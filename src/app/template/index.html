@@ -1,3 +1,99 @@
-{% extends './layout.html' %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vista 1 CVA</title>
+    <link rel="stylesheet" href="css/style3.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <script src="JS/script2.js"></script>
 
-{% bloack title %} CVA | Canadian Visa Advise {% endblock %}
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo-container">
+                <img src="../../../IMG/CVA-Logo.png" alt="CVA Logo" class="logo">
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#" class="active"><span class="icon">📊</span> Dashboard</a></li>
+                    <li><a href="#"><span class="icon">👥</span> Panel de Usuario</a></li>
+                    <li><a href="#"><span class="icon">📅</span> Programar Citas</a></li>
+                    <li><a href="#"><span class="icon">💼</span> Asesorías</a></li>
+                    <li><a href="#"><span class="icon">🛂</span> Tipos de Visa</a></li>
+                    <li><a href="#"><span class="icon">📋</span> Requisitos</a></li>
+                    <li><a href="eligibility_form.html"><span class="icon">📝</span> Proceso de Solicitud</a></li>
+                    <li><a href="#"><span class="icon">📞</span> Contacto y Soporte</a></li>
+                    <li><a href="#"><span class="icon">❓</span> Preguntas Frecuentes</a></li>
+                    <li><a href="#"><span class="icon">💬</span> Chatbot</a></li>
+                </ul>
+            </nav>
+            <div class="user-profile">
+                <a href="Login.html" class="user-profile-button">
+                    <span class="icon">👤</span>
+                    <span>Iniciar sesion</span>
+                </a>
+            </div>
+        </aside>
+        <main>
+            <header>
+                <div class="user-greeting">
+                    <h1>Hola, Usuario <span class="user-icon">👤</span></h1>
+                </div>
+                <div class="header-icons">
+                    <div class="search-container">
+                        <button class="icon-button search-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        </button>
+                        <div class="search-bar">
+                            <input type="text" placeholder="Busca algo aquí">
+                            <button type="submit">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <button class="icon-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-help-circle"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    </button>
+                    <button class="icon-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-bell"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    </button>
+                </div>
+            </header>
+            <section class="welcome">
+                <h2>Bienvenido</h2>
+                <p>¡Bienvenido a nuestra página de asesoramiento de visas canadienses! Nos complace ofrecerte información detallada y asistencia para que puedas elegir el tipo de visa que mejor se adapte a tus necesidades. Canadá es un país con una rica diversidad cultural, paisajes impresionantes y oportunidades únicas, y queremos ayudarte a experimentar todo lo que tiene para ofrecer.</p>
+            </section>
+            <section class="how-to-use">
+                <h2>¿Cómo utilizar nuestra página?</h2>
+                <ul>
+                    <li><strong>Explora los Tipos de Visa:</strong> Revisa las descripciones de los diferentes tipos de visa disponibles para determinar cuál se ajusta mejor a tu situación.</li>
+                    <br>
+                    <li><strong>Sigue las Instrucciones:</strong> Cada tipo de visa tiene instrucciones específicas que debes seguir. Asegúrate de leerlas detenidamente.</li>
+                    <br>
+                    <li><strong>Recoge la Documentación:</strong> Prepara todos los documentos necesarios antes de comenzar tu solicitud. Esto te ayudará a evitar retrasos.</li>
+                    <br>
+                    <li><strong>Aplica en Línea:</strong> Utiliza los enlaces proporcionados para acceder a los formularios de solicitud en línea y envía tu aplicación.</li>
+                </ul>
+            </section>
+            <div class="two-column">
+                <section class="help-section">
+                    <h2>Estamos aquí para ayudarte</h2>
+                    <p>Entendemos que el proceso de solicitud de visa puede ser complejo y abrumador. Por eso, estamos aquí para brindarte el soporte que necesitas en cada etapa del proceso. Si tienes alguna pregunta o necesitas asistencia adicional, no dudes en ponerte en contacto con nuestro equipo de expertos.</p>
+                </section>
+                <section class="start-journey">
+                    <h2>Comienza tu viaje hoy</h2>
+                    <p>¡Comienza explorando los diferentes tipos de visa y encuentra la opción perfecta para ti! Con nuestra ayuda, estarás un paso más cerca de alcanzar tus objetivos en Canadá.</p>
+                </section>
+            </div>
+            <div class="news-grid">
+                <div class="news-item">Noticia 1</div>
+                <div class="news-item">Noticia 2</div>
+                <div class="news-item">Noticia 3</div>
+                <div class="news-item">Noticia 4</div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

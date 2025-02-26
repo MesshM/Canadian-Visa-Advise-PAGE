@@ -1,0 +1,117 @@
+/* Fondo de la página con la imagen */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+    background-image: url("../fondo/hermes-rivera-ahHn48-zKWo-unsplash.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Contenedor principal */
+.container {
+    display: flex;
+    width: 90%; /* Ajustamos el contenedor a un 90% de la pantalla */
+    height: 80vh; /* Ajustamos la altura */
+    justify-content: space-between; /* Espacio entre los contenedores */
+}
+
+/* Contenedor de la imagen */
+.image-container {
+    flex: 1.8; /* 60% del ancho */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.image-left {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 15px 0 0 15px; /* Bordes redondeados solo en la izquierda */
+}
+
+/* Contenedor del formulario de registro */
+.login-container {
+    flex: 0.7; /* 30% del ancho */
+    background-color: rgba(242, 232, 220, 0.9); /* Fondo traslúcido */
+    padding: 5rem;
+    border-radius: 0 15px 15px 0; /* Bordes redondeados solo en la derecha */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Estilo del título */
+h1 {
+    text-align: center;
+    color: #333;
+    font-weight: 600;
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* Estilo del formulario */
+form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+input {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+input:focus {
+    border-color: #ff0000;
+    outline: none;
+}
+
+/* Estilo del botón de registro */
+button {
+    background-color: #ff0000;
+    color: white;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+button:hover {
+    background-color: #a80000;
+    transform: translateY(-2px);
+}
+
+/* Enlaces inferiores */
+.links {
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.links a {
+    color: #333;
+    text-decoration: none;
+    display: block;
+    margin-top: 0.5rem;
+    transition: color 0.3s ease;
+}
+
+.links a:hover {
+    color: #ff0000;
+}

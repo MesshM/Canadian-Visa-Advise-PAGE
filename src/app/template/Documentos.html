@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vista 1 CVA</title>
+    <link rel="stylesheet" href="../static/css/style4.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo-container">
+                <img src="../../../IMG/CVA-Logo.png" alt="CVA Logo" class="logo">
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html" class="active"><span class="icon">📊</span> Dashboard</a></li>
+                    <li><a href="#"><span class="icon">👥</span> Panel de Usuario</a></li>
+                    <li><a href="#"><span class="icon">📅</span> Programar Citas</a></li>
+                    <li><a href="#"><span class="icon">💼</span> Asesorías</a></li>
+                    <li><a href="#"><span class="icon">🛂</span> Tipos de Visa</a></li>
+                    <li><a href="#"><span class="icon">📋</span> Requisitos</a></li>
+                    <li><a href="#"><span class="icon">📝</span> Proceso de Solicitud</a></li>
+                    <li><a href="#"><span class="icon">📞</span> Contacto y Soporte</a></li>
+                    <li><a href="#"><span class="icon">❓</span> Preguntas Frecuentes</a></li>
+                    <li><a href="#"><span class="icon">💬</span> Chatbot</a></li>
+                </ul>
+            </nav>
+            <div class="user-profile">
+                <a href="Login.html" class="user-profile-button">
+                    <span class="icon">👤</span>
+                    <span>Cerrar sesion</span>
+                </a>
+            </div>
+        </aside>
+        <main>
+            <header>
+                <div class="user-greeting">
+                    <h1>Documentacion <span class="user-icon"></span></h1>
+                </div>
+                <div class="header-icons">
+                    <div class="search-container">
+                        <button class="icon-button search-icon">
+                            <div class="icon-background">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            </div>
+                        </button>
+                        <div class="search-bar">
+                            <input type="text" placeholder="Busca algo aquí">
+                            <button type="submit">
+                                <div class="icon-background">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                    <button class="icon-button">
+                        <div class="icon-background">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-help-circle"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                        </div>
+                    </button>
+                    <button class="icon-button">
+                        <div class="icon-background">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-bell"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                        </div>
+                    </button>
+                </div>
+            </header>
+            <section class="welcome">
+                <h2>Bienvenido</h2>
+                <p>A continuación puedes visualizar los docuentos necesarios para llevar a cabo la aplicación para tu VISA</p>
+                <div class="document-list">
+                    <div class="document-item">
+                        <span>Pasaporte</span><br><br>
+                        <input type="file" id="doc1" name="doc1" hidden>
+                        <label for="doc1" class="upload-btn">Subir</label>
+                    </div>
+                    <div class="document-item">
+                        <span>Comprobante de recursos financieros</span><br><br>
+                        <input type="file" id="doc2" name="doc2" hidden>
+                        <label for="doc2" class="upload-btn">Subir</label>
+                    </div>
+                    <div class="document-item">
+                        <span>Comprobante de medios apoyo</span><br><br>
+                        <input type="file" id="doc3" name="doc3" hidden>
+                        <label for="doc3" class="upload-btn">Subir</label>
+                    </div>
+                    <div class="document-item">
+                        <span>Foto digital</span><br><br>
+                        <input type="file" id="doc4" name="doc4" hidden>
+                        <label for="doc4" class="upload-btn">Subir</label>
+                    </div>
+                    <div class="document-item">
+                        <span>Proposito viaje</span><br><br>
+                        <input type="file" id="doc5" name="doc5" hidden>
+                        <label for="doc5" class="upload-btn">Subir</label>
+                    </div>
+                    <div class="document-item">
+                        <span>Prueba de estado civil</span><br><br>
+                        <input type="file" id="doc6" name="doc6" hidden>
+                        <label for="doc6" class="upload-btn">Subir</label>
+                    </div>
+                    <div class="document-item">
+                        <span>Informacion familiar</span><br><br>
+                        <input type="file" id="doc7" name="doc7" hidden>
+                        <label for="doc7" class="upload-btn">Subir</label>
+                    </div>
+                    <div class="document-item">
+                        <span>Aplicacion_IMM5257</span><br><br>
+                        <input type="file" id="doc8" name="doc8" hidden>
+                        <label for="doc8" class="upload-btn">Subir</label>
+                    </div>
+                    <div class="document-item">
+                        <span>Informacion del cliente</span><br><br>
+                        <input type="file" id="doc9" name="doc9" hidden>
+                        <label for="doc9" class="upload-btn">Subir</label>
+                    </div>
+                </div>
+                
+                <button class="submit-btn" onclick="submitDocuments()">Enviar documentos</button>
+            </div>
+                </div>    
+            </section>
+        </main>
+    </div>
+    <script src="../../../JS/script2.js"></script>
+</body>
+</html>
