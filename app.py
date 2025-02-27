@@ -145,7 +145,7 @@ def formularios():
         cursor = connection.cursor(dictionary=True)
         cursor.execute("""
             SELECT fe.id_formElegibilidad, CONCAT(u.nombres, ' ', u.apellidos) as solicitante, 
-                   fe.motivo_viaje, fe.codigo_pasaporte, fe.pais_residencia, fe.provincia_destino
+                fe.motivo_viaje, fe.codigo_pasaporte, fe.pais_residencia, fe.provincia_destino
             FROM tbl_form_eligibilidadCVA fe
             JOIN tbl_solicitante s ON fe.id_solicitante = s.id_solicitante
             JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
@@ -168,7 +168,7 @@ def asesorias():
         cursor = connection.cursor(dictionary=True)
         cursor.execute("""
             SELECT a.codigo_asesoria, a.fecha_asesoria, a.asesor_asignado,
-                   CONCAT(u.nombres, ' ', u.apellidos) as solicitante
+                CONCAT(u.nombres, ' ', u.apellidos) as solicitante
             FROM tbl_asesoria a
             JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
             JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
@@ -191,7 +191,7 @@ def pagos():
         cursor = connection.cursor(dictionary=True)
         cursor.execute("""
             SELECT p.num_factura, CONCAT(u.nombres, ' ', u.apellidos) as solicitante,
-                   p.metodo_pago, p.total_pago
+                p.metodo_pago, p.total_pago
             FROM tbl_pago p
             JOIN tbl_solicitante s ON p.id_solicitante = s.id_solicitante
             JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
@@ -214,7 +214,7 @@ def documentos():
         cursor = connection.cursor(dictionary=True)
         cursor.execute("""
             SELECT d.id_documento, CONCAT(u.nombres, ' ', u.apellidos) as solicitante,
-                   d.pasaporte, d.historial_viajes, d.foto_digital, d.proposito_viaje
+                d.pasaporte, d.historial_viajes, d.foto_digital, d.proposito_viaje
             FROM tbl_documentos_adjuntos d
             JOIN tbl_form_eligibilidadCVA fe ON d.id_formElegibilidad = fe.id_formElegibilidad
             JOIN tbl_solicitante s ON fe.id_solicitante = s.id_solicitante

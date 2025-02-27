@@ -21,63 +21,63 @@
     </style>
 </head>
 <body class="m-0 p-0 font-['Poppins',sans-serif] bg-[url('../fondo/hermes-rivera-ahHn48-zKWo-unsplash.jpg')] bg-cover bg-center bg-no-repeat h-screen flex justify-center items-center">
-   <div class="flex w-[90%] h-[80vh]">
-      <!-- Contenedor de la imagen -->
-      <div class="flex-[1.8] flex justify-center items-center h-full">
-          <img src="../fondo/hermes-rivera-ahHn48-zKWo-unsplash.jpg" alt="Imagen de fondo" class="w-full h-full object-cover rounded-l-[15px]">
-      </div>
+        <div class="flex w-[90%] h-[80vh]">
+        
+        <div class="flex-[1.8] flex justify-center items-center h-full">
+            <img src="../static/img/background-img-login-sigup.jpg" alt="Imagen de fondo" class="w-full h-full object-cover rounded-l-[15px]">
+        </div>
 
-      <!-- Contenedor de login -->
-      <div class="flex-[0.7] bg-login-container p-20 rounded-r-[15px] shadow-[0_4px_15px_rgba(0,0,0,0.1)] flex flex-col justify-center items-center h-[78vh]">
-          <h1 class="text-center text-[#333] font-semibold text-[1.5rem] mb-8">Acceder</h1>
-          <form method="POST" class="flex flex-col w-full">
-              {% with messages = get_flashed_messages(with_categories=true) %}
-                  {% if messages %}
-                      {% for category, message in messages %}
-                          <div class="p-4 mb-4 text-sm rounded-lg {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
-                              {{ message }}
-                          </div>
-                      {% endfor %}
-                  {% endif %}
-              {% endwith %}
-              
-              <input type="email" id="email" name="email" placeholder="Correo" required 
-                     class="mb-4 py-3 px-3 border border-[#ccc] rounded-[12px] text-base transition-all duration-300 focus:border-[#ff0000] focus:outline-none">
-              <input type="password" id="password" name="password" placeholder="Contraseña" required 
-                     class="mb-4 py-3 px-3 border border-[#ccc] rounded-[12px] text-base transition-all duration-300 focus:border-[#ff0000] focus:outline-none">
-              <button type="submit" 
-                      class="bg-button-red text-white py-3 px-3 border-none rounded-[12px] cursor-pointer font-semibold text-base transition-all duration-300 hover:bg-button-red-hover hover:-translate-y-0.5">
-                  Iniciar sesión
-              </button>
-          </form>
+        <!-- Contenedor de login -->
+        <div class="flex-[0.7] bg-login-container p-20 rounded-r-[15px] shadow-[0_4px_15px_rgba(0,0,0,0.1)] flex flex-col justify-center items-center h-[78vh]">
+            <h1 class="text-center text-[#333] font-semibold text-[1.5rem] mb-8">Acceder</h1>
+            <form method="POST" class="flex flex-col w-full">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="p-4 mb-4 text-sm rounded-lg {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <input type="email" id="email" name="email" placeholder="Correo" required 
+                        class="mb-4 py-3 px-3 border border-[#ccc] rounded-[12px] text-base transition-all duration-300 focus:border-[#ff0000] focus:outline-none">
+                <input type="password" id="password" name="password" placeholder="Contraseña" required 
+                        class="mb-4 py-3 px-3 border border-[#ccc] rounded-[12px] text-base transition-all duration-300 focus:border-[#ff0000] focus:outline-none">
+                <button type="submit" 
+                        class="bg-button-red text-white py-3 px-3 border-none rounded-[12px] cursor-pointer font-semibold text-base transition-all duration-300 hover:bg-button-red-hover hover:-translate-y-0.5">
+                    Iniciar sesión
+                </button>
+            </form>
 
-          <!-- Opciones sociales -->
-          <div class="flex flex-col gap-4 mt-6 w-full">
-              <a href="https://www.google.com" target="_blank" class="flex items-center justify-center bg-white text-[#333] py-3 px-3 rounded-[25px] w-[95%] no-underline font-semibold text-base border border-[#ccc] gap-4 transition-all duration-300 hover:bg-[#f1f1f1] hover:scale-105">
-                  <img src="../iconos/google_13170545.png" alt="Iniciar sesión con Google" class="w-[25px] h-[25px]">
-                  Registrarse con Google
-              </a>
-              <a href="https://www.facebook.com" target="_blank" class="flex items-center justify-center bg-white text-[#333] py-3 px-3 rounded-[25px] w-[95%] no-underline font-semibold text-base border border-[#ccc] gap-4 transition-all duration-300 hover:bg-[#f1f1f1] hover:scale-105">
-                  <img src="../iconos/facebook_5968764.png" alt="Iniciar sesión con Facebook" class="w-[25px] h-[25px]">
-                  Registrarse con Facebook
-              </a>
-              <a href="https://www.apple.com" target="_blank" class="flex items-center justify-center bg-white text-[#333] py-3 px-3 rounded-[25px] w-[95%] no-underline font-semibold text-base border border-[#ccc] gap-4 transition-all duration-300 hover:bg-[#f1f1f1] hover:scale-105">
-                  <img src="../iconos/apple_831329.png" alt="Iniciar sesión con Apple" class="w-[25px] h-[25px]">
-                  Registrarse con Apple
-              </a>
-          </div>
+            <!-- Opciones sociales -->
+            <div class="flex flex-col gap-4 mt-6 w-full">
+                <a href="https://www.google.com" target="_blank" class="flex items-center justify-center bg-white text-[#333] py-3 px-3 rounded-[25px] w-[95%] no-underline font-semibold text-base border border-[#ccc] gap-4 transition-all duration-300 hover:bg-[#f1f1f1] hover:scale-105">
+                    <img src="../iconos/google_13170545.png" alt="Iniciar sesión con Google" class="w-[25px] h-[25px]">
+                    Registrarse con Google
+                </a>
+                <a href="https://www.facebook.com" target="_blank" class="flex items-center justify-center bg-white text-[#333] py-3 px-3 rounded-[25px] w-[95%] no-underline font-semibold text-base border border-[#ccc] gap-4 transition-all duration-300 hover:bg-[#f1f1f1] hover:scale-105">
+                    <img src="../iconos/facebook_5968764.png" alt="Iniciar sesión con Facebook" class="w-[25px] h-[25px]">
+                    Registrarse con Facebook
+                </a>
+                <a href="https://www.apple.com" target="_blank" class="flex items-center justify-center bg-white text-[#333] py-3 px-3 rounded-[25px] w-[95%] no-underline font-semibold text-base border border-[#ccc] gap-4 transition-all duration-300 hover:bg-[#f1f1f1] hover:scale-105">
+                    <img src="../iconos/apple_831329.png" alt="Iniciar sesión con Apple" class="w-[25px] h-[25px]">
+                    Registrarse con Apple
+                </a>
+            </div>
 
-          <!-- Botón de registro -->
-          <a href="{{ url_for('registro') }}" class="bg-button-red text-white py-3 px-3 rounded-[12px] no-underline block text-base font-semibold mt-4 text-center w-full transition-all duration-300 hover:bg-[#a80000] hover:-translate-y-0.5">
-              Regístrate
-          </a>
+            <!-- Botón de registro -->
+            <a href="{{ url_for('registro') }}" class="bg-button-red text-white py-3 px-3 rounded-[12px] no-underline block text-base font-semibold mt-4 text-center w-full transition-all duration-300 hover:bg-[#a80000] hover:-translate-y-0.5">
+                Regístrate
+            </a>
 
-          <!-- Enlaces inferiores -->
-          <div class="mt-6 text-[0.9rem] text-center">
-              <a href="#" class="text-[#333] no-underline block mt-2 transition-colors duration-300 hover:text-[#ff0000]">¿Olvidaste contraseña?</a>
-              <a href="#" class="text-[#333] no-underline block mt-2 transition-colors duration-300 hover:text-[#ff0000]">¿No puedes iniciar sesión?</a>
-          </div>
-      </div>
-   </div>
+            <!-- Enlaces inferiores -->
+            <div class="mt-6 text-[0.9rem] text-center">
+                <a href="#" class="text-[#333] no-underline block mt-2 transition-colors duration-300 hover:text-[#ff0000]">¿Olvidaste contraseña?</a>
+                <a href="#" class="text-[#333] no-underline block mt-2 transition-colors duration-300 hover:text-[#ff0000]">¿No puedes iniciar sesión?</a>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
