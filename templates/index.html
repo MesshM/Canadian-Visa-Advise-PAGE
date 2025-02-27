@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Página con Tailwind CSS</title>
+    <link href="{{ url_for('static', filename='output.css') }}" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold text-center text-blue-600">Bienvenido, {{ session['user_name'] }}</h1>
+        <div class="mt-4 text-center">
+            <a href="{{ url_for('solicitantes') }}" class="bg-blue-500 text-white px-4 py-2 rounded">Solicitantes</a>
+            <a href="{{ url_for('formularios') }}" class="bg-green-500 text-white px-4 py-2 rounded ml-4">Formularios</a>
+            <a href="{{ url_for('asesorias') }}" class="bg-yellow-500 text-white px-4 py-2 rounded ml-4">Asesorías</a>
+            <a href="{{ url_for('pagos') }}" class="bg-purple-500 text-white px-4 py-2 rounded ml-4">Pagos</a>
+            <a href="{{ url_for('documentos') }}" class="bg-pink-500 text-white px-4 py-2 rounded ml-4">Documentos</a>
+            <a href="{{ url_for('logout') }}" class="bg-red-500 text-white px-4 py-2 rounded ml-4">Cerrar Sesión</a>
+        </div>
+    </div>
+</body>
+</html>

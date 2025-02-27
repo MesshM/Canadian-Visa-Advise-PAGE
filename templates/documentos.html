@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentos</title>
+    <link href="{{ url_for('static', filename='output.css') }}" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold text-center text-blue-600">Documentos Adjuntos</h1>
+        <table class="mt-4 w-full border-collapse border border-gray-300">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="border border-gray-300 px-4 py-2">ID</th>
+                    <th class="border border-gray-300 px-4 py-2">Solicitante</th>
+                    <th class="border border-gray-300 px-4 py-2">Pasaporte</th>
+                    <th class="border border-gray-300 px-4 py-2">Historial de Viajes</th>
+                    <th class="border border-gray-300 px-4 py-2">Foto Digital</th>
+                    <th class="border border-gray-300 px-4 py-2">Propósito de Viaje</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for documento in documentos %}
+                <tr class="bg-white">
+                    <td class="border border-gray-300 px-4 py-2">{{ documento.id_documento }}</td>
+                    <td class="border border-gray-300 px-4 py-2">{{ documento.solicitante }}</td>
+                    <td class="border border-gray-300 px-4 py-2">{{ documento.pasaporte }}</td>
+                    <td class="border border-gray-300 px-4 py-2">{{ documento.historial_viajes }}</td>
+                    <td class="border border-gray-300 px-4 py-2">{{ documento.foto_digital }}</td>
+                    <td class="border border-gray-300 px-4 py-2">{{ documento.proposito_viaje }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

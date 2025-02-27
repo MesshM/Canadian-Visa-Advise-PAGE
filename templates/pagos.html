@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="{{ url_for('static', filename='output.css') }}" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold text-center text-blue-600">Pagos</h1>
+        <table class="mt-4 w-full border-collapse border border-gray-300">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="border border-gray-300 px-4 py-2">Número de Factura</th>
+                    <th class="border border-gray-300 px-4 py-2">Solicitante</th>
+                    <th class="border border-gray-300 px-4 py-2">Método de Pago</th>
+                    <th class="border border-gray-300 px-4 py-2">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pago in pagos %}
+                <tr class="bg-white">
+                    <td class="border border-gray-300 px-4 py-2">{{ pago.num_factura }}</td>
+                    <td class="border border-gray-300 px-4 py-2">{{ pago.solicitante }}</td>
+                    <td class="border border-gray-300 px-4 py-2">{{ pago.metodo_pago }}</td>
+                    <td class="border border-gray-300 px-4 py-2">{{ pago.total_pago }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

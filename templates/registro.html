@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar Usuario</title><link href="{{ url_for('static', filename='output.css') }}" rel="stylesheet">
+    
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold text-center text-blue-600">Registro</h1>
+        <form method="POST" class="mt-4 max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="mb-4 p-2 text-center text-white bg-{{ 'red' if category == 'error' else 'green' }}-500 rounded">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            <div class="mb-4">
+                <label for="nombres" class="block text-gray-700">Nombres:</label>
+                <input type="text" id="nombres" name="nombres" class="w-full px-4 py-2 border rounded" required>
+            </div>
+            <div class="mb-4">
+                <label for="apellidos" class="block text-gray-700">Apellidos:</label>
+                <input type="text" id="apellidos" name="apellidos" class="w-full px-4 py-2 border rounded" required>
+            </div>
+            <div class="mb-4">
+                <label for="correo" class="block text-gray-700">Correo:</label>
+                <input type="email" id="correo" name="correo" class="w-full px-4 py-2 border rounded" required>
+            </div>
+            <div class="mb-4">
+                <label for="contrasena" class="block text-gray-700">Contraseña:</label>
+                <input type="password" id="contrasena" name="contrasena" class="w-full px-4 py-2 border rounded" required>
+            </div>
+            <div class="mb-4">
+                <label for="fecha_nacimiento" class="block text-gray-700">Fecha de Nacimiento:</label>
+                <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="w-full px-4 py-2 border rounded" required>
+            </div>
+            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded w-full">Registrarse</button>
+            <p class="mt-4 text-center">¿Ya tienes una cuenta? <a href="{{ url_for('login') }}" class="text-blue-500">Inicia Sesión</a></p>
+        </form>
+    </div>
+</body>
+</html>

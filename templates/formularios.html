@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formularios</title>
+    <link href="{{ url_for('static', filename='output.css') }}" rel="stylesheet"> 
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold text-center text-blue-600">Formularios de Elegibilidad</h1>
+        <table class="mt-4 w-full border-collapse border border-gray-300">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="border border-gray-300 px-4 py-2">ID</th>
+                    <th class="border border-gray-300 px-4 py-2">Solicitante</th>
+                    <th class="border border-gray-300 px-4 py-2">Motivo de Viaje</th>
+                    <th class="border border-gray-300 px-4 py-2">Código de Pasaporte</th>
+                    <th class="border border-gray-300 px-4 py-2">País de Residencia</th>
+                    <th class="border border-gray-300 px-4 py-2">Provincia de Destino</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for formulario in formularios %}
+                <tr class="bg-white">
+                    <td class="border border-gray-300 px-4 py-2">{{ formulario.id_formElegibilidad }}</td>
+                    <td class="border border-gray-300 px-4 py-2">{{ formulario.solicitante }}</td>
+                    <td class="border border-gray-300 px-4 py-2">{{ formulario.motivo_viaje }}</td>
+                    <td class="border border-gray-300 px-4 py-2">{{ formulario.codigo_pasaporte }}</td>
+                    <td class="border border-gray-300 px-4 py-2">{{ formulario.pais_residencia }}</td>
+                    <td class="border border-gray-300 px-4 py-2">{{ formulario.provincia_destino }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
