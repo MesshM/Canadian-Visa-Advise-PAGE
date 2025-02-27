@@ -3,45 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agregar Usuario</title><link href="{{ url_for('static', filename='output.css') }}" rel="stylesheet">
-    
+    <title>Página de Registro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', filename='output.css') }}" rel="stylesheet">
+    <style>
+        @layer utilities {
+            .bg-register-container {
+                background-color: rgba(242, 232, 220, 0.9);
+            }
+            .bg-button-red {
+                background-color: #ff0000;
+            }
+            .hover\:bg-button-red-hover:hover {
+                background-color: #a80000;
+            }
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <div class="container mx-auto p-4">
-        <h1 class="text-3xl font-bold text-center text-blue-600">Registro</h1>
-        <form method="POST" class="mt-4 max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="mb-4 p-2 text-center text-white bg-{{ 'red' if category == 'error' else 'green' }}-500 rounded">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-            <div class="mb-4">
-                <label for="nombres" class="block text-gray-700">Nombres:</label>
-                <input type="text" id="nombres" name="nombres" class="w-full px-4 py-2 border rounded" required>
-            </div>
-            <div class="mb-4">
-                <label for="apellidos" class="block text-gray-700">Apellidos:</label>
-                <input type="text" id="apellidos" name="apellidos" class="w-full px-4 py-2 border rounded" required>
-            </div>
-            <div class="mb-4">
-                <label for="correo" class="block text-gray-700">Correo:</label>
-                <input type="email" id="correo" name="correo" class="w-full px-4 py-2 border rounded" required>
-            </div>
-            <div class="mb-4">
-                <label for="contrasena" class="block text-gray-700">Contraseña:</label>
-                <input type="password" id="contrasena" name="contrasena" class="w-full px-4 py-2 border rounded" required>
-            </div>
-            <div class="mb-4">
-                <label for="fecha_nacimiento" class="block text-gray-700">Fecha de Nacimiento:</label>
-                <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="w-full px-4 py-2 border rounded" required>
-            </div>
-            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded w-full">Registrarse</button>
-            <p class="mt-4 text-center">¿Ya tienes una cuenta? <a href="{{ url_for('login') }}" class="text-blue-500">Inicia Sesión</a></p>
-        </form>
-    </div>
+<body class="m-0 p-0 font-['Poppins',sans-serif] bg-[url('../fondo/hermes-rivera-ahHn48-zKWo-unsplash.jpg')] bg-cover bg-center bg-no-repeat h-screen flex justify-center items-center">
+   <div class="flex w-[90%] h-[80vh] justify-between">
+      <!-- Contenedor de la imagen -->
+      <div class="flex-[1.8] flex justify-center items-center">
+          <img src="../fondo/hermes-rivera-ahHn48-zKWo-unsplash.jpg" alt="Imagen de fondo" class="w-full h-full object-cover rounded-l-[15px]">
+      </div>
+
+      <!-- Contenedor de registro -->
+      <div class="flex-[0.7] bg-register-container p-20 rounded-r-[15px] shadow-[0_4px_15px_rgba(0,0,0,0.1)] flex flex-col justify-center items-center">
+          <h1 class="text-center text-[#333] font-semibold text-[1.5rem] mb-8">Regístrate</h1>
+          <form method="POST" class="flex flex-col w-full">
+              {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                      {% for category, message in messages %}
+                          <div class="p-4 mb-4 text-sm rounded-lg {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                              {{ message }}
+                          </div>
+                      {% endfor %}
+                  {% endif %}
+              {% endwith %}
+              
+              <input type="text" id="nombres" name="nombres" placeholder="Nombre completo" required 
+                     class="mb-4 py-3 px-3 border border-[#ccc] rounded-[10px] text-base transition-all duration-300 focus:border-[#ff0000] focus:outline-none">
+              <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" required 
+                     class="mb-4 py-3 px-3 border border-[#ccc] rounded-[10px] text-base transition-all duration-300 focus:border-[#ff0000] focus:outline-none">
+              <input type="email" id="correo" name="correo" placeholder="Correo" required 
+                     class="mb-4 py-3 px-3 border border-[#ccc] rounded-[10px] text-base transition-all duration-300 focus:border-[#ff0000] focus:outline-none">
+              <input type="password" id="contrasena" name="contrasena" placeholder="Contraseña" required 
+                     class="mb-4 py-3 px-3 border border-[#ccc] rounded-[10px] text-base transition-all duration-300 focus:border-[#ff0000] focus:outline-none">
+              <input type="password" id="confirmar_contrasena" name="confirmar_contrasena" placeholder="Repite tu contraseña" required 
+                     class="mb-4 py-3 px-3 border border-[#ccc] rounded-[10px] text-base transition-all duration-300 focus:border-[#ff0000] focus:outline-none">
+              <button type="submit" 
+                      class="bg-button-red text-white py-3 px-3 border-none rounded-[10px] cursor-pointer font-semibold text-base transition-all duration-300 hover:bg-button-red-hover hover:-translate-y-0.5">
+                  Registrarse
+              </button>
+          </form>
+
+          <!-- Enlaces inferiores -->
+          <div class="mt-6 text-[0.9rem] text-center">
+              <a href="{{ url_for('login') }}" class="text-[#333] no-underline block mt-2 transition-colors duration-300 hover:text-[#ff0000]">¿Ya tienes una cuenta? Inicia sesión</a>
+              <a href="#" class="text-[#333] no-underline block mt-2 transition-colors duration-300 hover:text-[#ff0000]">¿No puedes registrarte?</a>
+          </div>
+      </div>
+   </div>
 </body>
 </html>

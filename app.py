@@ -70,20 +70,31 @@ def registro():
         contrasena = request.form['contrasena']
         fecha_nacimiento = request.form['fecha_nacimiento']
         
-        hashed_password = generate_password_hash(contrasena)
-        
+        # Verificar si el correo ya está registrado
         connection = create_connection()
         if connection:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM tbl_usuario WHERE correo = %s", (correo,))
+            existing_user = cursor.fetchone()
+            
+            if existing_user:
+                flash('El correo ya está registrado. Por favor, usa otro correo.', 'error')
+                cursor.close()
+                connection.close()
+                return redirect(url_for('registro'))
+            
+            # Si el correo no está registrado, proceder con el registro
+            hashed_password = generate_password_hash(contrasena)
+            
             try:
-                cursor = connection.cursor()
-                # Primero, insertar en tbl_usuario
+                # Insertar en tbl_usuario
                 cursor.execute(
                     "INSERT INTO tbl_usuario (nombres, apellidos, correo, contrasena, fecha_nacimiento) VALUES (%s, %s, %s, %s, %s)",
                     (nombres, apellidos, correo, hashed_password, fecha_nacimiento)
                 )
                 user_id = cursor.lastrowid
                 
-                # Luego, insertar en tbl_solicitante
+                # Insertar en tbl_solicitante
                 cursor.execute(
                     "INSERT INTO tbl_solicitante (id_usuario) VALUES (%s)",
                     (user_id,)
