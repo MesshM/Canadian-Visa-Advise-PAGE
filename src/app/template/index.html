@@ -1,3 +1,225 @@
-{% extends './layout.html' %}
+{% extends 'base.html' %}
 
-{% bloack title %} CVA | Canadian Visa Advise {% endblock %}
+{% block title %}Inicio - Canadian Visa Advise{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-900">Bienvenido a Canadian Visa Advise</h1>
+        <div class="flex items-center space-x-2">
+            <span class="text-sm text-gray-500">Usuario: Admin</span>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white rounded-lg border shadow-sm">
+            <div class="flex flex-col space-y-1.5 p-6">
+                <h3 class="text-lg font-medium">Solicitantes</h3>
+                <p class="text-sm text-gray-500">Total de solicitantes registrados</p>
+            </div>
+            <div class="p-6 pt-0">
+                <div class="flex justify-between items-center">
+                    <span class="text-3xl font-bold">7</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-canada-red">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <a href="/solicitantes" class="inline-flex items-center text-canada-red mt-2 hover:underline">
+                    Ver detalles 
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </a>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg border shadow-sm">
+            <div class="flex flex-col space-y-1.5 p-6">
+                <h3 class="text-lg font-medium">Formularios</h3>
+                <p class="text-sm text-gray-500">Formularios completados</p>
+            </div>
+            <div class="p-6 pt-0">
+                <div class="flex justify-between items-center">
+                    <span class="text-3xl font-bold">7</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-canada-red">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                </div>
+                <a href="/formularios" class="inline-flex items-center text-canada-red mt-2 hover:underline">
+                    Ver detalles 
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </a>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg border shadow-sm">
+            <div class="flex flex-col space-y-1.5 p-6">
+                <h3 class="text-lg font-medium">Asesorías</h3>
+                <p class="text-sm text-gray-500">Asesorías programadas</p>
+            </div>
+            <div class="p-6 pt-0">
+                <div class="flex justify-between items-center">
+                    <span class="text-3xl font-bold">7</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-canada-red">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </div>
+                <a href="/asesorias" class="inline-flex items-center text-canada-red mt-2 hover:underline">
+                    Ver detalles 
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </a>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg border shadow-sm">
+            <div class="flex flex-col space-y-1.5 p-6">
+                <h3 class="text-lg font-medium">Pagos</h3>
+                <p class="text-sm text-gray-500">Total de pagos recibidos</p>
+            </div>
+            <div class="p-6 pt-0">
+                <div class="flex justify-between items-center">
+                    <span class="text-3xl font-bold">7</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-canada-red">
+                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                        <line x1="1" y1="10" x2="23" y2="10"></line>
+                    </svg>
+                </div>
+                <a href="/pagos" class="inline-flex items-center text-canada-red mt-2 hover:underline">
+                    Ver detalles 
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg border shadow-sm">
+            <div class="flex flex-col space-y-1.5 p-6">
+                <h3 class="text-2xl font-semibold leading-none tracking-tight">Actividad Reciente</h3>
+                <p class="text-sm text-gray-500">Últimas acciones en el sistema</p>
+            </div>
+            <div class="p-6 pt-0">
+                <div class="space-y-4">
+                    <div class="flex justify-between items-start pb-3 border-b last:border-0 last:pb-0">
+                        <div>
+                            <p class="font-medium">Juan Pérez</p>
+                            <p class="text-sm text-gray-500">Completó formulario de elegibilidad</p>
+                        </div>
+                        <span class="text-xs text-gray-400">Hace 2 horas</span>
+                    </div>
+                    <div class="flex justify-between items-start pb-3 border-b last:border-0 last:pb-0">
+                        <div>
+                            <p class="font-medium">María González</p>
+                            <p class="text-sm text-gray-500">Programó asesoría</p>
+                        </div>
+                        <span class="text-xs text-gray-400">Hace 3 horas</span>
+                    </div>
+                    <div class="flex justify-between items-start pb-3 border-b last:border-0 last:pb-0">
+                        <div>
+                            <p class="font-medium">Carlos Rodríguez</p>
+                            <p class="text-sm text-gray-500">Realizó pago</p>
+                        </div>
+                        <span class="text-xs text-gray-400">Hace 5 horas</span>
+                    </div>
+                    <div class="flex justify-between items-start pb-3 border-b last:border-0 last:pb-0">
+                        <div>
+                            <p class="font-medium">Ana Martínez</p>
+                            <p class="text-sm text-gray-500">Subió documentos</p>
+                        </div>
+                        <span class="text-xs text-gray-400">Hace 1 día</span>
+                    </div>
+                    <div class="flex justify-between items-start pb-3 border-b last:border-0 last:pb-0">
+                        <div>
+                            <p class="font-medium">Luis Sánchez</p>
+                            <p class="text-sm text-gray-500">Actualizó información personal</p>
+                        </div>
+                        <span class="text-xs text-gray-400">Hace 1 día</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg border shadow-sm">
+            <div class="flex flex-col space-y-1.5 p-6">
+                <h3 class="text-2xl font-semibold leading-none tracking-tight">Próximas Asesorías</h3>
+                <p class="text-sm text-gray-500">Asesorías programadas para los próximos días</p>
+            </div>
+            <div class="p-6 pt-0">
+                <div class="space-y-4">
+                    <div class="flex justify-between items-start pb-3 border-b last:border-0 last:pb-0">
+                        <div>
+                            <p class="font-medium">Juan Pérez</p>
+                            <p class="text-sm text-gray-500">Asesor: Juan Pérez</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-medium">20 Sep 2024</p>
+                            <p class="text-xs text-gray-400">10:00 AM</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-start pb-3 border-b last:border-0 last:pb-0">
+                        <div>
+                            <p class="font-medium">María González</p>
+                            <p class="text-sm text-gray-500">Asesor: María González</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-medium">21 Sep 2024</p>
+                            <p class="text-xs text-gray-400">2:30 PM</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-start pb-3 border-b last:border-0 last:pb-0">
+                        <div>
+                            <p class="font-medium">Carlos Rodríguez</p>
+                            <p class="text-sm text-gray-500">Asesor: Carlos Rodríguez</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-medium">22 Sep 2024</p>
+                            <p class="text-xs text-gray-400">11:15 AM</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-start pb-3 border-b last:border-0 last:pb-0">
+                        <div>
+                            <p class="font-medium">Ana Martínez</p>
+                            <p class="text-sm text-gray-500">Asesor: Ana Martínez</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-medium">23 Sep 2024</p>
+                            <p class="text-xs text-gray-400">9:45 AM</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-start pb-3 border-b last:border-0 last:pb-0">
+                        <div>
+                            <p class="font-medium">Luis Sánchez</p>
+                            <p class="text-sm text-gray-500">Asesor: Luis Sánchez</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-medium">24 Sep 2024</p>
+                            <p class="text-xs text-gray-400">4:00 PM</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
