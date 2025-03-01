@@ -15,7 +15,7 @@
                     <svg class="h-8 w-8 text-red-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M12 2L14.5 9H22L16 13.5L18.5 20.5L12 16L5.5 20.5L8 13.5L2 9H9.5L12 2Z" fill="currentColor"/>
                     </svg>
-                    <span class="ml-2 text-xl font-semibold text-gray-800">Inmigración Canadiense</span>
+                    <span class="ml-2 text-xl font-semibold text-gray-800">Canadian Visa Advise</span>
                 </div>
                 <div class="flex items-center">
                     <a href="{{ url_for('index') }}" class="nav-link mr-4">Inicio</a>
@@ -65,5 +65,352 @@
                 </a>
             </div>
         </div>
-    </nav
+    </nav>
 
+    <!-- Contenido principal modernizado -->
+    <main class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-gray-800 mb-2">Documentación</h1>
+                <p class="text-gray-600 mb-6">A continuación puedes visualizar los documentos necesarios para llevar a cabo la aplicación para tu VISA</p>
+                
+                <!-- Contador de documentos -->
+                <div class="mb-6 flex items-center justify-between bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <span class="text-sm font-medium text-gray-700">Documentos requeridos: 9</span>
+                    <span id="upload-counter" class="text-sm font-medium text-gray-700">Subidos: <span id="uploaded-count">0</span>/9</span>
+                </div>
+                
+                <!-- Grid de documentos -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    <!-- Documento 1 -->
+                    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden transition-all hover:shadow-md">
+                        <div class="p-4 h-full flex flex-col">
+                            <div class="flex items-start justify-between mb-2">
+                                <h3 class="font-medium text-gray-800">Pasaporte</h3>
+                                <div id="status-doc1" class="hidden">
+                                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-4">Documento de identidad internacional válido</p>
+                            <div class="mt-auto">
+                                <div class="relative">
+                                    <input type="file" id="doc1" name="doc1" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="updateFileStatus('doc1')">
+                                    <button class="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center justify-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                                        </svg>
+                                        <span>Subir archivo</span>
+                                    </button>
+                                </div>
+                                <p id="filename-doc1" class="mt-2 text-xs text-gray-500 truncate hidden"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Documento 2 -->
+                    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden transition-all hover:shadow-md">
+                        <div class="p-4 h-full flex flex-col">
+                            <div class="flex items-start justify-between mb-2">
+                                <h3 class="font-medium text-gray-800">Comprobante de recursos financieros</h3>
+                                <div id="status-doc2" class="hidden">
+                                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-4">Estados de cuenta bancarios o inversiones</p>
+                            <div class="mt-auto">
+                                <div class="relative">
+                                    <input type="file" id="doc2" name="doc2" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="updateFileStatus('doc2')">
+                                    <button class="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center justify-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                                        </svg>
+                                        <span>Subir archivo</span>
+                                    </button>
+                                </div>
+                                <p id="filename-doc2" class="mt-2 text-xs text-gray-500 truncate hidden"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Documento 3 -->
+                    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden transition-all hover:shadow-md">
+                        <div class="p-4 h-full flex flex-col">
+                            <div class="flex items-start justify-between mb-2">
+                                <h3 class="font-medium text-gray-800">Comprobante de medios apoyo</h3>
+                                <div id="status-doc3" class="hidden">
+                                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-4">Cartas de apoyo o patrocinio</p>
+                            <div class="mt-auto">
+                                <div class="relative">
+                                    <input type="file" id="doc3" name="doc3" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="updateFileStatus('doc3')">
+                                    <button class="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center justify-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                                        </svg>
+                                        <span>Subir archivo</span>
+                                    </button>
+                                </div>
+                                <p id="filename-doc3" class="mt-2 text-xs text-gray-500 truncate hidden"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Documento 4 -->
+                    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden transition-all hover:shadow-md">
+                        <div class="p-4 h-full flex flex-col">
+                            <div class="flex items-start justify-between mb-2">
+                                <h3 class="font-medium text-gray-800">Foto digital</h3>
+                                <div id="status-doc4" class="hidden">
+                                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-4">Fotografía reciente con fondo blanco</p>
+                            <div class="mt-auto">
+                                <div class="relative">
+                                    <input type="file" id="doc4" name="doc4" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="updateFileStatus('doc4')">
+                                    <button class="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center justify-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                                        </svg>
+                                        <span>Subir archivo</span>
+                                    </button>
+                                </div>
+                                <p id="filename-doc4" class="mt-2 text-xs text-gray-500 truncate hidden"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Documento 5 -->
+                    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden transition-all hover:shadow-md">
+                        <div class="p-4 h-full flex flex-col">
+                            <div class="flex items-start justify-between mb-2">
+                                <h3 class="font-medium text-gray-800">Propósito viaje</h3>
+                                <div id="status-doc5" class="hidden">
+                                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-4">Carta explicativa del motivo de viaje</p>
+                            <div class="mt-auto">
+                                <div class="relative">
+                                    <input type="file" id="doc5" name="doc5" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="updateFileStatus('doc5')">
+                                    <button class="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center justify-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                                        </svg>
+                                        <span>Subir archivo</span>
+                                    </button>
+                                </div>
+                                <p id="filename-doc5" class="mt-2 text-xs text-gray-500 truncate hidden"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Documento 6 -->
+                    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden transition-all hover:shadow-md">
+                        <div class="p-4 h-full flex flex-col">
+                            <div class="flex items-start justify-between mb-2">
+                                <h3 class="font-medium text-gray-800">Prueba de estado civil</h3>
+                                <div id="status-doc6" class="hidden">
+                                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-4">Acta de matrimonio o divorcio</p>
+                            <div class="mt-auto">
+                                <div class="relative">
+                                    <input type="file" id="doc6" name="doc6" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="updateFileStatus('doc6')">
+                                    <button class="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center justify-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                                        </svg>
+                                        <span>Subir archivo</span>
+                                    </button>
+                                </div>
+                                <p id="filename-doc6" class="mt-2 text-xs text-gray-500 truncate hidden"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Documento 7 -->
+                    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden transition-all hover:shadow-md">
+                        <div class="p-4 h-full flex flex-col">
+                            <div class="flex items-start justify-between mb-2">
+                                <h3 class="font-medium text-gray-800">Información familiar</h3>
+                                <div id="status-doc7" class="hidden">
+                                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-4">Datos de familiares directos</p>
+                            <div class="mt-auto">
+                                <div class="relative">
+                                    <input type="file" id="doc7" name="doc7" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="updateFileStatus('doc7')">
+                                    <button class="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center justify-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                                        </svg>
+                                        <span>Subir archivo</span>
+                                    </button>
+                                </div>
+                                <p id="filename-doc7" class="mt-2 text-xs text-gray-500 truncate hidden"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Documento 8 -->
+                    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden transition-all hover:shadow-md">
+                        <div class="p-4 h-full flex flex-col">
+                            <div class="flex items-start justify-between mb-2">
+                                <h3 class="font-medium text-gray-800">Aplicación_IMM5257</h3>
+                                <div id="status-doc8" class="hidden">
+                                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-4">Formulario oficial de inmigración</p>
+                            <div class="mt-auto">
+                                <div class="relative">
+                                    <input type="file" id="doc8" name="doc8" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="updateFileStatus('doc8')">
+                                    <button class="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center justify-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                                        </svg>
+                                        <span>Subir archivo</span>
+                                    </button>
+                                </div>
+                                <p id="filename-doc8" class="mt-2 text-xs text-gray-500 truncate hidden"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Documento 9 -->
+                    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden transition-all hover:shadow-md">
+                        <div class="p-4 h-full flex flex-col">
+                            <div class="flex items-start justify-between mb-2">
+                                <h3 class="font-medium text-gray-800">Información del cliente</h3>
+                                <div id="status-doc9" class="hidden">
+                                    <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-4">Datos personales completos</p>
+                            <div class="mt-auto">
+                                <div class="relative">
+                                    <input type="file" id="doc9" name="doc9" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="updateFileStatus('doc9')">
+                                    <button class="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center justify-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                                        </svg>
+                                        <span>Subir archivo</span>
+                                    </button>
+                                </div>
+                                <p id="filename-doc9" class="mt-2 text-xs text-gray-500 truncate hidden"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Botón de envío -->
+                <div class="mt-8">
+                    <button id="submit-button" onclick="submitDocuments()" class="w-full bg-red-600 text-white py-3 px-6 rounded-md font-medium hover:bg-red-700 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <span id="submit-text">Enviar documentos</span>
+                        <span id="submit-loader" class="hidden ml-2">
+                            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </span>
+                    </button>
+                </div>
+                
+                <!-- Mensaje de éxito (oculto por defecto) -->
+                <div id="success-message" class="hidden mt-4 p-4 bg-green-50 border border-green-200 rounded-md">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span class="font-medium text-green-800">¡Documentos enviados correctamente!</span>
+                    </div>
+                    <p class="mt-2 text-sm text-green-700">Tus documentos han sido recibidos y están siendo procesados. Te notificaremos cuando hayan sido revisados.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Script para la funcionalidad -->
+    <script>
+        // Variables para el seguimiento de archivos
+        let uploadedFiles = {};
+        
+        // Función para actualizar el estado del archivo
+        function updateFileStatus(docId) {
+            const fileInput = document.getElementById(docId);
+            const statusElement = document.getElementById(`status-${docId}`);
+            const filenameElement = document.getElementById(`filename-${docId}`);
+            
+            if (fileInput.files && fileInput.files[0]) {
+                // Guardar el archivo
+                uploadedFiles[docId] = fileInput.files[0];
+                
+                // Mostrar el indicador de éxito
+                statusElement.classList.remove('hidden');
+                
+                // Mostrar el nombre del archivo
+                filenameElement.textContent = fileInput.files[0].name;
+                filenameElement.classList.remove('hidden');
+                
+                // Actualizar contador
+                updateCounter();
+            }
+        }
+        
+        // Función para actualizar el contador
+        function updateCounter() {
+            const count = Object.keys(uploadedFiles).length;
+            document.getElementById('uploaded-count').textContent = count;
+            
+            // Habilitar/deshabilitar botón de envío
+            const submitButton = document.getElementById('submit-button');
+            if (count > 0) {
+                submitButton.disabled = false;
+            } else {
+                submitButton.disabled = true;
+            }
+        }
+        
+        // Función para enviar documentos
+        function submitDocuments() {
+            // Mostrar loader
+            document.getElementById('submit-text').textContent = 'Enviando...';
+            document.getElementById('submit-loader').classList.remove('hidden');
+            document.getElementById('submit-button').disabled = true;
+            
+            // Simular envío (aquí iría tu lógica de envío real)
+            setTimeout(function() {
+                // Ocultar loader
+                document.getElementById('submit-loader').classList.add('hidden');
+                document.getElementById('submit-text').textContent = 'Documentos enviados';
+                
+                // Mostrar mensaje de éxito
+                document.getElementById('success-message').classList.remove('hidden');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
