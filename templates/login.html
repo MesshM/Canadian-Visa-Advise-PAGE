@@ -3,33 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión</title>
+    <title>Iniciar Sesión</title>
     <link href="../static/css/output.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
-<body class="bg-gray-100">
-    <div class="container mx-auto p-4">
-        <h1 class="text-3xl font-bold text-center text-blue-600">Iniciar Sesión</h1>
-        <form method="POST" class="mt-4 max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="mb-4 p-2 text-center text-white bg-{{ 'red' if category == 'error' else 'green' }}-500 rounded">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-            <div class="mb-4">
-                <label for="email" class="block text-gray-700">Correo:</label>
-                <input type="email" id="email" name="email" class="w-full px-4 py-2 border rounded" required>
+<body class="flex font-poppins items-center justify-center min-h-screen bg-gray-900">
+    <div class="grid gap-8">
+        <div class="bg-gradient-to-r from-blue-500 to-purple-500 rounded-[26px] m-4">
+            <div class="border-[20px] border-transparent rounded-[20px] bg-white shadow-lg p-10 m-2 dark:bg-gray-900">
+                <h1 class="text-5xl font-bold text-center dark:text-gray-400">Acceder</h1>
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="mb-4 p-2 text-center text-white bg-{{ 'red' if category == 'error' else 'green' }}-500 rounded">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <form method="POST" class="space-y-4">
+                    <div>
+                        <label for="email" class="text-lg dark:text-gray-400">Correo</label>
+                        <input id="email" name="email" type="email" placeholder="Correo" required class="w-full p-3 border rounded-lg shadow-md dark:bg-punch-600 dark:text-gray-300 dark:border-gray-700 focus:scale-105 transition ease-in-out duration-300">
+                    </div>
+                    <div>
+                        <label for="password" class="text-lg dark:text-gray-400">Contraseña</label>
+                        <input id="password" name="password" type="password" placeholder="Contraseña" required class="w-full p-3 border rounded-lg shadow-md dark:bg-indigo-700 dark:text-gray-300 dark:border-gray-700 focus:scale-105 transition ease-in-out duration-300">
+                    </div>
+                    <a href="#" class="text-blue-400 text-sm hover:underline">¿Olvidaste tu contraseña?</a>
+                    <button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white p-3 rounded-lg shadow-lg hover:scale-105 transition duration-300 ease-in-out">Iniciar Sesión</button>
+                </form>
+                <p class="text-center mt-4 text-gray-400">¿No tienes una cuenta? <a href="{{ url_for('registro') }}" class="text-blue-400 hover:underline">Regístrate</a></p>
+                <div class="flex justify-center gap-4 mt-5">
+                    <button class="p-3 border rounded-lg shadow-lg hover:scale-105 transition ease-in-out duration-300"><img src="/static/icons/google.png" class="w-6"></button>
+                    <button class="p-3 border rounded-lg shadow-lg hover:scale-105 transition ease-in-out duration-300"><img src="/static/icons/facebook.png" class="w-6"></button>
+                    <button class="p-3 border rounded-lg shadow-lg hover:scale-105 transition ease-in-out duration-300"><img src="/static/icons/apple.png" class="w-6"></button>
+                </div>
             </div>
-            <div class="mb-4">
-                <label for="password" class="block text-gray-700">Contraseña:</label>
-                <input type="password" id="password" name="password" class="w-full px-4 py-2 border rounded" required>
-            </div>
-            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded w-full">Iniciar Sesión</button>
-            <p class="mt-4 text-center">¿No tienes una cuenta? <a href="{{ url_for('registro') }}" class="text-blue-500">Regístrate</a></p>
-        </form>
+        </div>
     </div>
 </body>
 </html>

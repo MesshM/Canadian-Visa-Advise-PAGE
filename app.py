@@ -13,7 +13,7 @@ def create_connection():
     try:
         connection = mysql.connector.connect(
             host='localhost',      # Host de XAMPP
-            database='CVA',        # Nombre de la base de datos
+            database='cva',        # Nombre de la base de datos
             user='root',           # Usuario de MySQL en XAMPP (por defecto es 'root')
             password=''            # Contraseña de MySQL en XAMPP (por defecto está vacía)
         )
