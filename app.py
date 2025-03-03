@@ -27,7 +27,7 @@ def create_connection():
 # Rutas
 @app.route('/')
 def index():
-    if 'id_usuario' not in session:
+    if 'user_id' not in session:
         return redirect(url_for('login'))
     return render_template('index.html')
 
