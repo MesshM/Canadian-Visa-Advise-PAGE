@@ -14,7 +14,7 @@ def create_connection():
     try:
         connection = mysql.connector.connect(
             host='localhost',      # Host de XAMPP
-            database='cva',        # Nombre de la base de datos
+            database='CVA',        # Nombre de la base de datos
             user='root',           # Usuario de MySQL en XAMPP (por defecto es 'root')
             password=''            # Contraseña de MySQL en XAMPP (por defecto está vacía)
         )
@@ -27,7 +27,7 @@ def create_connection():
 # Rutas
 @app.route('/')
 def index():
-    if 'user_id' not in session:
+    if 'id_usuario' not in session:
         return redirect(url_for('login'))
     return render_template('index.html')
 

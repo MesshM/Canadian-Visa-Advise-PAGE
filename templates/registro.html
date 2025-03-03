@@ -6,61 +6,54 @@
     <title>Registro</title>
     <link href="../static/css/output.css" rel="stylesheet">
 </head>
-<body class="h-screen flex items-center justify-center bg-cover bg-center" style="background-image: url('/static/img/background-img-login-sigup.jpg');">
-    <div class="bg-white bg-opacity-80 p-8 rounded-xl shadow-lg max-w-md w-full">
-        <h1 class="text-2xl font-bold text-center text-gray-800">Crear Cuenta</h1>
+<body class="h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat px-6 md:px-10 text-gray-200"
+    style="background-image: url('/static/img/background-img-login-sigup.jpg');">
+    
+    <div class="absolute inset-0 bg-black/30 backdrop-blur-md"></div> <!-- Fondo borroso -->
+
+    <!-- Contenedor principal -->
+    <div class="relative flex items-center bg-gray-900 p-6 rounded-lg shadow-lg max-w-5xl w-full">
         
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="mb-4 p-2 text-center text-white bg-{{ 'red' if category == 'error' else 'green' }}-500 rounded">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        
-        <form method="POST" class="mt-4">
-            <div class="mb-4">
-                <label for="nombres" class="block text-gray-700">Nombre:</label>
-                <input type="text" id="nombres" name="nombres" class="w-full px-4 py-2 border rounded-lg" required>
-            </div>
-            <div class="mb-4">
-                <label for="apellidos" class="block text-gray-700">Apellido:</label>
-                <input type="text" id="apellidos" name="apellidos" class="w-full px-4 py-2 border rounded-lg" required>
-            </div>
-            <div class="mb-4">
-                <label for="correo" class="block text-gray-700">Correo:</label>
-                <input type="email" id="correo" name="correo" class="w-full px-4 py-2 border rounded-lg" required>
-            </div>
-            <div class="mb-4">
-                <label for="fecha_nacimiento" class="block text-gray-700">Fecha de Nacimiento:</label>
-                <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="w-full px-4 py-2 border rounded-lg" required>
-            </div>
-            <div class="mb-4">
-                <label for="contrasena" class="block text-gray-700">Contraseña:</label>
-                <input type="password" id="contrasena" name="contrasena" class="w-full px-4 py-2 border rounded-lg" required>
-            </div>
-            <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded-lg w-full font-semibold">Registrarse</button>
-        </form>
-        
-        
-        <div class="mt-4 space-y-2">
-            <button class="flex items-center justify-center w-full bg-white border rounded-lg px-4 py-2 shadow-sm text-gray-700 font-semibold">
-                <img src="/static/icons/google.png" class="w-5 h-5 mr-2"> Registrarse con Google
-            </button>
-            <button class="flex items-center justify-center w-full bg-white border rounded-lg px-4 py-2 shadow-sm text-gray-700 font-semibold">
-                <img src="/static/icons/facebook.png" class="w-5 h-5 mr-2"> Registrarse con Facebook
-            </button>
-            <button class="flex items-center justify-center w-full bg-white border rounded-lg px-4 py-2 shadow-sm text-gray-700 font-semibold">
-                <img src="/static/icons/apple.png" class="w-5 h-5 mr-2"> Registrarse con Apple
-            </button>
+        <!-- Imagen a la izquierda (ocupa todo el espacio de su div) -->
+        <div class="w-[600px] h-[500px]">
+            <img src="/static/img/background-img-login-sigup.jpg" alt="Imagen de fondo" class="w-full h-full object-cover rounded-l-lg">
         </div>
-        
-        <p class="mt-4 text-center text-gray-600">
-            ¿Ya tienes una cuenta? 
-            <a href="{{ url_for('login') }}" class="text-gray-800 font-medium">Inicia sesión</a>
-        </p>
+
+        <!-- Formulario de Registro -->
+        <div class="p-6 w-[400px]">
+            <h1 class="text-2xl font-bold text-center text-gray-100 mb-4">Crear Cuenta</h1>
+            
+            <form method="POST" class="space-y-4">
+                <div>
+                    <label for="nombres" class="block text-gray-300">Nombre:</label>
+                    <input type="text" id="nombres" name="nombres" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:ring-2 focus:ring-red-500 focus:outline-none" required>
+                </div>
+                <div>
+                    <label for="apellidos" class="block text-gray-300">Apellido:</label>
+                    <input type="text" id="apellidos" name="apellidos" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:ring-2 focus:ring-red-500 focus:outline-none" required>
+                </div>
+                <div>
+                    <label for="correo" class="block text-gray-300">Correo:</label>
+                    <input type="email" id="correo" name="correo" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:ring-2 focus:ring-red-500 focus:outline-none" required>
+                </div>
+                <div>
+                    <label for="fecha_nacimiento" class="block text-gray-300">Fecha de Nacimiento:</label>
+                    <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:ring-2 focus:ring-red-500 focus:outline-none" required>
+                </div>
+                <div>
+                    <label for="contrasena" class="block text-gray-300">Contraseña:</label>
+                    <input type="password" id="contrasena" name="contrasena" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:ring-2 focus:ring-red-500 focus:outline-none" required>
+                </div>
+                <button type="submit" class="bg-red-600 hover:bg-red-700 transition-all duration-300 text-white px-4 py-2 rounded-lg w-full font-semibold shadow-md hover:shadow-lg">
+                    Registrarse
+                </button>
+            </form>
+
+            <p class="mt-4 text-center text-gray-400">
+                ¿Ya tienes una cuenta?<br>
+                <a href="{{ url_for('login') }}" class="text-red-400 hover:text-red-500 font-medium">Inicia sesión</a>
+            </p>
+        </div>
     </div>
 </body>
 </html>
