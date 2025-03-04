@@ -5,46 +5,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro</title>
     <link href="../static/css/output.css" rel="stylesheet">
+    <style>
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fade-in 0.8s ease-out forwards; }
+
+        @keyframes slide-in {
+            from { opacity: 0; transform: translateX(-50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .animate-slide-in { animation: slide-in 0.8s ease-out forwards; }
+
+        @keyframes blur-fade {
+            from { backdrop-filter: blur(0px); }
+            to { backdrop-filter: blur(10px); }
+        }
+        .animate-blur { animation: blur-fade 1s ease-in-out forwards; }
+    </style>
 </head>
 <body class="h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat px-6 md:px-10 text-gray-200"
     style="background-image: url('/static/img/background-img-login-sigup.jpg');">
     
-    <div class="absolute inset-0 bg-black/30 backdrop-blur-md"></div> <!-- Fondo borroso -->
+    <div class="absolute inset-0 bg-black/30 backdrop-blur-md animate-blur"></div>
 
-    <!-- Contenedor principal -->
-    <div class="relative flex items-center bg-gray-900 p-6 rounded-lg shadow-lg max-w-5xl w-full">
+    <div class="relative flex items-center bg-gray-900 p-6 rounded-lg shadow-lg max-w-5xl w-full opacity-0 translate-y-10 animate-fade-in">
         
-        <!-- Imagen a la izquierda (ocupa todo el espacio de su div) -->
         <div class="w-[600px] h-[500px]">
-            <img src="/static/img/background-img-login-sigup.jpg" alt="Imagen de fondo" class="w-full h-full object-cover rounded-l-lg">
+            <img src="/static/img/background-img-login-sigup.jpg" alt="Imagen de fondo" class="w-full h-full object-cover rounded-l-lg opacity-0 translate-x-[-50px] animate-slide-in">
         </div>
 
-        <!-- Formulario de Registro -->
         <div class="p-6 w-[400px]">
             <h1 class="text-2xl font-bold text-center text-gray-100 mb-4">Crear Cuenta</h1>
             
-            <form method="POST" class="space-y-4">
+            <form method="POST" class="space-y-4" onsubmit="mostrarMensaje(event)">
                 <div>
                     <label for="nombres" class="block text-gray-300">Nombre:</label>
-                    <input type="text" id="nombres" name="nombres" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:ring-2 focus:ring-red-500 focus:outline-none" required>
+                    <input type="text" id="nombres" name="nombres" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:scale-105 focus:ring-4 focus:ring-red-500 focus:outline-none" required>
                 </div>
                 <div>
                     <label for="apellidos" class="block text-gray-300">Apellido:</label>
-                    <input type="text" id="apellidos" name="apellidos" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:ring-2 focus:ring-red-500 focus:outline-none" required>
+                    <input type="text" id="apellidos" name="apellidos" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:scale-105 focus:ring-4 focus:ring-red-500 focus:outline-none" required>
                 </div>
                 <div>
                     <label for="correo" class="block text-gray-300">Correo:</label>
-                    <input type="email" id="correo" name="correo" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:ring-2 focus:ring-red-500 focus:outline-none" required>
+                    <input type="email" id="correo" name="correo" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:scale-105 focus:ring-4 focus:ring-red-500 focus:outline-none" required>
                 </div>
                 <div>
                     <label for="fecha_nacimiento" class="block text-gray-300">Fecha de Nacimiento:</label>
-                    <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:ring-2 focus:ring-red-500 focus:outline-none" required>
+                    <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:scale-105 focus:ring-4 focus:ring-red-500 focus:outline-none" required>
                 </div>
                 <div>
                     <label for="contrasena" class="block text-gray-300">Contraseña:</label>
-                    <input type="password" id="contrasena" name="contrasena" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:ring-2 focus:ring-red-500 focus:outline-none" required>
+                    <input type="password" id="contrasena" name="contrasena" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:scale-105 focus:ring-4 focus:ring-red-500 focus:outline-none" required>
                 </div>
-                <button type="submit" class="bg-red-600 hover:bg-red-700 transition-all duration-300 text-white px-4 py-2 rounded-lg w-full font-semibold shadow-md hover:shadow-lg">
+                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg w-full font-semibold shadow-md hover:shadow-lg animate-pulse">
                     Registrarse
                 </button>
             </form>
@@ -55,5 +71,43 @@
             </p>
         </div>
     </div>
+    <!-- Formulario de registro -->
+<form id="registro-form">
+    <input type="text" name="usuario" placeholder="Usuario" required>
+    <input type="password" name="password" placeholder="Contraseña" required>
+    <button type="submit">Registrarse</button>
+</form>
+
+<!-- Mensaje de éxito oculto -->
+<div id="mensaje-exito" class="hidden bg-green-500 text-white p-3 mt-3 text-center">
+    ¡Tu registro ha sido un éxito!
+</div>
+
+<script>
+document.getElementById("registro-form").addEventListener("submit", async function(event) {
+    event.preventDefault(); // Evita el envío automático del formulario
+
+    const formData = new FormData(this); // Captura los datos del formulario
+    const response = await fetch("{{ url_for('registro') }}", {
+        method: "POST",
+        body: formData
+    });
+
+    if (response.ok) { 
+        document.getElementById("mensaje-exito").classList.remove("hidden"); // Muestra el mensaje de éxito
+        document.getElementById("registro-form").reset(); // Limpia el formulario
+    } else {
+        alert("Hubo un error en el registro.");
+    }
+});
+</script>
+
+<style>
+.hidden {
+    display: none;
+}
+</style>
+
+
 </body>
 </html>

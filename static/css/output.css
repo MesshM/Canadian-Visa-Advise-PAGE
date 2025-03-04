@@ -16,6 +16,7 @@
     --color-green-50: oklch(0.982 0.018 155.826);
     --color-green-200: oklch(0.925 0.084 155.995);
     --color-green-500: oklch(0.723 0.219 149.579);
+    --color-green-600: oklch(0.627 0.194 149.214);
     --color-green-700: oklch(0.527 0.154 150.069);
     --color-green-800: oklch(0.448 0.119 151.328);
     --color-blue-400: oklch(0.707 0.165 254.624);
@@ -82,6 +83,49 @@
     );
   }
 }
+
+@keyframes fade-in {
+  from {
+      opacity: 0;
+      transform: translateY(10px);
+  }
+  to {
+      opacity: 1;
+      transform: translateY(0);
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.8s ease-out forwards;
+}
+
+@keyframes slide-in {
+  from {
+      opacity: 0;
+      transform: translateX(-50px);
+  }
+  to {
+      opacity: 1;
+      transform: translateX(0);
+  }
+}
+.animate-slide-in {
+  animation: slide-in 0.8s ease-out forwards;
+}
+
+
+@keyframes blur-fade {
+  from {
+      backdrop-filter: blur(0px);
+  }
+  to {
+      backdrop-filter: blur(10px);
+  }
+}
+.animate-blur {
+  animation: blur-fade 1s ease-in-out forwards;
+}
+
+
 @layer base {
   *, ::after, ::before, ::backdrop, ::file-selector-button {
     box-sizing: border-box;
@@ -583,6 +627,9 @@
   }
   .h-\[500px\] {
     height: 500px;
+  }
+  .h-auto {
+    height: auto;
   }
   .h-full {
     height: 100%;
@@ -1403,6 +1450,9 @@
   .bg-green-50 {
     background-color: var(--color-green-50);
   }
+  .bg-green-600 {
+    background-color: var(--color-green-600);
+  }
   .bg-red-50 {
     background-color: var(--color-red-50);
   }
@@ -2184,6 +2234,10 @@
     --tw-duration: 300ms;
     transition-duration: 300ms;
   }
+  .duration-500 {
+    --tw-duration: 500ms;
+    transition-duration: 500ms;
+  }
   .ease-in {
     --tw-ease: var(--ease-in);
     transition-timing-function: var(--ease-in);
@@ -2537,6 +2591,11 @@
   .md\:inline-flex {
     @media (width >= 48rem) {
       display: inline-flex;
+    }
+  }
+  .md\:w-1\/2 {
+    @media (width >= 48rem) {
+      width: calc(1/2 * 100%);
     }
   }
   .md\:w-\[400px\] {
