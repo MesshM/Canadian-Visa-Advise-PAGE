@@ -4,194 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#fff1f1',
-                            100: '#ffe1e1',
-                            200: '#ffc7c7',
-                            300: '#ffa0a0',
-                            400: '#ff6b6b',
-                            500: '#ff3e3e',
-                            600: '#ff1f1f',
-                            700: '#e60000',
-                            800: '#bd0000',
-                            900: '#9b0000',
-                            950: '#560000',
-                        }
-                    },
-                    animation: {
-                        'gradient': 'gradient 8s ease infinite',
-                    },
-                    keyframes: {
-                        gradient: {
-                            '0%, 100%': { backgroundPosition: '0% 50%' },
-                            '50%': { backgroundPosition: '100% 50%' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <link href="../static/css/output.css" rel="stylesheet">
 </head>
-<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4 text-gray-200">
+<body class="h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat px-6 md:px-10 text-gray-200"
+    style="background-image: url('/static/img/background-img-login-sigup.jpg');">
     
-    <!-- Partículas de fondo (efecto decorativo) -->
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-        <div class="absolute h-2 w-2 rounded-full bg-primary-500/20 top-1/4 left-1/4 animate-pulse"></div>
-        <div class="absolute h-3 w-3 rounded-full bg-primary-500/30 top-1/3 right-1/3 animate-pulse" style="animation-delay: 1s;"></div>
-        <div class="absolute h-2 w-2 rounded-full bg-primary-500/20 bottom-1/4 right-1/4 animate-pulse" style="animation-delay: 2s;"></div>
-        <div class="absolute h-4 w-4 rounded-full bg-primary-500/10 bottom-1/3 left-1/3 animate-pulse" style="animation-delay: 0.5s;"></div>
-        <div class="absolute h-3 w-3 rounded-full bg-primary-500/20 top-1/2 right-1/2 animate-pulse" style="animation-delay: 1.5s;"></div>
-    </div>
+    <div class="absolute inset-0 bg-black/30 backdrop-blur-md"></div> <!-- Fondo borroso -->
 
-    <!-- Contenedor principal con efecto de vidrio -->
-    <div class="relative flex flex-col md:flex-row bg-gray-900/80 backdrop-blur-md border border-gray-700 rounded-2xl shadow-2xl overflow-hidden max-w-5xl w-full">
+    <!-- Contenedor principal -->
+    <div class="relative flex items-center bg-gray-900 p-6 rounded-lg shadow-lg max-w-5xl w-full">
         
-        <!-- Imagen a la izquierda con overlay y efectos -->
-        <div class="w-full md:w-1/2 relative h-60 md:h-auto overflow-hidden group">
-            <img src="/static/img/background-img-login-sigup.jpg" alt="Imagen de fondo" 
-                 class="w-full h-full object-cover transition-transform duration-10000 group-hover:scale-110">
-            <div class="absolute inset-0 bg-gradient-to-r from-primary-900/80 to-gray-900/60 backdrop-blur-sm"></div>
-            
-            <!-- Contenido sobre la imagen -->
-            <div class="absolute inset-0 flex flex-col justify-center items-center p-8 text-white">
-                <h2 class="text-3xl md:text-4xl font-bold mb-4 text-center">Únete a nosotros</h2>
-                <p class="text-lg text-center max-w-md opacity-90">Crea tu cuenta y comienza a disfrutar de todos nuestros servicios exclusivos.</p>
-                <div class="mt-8 w-24 h-1 bg-gradient-to-r from-primary-400 to-primary-600 rounded-full"></div>
-            </div>
+        <!-- Imagen a la izquierda (ocupa todo el espacio de su div) -->
+        <div class="w-[600px] h-[500px]">
+            <img src="/static/img/background-img-login-sigup.jpg" alt="Imagen de fondo" class="w-full h-full object-cover rounded-l-lg">
         </div>
 
-        <!-- Formulario de Registro con efectos mejorados -->
-        <div class="w-full md:w-1/2 p-8 md:p-10">
-            <div class="flex justify-center mb-6">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                    </svg>
-                </div>
-            </div>
-            
-            <h1 class="text-2xl md:text-3xl font-bold text-center text-gray-100 mb-2">Crear Cuenta</h1>
-
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="mb-4 p-3 text-center text-white rounded-lg {% if category == 'error' %}bg-red-500{% else %}bg-green-500{% endif %}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-        
-
-            <p class="text-gray-400 text-center mb-8">Completa tus datos para registrarte</p>
+        <!-- Formulario de Registro -->
+        <div class="p-6 w-[400px]">
+            <h1 class="text-2xl font-bold text-center text-gray-100 mb-4">Crear Cuenta</h1>
             
             <form method="POST" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="group">
-                        <label for="nombres" class="block text-gray-300 text-sm font-medium mb-2">Nombre</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 group-focus-within:text-primary-500 transition-colors duration-200" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                            <input type="text" id="nombres" name="nombres" 
-                                class="w-full pl-10 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none transition-all duration-200"
-                                placeholder="Tu nombre" required>
-                        </div>
-                    </div>
-                    
-                    <div class="group">
-                        <label for="apellidos" class="block text-gray-300 text-sm font-medium mb-2">Apellido</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 group-focus-within:text-primary-500 transition-colors duration-200" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                            <input type="text" id="apellidos" name="apellidos" 
-                                class="w-full pl-10 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none transition-all duration-200"
-                                placeholder="Tu apellido" required>
-                        </div>
-                    </div>
+                <div>
+                    <label for="nombres" class="block text-gray-300">Nombre:</label>
+                    <input type="text" id="nombres" name="nombres" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:ring-2 focus:ring-red-500 focus:outline-none" required>
                 </div>
-                
-                <div class="group">
-                    <label for="correo" class="block text-gray-300 text-sm font-medium mb-2">Correo electrónico</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 group-focus-within:text-primary-500 transition-colors duration-200" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                            </svg>
-                        </div>
-                        <input type="email" id="correo" name="correo" 
-                            class="w-full pl-10 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none transition-all duration-200"
-                            placeholder="tu@email.com" required>
-                    </div>
+                <div>
+                    <label for="apellidos" class="block text-gray-300">Apellido:</label>
+                    <input type="text" id="apellidos" name="apellidos" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:ring-2 focus:ring-red-500 focus:outline-none" required>
                 </div>
-                
-                <div class="group">
-                    <label for="fecha_nacimiento" class="block text-gray-300 text-sm font-medium mb-2">Fecha de Nacimiento</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 group-focus-within:text-primary-500 transition-colors duration-200" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                        <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" 
-                            class="w-full pl-10 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none transition-all duration-200"
-                            required>
-                    </div>
+                <div>
+                    <label for="correo" class="block text-gray-300">Correo:</label>
+                    <input type="email" id="correo" name="correo" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:ring-2 focus:ring-red-500 focus:outline-none" required>
                 </div>
-                
-                <div class="group">
-                    <label for="contrasena" class="block text-gray-300 text-sm font-medium mb-2">Contraseña</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 group-focus-within:text-primary-500 transition-colors duration-200" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                        <input type="password" id="contrasena" name="contrasena" 
-                            class="w-full pl-10 pr-12 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-gray-200 placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none transition-all duration-200"
-                            placeholder="••••••••" required>
-                        <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-200 focus:outline-none">
-                            <svg xmlns="http://www.w3.org/2000/svg" id="eyeIcon" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-                            </svg>
-                            <svg xmlns="http://www.w3.org/2000/svg" id="eyeOffIcon" class="h-5 w-5 hidden" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd" />
-                                <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
-                            </svg>
-                        </button>
-                    </div>
-                    
-                    <!-- Indicador de seguridad de contraseña -->
-                    <div class="mt-2">
-                        <div class="w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                            <div id="passwordStrength" class="h-full w-0 transition-all duration-300 rounded-full"></div>
-                        </div>
-                        <p id="passwordStrengthText" class="text-xs mt-1 text-gray-500">Ingresa tu contraseña</p>
-                    </div>
+                <div>
+                    <label for="fecha_nacimiento" class="block text-gray-300">Fecha de Nacimiento:</label>
+                    <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:ring-2 focus:ring-red-500 focus:outline-none" required>
                 </div>
-                
-                <button type="submit" 
-                    class="w-full relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-semibold py-3 px-4 rounded-lg shadow-lg hover:shadow-primary-500/30 transition-all duration-300 mt-6">
-                    <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
-                    <div class="relative flex items-center justify-center">
-                        <span>Registrarse</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
+                <div>
+                    <label for="contrasena" class="block text-gray-300">Contraseña:</label>
+                    <input type="password" id="contrasena" name="contrasena" class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 focus:ring-2 focus:ring-red-500 focus:outline-none" required>
+                </div>
+                <button type="submit" class="bg-red-600 hover:bg-red-700 transition-all duration-300 text-white px-4 py-2 rounded-lg w-full font-semibold shadow-md hover:shadow-lg">
+                    Registrarse
                 </button>
             </form>
 
@@ -203,88 +57,5 @@
             </div>
         </div>
     </div>
-    
-    <!-- Círculos decorativos -->
-    <div class="fixed -bottom-20 -left-20 w-80 h-80 rounded-full bg-primary-600/10 blur-3xl pointer-events-none"></div>
-    <div class="fixed -top-20 -right-20 w-80 h-80 rounded-full bg-primary-600/10 blur-3xl pointer-events-none"></div>
-
-    <!-- JavaScript para la funcionalidad de contraseña -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const passwordInput = document.getElementById('contrasena');
-            const toggleButton = document.getElementById('togglePassword');
-            const eyeIcon = document.getElementById('eyeIcon');
-            const eyeOffIcon = document.getElementById('eyeOffIcon');
-            const passwordStrength = document.getElementById('passwordStrength');
-            const passwordStrengthText = document.getElementById('passwordStrengthText');
-            
-            // Función para mostrar/ocultar contraseña
-            toggleButton.addEventListener('click', function() {
-                if (passwordInput.type === 'password') {
-                    passwordInput.type = 'text';
-                    eyeIcon.classList.add('hidden');
-                    eyeOffIcon.classList.remove('hidden');
-                } else {
-                    passwordInput.type = 'password';
-                    eyeIcon.classList.remove('hidden');
-                    eyeOffIcon.classList.add('hidden');
-                }
-            });
-            
-            // Función para evaluar la fortaleza de la contraseña
-            passwordInput.addEventListener('input', function() {
-                const password = passwordInput.value;
-                let strength = 0;
-                let feedback = '';
-                
-                // Criterios de fortaleza
-                if (password.length > 0) strength += 1;
-                if (password.length >= 8) strength += 1;
-                if (/[A-Z]/.test(password)) strength += 1;
-                if (/[0-9]/.test(password)) strength += 1;
-                if (/[^A-Za-z0-9]/.test(password)) strength += 1;
-                
-                // Actualizar la barra de progreso y el texto según la fortaleza
-                switch(strength) {
-                    case 0:
-                        passwordStrength.style.width = '0%';
-                        passwordStrength.className = 'h-full w-0 transition-all duration-300 rounded-full';
-                        passwordStrengthText.textContent = 'Ingresa tu contraseña';
-                        passwordStrengthText.className = 'text-xs mt-1 text-gray-500';
-                        break;
-                    case 1:
-                        passwordStrength.style.width = '20%';
-                        passwordStrength.className = 'h-full transition-all duration-300 rounded-full bg-red-600';
-                        passwordStrengthText.textContent = 'Muy débil';
-                        passwordStrengthText.className = 'text-xs mt-1 text-red-500';
-                        break;
-                    case 2:
-                        passwordStrength.style.width = '40%';
-                        passwordStrength.className = 'h-full transition-all duration-300 rounded-full bg-orange-500';
-                        passwordStrengthText.textContent = 'Débil';
-                        passwordStrengthText.className = 'text-xs mt-1 text-orange-500';
-                        break;
-                    case 3:
-                        passwordStrength.style.width = '60%';
-                        passwordStrength.className = 'h-full transition-all duration-300 rounded-full bg-yellow-500';
-                        passwordStrengthText.textContent = 'Media';
-                        passwordStrengthText.className = 'text-xs mt-1 text-yellow-500';
-                        break;
-                    case 4:
-                        passwordStrength.style.width = '80%';
-                        passwordStrength.className = 'h-full transition-all duration-300 rounded-full bg-lime-500';
-                        passwordStrengthText.textContent = 'Fuerte';
-                        passwordStrengthText.className = 'text-xs mt-1 text-lime-500';
-                        break;
-                    case 5:
-                        passwordStrength.style.width = '100%';
-                        passwordStrength.className = 'h-full transition-all duration-300 rounded-full bg-green-500';
-                        passwordStrengthText.textContent = 'Muy fuerte';
-                        passwordStrengthText.className = 'text-xs mt-1 text-green-500';
-                        break;
-                }
-            });
-        });
-    </script>
 </body>
 </html>
