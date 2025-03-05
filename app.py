@@ -62,6 +62,8 @@ def logout():
     session.pop('user_name', None)
     return redirect(url_for('login'))
 
+from datetime import datetime, date
+
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
     if request.method == 'POST':
@@ -70,37 +72,31 @@ def registro():
         correo = request.form['correo']
         contrasena = request.form['contrasena']
         fecha_nacimiento = request.form['fecha_nacimiento']
-        
-        # Verificar si el correo ya está registrado
+        # ✅ Verificar si la persona tiene al menos 18 años
+        fecha_nac = datetime.strptime(fecha_nacimiento, '%Y-%m-%d').date()
+        hoy = date.today()
+        edad = hoy.year - fecha_nac.year - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
+        if edad < 18:
+            flash('Debes tener al menos 18 años para registrarte.', 'error')
+            return redirect(url_for('registro'))
         connection = create_connection()
         if connection:
             cursor = connection.cursor(dictionary=True)
-            cursor.execute("SELECT * FROM tbl_usuario WHERE correo = %s", (correo,))
-            existing_user = cursor.fetchone()
-            
-            if existing_user:
-                flash('El correo ya está registrado. Por favor, usa otro correo.', 'error')
-                cursor.close()
-                connection.close()
-                return redirect(url_for('registro'))
-            
-            # Si el correo no está registrado, proceder con el registro
-            hashed_password = generate_password_hash(contrasena)
-            
             try:
-                # Insertar en tbl_usuario
+                # ✅ Verificar si el correo ya está registrado
+                cursor.execute("SELECT * FROM tbl_usuario WHERE correo = %s", (correo,))
+                existing_user = cursor.fetchone()
+                if existing_user:
+                    flash('El correo ya está registrado. Por favor, usa otro correo.', 'error')
+                    return redirect(url_for('registro'))
+                # Si todo está bien, proceder con el registro
+                hashed_password = generate_password_hash(contrasena)
                 cursor.execute(
                     "INSERT INTO tbl_usuario (nombres, apellidos, correo, contrasena, fecha_nacimiento) VALUES (%s, %s, %s, %s, %s)",
                     (nombres, apellidos, correo, hashed_password, fecha_nacimiento)
                 )
                 user_id = cursor.lastrowid
-                
-                # Insertar en tbl_solicitante
-                cursor.execute(
-                    "INSERT INTO tbl_solicitante (id_usuario) VALUES (%s)",
-                    (user_id,)
-                )
-                
+                cursor.execute("INSERT INTO tbl_solicitante (id_usuario) VALUES (%s)", (user_id,))
                 connection.commit()
                 flash('Registro exitoso. Ahora puedes iniciar sesión.', 'success')
                 return redirect(url_for('login'))
@@ -112,8 +108,8 @@ def registro():
                 connection.close()
         else:
             flash('Error de conexión a la base de datos', 'error')
-    
     return render_template('registro.html')
+
 
 @app.route('/solicitantes')
 def solicitantes():
