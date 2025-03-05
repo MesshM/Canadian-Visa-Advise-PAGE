@@ -13,16 +13,17 @@ app.secret_key = os.urandom(24)
 def create_connection():
     try:
         connection = mysql.connector.connect(
-            host='localhost',      # Host de XAMPP
-            database='CVA',        # Nombre de la base de datos
-            user='root',           # Usuario de MySQL en XAMPP (por defecto es 'root')
-            password=''            # Contraseña de MySQL en XAMPP (por defecto está vacía)
+            host='cva.ch86isccq37m.us-east-2.rds.amazonaws.com',  # Endpoint de RDS
+            database='cva',  # Nombre de tu base de datos
+            user='admin',  # Usuario de MySQL en RDS
+            password='root.2025'  # Contraseña de MySQL en RDS
         )
         if connection.is_connected():
             return connection
     except Error as e:
         print(f"Error al conectar a MySQL: {e}")
         return None
+
 
 # Rutas
 @app.route('/')
