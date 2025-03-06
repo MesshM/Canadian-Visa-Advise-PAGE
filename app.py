@@ -4,6 +4,9 @@ from mysql.connector import Error
 import os
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+import os
+import boto3
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -56,6 +59,7 @@ def login():
             flash('Error de conexión a la base de datos', 'error')
     
     return render_template('login.html')
+
 
 @app.route('/logout')
 def logout():
