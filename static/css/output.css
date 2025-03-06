@@ -84,6 +84,7 @@
   }
 }
 
+
 @keyframes fade-in {
   from {
       opacity: 0;
@@ -2671,7 +2672,11 @@
       color: var(--color-gray-400);
     }
   }
+
 }
+
+
+
 @property --tw-translate-x {
   syntax: "*";
   inherits: false;
