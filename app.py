@@ -2,16 +2,23 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 import mysql.connector
 from mysql.connector import Error
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import boto3
 from dotenv import load_dotenv
 
+
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-
+# Configuración de SES
+ses_client = boto3.client(
+    'ses',
+    region_name=os.getenv('AWS_REGION'),
+    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+)
 # Configuración de la base de datos para XAMPP
 def create_connection():
     try:
@@ -60,6 +67,122 @@ def login():
     
     return render_template('login.html')
 
+# Ruta para olvidar contraseña
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form['email']
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            try:
+                cursor.execute("SELECT id_usuario FROM tbl_usuario WHERE correo = %s", (email,))
+                user = cursor.fetchone()
+                
+                if user:
+                    # Generar token y fecha de expiración
+                    token = secrets.token_urlsafe(32)
+                    expiration = datetime.now() + timedelta(hours=1)
+                    
+                    # Guardar token en la base de datos
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS tbl_password_reset (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            user_id INT NOT NULL,
+                            token VARCHAR(255) NOT NULL,
+                            expiration DATETIME NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES tbl_usuario(id_usuario)
+                        """)
+                    
+                    cursor.execute("""
+                        INSERT INTO tbl_password_reset (user_id, token, expiration)
+                        VALUES (%s, %s, %s)
+                    """, (user['id_usuario'], token, expiration))
+                    connection.commit()
+                    
+                    # Enviar correo electrónico
+                    reset_url = url_for('reset_password', token=token, _external=True)
+                    body = f"""Para restablecer tu contraseña, haz clic en el siguiente enlace:
+                            {reset_url}
+                            
+                            Este enlace expirará en 1 hora."""
+                    
+                    ses_client.send_email(
+                        Source=os.getenv('AWS_SES_SENDER'),
+                        Destination={'ToAddresses': [email]},
+                        Message={
+                            'Subject': {'Data': 'Restablecimiento de contraseña - CVA'},
+                            'Body': {'Text': {'Data': body}}
+                        }
+                    )
+                    
+                    flash('Se ha enviado un correo con instrucciones para restablecer tu contraseña', 'success')
+                else:
+                    flash('No existe una cuenta con este correo electrónico', 'error')
+                    
+            except Error as e:
+                connection.rollback()
+                flash('Error al procesar la solicitud', 'error')
+            finally:
+                cursor.close()
+                connection.close()
+        else:
+            flash('Error de conexión a la base de datos', 'error')
+    
+    return render_template('forgot_password.html')
+
+# Ruta para restablecer contraseña
+@app.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    connection = create_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT user_id, expiration 
+                FROM tbl_password_reset 
+                WHERE token = %s AND expiration > NOW()
+            """, (token,))
+            
+            reset_request = cursor.fetchone()
+            
+            if not reset_request:
+                flash('El enlace es inválido o ha expirado', 'error')
+                return redirect(url_for('login'))
+            
+            if request.method == 'POST':
+                new_password = request.form['password']
+                hashed_password = generate_password_hash(new_password)
+                
+                # Actualizar contraseña
+                cursor.execute("""
+                    UPDATE tbl_usuario 
+                    SET contrasena = %s 
+                    WHERE id_usuario = %s
+                """, (hashed_password, reset_request['user_id']))
+                
+                # Eliminar token usado
+                cursor.execute("""
+                    DELETE FROM tbl_password_reset 
+                    WHERE token = %s
+                """, (token,))
+                
+                connection.commit()
+                flash('Tu contraseña ha sido actualizada exitosamente', 'success')
+                return redirect(url_for('login'))
+            
+            return render_template('reset_password.html', token=token)
+            
+        except Error as e:
+            connection.rollback()
+            flash('Error al restablecer la contraseña', 'error')
+        finally:
+            cursor.close()
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos', 'error')
+    
+    return redirect(url_for('login'))
 
 @app.route('/logout')
 def logout():
