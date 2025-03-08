@@ -239,7 +239,7 @@ def registro():
     return render_template('registro.html')
 
 
-@app.route('/solicitantes')
+@app.route('/solicitante')
 def solicitantes():
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -249,13 +249,13 @@ def solicitantes():
         cursor = connection.cursor(dictionary=True)
         cursor.execute("""
             SELECT s.id_solicitante, u.id_usuario, u.nombres, u.apellidos, u.correo, u.fecha_nacimiento 
-            FROM tbl_solicitante s
+            FROM tbl_solicitante
             JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
         """)
-        solicitantes = cursor.fetchall()
+        solicitante = cursor.fetchall()
         cursor.close()
         connection.close()
-        return render_template('solicitantes.html', solicitantes=solicitantes)
+        return render_template('solicitante.html', solicitante=solicitante)
     else:
         flash('Error de conexión a la base de datos', 'error')
         return redirect(url_for('index'))
@@ -271,7 +271,7 @@ def formularios():
         cursor.execute("""
             SELECT fe.id_formElegibilidad, CONCAT(u.nombres, ' ', u.apellidos) as solicitante, 
                 fe.motivo_viaje, fe.codigo_pasaporte, fe.pais_residencia, fe.provincia_destino
-            FROM tbl_form_eligibilidadCVA fe
+            FROM tbl_form_eligibilidadcva fe
             JOIN tbl_solicitante s ON fe.id_solicitante = s.id_solicitante
             JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
         """)
@@ -341,8 +341,8 @@ def documentos():
             SELECT d.id_documento, CONCAT(u.nombres, ' ', u.apellidos) as solicitante,
                 d.pasaporte, d.historial_viajes, d.foto_digital, d.proposito_viaje
             FROM tbl_documentos_adjuntos d
-            JOIN tbl_form_eligibilidadCVA fe ON d.id_formElegibilidad = fe.id_formElegibilidad
-            JOIN tbl_solicitante s ON fe.id_solicitante = s.id_solicitante
+            JOIN tbl_form_eligibilidadcva fe ON d.id_formElegibilidad = fe.id_formElegibilidad
+            JOIN tbl_solicitante ON fe.id_solicitante = s.id_solicitante
             JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
         """)
         documentos = cursor.fetchall()
