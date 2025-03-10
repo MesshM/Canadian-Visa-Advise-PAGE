@@ -131,6 +131,54 @@ def forgot_password():
     
     return render_template('forgot_password.html')
 
+
+
+@app.route('/nueva_asesoria', methods=['GET', 'POST'])
+def nueva_asesoria():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    connection = create_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+
+        # Obtener la lista de solicitantes
+        cursor.execute("""
+            SELECT s.id_solicitante, CONCAT(u.nombres, ' ', u.apellidos) AS nombre_completo
+            FROM tbl_solicitante s
+            JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+        """)
+        solicitantes = cursor.fetchall()
+
+        if request.method == 'POST':
+            id_solicitante = request.form['id_solicitante']
+            fecha_asesoria = request.form['fecha_asesoria']
+            asesor_asignado = request.form['asesor_asignado']
+
+            try:
+                cursor.execute("""
+                    INSERT INTO tbl_asesoria (id_solicitante, fecha_asesoria, asesor_asignado)
+                    VALUES (%s, %s, %s)
+                """, (id_solicitante, fecha_asesoria, asesor_asignado))
+                connection.commit()
+                flash('Asesoría registrada exitosamente', 'success')
+                return redirect(url_for('asesorias'))
+            except Error as e:
+                connection.rollback()
+                flash(f'Error al registrar asesoría: {e}', 'error')
+            finally:
+                cursor.close()
+                connection.close()
+        else:
+            cursor.close()
+            connection.close()
+
+        return render_template('nueva_asesoria.html', solicitantes=solicitantes)
+    else:
+        flash('Error de conexión a la base de datos', 'error')
+        return redirect(url_for('index'))
+
+
 # Ruta para restablecer contraseña
 @app.route('/reset_password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
