@@ -18,6 +18,9 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
+# Configurar la duración de la sesión
+app.permanent_session_lifetime = timedelta(days=30)
+
 # Configuración de Zoho Mail
 ZOHO_EMAIL = os.getenv('ZOHO_EMAIL')  # Tu correo de Zoho
 ZOHO_PASSWORD = os.getenv('ZOHO_PASSWORD')  # Contraseña de aplicación de Zoho
@@ -67,6 +70,7 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
+        remember_me = request.form.get('remember_me')  # Verificar si marcó "Mantener la sesión abierta"
         
         connection = create_connection()
         if connection:
@@ -79,6 +83,13 @@ def login():
             if user and check_password_hash(user['contrasena'], password):
                 session['user_id'] = user['id_usuario']
                 session['user_name'] = f"{user['nombres']} {user['apellidos']}"
+                
+                # Si marcó "Mantener la sesión abierta", hacer la sesión permanente
+                if remember_me:
+                    session.permanent = True
+                else:
+                    session.permanent = False
+                
                 return redirect(url_for('index'))
             else:
                 flash('Correo o contraseña incorrectos', 'error')
