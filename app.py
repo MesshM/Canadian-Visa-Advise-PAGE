@@ -21,7 +21,7 @@ ses_client = boto3.client(
     aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
 )
-# Configuración de la base de datos 
+# Configuración de la base de datos para XAMPP
 def create_connection():
     try:
         connection = mysql.connector.connect(
@@ -78,37 +78,43 @@ def forgot_password():
         if connection:
             cursor = connection.cursor(dictionary=True)
             try:
-                # Verificar si el correo existe en la base de datos
                 cursor.execute("SELECT id_usuario FROM tbl_usuario WHERE correo = %s", (email,))
                 user = cursor.fetchone()
                 
                 if user:
                     # Generar token y fecha de expiración
-                    token = secrets.token_urlsafe(32)  # Token seguro
-                    expiration = datetime.now() + timedelta(hours=1)  # Expira en 1 hora
-
-                    # Insertar el token en la tabla tbl_password_reset
+                    token = secrets.token_urlsafe(32)
+                    expiration = datetime.now() + timedelta(hours=1)
+                    
                     cursor.execute("""
                         INSERT INTO tbl_password_reset (user_id, token, expiration)
                         VALUES (%s, %s, %s)
                     """, (user['id_usuario'], token, expiration))
                     connection.commit()
-
-                    # Enviar correo electrónico con el enlace de restablecimiento
+                    
+                    # Enviar correo electrónico
                     reset_url = url_for('reset_password', token=token, _external=True)
                     body = f"""Para restablecer tu contraseña, haz clic en el siguiente enlace:
                             {reset_url}
                             
                             Este enlace expirará en 1 hora."""
-
-                    # Aquí puedes integrar el envío de correo con AWS SES o cualquier otro servicio
+                    
+                    ses_client.send_email(
+                        Source=os.getenv('AWS_SES_SENDER'),
+                        Destination={'ToAddresses': [email]},
+                        Message={
+                            'Subject': {'Data': 'Restablecimiento de contraseña - CVA'},
+                            'Body': {'Text': {'Data': body}}
+                        }
+                    )
+                    
                     flash('Se ha enviado un correo con instrucciones para restablecer tu contraseña', 'success')
                 else:
                     flash('No existe una cuenta con este correo electrónico', 'error')
                     
             except Error as e:
                 connection.rollback()
-                flash(f'Error al procesar la solicitud: {e}', 'error')
+                flash('Error al procesar la solicitud', 'error')
             finally:
                 cursor.close()
                 connection.close()
@@ -117,18 +123,19 @@ def forgot_password():
     
     return render_template('forgot_password.html')
 
+# Ruta para restablecer contraseña
 @app.route('/reset_password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
     connection = create_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
         try:
-            # Verificar si el token es válido y no ha expirado
             cursor.execute("""
                 SELECT user_id, expiration 
                 FROM tbl_password_reset 
                 WHERE token = %s AND expiration > NOW()
             """, (token,))
+            
             reset_request = cursor.fetchone()
             
             if not reset_request:
@@ -139,14 +146,14 @@ def reset_password(token):
                 new_password = request.form['password']
                 hashed_password = generate_password_hash(new_password)
                 
-                # Actualizar la contraseña del usuario
+                # Actualizar contraseña
                 cursor.execute("""
                     UPDATE tbl_usuario 
                     SET contrasena = %s 
                     WHERE id_usuario = %s
                 """, (hashed_password, reset_request['user_id']))
                 
-                # Eliminar el token usado
+                # Eliminar token usado
                 cursor.execute("""
                     DELETE FROM tbl_password_reset 
                     WHERE token = %s
@@ -160,7 +167,7 @@ def reset_password(token):
             
         except Error as e:
             connection.rollback()
-            flash(f'Error al restablecer la contraseña: {e}', 'error')
+            flash('Error al restablecer la contraseña', 'error')
         finally:
             cursor.close()
             connection.close()
@@ -240,7 +247,7 @@ def solicitantes():
         solicitante = cursor.fetchall()
         cursor.close()
         connection.close()
-        return render_template('solicitante.html', solicitante=solicitante)
+        return render_template('solicitudes.html', solicitante=solicitante)
     else:
         flash('Error de conexión a la base de datos', 'error')
         return redirect(url_for('index'))
@@ -253,20 +260,28 @@ def formularios():
     connection = create_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT fe.id_formElegibilidad, CONCAT(u.nombres, ' ', u.apellidos) as solicitante, 
-                fe.motivo_viaje, fe.codigo_pasaporte, fe.pais_residencia, fe.provincia_destino
-            FROM tbl_form_eligibilidadcva fe
-            JOIN tbl_solicitante s ON fe.id_solicitante = s.id_solicitante
-            JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-        """)
-        formularios = cursor.fetchall()
-        cursor.close()
-        connection.close()
-        return render_template('formularios.html', formularios=formularios)
+        try:
+            cursor.execute("""
+                SELECT fe.id_formElegibilidad, CONCAT(u.nombres, ' ', u.apellidos) as solicitante, 
+                    fe.motivo_viaje, fe.codigo_pasaporte, fe.pais_residencia, fe.provincia_destino
+                FROM tbl_form_eligibilidadCVA 
+                           fe
+                JOIN tbl_solicitante s ON fe.id_solicitante = s.id_solicitante
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+            """)
+            formularios = cursor.fetchall()
+            return render_template('formularios.html', formularios=formularios)
+        except Exception as e:
+            print(f"Error en la consulta: {e}")
+            flash('Error al cargar los formularios', 'error')
+            return redirect(url_for('index'))
+        finally:
+            cursor.close()
+            connection.close()
     else:
         flash('Error de conexión a la base de datos', 'error')
         return redirect(url_for('index'))
+
 
 @app.route('/asesorias')
 def asesorias():
