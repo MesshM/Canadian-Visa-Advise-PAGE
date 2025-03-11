@@ -1,12 +1,16 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+import smtplib
+from email.mime.text import MIMEText
+from flask import Flask, render_template, request, redirect, url_for, flash, session,jsonify
 import mysql.connector
 from mysql.connector import Error
 import os
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
-import boto3
 import secrets
+from pytz import timezone
 from dotenv import load_dotenv
+import random
+import string
 
 # Cargar variables de entorno desde .env
 load_dotenv()
@@ -14,13 +18,27 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-# Configuración de SES
-ses_client = boto3.client(
-    'ses',
-    region_name=os.getenv('AWS_REGION'),
-    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
-)
+# Configuración de Zoho Mail
+ZOHO_EMAIL = os.getenv('ZOHO_EMAIL')  # Tu correo de Zoho
+ZOHO_PASSWORD = os.getenv('ZOHO_PASSWORD')  # Contraseña de aplicación de Zoho
+
+def send_email_via_zoho(to_email, subject, body):
+    msg = MIMEText(body)
+    msg['Subject'] = subject
+    msg['From'] = ZOHO_EMAIL
+    msg['To'] = to_email
+
+    try:
+        server = smtplib.SMTP('smtp.zoho.com', 587)
+        server.starttls()
+        server.login(ZOHO_EMAIL, ZOHO_PASSWORD)
+        server.sendmail(ZOHO_EMAIL, [to_email], msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        print("Error al enviar correo:", e)
+        return False
+
 # Configuración de la base de datos para XAMPP
 def create_connection():
     try:
@@ -69,11 +87,25 @@ def login():
     
     return render_template('login.html')
 
+#generar un texto aleatorio para el captcha
+def generate_captcha_text(length=6):
+    characters = string.ascii_letters + string.digits
+    return ''.join(random.choice(characters) for i in range(length))
+
 # Ruta para olvidar contraseña
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
+    captcha_text = generate_captcha_text()  # Generar el texto del captcha
+    
     if request.method == 'POST':
         email = request.form['email']
+        user_captcha = request.form.get('captcha')  # Captcha ingresado por el usuario
+        
+        # Validar el captcha
+        if user_captcha != session.get('captcha_text'):
+            flash('El código de verificación es incorrecto', 'error')
+            return render_template('forgot_password.html', captcha_text=generate_captcha_text())
+        
         connection = create_connection()
         if connection:
             cursor = connection.cursor(dictionary=True)
@@ -84,14 +116,15 @@ def forgot_password():
                 if user:
                     # Generar token y fecha de expiración
                     token = secrets.token_urlsafe(32)
-                    expiration = datetime.now() + timedelta(hours=1)
-                    
+                    colombia_tz = timezone('America/Bogota')
+                    expiration = datetime.now(colombia_tz) + timedelta(hours=1)
+
                     cursor.execute("""
                         INSERT INTO tbl_password_reset (user_id, token, expiration)
                         VALUES (%s, %s, %s)
                     """, (user['id_usuario'], token, expiration))
                     connection.commit()
-                    
+
                     # Enviar correo electrónico
                     reset_url = url_for('reset_password', token=token, _external=True)
                     body = f"""Para restablecer tu contraseña, haz clic en el siguiente enlace:
@@ -99,16 +132,10 @@ def forgot_password():
                             
                             Este enlace expirará en 1 hora."""
                     
-                    ses_client.send_email(
-                        Source=os.getenv('AWS_SES_SENDER'),
-                        Destination={'ToAddresses': [email]},
-                        Message={
-                            'Subject': {'Data': 'Restablecimiento de contraseña - CVA'},
-                            'Body': {'Text': {'Data': body}}
-                        }
-                    )
-                    
-                    flash('Se ha enviado un correo con instrucciones para restablecer tu contraseña', 'success')
+                    if send_email_via_zoho(email, 'Restablecimiento de contraseña - CVA', body):
+                        flash('Se ha enviado un correo con instrucciones para restablecer tu contraseña', 'success')
+                    else:
+                        flash('Error al enviar el correo', 'error')
                 else:
                     flash('No existe una cuenta con este correo electrónico', 'error')
                     
@@ -121,7 +148,15 @@ def forgot_password():
         else:
             flash('Error de conexión a la base de datos', 'error')
     
-    return render_template('forgot_password.html')
+    # Guardar el captcha en la sesión para validarlo después
+    session['captcha_text'] = captcha_text
+    return render_template('forgot_password.html', captcha_text=captcha_text)
+
+@app.route('/refresh_captcha')
+def refresh_captcha():
+    captcha_text = generate_captcha_text()
+    session['captcha_text'] = captcha_text  # Guardar el nuevo captcha en la sesión
+    return jsonify({'captcha_text': captcha_text})
 
 # Ruta para restablecer contraseña
 @app.route('/reset_password/<token>', methods=['GET', 'POST'])
@@ -133,7 +168,7 @@ def reset_password(token):
             cursor.execute("""
                 SELECT user_id, expiration 
                 FROM tbl_password_reset 
-                WHERE token = %s AND expiration > NOW()
+                WHERE token = %s AND expiration > CONVERT_TZ(NOW(), 'UTC', 'America/Bogota')
             """, (token,))
             
             reset_request = cursor.fetchone()
