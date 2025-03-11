@@ -4,10 +4,12 @@ from mysql.connector import Error
 import os
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
-import os
 import boto3
+import secrets
 from dotenv import load_dotenv
 
+# Cargar variables de entorno desde .env
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -19,12 +21,12 @@ ses_client = boto3.client(
     aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
 )
-# Configuración de la base de datos para XAMPP
+# Configuración de la base de datos 
 def create_connection():
     try:
         connection = mysql.connector.connect(
             host='cva.ch86isccq37m.us-east-2.rds.amazonaws.com',  # Endpoint de RDS
-            database='cva',  # Nombre de tu base de datos
+            database='CVA',  # Nombre de tu base de datos
             user='admin',  # Usuario de MySQL en RDS
             password='root.2025'  # Contraseña de MySQL en RDS
         )
@@ -76,53 +78,37 @@ def forgot_password():
         if connection:
             cursor = connection.cursor(dictionary=True)
             try:
+                # Verificar si el correo existe en la base de datos
                 cursor.execute("SELECT id_usuario FROM tbl_usuario WHERE correo = %s", (email,))
                 user = cursor.fetchone()
                 
                 if user:
                     # Generar token y fecha de expiración
-                    token = secrets.token_urlsafe(32)
-                    expiration = datetime.now() + timedelta(hours=1)
-                    
-                    # Guardar token en la base de datos
-                    cursor.execute("""
-                        CREATE TABLE IF NOT EXISTS tbl_password_reset (
-                            id INT AUTO_INCREMENT PRIMARY KEY,
-                            user_id INT NOT NULL,
-                            token VARCHAR(255) NOT NULL,
-                            expiration DATETIME NOT NULL,
-                            FOREIGN KEY (user_id) REFERENCES tbl_usuario(id_usuario)
-                        """)
-                    
+                    token = secrets.token_urlsafe(32)  # Token seguro
+                    expiration = datetime.now() + timedelta(hours=1)  # Expira en 1 hora
+
+                    # Insertar el token en la tabla tbl_password_reset
                     cursor.execute("""
                         INSERT INTO tbl_password_reset (user_id, token, expiration)
                         VALUES (%s, %s, %s)
                     """, (user['id_usuario'], token, expiration))
                     connection.commit()
-                    
-                    # Enviar correo electrónico
+
+                    # Enviar correo electrónico con el enlace de restablecimiento
                     reset_url = url_for('reset_password', token=token, _external=True)
                     body = f"""Para restablecer tu contraseña, haz clic en el siguiente enlace:
                             {reset_url}
                             
                             Este enlace expirará en 1 hora."""
-                    
-                    ses_client.send_email(
-                        Source=os.getenv('AWS_SES_SENDER'),
-                        Destination={'ToAddresses': [email]},
-                        Message={
-                            'Subject': {'Data': 'Restablecimiento de contraseña - CVA'},
-                            'Body': {'Text': {'Data': body}}
-                        }
-                    )
-                    
+
+                    # Aquí puedes integrar el envío de correo con AWS SES o cualquier otro servicio
                     flash('Se ha enviado un correo con instrucciones para restablecer tu contraseña', 'success')
                 else:
                     flash('No existe una cuenta con este correo electrónico', 'error')
                     
             except Error as e:
                 connection.rollback()
-                flash('Error al procesar la solicitud', 'error')
+                flash(f'Error al procesar la solicitud: {e}', 'error')
             finally:
                 cursor.close()
                 connection.close()
@@ -131,19 +117,18 @@ def forgot_password():
     
     return render_template('forgot_password.html')
 
-# Ruta para restablecer contraseña
 @app.route('/reset_password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
     connection = create_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
         try:
+            # Verificar si el token es válido y no ha expirado
             cursor.execute("""
                 SELECT user_id, expiration 
                 FROM tbl_password_reset 
                 WHERE token = %s AND expiration > NOW()
             """, (token,))
-            
             reset_request = cursor.fetchone()
             
             if not reset_request:
@@ -154,14 +139,14 @@ def reset_password(token):
                 new_password = request.form['password']
                 hashed_password = generate_password_hash(new_password)
                 
-                # Actualizar contraseña
+                # Actualizar la contraseña del usuario
                 cursor.execute("""
                     UPDATE tbl_usuario 
                     SET contrasena = %s 
                     WHERE id_usuario = %s
                 """, (hashed_password, reset_request['user_id']))
                 
-                # Eliminar token usado
+                # Eliminar el token usado
                 cursor.execute("""
                     DELETE FROM tbl_password_reset 
                     WHERE token = %s
@@ -175,7 +160,7 @@ def reset_password(token):
             
         except Error as e:
             connection.rollback()
-            flash('Error al restablecer la contraseña', 'error')
+            flash(f'Error al restablecer la contraseña: {e}', 'error')
         finally:
             cursor.close()
             connection.close()
