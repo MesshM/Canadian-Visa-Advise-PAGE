@@ -4,13 +4,15 @@ from mysql.connector import Error
 import os
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
-import os
 import boto3
 from dotenv import load_dotenv
-
+import secrets
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+
+# Load environment variables
+load_dotenv()
 
 # Configuración de SES
 ses_client = boto3.client(
@@ -19,21 +21,22 @@ ses_client = boto3.client(
     aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
 )
-# Configuración de la base de datos para XAMPP
+
+# Configuración de la base de datos para XAMPP (localhost)
 def create_connection():
     try:
         connection = mysql.connector.connect(
-            host='cva.ch86isccq37m.us-east-2.rds.amazonaws.com',  # Endpoint de RDS
-            database='cva',  # Nombre de tu base de datos
-            user='admin',  # Usuario de MySQL en RDS
-            password='root.2025'  # Contraseña de MySQL en RDS
+            host='localhost',
+            database='cva',
+            user='root',
+            password=''
         )
         if connection.is_connected():
+            print("Conexión exitosa a MySQL en XAMPP")
             return connection
     except Error as e:
-        print(f"Error al conectar a MySQL: {e}")
+        print(f"Error al conectar a MySQL en XAMPP: {e}")
         return None
-
 
 # Rutas
 @app.route('/')
@@ -67,7 +70,6 @@ def login():
     
     return render_template('login.html')
 
-# Ruta para olvidar contraseña
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
@@ -80,11 +82,9 @@ def forgot_password():
                 user = cursor.fetchone()
                 
                 if user:
-                    # Generar token y fecha de expiración
                     token = secrets.token_urlsafe(32)
                     expiration = datetime.now() + timedelta(hours=1)
                     
-                    # Guardar token en la base de datos
                     cursor.execute("""
                         CREATE TABLE IF NOT EXISTS tbl_password_reset (
                             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -92,7 +92,8 @@ def forgot_password():
                             token VARCHAR(255) NOT NULL,
                             expiration DATETIME NOT NULL,
                             FOREIGN KEY (user_id) REFERENCES tbl_usuario(id_usuario)
-                        """)
+                        )
+                    """)
                     
                     cursor.execute("""
                         INSERT INTO tbl_password_reset (user_id, token, expiration)
@@ -100,7 +101,6 @@ def forgot_password():
                     """, (user['id_usuario'], token, expiration))
                     connection.commit()
                     
-                    # Enviar correo electrónico
                     reset_url = url_for('reset_password', token=token, _external=True)
                     body = f"""Para restablecer tu contraseña, haz clic en el siguiente enlace:
                             {reset_url}
@@ -131,55 +131,36 @@ def forgot_password():
     
     return render_template('forgot_password.html')
 
-
-
-@app.route('/nueva_asesoria', methods=['GET', 'POST'])
-def nueva_asesoria():
+@app.route('/documentos')
+def documentos():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-
+    
     connection = create_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
-
-        # Obtener la lista de solicitantes
-        cursor.execute("""
-            SELECT s.id_solicitante, CONCAT(u.nombres, ' ', u.apellidos) AS nombre_completo
-            FROM tbl_solicitante s
-            JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-        """)
-        solicitantes = cursor.fetchall()
-
-        if request.method == 'POST':
-            id_solicitante = request.form['id_solicitante']
-            fecha_asesoria = request.form['fecha_asesoria']
-            asesor_asignado = request.form['asesor_asignado']
-
-            try:
-                cursor.execute("""
-                    INSERT INTO tbl_asesoria (id_solicitante, fecha_asesoria, asesor_asignado)
-                    VALUES (%s, %s, %s)
-                """, (id_solicitante, fecha_asesoria, asesor_asignado))
-                connection.commit()
-                flash('Asesoría registrada exitosamente', 'success')
-                return redirect(url_for('asesorias'))
-            except Error as e:
-                connection.rollback()
-                flash(f'Error al registrar asesoría: {e}', 'error')
-            finally:
-                cursor.close()
-                connection.close()
-        else:
+        try:
+            cursor.execute("""
+                SELECT d.id_documento, CONCAT(u.nombres, ' ', u.apellidos) as solicitante,
+                    d.pasaporte, d.historial_viajes, d.foto_digital, d.proposito_viaje
+                FROM tbl_documentos_adjuntos d
+                JOIN tbl_form_eligibilidadcva fe ON d.id_formElegibilidad = fe.id_formElegibilidad
+                JOIN tbl_solicitante s ON fe.id_solicitante = s.id_solicitante
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+            """)
+            documentos = cursor.fetchall()
+            return render_template('documentos.html', documentos=documentos)
+        except Exception as e:
+            print(f"Error en la consulta: {e}")
+            flash('Error al cargar los documentos', 'error')
+            return redirect(url_for('index'))
+        finally:
             cursor.close()
             connection.close()
-
-        return render_template('nueva_asesoria.html', solicitantes=solicitantes)
     else:
         flash('Error de conexión a la base de datos', 'error')
         return redirect(url_for('index'))
 
-
-# Ruta para restablecer contraseña
 @app.route('/reset_password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
     connection = create_connection()
@@ -202,14 +183,12 @@ def reset_password(token):
                 new_password = request.form['password']
                 hashed_password = generate_password_hash(new_password)
                 
-                # Actualizar contraseña
                 cursor.execute("""
                     UPDATE tbl_usuario 
                     SET contrasena = %s 
                     WHERE id_usuario = %s
                 """, (hashed_password, reset_request['user_id']))
                 
-                # Eliminar token usado
                 cursor.execute("""
                     DELETE FROM tbl_password_reset 
                     WHERE token = %s
@@ -238,8 +217,6 @@ def logout():
     session.pop('user_name', None)
     return redirect(url_for('login'))
 
-from datetime import datetime, date
-
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
     if request.method == 'POST':
@@ -248,24 +225,24 @@ def registro():
         correo = request.form['correo']
         contrasena = request.form['contrasena']
         fecha_nacimiento = request.form['fecha_nacimiento']
-        # ✅ Verificar si la persona tiene al menos 18 años
+        
         fecha_nac = datetime.strptime(fecha_nacimiento, '%Y-%m-%d').date()
         hoy = date.today()
         edad = hoy.year - fecha_nac.year - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
         if edad < 18:
             flash('Debes tener al menos 18 años para registrarte.', 'error')
             return redirect(url_for('registro'))
+        
         connection = create_connection()
         if connection:
             cursor = connection.cursor(dictionary=True)
             try:
-                # ✅ Verificar si el correo ya está registrado
                 cursor.execute("SELECT * FROM tbl_usuario WHERE correo = %s", (correo,))
                 existing_user = cursor.fetchone()
                 if existing_user:
                     flash('El correo ya está registrado. Por favor, usa otro correo.', 'error')
                     return redirect(url_for('registro'))
-                # Si todo está bien, proceder con el registro
+                
                 hashed_password = generate_password_hash(contrasena)
                 cursor.execute(
                     "INSERT INTO tbl_usuario (nombres, apellidos, correo, contrasena, fecha_nacimiento) VALUES (%s, %s, %s, %s, %s)",
@@ -286,8 +263,7 @@ def registro():
             flash('Error de conexión a la base de datos', 'error')
     return render_template('registro.html')
 
-
-@app.route('/solicitante')
+@app.route('/solicitudes')
 def solicitantes():
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -297,13 +273,13 @@ def solicitantes():
         cursor = connection.cursor(dictionary=True)
         cursor.execute("""
             SELECT s.id_solicitante, u.id_usuario, u.nombres, u.apellidos, u.correo, u.fecha_nacimiento 
-            FROM tbl_solicitante
+            FROM tbl_solicitante s
             JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
         """)
         solicitante = cursor.fetchall()
         cursor.close()
         connection.close()
-        return render_template('solicitante.html', solicitante=solicitante)
+        return render_template('solicitudes.html', solicitante=solicitante)
     else:
         flash('Error de conexión a la base de datos', 'error')
         return redirect(url_for('index'))
@@ -316,17 +292,24 @@ def formularios():
     connection = create_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT fe.id_formElegibilidad, CONCAT(u.nombres, ' ', u.apellidos) as solicitante, 
-                fe.motivo_viaje, fe.codigo_pasaporte, fe.pais_residencia, fe.provincia_destino
-            FROM tbl_form_eligibilidadcva fe
-            JOIN tbl_solicitante s ON fe.id_solicitante = s.id_solicitante
-            JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-        """)
-        formularios = cursor.fetchall()
-        cursor.close()
-        connection.close()
-        return render_template('formularios.html', formularios=formularios)
+        try:
+            cursor.execute("""
+                SELECT fe.id_formElegibilidad, CONCAT(u.nombres, ' ', u.apellidos) as solicitante, 
+                    fe.motivo_viaje, fe.codigo_pasaporte, fe.pais_residencia, fe.provincia_destino
+                FROM tbl_form_eligibilidadcva 
+                           fe
+                JOIN tbl_solicitante s ON fe.id_solicitante = s.id_solicitante
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+            """)
+            formularios = cursor.fetchall()
+            return render_template('formularios.html', formularios=formularios)
+        except Exception as e:
+            print(f"Error en la consulta: {e}")
+            flash('Error al cargar los formularios', 'error')
+            return redirect(url_for('index'))
+        finally:
+            cursor.close()
+            connection.close()
     else:
         flash('Error de conexión a la base de datos', 'error')
         return redirect(url_for('index'))
@@ -339,20 +322,68 @@ def asesorias():
     connection = create_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT a.codigo_asesoria, a.fecha_asesoria, a.asesor_asignado,
-                CONCAT(u.nombres, ' ', u.apellidos) as solicitante
-            FROM tbl_asesoria a
-            JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
-            JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-        """)
-        asesorias = cursor.fetchall()
-        cursor.close()
-        connection.close()
-        return render_template('asesorias.html', asesorias=asesorias)
+        try:
+            cursor.execute("""
+                SELECT a.codigo_asesoria, a.fecha_asesoria, a.asesor_asignado,
+                    CONCAT(u.nombres, ' ', u.apellidos) as solicitante
+                FROM tbl_asesoria a
+                JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+            """)
+            asesorias = cursor.fetchall()
+            return render_template('asesorias.html', asesorias=asesorias)
+        except Exception as e:
+            print(f"Error en la consulta: {e}")
+            flash('Error al cargar las asesorías', 'error')
+            return redirect(url_for('index'))
+        finally:
+            cursor.close()
+            connection.close()
     else:
         flash('Error de conexión a la base de datos', 'error')
         return redirect(url_for('index'))
+
+@app.route('/nueva_asesoria', methods=['GET', 'POST'])
+def nueva_asesoria():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    connection = create_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT s.id_solicitante, CONCAT(u.nombres, ' ', u.apellidos) AS nombre_completo
+                FROM tbl_solicitante s
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+            """)
+            solicitantes = cursor.fetchall()
+
+            if request.method == 'POST':
+                id_solicitante = request.form['id_solicitante']
+                fecha_asesoria = request.form['fecha_asesoria']
+                asesor_asignado = request.form['asesor_asignado']
+
+                cursor.execute("""
+                    INSERT INTO tbl_asesoria (id_solicitante, fecha_asesoria, asesor_asignado)
+                    VALUES (%s, %s, %s)
+                """, (id_solicitante, fecha_asesoria, asesor_asignado))
+                connection.commit()
+                flash('Asesoría registrada exitosamente', 'success')
+                return redirect(url_for('asesorias'))
+            else:
+                return render_template('nueva_asesoria.html', solicitantes=solicitantes)
+        except Exception as e:
+            print(f"Error en la consulta: {e}")
+            connection.rollback()
+            flash(f'Error al registrar asesoría: {e}', 'error')
+        finally:
+            cursor.close()
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos', 'error')
+    
+    return redirect(url_for('index'))
 
 @app.route('/pagos')
 def pagos():
@@ -362,41 +393,23 @@ def pagos():
     connection = create_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT p.num_factura, CONCAT(u.nombres, ' ', u.apellidos) as solicitante,
-                p.metodo_pago, p.total_pago
-            FROM tbl_pago p
-            JOIN tbl_solicitante s ON p.id_solicitante = s.id_solicitante
-            JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-        """)
-        pagos = cursor.fetchall()
-        cursor.close()
-        connection.close()
-        return render_template('pagos.html', pagos=pagos)
-    else:
-        flash('Error de conexión a la base de datos', 'error')
-        return redirect(url_for('index'))
-
-@app.route('/documentos')
-def documentos():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    connection = create_connection()
-    if connection:
-        cursor = connection.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT d.id_documento, CONCAT(u.nombres, ' ', u.apellidos) as solicitante,
-                d.pasaporte, d.historial_viajes, d.foto_digital, d.proposito_viaje
-            FROM tbl_documentos_adjuntos d
-            JOIN tbl_form_eligibilidadcva fe ON d.id_formElegibilidad = fe.id_formElegibilidad
-            JOIN tbl_solicitante ON fe.id_solicitante = s.id_solicitante
-            JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-        """)
-        documentos = cursor.fetchall()
-        cursor.close()
-        connection.close()
-        return render_template('documentos.html', documentos=documentos)
+        try:
+            cursor.execute("""
+                SELECT p.num_factura, CONCAT(u.nombres, ' ', u.apellidos) as solicitante,
+                    p.metodo_pago, p.total_pago
+                FROM tbl_pago p
+                JOIN tbl_solicitante s ON p.id_solicitante = s.id_solicitante
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+            """)
+            pagos = cursor.fetchall()
+            return render_template('pagos.html', pagos=pagos)
+        except Exception as e:
+            print(f"Error en la consulta: {e}")
+            flash('Error al cargar los pagos', 'error')
+            return redirect(url_for('index'))
+        finally:
+            cursor.close()
+            connection.close()
     else:
         flash('Error de conexión a la base de datos', 'error')
         return redirect(url_for('index'))
