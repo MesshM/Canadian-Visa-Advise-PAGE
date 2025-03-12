@@ -264,10 +264,10 @@ def registro():
     return render_template('registro.html')
 
 @app.route('/solicitudes')
-def solicitantes():
+def solicitantes():  # Mantenemos el nombre 'solicitantes' para la función
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    
+
     connection = create_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
@@ -276,13 +276,16 @@ def solicitantes():
             FROM tbl_solicitante s
             JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
         """)
-        solicitante = cursor.fetchall()
+        solicitantes = cursor.fetchall()  # Cambiado a plural para mayor claridad
         cursor.close()
         connection.close()
-        return render_template('solicitudes.html', solicitante=solicitante)
+        
+        # No pasamos url_map_endpoints a la plantilla
+        return render_template('solicitudes.html', solicitantes=solicitantes)
     else:
         flash('Error de conexión a la base de datos', 'error')
         return redirect(url_for('index'))
+      
 
 @app.route('/formularios')
 def formularios():
@@ -352,6 +355,7 @@ def nueva_asesoria():
     if connection:
         cursor = connection.cursor(dictionary=True)
         try:
+            # Fetch solicitantes for the dropdown
             cursor.execute("""
                 SELECT s.id_solicitante, CONCAT(u.nombres, ' ', u.apellidos) AS nombre_completo
                 FROM tbl_solicitante s
@@ -364,6 +368,7 @@ def nueva_asesoria():
                 fecha_asesoria = request.form['fecha_asesoria']
                 asesor_asignado = request.form['asesor_asignado']
 
+                # Insert new advisory
                 cursor.execute("""
                     INSERT INTO tbl_asesoria (id_solicitante, fecha_asesoria, asesor_asignado)
                     VALUES (%s, %s, %s)
@@ -371,19 +376,18 @@ def nueva_asesoria():
                 connection.commit()
                 flash('Asesoría registrada exitosamente', 'success')
                 return redirect(url_for('asesorias'))
-            else:
-                return render_template('nueva_asesoria.html', solicitantes=solicitantes)
-        except Exception as e:
-            print(f"Error en la consulta: {e}")
-            connection.rollback()
-            flash(f'Error al registrar asesoría: {e}', 'error')
+            
+            return render_template('nueva_asesoria.html', solicitantes=solicitantes)
+        except Error as e:
+            print(f"Error: {e}")
+            flash('Error al procesar la solicitud', 'error')
         finally:
             cursor.close()
             connection.close()
     else:
         flash('Error de conexión a la base de datos', 'error')
     
-    return redirect(url_for('index'))
+    return redirect(url_for('asesorias'))
 
 @app.route('/pagos')
 def pagos():
