@@ -4,17 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter&family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
     <link href="../static/css/output.css" rel="stylesheet">
 </head>
-<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-900 via-zinc-800 to-black p-4 text-zinc-200">
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-900 via-zinc-800 to-black p-4 text-zinc-200 font-inter">
     
     <!-- Partículas de fondo (efecto decorativo) -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
-        <div class="absolute h-2 w-2 rounded-full bg-red-500/20 top-1/4 left-1/4 animate-[pulse_2s_ease-in-out_infinite]"></div>
-        <div class="absolute h-3 w-3 rounded-full bg-red-500/30 top-1/3 right-1/3 animate-[pulse_2s_ease-in-out_infinite]" style="animation-delay: 1s;"></div>
-        <div class="absolute h-2 w-2 rounded-full bg-red-500/20 bottom-1/4 right-1/4 animate-[pulse_2s_ease-in-out_infinite]" style="animation-delay: 2s;"></div>
-        <div class="absolute h-4 w-4 rounded-full bg-red-500/10 bottom-1/3 left-1/3 animate-[pulse_2s_ease-in-out_infinite]" style="animation-delay: 0.5s;"></div>
-        <div class="absolute h-3 w-3 rounded-full bg-red-500/20 top-1/2 right-1/2 animate-[pulse_2s_ease-in-out_infinite]" style="animation-delay: 1.5s;"></div>
+        <div class="absolute h-2 w-2 rounded-full bg-primary-500/20 top-1/4 left-1/4 animate-[pulse_2s_ease-in-out_infinite]"></div>
+        <div class="absolute h-3 w-3 rounded-full bg-primary-500/30 top-1/3 right-1/3 animate-[pulse_2s_ease-in-out_infinite]" style="animation-delay: 1s;"></div>
+        <div class="absolute h-2 w-2 rounded-full bg-primary-500/20 bottom-1/4 right-1/4 animate-[pulse_2s_ease-in-out_infinite]" style="animation-delay: 2s;"></div>
+        <div class="absolute h-4 w-4 rounded-full bg-primary-500/10 bottom-1/3 left-1/3 animate-[pulse_2s_ease-in-out_infinite]" style="animation-delay: 0.5s;"></div>
+        <div class="absolute h-3 w-3 rounded-full bg-primary-500/20 top-1/2 right-1/2 animate-[pulse_2s_ease-in-out_infinite]" style="animation-delay: 1.5s;"></div>
     </div>
 
     <!-- Contenedor principal con efecto de vidrio -->
@@ -25,31 +29,31 @@
             <img src="/static/img/background-img-login-sigup.jpg" alt="Imagen de fondo"
                 class="w-full h-full object-cover transition-transform duration-[2000ms] ease-out group-hover:scale-105">
             
-            <div class="absolute inset-0 to-zinc-900/60 backdrop-blur-sm"></div>
+            <div class="absolute inset-0 backdrop-blur-sm"></div>
         
             <!-- Contenido sobre la imagen -->
             <div class="absolute inset-0 flex flex-col justify-center items-center p-8 text-white">
-                <h2 class="text-3xl md:text-4xl font-bold mb-4 text-center">Bienvenido de nuevo</h2>
+                <h2 class="text-3xl md:text-4xl font-roboto mb-4 text-center">Bienvenido de nuevo</h2>
                 <p class="text-lg text-center max-w-md opacity-90">
                     Accede a tu cuenta para disfrutar de todos nuestros servicios exclusivos.
                 </p>
-                <div class="mt-8 w-24 h-1 bg-gradient-to-r from-red-400 to-red-600 rounded-full"></div>
+                <div class="mt-8 w-24 h-1 bg-gradient-to-r from-primary-400 to-primary-600 rounded-full"></div>
             </div>
         </div>
         
 
         <!-- Formulario de Inicio de Sesión con efectos mejorados -->
-        <div class="w-full md:w-1/2 p-8 md:p-10">
+        <div class="w-full md:w-1/2 p-8 md:p-10 bg-white">
             <div class="flex justify-center mb-6">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-lg">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                 </div>
             </div>
             
-            <h1 class="text-2xl md:text-3xl font-bold text-center text-zinc-100 mb-2">Iniciar Sesión</h1>
-            <p class="text-zinc-400 text-center mb-8">Ingresa tus credenciales para continuar</p>
+            <h1 class="text-2xl md:text-3xl font-roboto text-center text-red-700 mb-2">Iniciar Sesión</h1>
+            <p class="text-zinc-500 text-center mb-8">Ingresa tus credenciales para continuar</p>
             
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
@@ -74,33 +78,43 @@
             
             <form method="POST" class="space-y-5">
                 <div class="group">
-                    <label for="email" class="block text-zinc-300 text-sm font-medium mb-2">Correo electrónico</label>
+                    <label for="email" class="block text-red-700 text-sm font-roboto mb-2">Correo electrónico</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-zinc-500 group-focus-within:text-red-500 transition-colors duration-200" viewBox="0 0 20 20" fill="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400 group-focus-within:text-primary-500 transition-colors duration-200" viewBox="0 0 20 20" fill="currentColor">
                                 <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                                 <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                             </svg>
                         </div>
                         <input type="email" id="email" name="email" 
-                                class="w-full pl-10 pr-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-lg text-zinc-200 placeholder-zinc-500 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none transition-all duration-200"
+                                class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-red-100 rounded-lg text-zinc-700 placeholder-zinc-500 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none transition-all duration-200 font-inter"
                                 placeholder="tu@email.com" required>
                     </div>
                 </div>
                 
                 <div class="group">
                     <div class="flex justify-between mb-2">
-                        <label for="password" class="block text-zinc-300 text-sm font-medium">Contraseña</label>
+                        <label for="password" class="block text-red-700 text-sm font-roboto">Contraseña</label>
                     </div>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-zinc-500 group-focus-within:text-red-500 transition-colors duration-200" viewBox="0 0 20 20" fill="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400 group-focus-within:text-primary-500 transition-colors duration-200" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
                             </svg>
                         </div>
                         <input type="password" id="password" name="password" 
-                                class="w-full pl-10 pr-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-lg text-zinc-200 placeholder-zinc-500 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none transition-all duration-200"
+                                class="w-full pl-10 pr-12 py-3 bg-gray-50 border border-red-100 rounded-lg text-zinc-700 placeholder-zinc-500 focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none transition-all duration-200 font-inter"
                                 placeholder="••••••••" required>
+                        <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-700 hover:text-zinc-500 focus:outline-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" id="eyeIcon" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                            </svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" id="eyeOffIcon" class="h-5 w-5 hidden" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd" />
+                                <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
                 
@@ -109,19 +123,19 @@
                     <label for="remember_me" class="relative flex items-center cursor-pointer">
                         <input type="checkbox" id="remember_me" name="remember_me" 
                             class="peer sr-only">
-                        <div class="w-5 h-5 border border-zinc-600 rounded bg-zinc-800/70 flex items-center justify-center transition-all duration-200 peer-checked:bg-red-500/90 peer-checked:border-red-400 peer-focus:ring-2 peer-focus:ring-red-500/50 peer-focus:ring-offset-1 peer-focus:ring-offset-zinc-900">
+                        <div class="w-5 h-5 border border-red-200 rounded bg-gray-50 flex items-center justify-center transition-all duration-200 peer-checked:bg-red-500/90 peer-checked:border-red-400 peer-focus:ring-2 peer-focus:ring-red-500/50 peer-focus:ring-offset-1 peer-focus:ring-offset-white">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity duration-200" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                             </svg>
                         </div>
-                        <span class="ml-2.5 text-sm text-zinc-300 select-none group-hover:text-zinc-200 transition-colors duration-200">
+                        <span class="ml-2.5 text-sm text-zinc-600 select-none group-hover:text-zinc-800 transition-colors duration-200 font-inter">
                             Mantener la sesión abierta
                         </span>
                     </label>
                 </div>
 
                 <button type="submit" 
-                        class="w-full relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-semibold py-3 px-4 rounded-lg shadow-lg hover:shadow-primary-500/30 transition-all duration-300 mt-6">
+                        class="w-full relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-4 rounded-lg shadow-lg hover:shadow-primary-500/30 transition-all duration-300 mt-6">
                     <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
                     <div class="relative flex items-center justify-center">
                         <span>Iniciar Sesión</span>
@@ -133,18 +147,21 @@
             </form>
 
             <div class="mt-8 flex flex-col sm:flex-row items-center justify-between text-sm">
-                <p class="mb-4 sm:mb-0 text-zinc-400">
+                <p class="mb-4 sm:mb-0 text-zinc-500 font-inter">
                     ¿No tienes una cuenta?
-                    <a href="{{ url_for('registro') }}" class="text-red-400 hover:text-red-300 font-medium transition-colors duration-200 underline-offset-2 hover:underline">Regístrate</a>
+                    <a href="{{ url_for('registro') }}" class="text-primary-400 hover:text-primary-300 font-roboto transition-colors duration-200 underline-offset-2 hover:underline">Regístrate</a>
                 </p>
-                <a href="{{ url_for('forgot_password') }}" class="text-red-400 hover:text-red-300 font-medium transition-colors duration-200 underline-offset-2 hover:underline">¿Olvidaste tu contraseña?</a>
-
+                <a href="{{ url_for('forgot_password') }}" class="text-primary-400 hover:text-primary-300 font-roboto transition-colors duration-200 underline-offset-2 hover:underline">¿Olvidaste tu contraseña?</a>
             </div>
         </div>
     </div>
     
     <!-- Círculo decorativo -->
-    <div class="fixed -bottom-20 -left-20 w-80 h-80 rounded-full bg-red-600/10 blur-3xl pointer-events-none"></div>
-    <div class="fixed -top-20 -right-20 w-80 h-80 rounded-full bg-red-600/10 blur-3xl pointer-events-none"></div>
+    <div class="fixed -bottom-20 -left-20 w-80 h-80 rounded-full bg-primary-600/10 blur-3xl pointer-events-none"></div>
+    <div class="fixed -top-20 -right-20 w-80 h-80 rounded-full bg-primary-600/10 blur-3xl pointer-events-none"></div>
+
+    <!-- JavaScript para la funcionalidad de contraseña -->
+    <script src="../static/js/login.js"></script>
+
 </body>
 </html>
