@@ -57,13 +57,15 @@ def create_connection():
         print(f"Error al conectar a MySQL: {e}")
         return None
 
-
 # Rutas
 @app.route('/')
 def index():
     if 'user_id' not in session:
-        return redirect(url_for('login'))
-    return render_template('index.html')
+        # Si no hay usuario logueado, mostrar la página de inicio con botones de registro y login
+        return render_template('index.html', logged_in=False)
+    else:
+        # Si hay usuario logueado, mostrar el dashboard
+        return render_template('index.html', logged_in=True)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
