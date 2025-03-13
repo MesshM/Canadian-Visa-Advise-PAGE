@@ -6,6 +6,10 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        'roboto': ['"Roboto Condensed"', 'sans-serif'],
+        'inter': ['Inter', 'sans-serif'],
+      },
       colors: {
         primary: {
           50: '#fff1f1',
@@ -21,7 +25,8 @@ module.exports = {
           950: '#560000',
           DEFAULT: '#b80404',
           light: '#fef2f2',
-          hover: '#940303'
+          hover: '#940303',
+          beige: '#f5f5cd'
         }
       },
     }

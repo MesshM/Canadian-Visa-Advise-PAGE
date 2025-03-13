@@ -46,10 +46,10 @@ def send_email_via_zoho(to_email, subject, body):
 def create_connection():
     try:
         connection = mysql.connector.connect(
-            host='cva.ch86isccq37m.us-east-2.rds.amazonaws.com',  # Endpoint de RDS
-            database='CVA',  # Nombre de tu base de datos
-            user='admin',  # Usuario de MySQL en RDS
-            password='root.2025'  # Contraseña de MySQL en RDS
+            host='localhost',          # Host local de XAMPP
+            database='cva',            # Mantiene el mismo nombre de la base de datos
+            user='root',               # Usuario por defecto de XAMPP
+            password=''                # Contraseña por defecto de XAMPP (vacía)
         )
         if connection.is_connected():
             return connection
@@ -281,25 +281,53 @@ def registro():
 def solicitantes():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-
+    
     connection = create_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
         cursor.execute("""
-            SELECT s.id_solicitante, u.id_usuario, u.nombres, u.apellidos, u.correo, u.fecha_nacimiento 
-            FROM tbl_solicitante
-            JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-        """)
-        solicitantes = cursor.fetchall()  # Cambiado a plural para mayor claridad
+    SELECT s.id_solicitante, u.id_usuario, u.nombres, u.apellidos, u.correo, u.fecha_nacimiento 
+    FROM tbl_solicitante s  -- Aquí se define el alias 's'
+    JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+""")
+
+
+        solicitante = cursor.fetchall()
         cursor.close()
         connection.close()
-        
-        # No pasamos url_map_endpoints a la plantilla
-        return render_template('solicitudes.html', solicitantes=solicitantes)
+        return render_template('solicitudes.html', solicitante=solicitante)
     else:
         flash('Error de conexión a la base de datos', 'error')
         return redirect(url_for('index'))
-      
+    
+@app.route('/solicitante/agregar', methods=['GET', 'POST'])
+def agregar_solicitante():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        id_usuario = request.form['id_usuario']
+
+        connection = create_connection()
+        if connection:
+            try:
+                cursor = connection.cursor()
+                cursor.execute("INSERT INTO tbl_solicitante (id_usuario) VALUES (%s)", (id_usuario,))
+                connection.commit()
+                cursor.close()
+                connection.close()
+                flash('Solicitante agregado con éxito', 'success')
+                return redirect(url_for('solicitantes'))
+            except Exception as e:
+                flash(f'Error al agregar solicitante: {str(e)}', 'error')
+                return redirect(url_for('solicitantes'))
+        else:
+            flash('Error de conexión a la base de datos', 'error')
+            return redirect(url_for('solicitantes'))
+
+    # If it's a GET request, just redirect to the solicitantes page 
+    # since the form is already there
+    return redirect(url_for('solicitantes'))
 
 @app.route('/formularios')
 def formularios():
