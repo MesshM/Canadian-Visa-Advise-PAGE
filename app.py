@@ -46,10 +46,10 @@ def send_email_via_zoho(to_email, subject, body):
 def create_connection():
     try:
         connection = mysql.connector.connect(
-            host='cva.ch86isccq37m.us-east-2.rds.amazonaws.com',  # Endpoint de RDS
-            database='CVA',  # Nombre de tu base de datos
-            user='admin',  # Usuario de MySQL en RDS
-            password='root.2025'  # Contraseña de MySQL en RDS
+            host='localhost',          # Host local de XAMPP
+            database='cva',            # Mantiene el mismo nombre de la base de datos
+            user='root',               # Usuario por defecto de XAMPP
+            password=''                # Contraseña por defecto de XAMPP (vacía)
         )
         if connection.is_connected():
             return connection
@@ -279,26 +279,107 @@ def registro():
     return render_template('registro.html')
 
 
-@app.route('/solicitante')
+@app.route('/solicitantes')
 def solicitantes():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
+    # Obtener parámetros de paginación
+    page = request.args.get('page', 1, type=int)
+    per_page = 10  # Número de solicitantes por página
+    
     connection = create_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT s.id_solicitante, u.id_usuario, u.nombres, u.apellidos, u.correo, u.fecha_nacimiento 
-            FROM tbl_solicitante
-            JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-        """)
-        solicitante = cursor.fetchall()
-        cursor.close()
-        connection.close()
-        return render_template('solicitudes.html', solicitante=solicitante)
+        try:
+            # Contar el total de solicitantes para la paginación
+            cursor.execute("SELECT COUNT(*) as total FROM tbl_solicitante")
+            total = cursor.fetchone()['total']
+            
+            # Calcular el offset para la paginación
+            offset = (page - 1) * per_page
+            
+            # Obtener los solicitantes para la página actual
+            cursor.execute("""
+                SELECT s.id_solicitante, u.id_usuario, u.nombres, u.apellidos, u.correo, u.fecha_nacimiento 
+                FROM tbl_solicitante s
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+                ORDER BY s.id_solicitante DESC
+                LIMIT %s OFFSET %s
+            """, (per_page, offset))
+            
+            solicitantes = cursor.fetchall()
+            
+            # Obtener usuarios que no son solicitantes para el formulario de agregar
+            cursor.execute("""
+                SELECT id_usuario, CONCAT(nombres, ' ', apellidos) as nombre_completo, correo
+                FROM tbl_usuario
+                WHERE id_usuario NOT IN (SELECT id_usuario FROM tbl_solicitante)
+                ORDER BY nombres
+            """)
+            
+            usuarios_disponibles = cursor.fetchall()
+            
+            # Calcular el número total de páginas
+            total_pages = (total + per_page - 1) // per_page
+            
+            return render_template(
+                'solicitudes.html', 
+                solicitantes=solicitantes,
+                usuarios_disponibles=usuarios_disponibles,
+                page=page,
+                total_pages=total_pages,
+                total=total
+            )
+        except Error as e:
+            flash(f'Error al cargar los solicitantes: {e}', 'error')
+        finally:
+            cursor.close()
+            connection.close()
     else:
         flash('Error de conexión a la base de datos', 'error')
-        return redirect(url_for('index'))
+    
+    return redirect(url_for('index'))
+    
+@app.route('/agregar_solicitante', methods=['POST'])
+def agregar_solicitante():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Obtener el ID del usuario seleccionado
+    id_usuario = request.form.get('id_usuario')
+    
+    if not id_usuario:
+        flash('Debes seleccionar un usuario', 'error')
+        return redirect(url_for('solicitantes'))
+    
+    connection = create_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        try:
+            # Verificar si el usuario ya es un solicitante
+            cursor.execute("SELECT * FROM tbl_solicitante WHERE id_usuario = %s", (id_usuario,))
+            existing_solicitante = cursor.fetchone()
+            
+            if existing_solicitante:
+                flash('Este usuario ya es un solicitante', 'error')
+                return redirect(url_for('solicitantes'))
+            
+            # Insertar nuevo solicitante
+            cursor.execute("INSERT INTO tbl_solicitante (id_usuario) VALUES (%s)", (id_usuario,))
+            
+            connection.commit()
+            flash('Usuario agregado como solicitante con éxito', 'success')
+        except Error as e:
+            connection.rollback()
+            flash(f'Error al agregar solicitante: {e}', 'error')
+        finally:
+            cursor.close()
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos', 'error')
+    
+    return redirect(url_for('solicitantes'))
 
 @app.route('/formularios')
 def formularios():
@@ -339,6 +420,8 @@ def asesorias():
     connection = create_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
+        
+        # Obtener asesorías
         cursor.execute("""
             SELECT a.codigo_asesoria, a.fecha_asesoria, a.asesor_asignado,
                 CONCAT(u.nombres, ' ', u.apellidos) as solicitante
@@ -347,12 +430,54 @@ def asesorias():
             JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
         """)
         asesorias = cursor.fetchall()
+        
+        # Obtener solicitantes para el formulario
+        cursor.execute("""
+            SELECT s.id_solicitante, CONCAT(u.nombres, ' ', u.apellidos) as nombre
+            FROM tbl_solicitante s
+            JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+        """)
+        solicitantes = cursor.fetchall()
+        
         cursor.close()
         connection.close()
-        return render_template('asesorias.html', asesorias=asesorias)
+        return render_template('asesorias.html', asesorias=asesorias, solicitantes=solicitantes)
     else:
         flash('Error de conexión a la base de datos', 'error')
         return redirect(url_for('index'))
+    
+@app.route('/nueva_asesoria', methods=['POST'])
+def nueva_asesoria():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Obtener datos del formulario
+    id_solicitante = request.form['id_solicitante']
+    fecha_asesoria = request.form['fecha_asesoria']
+    asesor_asignado = request.form['asesor_asignado']
+    
+    connection = create_connection()
+    if connection:
+        cursor = connection.cursor()
+        try:
+            # Insertar nueva asesoría
+            cursor.execute("""
+                INSERT INTO tbl_asesoria (fecha_asesoria, asesor_asignado, id_solicitante)
+                VALUES (%s, %s, %s)
+            """, (fecha_asesoria, asesor_asignado, id_solicitante))
+            
+            connection.commit()
+            flash('Asesoría creada con éxito', 'success')
+        except Error as e:
+            connection.rollback()
+            flash(f'Error al crear la asesoría: {e}', 'error')
+        finally:
+            cursor.close()
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos', 'error')
+    
+    return redirect(url_for('asesorias'))    
 
 @app.route('/pagos')
 def pagos():
@@ -407,3 +532,8 @@ def ayuda():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
+
+    
