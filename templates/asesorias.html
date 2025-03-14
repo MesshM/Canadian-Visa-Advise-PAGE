@@ -312,53 +312,7 @@
 </div>
 
 <script>
-    // Script para búsqueda en tiempo real
-document.getElementById('search').addEventListener('keyup', function() {
-    const searchValue = this.value.toLowerCase();
-    const tableRows = document.querySelectorAll('#table-body tr:not(#no-results)');
-    let hasResults = false;
-    
-    tableRows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        if(text.includes(searchValue)) {
-            row.style.display = '';
-            hasResults = true;
-        } else {
-            row.style.display = 'none';
-        }
-    });
-    
-    // Mostrar mensaje de "no se encontraron resultados" si no hay coincidencias
-    const noResults = document.getElementById('no-results');
-    if (noResults) {
-        noResults.style.display = hasResults ? 'none' : '';
-    }
-});
-
-// Animaciones mejoradas para elementos de la interfaz
-document.addEventListener('DOMContentLoaded', function() {
-    // Añadir clase para animar la aparición de las filas de la tabla
-    const rows = document.querySelectorAll('#table-body tr');
-    rows.forEach((row, index) => {
-        setTimeout(() => {
-            row.style.opacity = '0';
-            row.style.transform = 'translateY(20px)';
-            row.style.transition = 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
-            
-            setTimeout(() => {
-                row.style.opacity = '1';
-                row.style.transform = 'translateY(0)';
-            }, 50);
-        }, index * 80);
-    });
-
-    // Inicializar el modal correctamente - asegurarse que está oculto al inicio
-    const modal = document.getElementById('newAdvisoryModal');
-    modal.classList.add('hidden');
-    modal.style.display = 'none';
-});
-
-// Funciones para abrir y cerrar el modal
+ // Funciones para abrir y cerrar el modal
 function openNewAdvisoryModal() {
     const modal = document.getElementById('newAdvisoryModal');
     modal.style.display = 'flex';
@@ -386,4 +340,39 @@ window.onclick = function(event) {
         closeNewAdvisoryModal();
     }
 };
+
+// Script para búsqueda en tiempo real
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function() {
+            const searchValue = this.value.toLowerCase();
+            const tableRows = document.querySelectorAll('#table-body tr:not(#no-results)');
+            let hasResults = false;
+            
+            tableRows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                if(text.includes(searchValue)) {
+                    row.style.display = '';
+                    hasResults = true;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Mostrar mensaje de "no se encontraron resultados" si no hay coincidencias
+            const noResults = document.getElementById('no-results');
+            if (noResults) {
+                noResults.style.display = hasResults ? 'none' : '';
+            }
+        });
+    }
+    
+    // Inicializar el modal correctamente - asegurarse que está oculto al inicio
+    const modal = document.getElementById('newAdvisoryModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+});
 </script>
