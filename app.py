@@ -477,8 +477,8 @@ def nueva_asesoria():
     else:
         flash('Error de conexión a la base de datos', 'error')
     
-    return redirect(url_for('asesorias'))    
-
+    return redirect(url_for('asesorias'))  
+  
 @app.route('/pagos')
 def pagos():
     if 'user_id' not in session:
@@ -487,20 +487,162 @@ def pagos():
     connection = create_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT p.num_factura, CONCAT(u.nombres, ' ', u.apellidos) as solicitante,
-                p.metodo_pago, p.total_pago
-            FROM tbl_pago p
-            JOIN tbl_solicitante s ON p.id_solicitante = s.id_solicitante
-            JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-        """)
-        pagos = cursor.fetchall()
-        cursor.close()
-        connection.close()
-        return render_template('pagos.html', pagos=pagos)
+        try:
+            # Consulta para obtener pagos
+            cursor.execute("""
+                SELECT 
+                    p.num_factura,
+                    p.id_solicitante,
+                    CONCAT(u.nombres, ' ', u.apellidos) as solicitante,
+                    p.metodo_pago,
+                    p.total_pago,
+                    CURDATE() as fecha_pago,
+                    'Pendiente' as estado
+                FROM tbl_pago p
+                JOIN tbl_solicitante s ON p.id_solicitante = s.id_solicitante
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+                ORDER BY p.num_factura DESC
+            """)
+            pagos = cursor.fetchall()
+            
+            # Consulta para obtener solicitantes
+            cursor.execute("""
+                SELECT 
+                    s.id_solicitante,
+                    CONCAT(u.nombres, ' ', u.apellidos) as nombre
+                FROM tbl_solicitante s
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+                ORDER BY u.nombres, u.apellidos
+            """)
+            solicitantes = cursor.fetchall()
+            
+            # Imprime para depuración
+            print(f"Solicitantes encontrados: {len(solicitantes)}")
+            for s in solicitantes:
+                print(f"ID: {s['id_solicitante']}, Nombre: {s['nombre']}")
+            
+            cursor.close()
+            connection.close()
+            
+            return render_template('pagos.html', pagos=pagos, solicitantes=solicitantes)
+        except Exception as e:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
+            print(f"Error en la consulta: {str(e)}")
+            flash(f'Error al cargar la página de pagos: {str(e)}', 'danger')
+            return render_template('pagos.html', pagos=[], solicitantes=[])
     else:
-        flash('Error de conexión a la base de datos', 'error')
-        return redirect(url_for('index'))
+        flash('Error de conexión a la base de datos', 'danger')
+        return render_template('pagos.html', pagos=[], solicitantes=[])
+
+@app.route('/generar_pago', methods=['POST'])
+def generar_pago():
+    # Resto del código...
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    try:
+        id_solicitante = request.form.get('id_solicitante')
+        metodo_pago = request.form.get('metodo_pago')
+        total_pago = request.form.get('total_pago')
+        if not id_solicitante or not metodo_pago or not total_pago:
+            flash('Todos los campos son obligatorios', 'danger')
+            return redirect(url_for('pagos'))
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor()
+            query = """
+            INSERT INTO tbl_pago (id_solicitante, metodo_pago, total_pago)
+            VALUES (%s, %s, %s)
+            """
+            cursor.execute(query, (id_solicitante, metodo_pago, total_pago))
+            connection.commit()
+            cursor.close()
+            connection.close()
+            flash('Pago registrado exitosamente', 'success')
+        else:
+            flash('Error de conexión a la base de datos', 'danger')
+    except Exception as e:
+        flash(f'Error al registrar el pago: {str(e)}', 'danger')
+    return redirect(url_for('pagos'))
+
+@app.route('/eliminar_pago/<int:id_pago>')
+def eliminar_pago(id_pago):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    try:
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor()
+            cursor.execute("DELETE FROM tbl_pago WHERE num_factura = %s", (id_pago,))
+            connection.commit()
+            cursor.close()
+            connection.close()
+            flash('Pago eliminado exitosamente', 'success')
+        else:
+            flash('Error de conexión a la base de datos', 'danger')
+    except Exception as e:
+        flash(f'Error al eliminar el pago: {str(e)}', 'danger')
+    return redirect(url_for('pagos'))
+
+@app.route('/editar_pago/<int:id_pago>', methods=['GET', 'POST'])
+def editar_pago(id_pago):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    if request.method == 'POST':
+        try:
+            id_solicitante = request.form.get('id_solicitante')
+            metodo_pago = request.form.get('metodo_pago')
+            total_pago = request.form.get('total_pago')
+            if not id_solicitante or not metodo_pago or not total_pago:
+                flash('Todos los campos son obligatorios', 'danger')
+                return redirect(url_for('editar_pago', id_pago=id_pago))
+            connection = create_connection()
+            if connection:
+                cursor = connection.cursor()
+                cursor.execute("""
+                    UPDATE tbl_pago 
+                    SET id_solicitante = %s, metodo_pago = %s, total_pago = %s
+                    WHERE num_factura = %s
+                """, (id_solicitante, metodo_pago, total_pago, id_pago))
+                connection.commit()
+                cursor.close()
+                connection.close()
+                flash('Pago actualizado exitosamente', 'success')
+            else:
+                flash('Error de conexión a la base de datos', 'danger')
+            return redirect(url_for('pagos'))
+        except Exception as e:
+            flash(f'Error al actualizar el pago: {str(e)}', 'danger')
+            return redirect(url_for('pagos'))
+    try:
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute("""
+                SELECT * FROM tbl_pago WHERE num_factura = %s
+            """, (id_pago,))
+            pago = cursor.fetchone()
+            cursor.execute("""
+                SELECT s.id_solicitante, CONCAT(u.nombres, ' ', u.apellidos) as nombre
+                FROM tbl_solicitante s
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+                ORDER BY u.nombres, u.apellidos
+            """)
+            solicitantes = cursor.fetchall()
+            cursor.close()
+            connection.close()
+            if pago:
+                return render_template('editar_pago.html', pago=pago, solicitantes=solicitantes)
+            else:
+                flash('Pago no encontrado', 'danger')
+                return redirect(url_for('pagos'))
+        else:
+            flash('Error de conexión a la base de datos', 'danger')
+            return redirect(url_for('pagos'))
+    except Exception as e:
+        flash(f'Error al cargar el formulario: {str(e)}', 'danger')
+        return redirect(url_for('pagos'))
 
 @app.route('/documentos')
 def documentos():
@@ -515,7 +657,7 @@ def documentos():
                 d.pasaporte, d.historial_viajes, d.foto_digital, d.proposito_viaje
             FROM tbl_documentos_adjuntos d
             JOIN tbl_form_eligibilidadcva fe ON d.id_formElegibilidad = fe.id_formElegibilidad
-            JOIN tbl_solicitante ON fe.id_solicitante = s.id_solicitante
+            JOIN tbl_solicitante s ON fe.id_solicitante = s.id_solicitante
             JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
         """)
         documentos = cursor.fetchall()
