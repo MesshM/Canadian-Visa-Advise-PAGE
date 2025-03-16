@@ -42,14 +42,14 @@ def send_email_via_zoho(to_email, subject, body):
         print("Error al enviar correo:", e)
         return False
 
-# Configuración de la base de datos para XAMPP
+# Configuración de la base de datos para AWS
 def create_connection():
     try:
         connection = mysql.connector.connect(
-            host='localhost',          # Host local de XAMPP
-            database='cva',            # Mantiene el mismo nombre de la base de datos
-            user='root',               # Usuario por defecto de XAMPP
-            password=''                # Contraseña por defecto de XAMPP (vacía)
+            host='cva.ch86isccq37m.us-east-2.rds.amazonaws.com',  # Endpoint de RDS
+            database='CVA',  # Nombre de tu base de datos
+            user='admin',  # Usuario de MySQL en RDS
+            password='root.2025'  # Contraseña de MySQL en RDS
         )
         if connection.is_connected():
             return connection
