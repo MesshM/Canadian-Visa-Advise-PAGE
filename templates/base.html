@@ -12,13 +12,7 @@
 </head>
 <body class="bg-page-gradient text-gray-800 font-inter">
     <!-- Partículas de fondo (efecto decorativo) -->
-    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div class="absolute h-2 w-2 rounded-full bg-primary-400/20 top-1/4 left-1/4 animate-pulse-slow"></div>
-        <div class="absolute h-3 w-3 rounded-full bg-primary-500/30 top-1/3 right-1/3 animate-pulse-slow delay-1000"></div>
-        <div class="absolute h-2 w-2 rounded-full bg-primary-400/20 bottom-1/4 right-1/4 animate-pulse-slow delay-2000"></div>
-        <div class="absolute h-4 w-4 rounded-full bg-primary-500/10 bottom-1/3 left-1/3 animate-pulse-slow delay-500"></div>
-        <div class="absolute h-3 w-3 rounded-full bg-primary-400/20 top-1/2 right-1/2 animate-pulse-slow delay-1500"></div>
-        
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">        
         <!-- Gradientes decorativos -->
         <div class="fixed top-0 left-0 w-full h-64 bg-gradient-to-b from-primary-50/50 to-transparent pointer-events-none"></div>
         <div class="fixed bottom-0 left-0 w-full h-64 bg-gradient-to-t from-primary-50/50 to-transparent pointer-events-none"></div>
@@ -27,7 +21,7 @@
 
     {% include 'includes/_sidebar.html' %}
 
-    <main class="ml-[calc(240px+40px)] p-8 min-h-screen relative z-10">
+    <main class="ml-[calc(240px+40px)] p-8 min-h-screen relative z-50">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <div class="mb-6">

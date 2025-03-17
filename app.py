@@ -4,13 +4,14 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 import mysql.connector
 from mysql.connector import Error
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 from pytz import timezone
 from dotenv import load_dotenv
 import random
 import string
+import json
 
 # Cargar variables de entorno desde .env
 load_dotenv()
@@ -56,6 +57,11 @@ def create_connection():
     except Error as e:
         print(f"Error al conectar a MySQL: {e}")
         return None
+
+# Definir el filtro personalizado
+@app.template_filter('split')
+def split_filter(s, delimiter=None):
+    return s.split(delimiter)
 
 # Rutas
 @app.route('/')
@@ -230,7 +236,7 @@ def logout():
     session.pop('user_name', None)
     return redirect(url_for('login'))
 
-from datetime import datetime, date
+
 
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
@@ -412,6 +418,7 @@ def formularios():
         return redirect(url_for('index'))
 
 
+# Modificación de la función asesorias para mostrar solo las asesorías del usuario logueado
 @app.route('/asesorias')
 def asesorias():
     if 'user_id' not in session:
@@ -421,31 +428,43 @@ def asesorias():
     if connection:
         cursor = connection.cursor(dictionary=True)
         
-        # Obtener asesorías
+        # Obtener el id_solicitante del usuario logueado
+        cursor.execute("""
+            SELECT id_solicitante FROM tbl_solicitante WHERE id_usuario = %s
+        """, (session['user_id'],))
+        solicitante_result = cursor.fetchone()
+        
+        if not solicitante_result:
+            flash('No se encontró información de solicitante para este usuario', 'error')
+            return redirect(url_for('index'))
+        
+        id_solicitante = solicitante_result['id_solicitante']
+        
+        # Obtener asesorías con información adicional solo del usuario logueado
         cursor.execute("""
             SELECT a.codigo_asesoria, a.fecha_asesoria, a.asesor_asignado,
-                CONCAT(u.nombres, ' ', u.apellidos) as solicitante
+                CONCAT(u.nombres, ' ', u.apellidos) as solicitante,
+                a.id_solicitante, a.id_asesor,
+                p.metodo_pago, p.total_pago as precio,
+                'Virtual (Zoom)' as lugar,
+                a.tipo_asesoria, a.descripcion, a.estado
             FROM tbl_asesoria a
             JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
             JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-        """)
+            LEFT JOIN tbl_pago p ON s.id_solicitante = p.id_solicitante
+            WHERE a.id_solicitante = %s
+            ORDER BY a.fecha_asesoria DESC
+        """, (id_solicitante,))
         asesorias = cursor.fetchall()
-        
-        # Obtener solicitantes para el formulario
-        cursor.execute("""
-            SELECT s.id_solicitante, CONCAT(u.nombres, ' ', u.apellidos) as nombre
-            FROM tbl_solicitante s
-            JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-        """)
-        solicitantes = cursor.fetchall()
         
         cursor.close()
         connection.close()
-        return render_template('asesorias.html', asesorias=asesorias, solicitantes=solicitantes)
+        return render_template('asesorias.html', asesorias=asesorias)
     else:
         flash('Error de conexión a la base de datos', 'error')
         return redirect(url_for('index'))
-    
+
+# Modificación de la función nueva_asesoria para incluir el número de documento
 @app.route('/nueva_asesoria', methods=['POST'])
 def nueva_asesoria():
     if 'user_id' not in session:
@@ -454,75 +473,136 @@ def nueva_asesoria():
     # Obtener datos del formulario
     id_solicitante = request.form['id_solicitante']
     fecha_asesoria = request.form['fecha_asesoria']
-    asesor_asignado = request.form['asesor_asignado']
+    tipo_asesoria = request.form.get('tipo_asesoria', 'Visa de Trabajo')
+    descripcion = request.form.get('descripcion', '')
+    lugar = request.form.get('lugar', 'Virtual (Zoom)')
+    metodo_pago = request.form.get('metodo_pago', 'Tarjeta de Crédito')
+    tipo_documento = request.form.get('tipo_documento', 'C.C')
+    numero_documento = request.form.get('numero_documento', '')
     
     connection = create_connection()
     if connection:
         cursor = connection.cursor()
         try:
-            # Insertar nueva asesoría
+            # Obtener el último número de asesoría para este solicitante
             cursor.execute("""
-                INSERT INTO tbl_asesoria (fecha_asesoria, asesor_asignado, id_solicitante)
-                VALUES (%s, %s, %s)
-            """, (fecha_asesoria, asesor_asignado, id_solicitante))
+                SELECT COALESCE(MAX(numero_asesoria), 0) + 1 as next_num
+                FROM tbl_asesoria
+                WHERE id_solicitante = %s
+            """, (id_solicitante,))
+            
+            result = cursor.fetchone()
+            numero_asesoria = result[0] if result else 1
+            
+            # Insertar nueva asesoría con estado "Pendiente" y documento
+            cursor.execute("""
+                INSERT INTO tbl_asesoria (fecha_asesoria, asesor_asignado, id_solicitante, tipo_asesoria, descripcion, lugar, estado, tipo_documento, numero_documento, numero_asesoria)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (fecha_asesoria, "Por asignar", id_solicitante, tipo_asesoria, descripcion, lugar, "Pendiente", tipo_documento, numero_documento, numero_asesoria))
+            
+            # Obtener el ID de la asesoría recién creada
+            asesoria_id = cursor.lastrowid
+            
+            # Verificar si ya existe un pago para este solicitante
+            cursor.execute("""
+                SELECT num_factura FROM tbl_pago WHERE id_solicitante = %s
+            """, (id_solicitante,))
+            
+            pago_existente = cursor.fetchone()
+            
+            # Si no existe un pago, crear uno nuevo
+            if not pago_existente:
+                cursor.execute("""
+                    INSERT INTO tbl_pago (metodo_pago, total_pago, id_solicitante)
+                    VALUES (%s, %s, %s)
+                """, (metodo_pago, 150.00, id_solicitante))
             
             connection.commit()
-            flash('Asesoría creada con éxito', 'success')
+            flash('Asesoría solicitada con éxito. Un asesor será asignado pronto.', 'success')
         except Error as e:
             connection.rollback()
-            flash(f'Error al crear la asesoría: {e}', 'error')
+            flash(f'Error al solicitar la asesoría: {e}', 'error')
         finally:
             cursor.close()
             connection.close()
     else:
         flash('Error de conexión a la base de datos', 'error')
     
-    return redirect(url_for('asesorias'))  
-
-@app.route('/eliminar_asesoria/<int:codigo_asesoria>')
-def eliminar_asesoria(codigo_asesoria):
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    try:
-        connection = create_connection()
-        if connection:
-            cursor = connection.cursor()
-            cursor.execute("DELETE FROM tbl_asesoria WHERE codigo_asesoria = %s", (codigo_asesoria,))
-            connection.commit()
-            cursor.close()
-            connection.close()
-            flash('Asesoría eliminada exitosamente', 'success')
-        else:
-            flash('Error de conexión a la base de datos', 'danger')
-    except Exception as e:
-        flash(f'Error al eliminar la asesoría: {str(e)}', 'danger')
-    
     return redirect(url_for('asesorias'))
 
+# Modificación de la función editar_asesoria para el usuario común
 @app.route('/editar_asesoria/<int:codigo_asesoria>', methods=['GET', 'POST'])
 def editar_asesoria(codigo_asesoria):
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
+    # Verificar que la asesoría pertenezca al usuario logueado
+    connection = create_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        
+        # Obtener el id_solicitante del usuario logueado
+        cursor.execute("""
+            SELECT id_solicitante FROM tbl_solicitante WHERE id_usuario = %s
+        """, (session['user_id'],))
+        solicitante_result = cursor.fetchone()
+        
+        if not solicitante_result:
+            cursor.close()
+            connection.close()
+            flash('No se encontró información de solicitante para este usuario', 'error')
+            return redirect(url_for('asesorias'))
+        
+        id_solicitante = solicitante_result['id_solicitante']
+        
+        # Verificar que la asesoría pertenezca al usuario
+        cursor.execute("""
+            SELECT * FROM tbl_asesoria WHERE codigo_asesoria = %s AND id_solicitante = %s
+        """, (codigo_asesoria, id_solicitante))
+        asesoria = cursor.fetchone()
+        
+        if not asesoria:
+            cursor.close()
+            connection.close()
+            flash('No tienes permiso para editar esta asesoría', 'error')
+            return redirect(url_for('asesorias'))
+        
+        # Solo permitir editar asesorías pendientes
+        if asesoria['estado'] != 'Pendiente':
+            cursor.close()
+            connection.close()
+            flash('Solo puedes editar asesorías en estado pendiente', 'warning')
+            return redirect(url_for('asesorias'))
+        
+        cursor.close()
+        connection.close()
+    
     if request.method == 'POST':
         try:
-            id_solicitante = request.form.get('id_solicitante')
             fecha_asesoria = request.form.get('fecha_asesoria')
-            asesor_asignado = request.form.get('asesor_asignado')
-            
-            if not id_solicitante or not fecha_asesoria or not asesor_asignado:
-                flash('Todos los campos son obligatorios', 'danger')
-                return redirect(url_for('editar_asesoria', codigo_asesoria=codigo_asesoria))
+            tipo_asesoria = request.form.get('tipo_asesoria')
+            descripcion = request.form.get('descripcion')
+            lugar = request.form.get('lugar')
+            metodo_pago = request.form.get('metodo_pago')
             
             connection = create_connection()
             if connection:
                 cursor = connection.cursor()
+                
+                # Actualizar la asesoría
                 cursor.execute("""
                     UPDATE tbl_asesoria 
-                    SET id_solicitante = %s, fecha_asesoria = %s, asesor_asignado = %s
-                    WHERE codigo_asesoria = %s
-                """, (id_solicitante, fecha_asesoria, asesor_asignado, codigo_asesoria))
+                    SET fecha_asesoria = %s, tipo_asesoria = %s, descripcion = %s, lugar = %s
+                    WHERE codigo_asesoria = %s AND id_solicitante = %s
+                """, (fecha_asesoria, tipo_asesoria, descripcion, lugar, codigo_asesoria, id_solicitante))
+                
+                # Actualizar el método de pago
+                cursor.execute("""
+                    UPDATE tbl_pago 
+                    SET metodo_pago = %s
+                    WHERE id_solicitante = %s
+                """, (metodo_pago, id_solicitante))
+                
                 connection.commit()
                 cursor.close()
                 connection.close()
@@ -534,38 +614,140 @@ def editar_asesoria(codigo_asesoria):
             flash(f'Error al actualizar la asesoría: {str(e)}', 'danger')
             return redirect(url_for('asesorias'))
     
-    try:
-        connection = create_connection()
-        if connection:
-            cursor = connection.cursor(dictionary=True)
-            cursor.execute("""
-                SELECT * FROM tbl_asesoria WHERE codigo_asesoria = %s
-            """, (codigo_asesoria,))
-            asesoria = cursor.fetchone()
-            
-            cursor.execute("""
-                SELECT s.id_solicitante, CONCAT(u.nombres, ' ', u.apellidos) as nombre
-                FROM tbl_solicitante s
-                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-                ORDER BY u.nombres, u.apellidos
-            """)
-            solicitantes = cursor.fetchall()
-            
+    # Si es GET, obtener los datos de la asesoría para mostrar en el formulario
+    connection = create_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        
+        cursor.execute("""
+            SELECT a.*, p.metodo_pago
+            FROM tbl_asesoria a
+            LEFT JOIN tbl_pago p ON a.id_solicitante = p.id_solicitante
+            WHERE a.codigo_asesoria = %s
+        """, (codigo_asesoria,))
+        asesoria = cursor.fetchone()
+        
+        cursor.close()
+        connection.close()
+        
+        return render_template('editar_asesoria.html', asesoria=asesoria)
+    else:
+        flash('Error de conexión a la base de datos', 'danger')
+        return redirect(url_for('asesorias'))
+
+# Función para cancelar una asesoría (solo para asesorías pendientes)
+@app.route('/cancelar_asesoria/<int:codigo_asesoria>', methods=['GET'])
+def cancelar_asesoria(codigo_asesoria):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Verificar que la asesoría pertenezca al usuario logueado
+    connection = create_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        
+        # Obtener el id_solicitante del usuario logueado
+        cursor.execute("""
+            SELECT id_solicitante FROM tbl_solicitante WHERE id_usuario = %s
+        """, (session['user_id'],))
+        solicitante_result = cursor.fetchone()
+        
+        if not solicitante_result:
             cursor.close()
             connection.close()
-            
-            if asesoria:
-                return render_template('editar_asesoria.html', asesoria=asesoria, solicitantes=solicitantes)
-            else:
-                flash('Asesoría no encontrada', 'danger')
-                return redirect(url_for('asesorias'))
-        else:
-            flash('Error de conexión a la base de datos', 'danger')
+            flash('No se encontró información de solicitante para este usuario', 'error')
             return redirect(url_for('asesorias'))
-    except Exception as e:
-        flash(f'Error al cargar el formulario: {str(e)}', 'danger')
-        return redirect(url_for('asesorias'))
-  
+        
+        id_solicitante = solicitante_result['id_solicitante']
+        
+        # Verificar que la asesoría pertenezca al usuario y esté pendiente
+        cursor.execute("""
+            SELECT * FROM tbl_asesoria 
+            WHERE codigo_asesoria = %s AND id_solicitante = %s AND estado = 'Pendiente'
+        """, (codigo_asesoria, id_solicitante))
+        asesoria = cursor.fetchone()
+        
+        if not asesoria:
+            cursor.close()
+            connection.close()
+            flash('No puedes cancelar esta asesoría', 'error')
+            return redirect(url_for('asesorias'))
+        
+        # Cancelar la asesoría
+        cursor.execute("""
+            UPDATE tbl_asesoria SET estado = 'Cancelada'
+            WHERE codigo_asesoria = %s
+        """, (codigo_asesoria,))
+        
+        connection.commit()
+        cursor.close()
+        connection.close()
+        flash('Asesoría cancelada exitosamente', 'success')
+    else:
+        flash('Error de conexión a la base de datos', 'error')
+    
+    return redirect(url_for('asesorias'))
+
+# Ruta para procesar pagos
+@app.route('/procesar_pago', methods=['POST'])
+def procesar_pago():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    codigo_asesoria = request.form.get('codigo_asesoria')
+    monto = request.form.get('monto')
+    metodo_pago = request.form.get('metodo_pago')
+    
+    # Obtener datos adicionales según el método de pago
+    datos_adicionales = {}
+    
+    if metodo_pago == 'Tarjeta de Crédito':
+        datos_adicionales['numero_tarjeta'] = request.form.get('numero_tarjeta', '')
+        datos_adicionales['fecha_expiracion'] = request.form.get('fecha_expiracion', '')
+        datos_adicionales['cvv'] = request.form.get('cvv', '')
+    elif metodo_pago == 'PayPal':
+        datos_adicionales['email_paypal'] = request.form.get('email_paypal', '')
+    elif metodo_pago == 'Transferencia Bancaria':
+        datos_adicionales['comprobante'] = request.form.get('comprobante_transferencia', '')
+        datos_adicionales['fecha_transferencia'] = request.form.get('fecha_transferencia', '')
+    
+    connection = create_connection()
+    if connection:
+        cursor = connection.cursor()
+        try:
+            # Registrar el pago
+            cursor.execute("""
+                INSERT INTO tbl_pago_asesoria (codigo_asesoria, monto, metodo_pago, estado_pago, datos_adicionales)
+                VALUES (%s, %s, %s, 'Completado', %s)
+            """, (codigo_asesoria, monto, metodo_pago, json.dumps(datos_adicionales)))
+            
+            # Actualizar el estado de la asesoría a "Pagada"
+            cursor.execute("""
+                UPDATE tbl_asesoria SET estado = 'Pagada' WHERE codigo_asesoria = %s
+            """, (codigo_asesoria,))
+            
+            connection.commit()
+            flash('Pago procesado exitosamente', 'success')
+        except Error as e:
+            connection.rollback()
+            flash(f'Error al procesar el pago: {e}', 'error')
+        finally:
+            cursor.close()
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos', 'error')
+    
+    return redirect(url_for('asesorias'))
+
+
+
+# Función para obtener la fecha y hora actual (para usar en las plantillas)
+@app.context_processor
+def utility_processor():
+    def now():
+        return datetime.now()
+    return dict(now=now)
+
 @app.route('/pagos')
 def pagos():
     if 'user_id' not in session:
