@@ -3,180 +3,463 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asesorías - Sistema de Inmigración Canadiense</title>
+    <title>Pagos - Sistema de Inmigración Canadiense</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="../static/css/output.css" rel="stylesheet">
-
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos personalizados */
+        .border-l-3 {
+            border-left-width: 3px;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        /* Estilos para el modal */
+        .modal {
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal-content {
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal.show .modal-content {
+            transform: scale(1);
+        }
+    </style>
 </head>
-<body class="bg-gray-600 font-sans text-gray-800">
-    <div class="flex flex-col md:flex-row">
-        <!-- Sidebar -->
-        <nav class="w-[27%] min-h-screen bg-gray-900 shadow-2xl flex flex-col justify-between p-4 border-r border-gray-800 sticky top-0">
-
-
-            <!-- Logo -->
-            <div>
-                <div class="flex items-center justify-center">
-                    <!-- Imagen con tamaño personalizado -->
-                    <img src="../static/img/Logo_Canadian.png" 
-                         alt="Descripción de la imagen" 
-                         class="rounded-full object-contain" 
-                         style="width: 100px; height: 100px;">
+<body class="font-['Inter'] bg-gray-50 text-gray-700 overflow-x-hidden m-0 p-0">
+    <!-- Sidebar -->
+    <aside class="fixed w-60 h-[calc(100vh-40px)] bg-white rounded-2xl m-5 shadow-lg z-10 transition-all duration-300 ease-in-out flex flex-col">
+        <div class="flex items-center p-6 border-b border-gray-100">
+            <div class="flex items-center font-bold text-2xl text-gray-900">
+                <div class="w-20 h-20 rounded-full flex items-center justify-center mr-3 font-bold overflow-hidden mx-auto">
+                    <img src="../static/img/Logo_Canadian.png" alt="Logo" class="w-full h-full object-cover object-center scale-110">
                 </div>
-                <div class="h-px w-full bg-gradient-to-r from-transparent via-white to-transparent my-6"></div>
             </div>
-            
-            <!-- Navegación principal mejorada -->
-            
-            <div class="flex-grow bg-gray-900 p-4 rounded-xl">
-                <ul class="space-y-4">
-                    <li>
-                        <a href="{{ url_for('solicitantes') }}" class="flex items-center p-4 rounded-lg text-white bg-gray-800 hover:bg-red-600 hover:shadow-xl transition-all duration-300">
-                            <svg class="w-6 h-6 mr-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
-                            <span class="font-semibold">Solicitantes</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url_for('formularios') }}" class="flex items-center p-4 rounded-lg text-white bg-gray-800 hover:bg-red-600 hover:shadow-xl transition-all duration-300">
-                            <svg class="w-6 h-6 mr-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            <span class="font-semibold">Formularios</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url_for('asesorias') }}" class="flex items-center p-4 rounded-lg text-white bg-gray-800 hover:bg-red-600 hover:shadow-xl transition-all duration-300">
-                            <svg class="w-6 h-6 mr-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
-                            </svg>
-                            <span class="font-semibold">Asesorías</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ url_for('pagos') }}" class="flex items-center p-4 rounded-lg bg-red-600 text-white border-l-4 border-white shadow-lg">
-                            <svg class="w-6 h-6 mr-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                            </svg>
-                            <span class="font-semibold">Pagos</span>
-                        </a>
-                        
-                        
-                    </li>
-                    <li>
-                        <a href="{{ url_for('documentos') }}" class="flex items-center p-4 rounded-lg text-white bg-gray-800 hover:bg-red-600 hover:shadow-xl transition-all duration-300">
-                            <svg class="w-6 h-6 mr-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                            </svg>
-                            <span class="font-semibold">Documentos</span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-            
+        </div>
 
-            <div class="h-px w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent my-6"></div>
+        <nav class="flex-1 overflow-y-auto overflow-x-hidden py-4">
+            <a href="/" class="flex items-center px-6 py-3 text-gray-500 no-underline transition-all duration-300 ease-in-out border-l-3 border-transparent hover:text-red-500 hover:translate-x-1 relative overflow-hidden group">
+                <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                <span>Inicio</span>
+                <span class="absolute inset-0 w-0 bg-red-50 -z-10 transition-all duration-300 ease-in-out group-hover:w-full"></span>
+            </a>
 
-            <!-- Botones de inicio y cerrar sesión -->
-            <div class="space-y-4">
-                <a href="{{ url_for('index') }}" class="flex items-center p-3 rounded-lg text-white hover:bg-gray-800 hover:bg-red-600 hover:bg-primary-light hover:text-white hover:translate-x-1 transition-all duration-300">
-                    <svg class="w-5 h-5 mr-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-7-7v14"></path>
-                    </svg>
-                    <span class="font-medium">Inicio</span>
-                </a>
-                <a href="{{ url_for('logout') }}" class="flex items-center p-3 rounded-lg text-white hover:bg-gray-800 hover:bg-red-600 hover:bg-primary-light hover:text-white hover:translate-x-1 transition-all duration-300">
-                    <svg class="w-5 h-5 mr-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                    </svg>
-                    <span class="font-medium">Cerrar Sesión</span>
-                </a>
-            </div>
-            
+            <a href="/solicitantes" class="flex items-center px-6 py-3 text-gray-500 no-underline transition-all duration-300 ease-in-out border-l-3 border-transparent hover:text-red-500 hover:translate-x-1 relative overflow-hidden group">
+                <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                <span>Solicitantes</span>
+                <span class="absolute inset-0 w-0 bg-red-50 -z-10 transition-all duration-300 ease-in-out group-hover:w-full"></span>
+            </a>
+
+            <a href="/formularios" class="flex items-center px-6 py-3 text-gray-500 no-underline transition-all duration-300 ease-in-out border-l-3 border-transparent hover:text-red-500 hover:translate-x-1 relative overflow-hidden group">
+                <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <span>Formularios</span>
+                <span class="absolute inset-0 w-0 bg-red-50 -z-10 transition-all duration-300 ease-in-out group-hover:w-full"></span>
+            </a>
+
+            <a href="/asesorias" class="flex items-center px-6 py-3 text-gray-500 no-underline transition-all duration-300 ease-in-out border-l-3 border-transparent hover:text-red-500 hover:translate-x-1 relative overflow-hidden group">
+                <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                </svg>
+                <span>Asesorías</span>
+                <span class="absolute inset-0 w-0 bg-red-50 -z-10 transition-all duration-300 ease-in-out group-hover:w-full"></span>
+            </a>
+
+            <a href="/pagos" class="flex items-center px-6 py-3 text-red-500 no-underline transition-all duration-300 ease-in-out border-l-3 border-red-500 font-medium bg-red-50 relative overflow-hidden group">
+                <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                <span>Pagos</span>
+            </a>
+
+            <a href="/documentos" class="flex items-center px-6 py-3 text-gray-500 no-underline transition-all duration-300 ease-in-out border-l-3 border-transparent hover:text-red-500 hover:translate-x-1 relative overflow-hidden group">
+                <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                </svg>
+                <span>Documentos</span>
+                <span class="absolute inset-0 w-0 bg-red-50 -z-10 transition-all duration-300 ease-in-out group-hover:w-full"></span>
+            </a>
+
+            <a href="/chat" class="flex items-center px-6 py-3 text-gray-500 no-underline transition-all duration-300 ease-in-out border-l-3 border-transparent hover:text-red-500 hover:translate-x-1 relative overflow-hidden group">
+                <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                </svg>
+                <span>Chat</span>
+                <span class="absolute inset-0 w-0 bg-red-50 -z-10 transition-all duration-300 ease-in-out group-hover:w-full"></span>
+            </a>
+
+            <a href="/usuarios" class="flex items-center px-6 py-3 text-gray-500 no-underline transition-all duration-300 ease-in-out border-l-3 border-transparent hover:text-red-500 hover:translate-x-1 relative overflow-hidden group">
+                <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                <span>Usuarios</span>
+                <span class="absolute inset-0 w-0 bg-red-50 -z-10 transition-all duration-300 ease-in-out group-hover:w-full"></span>
+            </a>
+
+            <a href="/configuracion" class="flex items-center px-6 py-3 text-gray-500 no-underline transition-all duration-300 ease-in-out border-l-3 border-transparent hover:text-red-500 hover:translate-x-1 relative overflow-hidden group">
+                <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <span>Configuración</span>
+                <span class="absolute inset-0 w-0 bg-red-50 -z-10 transition-all duration-300 ease-in-out group-hover:w-full"></span>
+            </a>
         </nav>
 
-        <!-- Contenido principal -->
-        <main class="flex-1 p-4 md:p-8">
-            <div class="bg-gray-800 rounded-xl shadow-md p-6 mb-8 border text-white">
-                <h1 class="text-3xl font-semibold mb-6 text-white relative inline-block">Pagos</h1>
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div class="relative w-full md:w-72">
-                        <input type="text" id="search" placeholder="Buscar pago..." class="pl-4 pr-4 py-2 w-full border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary">
+        <!-- User profile -->
+        <div class="mt-auto border-t border-gray-100">
+            <div class="flex items-center p-6">
+                <div class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 mr-3 text-gray-500 transition-all duration-300 ease-in-out shadow-sm">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <div class="font-medium text-gray-900">
+                        {% if session is defined and 'user_name' in session %}
+                            {{ session['user_name'] }}
+                        {% else %}
+                            Usuario
+                        {% endif %}
                     </div>
-                    <button class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg flex items-center shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-110 hover:-translate-y-2 hover:rotate-2 hover:brightness-110 hover:outline-none">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                        </svg>
-                        Nueva Pago
-                    </button>
+                    <div class="text-xs text-gray-500">
+                        {% if session is defined and 'user_role' in session %}
+                            {{ session['user_role'] }}
+                        {% else %}
+                            Administrador
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-gray-800 rounded-xl shadow-md overflow-hidden border border-white">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-primary text-white">
-                            <tr>
-                                <th class="px-6 py-4 text-left text-xs font-medium uppercase">Número de Factura</th>
-                                <th class="px-6 py-4 text-left text-xs font-medium uppercase">Solicitante</th>
-                                <th class="px-6 py-4 text-left text-xs font-medium uppercase">Método de Pago</th>
-                                <th class="px-6 py-4 text-left text-xs font-medium uppercase">Total</th>
-                                <th class="px-6 py-4 text-left text-xs font-medium uppercase">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-gray-800 divide-y divide-white" id="table-body">
-                            {% for pago in pagos %}
-                            <tr class="hover:bg-gray-700 transition-colors duration-200">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white">{{ pago.num_factura }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white">{{ pago.solicitante }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-white">{{ pago.metodo_pago }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">${{ pago.total_pago }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <div class="flex space-x-2">
-                                        <button class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-800 text-white hover:bg-gray-400">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            <a href="/logout" class="flex items-center w-full p-3 text-gray-500 border-t border-gray-100 transition-all duration-300 ease-in-out hover:text-red-500 hover:bg-gray-50 text-sm">
+                <svg class="w-5 h-5 mr-2 transition-transform duration-300 ease-in-out" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                </svg>
+                <span>Cerrar sesión</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-[calc(240px+40px)] p-8 min-h-screen">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 m-0 mb-2">Pagos</h1>
+            <p class="text-gray-500 text-sm">Gestiona los pagos de inmigración canadiense</p>
+        </div>
+
+        <!-- Barra de búsqueda y filtros -->
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div class="relative flex-grow max-w-md">
+                <input 
+                    type="text" 
+                    id="search" 
+                    placeholder="Buscar pagos..." 
+                    class="w-full py-3 pl-10 pr-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 shadow-sm"
+                >
+                <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-3">
+                <select id="filter-metodo" class="py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 shadow-sm">
+                    <option value="">Todos los métodos</option>
+                    <option value="tarjeta">Tarjeta de Crédito</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="paypal">PayPal</option>
+                    <option value="efectivo">Efectivo</option>
+                </select>
+                
+                <select id="filter-date" class="py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 shadow-sm">
+                    <option value="">Todas las fechas</option>
+                    <option value="today">Hoy</option>
+                    <option value="week">Esta semana</option>
+                    <option value="month">Este mes</option>
+                </select>
+                
+                <button onclick="resetFilters()" class="py-3 px-4 text-sm font-medium rounded-xl transition-all duration-300 bg-gray-100 text-gray-700 hover:bg-gray-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Botón para abrir el formulario de nuevo pago -->
+        <button onclick="openNewPaymentModal()" class="inline-flex items-center justify-center py-3 px-6 text-sm font-medium rounded-xl transition-all duration-300 bg-red-500 text-white border-0 shadow-lg shadow-red-500/20 hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/30 hover:translate-y-[-2px] active:translate-y-0 relative overflow-hidden mb-6">
+            <svg class="w-5 h-5 mr-2 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            <span>Nuevo Pago</span>
+        </button>
+
+        <!-- Listado de Pagos -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 animate-fadeIn transition-all duration-300 hover:shadow-xl">
+            <div class="mb-6 flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-900 m-0 mb-2">Listado de Pagos</h2>
+                    <p class="text-gray-500 text-sm">Lista de todos los pagos registrados en el sistema</p>
+                </div>
+                <!-- Botón para abrir modal de nuevo pago -->
+                <button onclick="openNewPaymentModal()" class="py-3 px-6 text-sm font-medium rounded-xl transition-all duration-300 bg-red-500 text-white hover:bg-red-600 flex items-center">
+                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Nuevo Pago
+                </button>
+            </div>
+
+            <!-- Barra de búsqueda -->
+            <div class="mb-4">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="text-gray-400">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <input type="text" id="search-table" class="w-full pl-10 py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 shadow-sm" placeholder="Buscar pagos...">
                 </div>
             </div>
-        </main>
+
+            <!-- Tabla de pagos -->
+            <div class="overflow-x-hidden rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-300 hover:shadow-xl">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr>
+                            <th class="bg-gray-50 p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                Número de Factura
+                            </th>
+                            <th class="bg-gray-50 p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                Solicitante
+                            </th>
+                            <th class="bg-gray-50 p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                Método de Pago
+                            </th>
+                            <th class="bg-gray-50 p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                Total
+                            </th>
+                            <th class="bg-gray-50 p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                Acciones
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        {% for pago in pagos %}
+                        <tr class="transition-all duration-300 hover:bg-gray-50 hover:scale-[1.01] hover:shadow-md relative z-0">
+                            <td class="p-4 text-sm border-b border-gray-200 text-gray-700">{{ pago.num_factura }}</td>
+                            <td class="p-4 text-sm border-b border-gray-200 text-gray-700">{{ pago.solicitante }}</td>
+                            <td class="p-4 text-sm border-b border-gray-200 text-gray-700">{{ pago.metodo_pago }}</td>
+                            <td class="p-4 text-sm border-b border-gray-200 text-gray-700">${{ pago.total_pago }}</td>
+                            <td class="p-4 text-sm border-b border-gray-200">
+                                <div class="flex space-x-2">
+                                    <button class="flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 transition-all duration-300 hover:text-red-500 hover:translate-y-[-3px] relative overflow-hidden" title="Ver detalles">
+                                        <span class="absolute inset-0 bg-current opacity-0 rounded-lg transition-opacity duration-300 hover:opacity-10"></span>
+                                        <svg class="relative z-10 transition-transform duration-300 hover:scale-110 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                    </button>
+                                    <button class="flex items-center justify-center w-9 h-9 rounded-lg text-red-500 transition-all duration-300 hover:text-red-600 hover:translate-y-[-3px] relative overflow-hidden" title="Eliminar">
+                                        <span class="absolute inset-0 bg-current opacity-0 rounded-lg transition-opacity duration-300 hover:opacity-10"></span>
+                                        <svg class="relative z-10 transition-transform duration-300 hover:scale-110 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                    <button class="flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 transition-all duration-300 hover:text-red-500 hover:translate-y-[-3px] relative overflow-hidden" title="Editar">
+                                        <span class="absolute inset-0 bg-current opacity-0 rounded-lg transition-opacity duration-300 hover:opacity-10"></span>
+                                        <svg class="relative z-10 transition-transform duration-300 hover:scale-110 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not pagos %}
+                        <tr id="no-results">
+                            <td colspan="5" class="p-4 text-sm text-center text-gray-500">
+                                No hay pagos registrados en el sistema
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal para Nuevo Pago -->
+    <div id="newPaymentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50 modal">
+        <div class="bg-white rounded-2xl shadow-lg p-6 w-full max-w-md modal-content">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Nuevo Pago</h2>
+            <form action="/nuevo_pago" method="POST">
+                <div class="mb-4">
+                    <label for="id_solicitante" class="block text-sm font-medium text-gray-700 mb-2">Solicitante</label>
+                    <select id="id_solicitante" name="id_solicitante" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 shadow-sm" required>
+                        <option value="">Seleccione un solicitante</option>
+                        {% for solicitante in solicitantes %}
+                            <option value="{{ solicitante.id_solicitante }}">{{ solicitante.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label for="metodo_pago" class="block text-sm font-medium text-gray-700 mb-2">Método de Pago</label>
+                    <select id="metodo_pago" name="metodo_pago" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 shadow-sm" required>
+                        <option value="">Seleccione un método de pago</option>
+                        <option value="Tarjeta de Crédito">Tarjeta de Crédito</option>
+                        <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+                        <option value="PayPal">PayPal</option>
+                        <option value="Efectivo">Efectivo</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label for="monto" class="block text-sm font-medium text-gray-700 mb-2">Monto</label>
+                    <input type="number" step="0.01" id="monto" name="monto" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 shadow-sm" required>
+                </div>
+
+                <div class="mb-4">
+                    <label for="fecha_pago" class="block text-sm font-medium text-gray-700 mb-2">Fecha de Pago</label>
+                    <input type="date" id="fecha_pago" name="fecha_pago" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 shadow-sm" required>
+                </div>
+
+                <div class="mb-4">
+                    <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
+                    <input type="text" id="descripcion" name="descripcion" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 shadow-sm">
+                </div>
+
+                <div class="flex justify-end space-x-4">
+                    <button type="button" onclick="closeNewPaymentModal()" class="py-3 px-6 text-sm font-medium rounded-xl transition-all duration-300 bg-gray-200 text-gray-700 hover:bg-gray-300">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="py-3 px-6 text-sm font-medium rounded-xl transition-all duration-300 bg-red-500 text-white hover:bg-red-600">
+                        Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
-        // Hacer que el enlace activo cambie de clase cuando se hace clic
-        document.querySelectorAll('nav a').forEach(link => {
-            link.addEventListener('click', () => {
-                document.querySelectorAll('nav a').forEach(l => {
-                    l.classList.remove('bg-primary-light', 'text-primary', 'border-l-4', 'border-primary', 'font-semibold');
-                    l.classList.add('text-gray-700', 'hover:bg-primary-light', 'hover:text-primary', 'hover:translate-x-1');
-                });
-                link.classList.remove('text-gray-700', 'hover:bg-primary-light', 'hover:text-primary', 'hover:translate-x-1');
-                link.classList.add('bg-primary-light', 'text-primary', 'border-l-4', 'border-primary', 'font-semibold');
-            });
-        });
-
-        // Añadir funcionalidad de búsqueda
-        document.getElementById('search').addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const rows = document.querySelectorAll('tbody tr');
+        // Script para búsqueda en tiempo real
+        document.getElementById('search-table').addEventListener('keyup', function() {
+            const searchValue = this.value.toLowerCase();
+            const tableRows = document.querySelectorAll('#table-body tr:not(#no-results)');
+            let hasResults = false;
             
-            rows.forEach(row => {
+            tableRows.forEach(row => {
                 const text = row.textContent.toLowerCase();
-                if(text.includes(searchTerm)) {
+                if(text.includes(searchValue)) {
                     row.style.display = '';
+                    hasResults = true;
                 } else {
                     row.style.display = 'none';
                 }
             });
+            
+            // Mostrar mensaje de "no se encontraron resultados" si no hay coincidencias
+            const noResults = document.getElementById('no-results');
+            if (noResults) {
+                noResults.style.display = hasResults ? 'none' : '';
+            }
         });
+
+        // Animaciones mejoradas para elementos de la interfaz
+        document.addEventListener('DOMContentLoaded', function() {
+            // Añadir clase para animar la aparición de las filas de la tabla
+            const rows = document.querySelectorAll('#table-body tr');
+            rows.forEach((row, index) => {
+                setTimeout(() => {
+                    row.style.opacity = '0';
+                    row.style.transform = 'translateY(20px)';
+                    row.style.transition = 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                    
+                    setTimeout(() => {
+                        row.style.opacity = '1';
+                        row.style.transform = 'translateY(0)';
+                    }, 50);
+                }, index * 80);
+            });
+
+            // Inicializar el modal correctamente - asegurarse que está oculto al inicio
+            const modal = document.getElementById('newPaymentModal');
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        });
+
+        // Funciones para abrir y cerrar el modal
+        function openNewPaymentModal() {
+            const modal = document.getElementById('newPaymentModal');
+            modal.style.display = 'flex';
+            // Pequeño retraso para permitir que el navegador aplique el display:flex antes de remover hidden
+            setTimeout(() => {
+                modal.classList.remove('hidden');
+                modal.classList.add('show');
+            }, 10);
+        }
+
+        function closeNewPaymentModal() {
+            const modal = document.getElementById('newPaymentModal');
+            modal.classList.remove('show');
+            modal.classList.add('hidden');
+            // Esperar a que termine la animación antes de cambiar el display
+            setTimeout(() => {
+                if (modal.classList.contains('hidden')) {
+                    modal.style.display = 'none';
+                }
+            }, 300);
+        }
+
+        // Cerrar modal al hacer clic fuera de él
+        window.onclick = function(event) {
+            const modal = document.getElementById('newPaymentModal');
+            if (event.target === modal) {
+                closeNewPaymentModal();
+            }
+        };
+
+        // Función para resetear los filtros
+        function resetFilters() {
+            document.getElementById('search').value = '';
+            document.getElementById('search-table').value = '';
+            document.getElementById('filter-metodo').selectedIndex = 0;
+            document.getElementById('filter-date').selectedIndex = 0;
+            
+            // Mostrar todas las filas
+            const tableRows = document.querySelectorAll('#table-body tr:not(#no-results)');
+            tableRows.forEach(row => {
+                row.style.display = '';
+            });
+            
+            // Ocultar mensaje de "no se encontraron resultados"
+            const noResults = document.getElementById('no-results');
+            if (noResults) {
+                noResults.style.display = 'none';
+            }
+        }
     </script>
 </body>
 </html>
