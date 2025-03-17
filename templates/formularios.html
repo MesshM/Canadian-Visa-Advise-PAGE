@@ -6,220 +6,505 @@
     <title>Formularios - Sistema de Inmigración Canadiense</title>
     <link href="../static/css/output.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50 font-sans">
-    <header class="bg-white shadow-sm">
-        <div class="container mx-auto px-4 py-4">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center">
-                    <svg class="h-8 w-8 text-red-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2L14.5 9H22L16 13.5L18.5 20.5L12 16L5.5 20.5L8 13.5L2 9H9.5L12 2Z" fill="currentColor"/>
-                    </svg>
-                    <span class="ml-2 text-xl font-semibold text-gray-800">Inmigración Canadiense</span>
-                </div>
-                <div class="flex items-center">
-                    <a href="{{ url_for('index') }}" class="nav-link mr-4">Inicio</a>
-                    <a href="{{ url_for('logout') }}" class="btn-secondary flex items-center">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                        </svg>
-                        Cerrar Sesión
-                    </a>
+<body class="font-['Inter'] bg-gray-50 text-gray-700 overflow-x-hidden m-0 p-0">
+    <!-- Sidebar -->
+    <aside class="fixed w-60 h-[calc(100vh-40px)] bg-white rounded-2xl m-5 shadow-lg z-10 transition-all duration-300 ease-in-out flex flex-col">
+        <div class="flex items-center p-6 border-b border-gray-100">
+            <div class="flex items-center font-bold text-2xl text-gray-900">
+                <div class="w-20 h-20 rounded-full flex items-center justify-center mr-3 font-bold overflow-hidden mx-auto">
+                    <img src="../static/img/Logo_Canadian.png" alt="Usuario" class="w-full h-full object-cover object-center scale-110">
                 </div>
             </div>
         </div>
-    </header>
 
-    <nav class="bg-white border-b border-gray-200">
-        <div class="container mx-auto px-4">
-            <div class="flex justify-center space-x-1 py-3 overflow-x-auto">
-                <a href="{{ url_for('solicitantes') }}" class="nav-link flex items-center">
-                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <nav class="flex-1 overflow-y-auto overflow-x-hidden py-4">
+            <a href="/" class="flex items-center px-6 py-3 text-gray-500 no-underline transition-all duration-300 ease-in-out border-l-3 border-transparent hover:text-red-500 hover:translate-x-1 relative overflow-hidden group">
+                <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                <span>Inicio</span>
+                <span class="absolute inset-0 w-0 bg-red-50 -z-10 transition-all duration-300 ease-in-out group-hover:w-full"></span>
+            </a>
+            
+            <a href="{{ url_for('solicitantes') }}" class="flex items-center px-6 py-3 text-gray-500 no-underline transition-all duration-300 ease-in-out border-l-3 border-transparent hover:text-red-500 hover:translate-x-1 relative overflow-hidden group">
+                <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                <span>Solicitantes</span>
+                <span class="absolute inset-0 w-0 bg-red-50 -z-10 transition-all duration-300 ease-in-out group-hover:w-full"></span>
+            </a>
+
+            <a href="{{ url_for('formularios') }}" class="flex items-center px-6 py-3 text-red-500 no-underline transition-all duration-300 ease-in-out border-l-3 border-red-500 font-medium bg-red-50 relative overflow-hidden group">
+                <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <span>Formularios</span>
+            </a>
+            
+            <a href="{{ url_for('documentos') }}" class="flex items-center px-6 py-3 text-gray-500 no-underline transition-all duration-300 ease-in-out border-l-3 border-transparent hover:text-red-500 hover:translate-x-1 relative overflow-hidden group">
+                <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                </svg>
+                <span>Documentos</span>
+                <span class="absolute inset-0 w-0 bg-red-50 -z-10 transition-all duration-300 ease-in-out group-hover:w-full"></span>
+            </a>
+
+            <a href="{{ url_for('asesorias') }}" class="flex items-center px-6 py-3 text-gray-500 no-underline transition-all duration-300 ease-in-out border-l-3 border-transparent hover:text-red-500 hover:translate-x-1 relative overflow-hidden group">
+                <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                </svg>
+                <span>Asesorías</span>
+                <span class="absolute inset-0 w-0 bg-red-50 -z-10 transition-all duration-300 ease-in-out group-hover:w-full"></span>
+            </a>
+            
+            <a href="{{ url_for('pagos') }}" class="flex items-center px-6 py-3 text-gray-500 no-underline transition-all duration-300 ease-in-out border-l-3 border-transparent hover:text-red-500 hover:translate-x-1 relative overflow-hidden group">
+                <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                <span>Pagos</span>
+                <span class="absolute inset-0 w-0 bg-red-50 -z-10 transition-all duration-300 ease-in-out group-hover:w-full"></span>
+            </a>
+
+            <a href="/chat" class="flex items-center px-6 py-3 text-gray-500 no-underline transition-all duration-300 ease-in-out border-l-3 border-transparent hover:text-red-500 hover:translate-x-1 relative overflow-hidden group">
+                <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                </svg>
+                <span>Chat</span>
+                <span class="absolute inset-0 w-0 bg-red-50 -z-10 transition-all duration-300 ease-in-out group-hover:w-full"></span>
+            </a>
+
+            <a href="/usuarios" class="flex items-center px-6 py-3 text-gray-500 no-underline transition-all duration-300 ease-in-out border-l-3 border-transparent hover:text-red-500 hover:translate-x-1 relative overflow-hidden group">
+                <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                <span>Usuarios</span>
+                <span class="absolute inset-0 w-0 bg-red-50 -z-10 transition-all duration-300 ease-in-out group-hover:w-full"></span>
+            </a>
+
+            <a href="/configuracion" class="flex items-center px-6 py-3 text-gray-500 no-underline transition-all duration-300 ease-in-out border-l-3 border-transparent hover:text-red-500 hover:translate-x-1 relative overflow-hidden group">
+                <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <span>Configuración</span>
+                <span class="absolute inset-0 w-0 bg-red-50 -z-10 transition-all duration-300 ease-in-out group-hover:w-full"></span>
+            </a>
+        </nav>
+
+        <!-- Perfil de usuario en la parte inferior -->
+        <div class="mt-auto border-t border-gray-100">
+            <div class="flex items-center p-6">
+                <div class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 mr-3 text-gray-500 transition-all duration-300 ease-in-out shadow-sm">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                     </svg>
-                    Solicitantes
-                </a>
-                <a href="{{ url_for('formularios') }}" class="nav-link nav-link-active flex items-center">
-                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    Formularios
-                </a>
-                <a href="{{ url_for('asesorias') }}" class="nav-link flex items-center">
-                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
-                    </svg>
-                    Asesorías
-                </a>
-                <a href="{{ url_for('pagos') }}" class="nav-link flex items-center">
-                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
-                    Pagos
-                </a>
-                <a href="{{ url_for('documentos') }}" class="nav-link flex items-center">
-                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                    </svg>
-                    Documentos
-                </a>
+                </div>
+                <div class="flex-1">
+                    <div class="font-medium text-gray-900">
+                        {% if session is defined and 'user_name' in session %}
+                            {{ session['user_name'] }}
+                        {% else %}
+                            Usuario
+                        {% endif %}
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        {% if session is defined and 'user_role' in session %}
+                            {{ session['user_role'] }}
+                        {% else %}
+                            Rol no definido
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-        </div>
-    </nav>
 
-    <main class="container mx-auto px-4 py-8">
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div class="p-6">
-                <h1 class="text-2xl font-bold text-gray-800 mb-6">Formularios de Elegibilidad</h1>
-                
-                <div class="mb-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
-                    <div class="relative w-full sm:w-64">
-                        <input type="text" id="search" placeholder="Buscar formulario..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                            </svg>
+            <a href="/logout" class="flex items-center w-full p-3 text-gray-500 border-t border-gray-100 transition-all duration-300 ease-in-out hover:text-red-500 hover:bg-gray-50 text-sm">
+                <svg class="w-5 h-5 mr-2 transition-transform duration-300 ease-in-out" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                </svg>
+                <span>Cerrar sesión</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-[calc(240px+40px)] p-8 min-h-screen">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 m-0 mb-2">Formularios de Elegibilidad</h1>
+            <p class="text-gray-500 text-sm">Gestiona los formularios de elegibilidad para visas canadienses</p>
+        </div>
+        
+        <!-- Contenido principal -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 animate-[fadeIn_0.5s_ease] transition-all duration-300 hover:shadow-xl">
+            <div class="mb-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
+                <div class="relative w-full sm:w-64">
+                    <input type="text" id="search" placeholder="Buscar formulario..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <button id="btn-nuevo-formulario" class="w-full sm:w-auto px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors flex items-center justify-center shadow-lg shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/30 hover:translate-y-[-2px] active:translate-y-0">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Nuevo Formulario
+                </button>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solicitante</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Motivo de Viaje</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código de Pasaporte</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">País de Residencia</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Provincia de Destino</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="table-body">
+                        {% for formulario in formularios %}
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ formulario.id_formElegibilidad }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ formulario.solicitante }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ formulario.motivo_viaje }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ formulario.codigo_pasaporte }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ formulario.pais_residencia }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ formulario.provincia_destino }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex space-x-2">
+                                    <button class="text-indigo-600 hover:text-indigo-900 transition-colors" title="Ver" onclick="verFormulario({{ formulario.id_formElegibilidad }})">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                    </button>
+                                    <button class="text-blue-600 hover:text-blue-900 transition-colors" title="Editar" onclick="editarFormulario({{ formulario.id_formElegibilidad }})">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                    </button>
+                                    <button class="text-red-600 hover:text-red-900 transition-colors" title="Eliminar" onclick="eliminarFormulario({{ formulario.id_formElegibilidad }})">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        <tr id="no-results" class="hidden">
+                            <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">No se encontraron resultados</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-6">
+                <nav class="flex items-center justify-between">
+                    <div class="flex-1 flex justify-between sm:hidden">
+                        <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Anterior
+                        </a>
+                        <a href="#" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Siguiente
+                        </a>
+                    </div>
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm text-gray-700">
+                                Mostrando <span class="font-medium">1</span> a <span class="font-medium">10</span> de <span class="font-medium">{{ total_formularios if total_formularios is defined else '0' }}</span> resultados
+                            </p>
+                        </div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Anterior</span>
+                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                                <a href="#" aria-current="page" class="z-10 bg-red-50 border-red-500 text-red-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                    1
+                                </a>
+                                <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                    2
+                                </a>
+                                <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 hidden md:inline-flex relative items-center px-4 py-2 border text-sm font-medium">
+                                    3
+                                </a>
+                                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                    ...
+                                </span>
+                                <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 hidden md:inline-flex relative items-center px-4 py-2 border text-sm font-medium">
+                                    8
+                                </a>
+                                <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                    9
+                                </a>
+                                <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                    10
+                                </a>
+                                <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Siguiente</span>
+                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                            </nav>
                         </div>
                     </div>
-                    <button class="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center justify-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                        </svg>
-                        Nuevo Formulario
-                    </button>
-                </div>
-                
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solicitante</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Motivo de Viaje</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código de Pasaporte</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">País de Residencia</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Provincia de Destino</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            {% for formulario in formularios %}
-                            <tr class="hover:bg-gray-50 transition-colors">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ formulario.id_formElegibilidad }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ formulario.solicitante }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ formulario.motivo_viaje }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ formulario.codigo_pasaporte }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ formulario.pais_residencia }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ formulario.provincia_destino }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <div class="flex space-x-2">
-                                        <button class="text-indigo-600 hover:text-indigo-900 transition-colors" title="Ver">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                            </svg>
-                                        </button>
-                                        <button class="text-blue-600 hover:text-blue-900 transition-colors" title="Editar">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                            </svg>
-                                        </button>
-                                        <button class="text-red-600 hover:text-red-900 transition-colors" title="Eliminar">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="mt-6">
-                    <nav class="flex items-center justify-between">
-                        <div class="flex-1 flex justify-between sm:hidden">
-                            <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                                Anterior
-                            </a>
-                            <a href="#" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                                Siguiente
-                            </a>
-                        </div>
-                        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                            <div>
-                                <p class="text-sm text-gray-700">
-                                    Mostrando <span class="font-medium">1</span> a <span class="font-medium">10</span> de <span class="font-medium">97</span> resultados
-                                </p>
-                            </div>
-                            <div>
-                                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                                    <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                        <span class="sr-only">Anterior</span>
-                                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                        </svg>
-                                    </a>
-                                    <a href="#" aria-current="page" class="z-10 bg-red-50 border-red-500 text-red-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
-                                        1
-                                    </a>
-                                    <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
-                                        2
-                                    </a>
-                                    <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 hidden md:inline-flex relative items-center px-4 py-2 border text-sm font-medium">
-                                        3
-                                    </a>
-                                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                                        ...
-                                    </span>
-                                    <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 hidden md:inline-flex relative items-center px-4 py-2 border text-sm font-medium">
-                                        8
-                                    </a>
-                                    <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
-                                        9
-                                    </a>
-                                    <a href="#" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
-                                        10
-                                    </a>
-                                    <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                        <span class="sr-only">Siguiente</span>
-                                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                                        </svg>
-                                    </a>
-                                </nav>
-                            </div>
-                        </div>
-                    </nav>
-                </div>
+                </nav>
             </div>
         </div>
     </main>
 
-    <footer class="bg-white border-t border-gray-200 mt-12">
-        <div class="container mx-auto px-4 py-6">
-            <div class="text-center text-gray-600 text-sm">
-                <p>&copy; 2025 Sistema de Inmigración Canadiense. Todos los derechos reservados.</p>
+    <!-- Modal para crear/editar formulario -->
+    <div id="modal-formulario" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-semibold text-gray-900" id="modal-title">Nuevo Formulario de Elegibilidad</h3>
+                    <button id="btn-cerrar-modal" class="text-gray-400 hover:text-gray-500">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
+            <form id="form-formulario" method="POST" action="{{ url_for('crear_formulario') }}">
+                <input type="hidden" name="id_formulario" id="id_formulario" value="">
+                <div class="p-6 space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Sección de información básica -->
+                        <div>
+                            <h4 class="text-lg font-medium text-gray-900 mb-4">Información Básica</h4>
+                            
+                            <div class="mb-4">
+                                <label for="id_solicitante" class="block text-sm font-medium text-gray-700 mb-1">Solicitante:</label>
+                                <select name="id_solicitante" id="id_solicitante" required class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 shadow-sm">
+                                    <option value="">Seleccione un solicitante</option>
+                                    {% for solicitante in solicitantes %}
+                                    <option value="{{ solicitante.id_solicitante }}">{{ solicitante.nombres }} {{ solicitante.apellidos }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="motivo_viaje" class="block text-sm font-medium text-gray-700 mb-1">Motivo de Viaje:</label>
+                                <select name="motivo_viaje" id="motivo_viaje" required class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 shadow-sm">
+                                    <option value="">Seleccione un motivo</option>
+                                    <option value="Turismo">Turismo</option>
+                                    <option value="Trabajo">Trabajo</option>
+                                    <option value="Estudios">Estudios</option>
+                                    <option value="Negocios">Negocios</option>
+                                    <option value="Familiar">Visita Familiar</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="codigo_pasaporte" class="block text-sm font-medium text-gray-700 mb-1">Código de Pasaporte:</label>
+                                <input type="text" name="codigo_pasaporte" id="codigo_pasaporte" required class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 shadow-sm">
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="pais_residencia" class="block text-sm font-medium text-gray-700 mb-1">País de Residencia:</label>
+                                <input type="text" name="pais_residencia" id="pais_residencia" required class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 shadow-sm">
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="estado_civil" class="block text-sm font-medium text-gray-700 mb-1">Estado Civil:</label>
+                                <select name="estado_civil" id="estado_civil" required class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 shadow-sm">
+                                    <option value="">Seleccione un estado</option>
+                                    <option value="Soltero">Soltero/a</option>
+                                    <option value="Casado">Casado/a</option>
+                                    <option value="Divorciado">Divorciado/a</option>
+                                    <option value="Viudo">Viudo/a</option>
+                                    <option value="Unión Libre">Unión Libre</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Sección de información adicional -->
+                        <div>
+                            <h4 class="text-lg font-medium text-gray-900 mb-4">Información Adicional</h4>
+                            
+                            <div class="mb-4">
+                                <label for="provincia_destino" class="block text-sm font-medium text-gray-700 mb-1">Provincia de Destino:</label>
+                                <select name="provincia_destino" id="provincia_destino" required class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 shadow-sm">
+                                    <option value="">Seleccione una provincia</option>
+                                    <option value="Ontario">Ontario</option>
+                                    <option value="Quebec">Quebec</option>
+                                    <option value="British Columbia">British Columbia</option>
+                                    <option value="Alberta">Alberta</option>
+                                    <option value="Manitoba">Manitoba</option>
+                                    <option value="Saskatchewan">Saskatchewan</option>
+                                    <option value="Nova Scotia">Nova Scotia</option>
+                                    <option value="New Brunswick">New Brunswick</option>
+                                    <option value="Newfoundland and Labrador">Newfoundland and Labrador</option>
+                                    <option value="Prince Edward Island">Prince Edward Island</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="trabajo_actual" class="block text-sm font-medium text-gray-700 mb-1">Trabajo Actual:</label>
+                                <input type="text" name="trabajo_actual" id="trabajo_actual" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 shadow-sm">
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="negocios_actuales" class="block text-sm font-medium text-gray-700 mb-1">Negocios Actuales:</label>
+                                <input type="text" name="negocios_actuales" id="negocios_actuales" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 shadow-sm">
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Familiares en Canadá:</label>
+                                    <div class="flex items-center space-x-4">
+                                        <label class="inline-flex items-center">
+                                            <input type="radio" name="familiares_canada" value="Sí" class="form-radio text-red-500">
+                                            <span class="ml-2">Sí</span>
+                                        </label>
+                                        <label class="inline-flex items-center">
+                                            <input type="radio" name="familiares_canada" value="No" class="form-radio text-red-500" checked>
+                                            <span class="ml-2">No</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label for="relacion_familiares_can" class="block text-sm font-medium text-gray-700 mb-1">Relación:</label>
+                                    <input type="text" name="relacion_familiares_can" id="relacion_familiares_can" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/10 shadow-sm">
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Viajes Recientes:</label>
+                                    <div class="flex items-center space-x-4">
+                                        <label class="inline-flex items-center">
+                                            <input type="radio" name="viajes_recientes" value="Sí" class="form-radio text-red-500">
+                                            <span class="ml-2">Sí</span>
+                                        </label>
+                                        <label class="inline-flex items-center">
+                                            <input type="radio" name="viajes_recientes" value="No" class="form-radio text-red-500" checked>
+                                            <span class="ml-2">No</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Acompañante a Canadá:</label>
+                                    <div class="flex items-center space-x-4">
+                                        <label class="inline-flex items-center">
+                                            <input type="radio" name="acompanante_canada" value="Sí" class="form-radio text-red-500">
+                                            <span class="ml-2">Sí</span>
+                                        </label>
+                                        <label class="inline-flex items-center">
+                                            <input type="radio" name="acompanante_canada" value="No" class="form-radio text-red-500" checked>
+                                            <span class="ml-2">No</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+                    <button type="button" id="btn-cancelar" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-xl hover:bg-gray-300 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/30 hover:translate-y-[-2px] active:translate-y-0">
+                        Guardar Formulario
+                    </button>
+                </div>
+            </form>
         </div>
-    </footer>
+    </div>
 
     <script>
         // Script para búsqueda en tiempo real
         document.getElementById('search').addEventListener('keyup', function() {
             const searchValue = this.value.toLowerCase();
-            const tableRows = document.querySelectorAll('tbody tr');
+            const tableRows = document.querySelectorAll('#table-body tr:not(#no-results)');
+            let hasResults = false;
             
             tableRows.forEach(row => {
                 const text = row.textContent.toLowerCase();
                 if(text.includes(searchValue)) {
                     row.style.display = '';
+                    hasResults = true;
                 } else {
                     row.style.display = 'none';
                 }
             });
+            
+            // Mostrar mensaje de "no se encontraron resultados" si no hay coincidencias
+            const noResultsRow = document.getElementById('no-results');
+            if (noResultsRow) {
+                if (hasResults) {
+                    noResultsRow.style.display = 'none';
+                } else {
+                    noResultsRow.style.display = '';
+                    noResultsRow.querySelector('td').textContent = 'No se encontraron resultados para "' + searchValue + '"';
+                }
+            }
         });
+        
+        // Funcionalidad del modal
+        const modal = document.getElementById('modal-formulario');
+        const btnNuevoFormulario = document.getElementById('btn-nuevo-formulario');
+        const btnCerrarModal = document.getElementById('btn-cerrar-modal');
+        const btnCancelar = document.getElementById('btn-cancelar');
+        
+        btnNuevoFormulario.addEventListener('click', function() {
+            document.getElementById('modal-title').textContent = 'Nuevo Formulario de Elegibilidad';
+            document.getElementById('form-formulario').reset();
+            document.getElementById('id_formulario').value = '';
+            modal.classList.remove('hidden');
+        });
+        
+        btnCerrarModal.addEventListener('click', function() {
+            modal.classList.add('hidden');
+        });
+        
+        btnCancelar.addEventListener('click', function() {
+            modal.classList.add('hidden');
+        });
+        
+        // Cerrar modal al hacer clic fuera de él
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+            }
+        });
+        
+        // Funciones para acciones de la tabla
+        function verFormulario(id) {
+            // Implementar lógica para ver detalles del formulario
+            alert('Ver formulario con ID: ' + id);
+        }
+        
+        function editarFormulario(id) {
+            document.getElementById('modal-title').textContent = 'Editar Formulario de Elegibilidad';
+            document.getElementById('id_formulario').value = id;
+            
+            // Aquí se cargarían los datos del formulario desde el servidor
+            // Por ahora solo mostramos el modal
+            modal.classList.remove('hidden');
+        }
+        
+        function eliminarFormulario(id) {
+            if (confirm('¿Está seguro de que desea eliminar este formulario?')) {
+                // Implementar lógica para eliminar formulario
+                alert('Formulario con ID: ' + id + ' eliminado');
+            }
+        }
     </script>
 </body>
 </html>
