@@ -3,7 +3,7 @@
 
 {% block title %}CVA | Inicio{% endblock %}
 
-{% block content %}
+{% block main %}
     <!-- Header with notification icon -->
     <div class="flex justify-between items-center mb-8 animate-fade-in">
         <h1 class="text-3xl font-bold text-gray-900 font-roboto">Inicio</h1>
@@ -47,12 +47,12 @@
     <div class="mb-8 animate-fade-in delay-100">
         <ul class="flex flex-wrap -mb-px text-sm font-medium text-center border-b border-gray-200" id="newsTabs" role="tablist">
             <li class="mr-2" role="presentation">
-                <button class="inline-block p-4 border-b-2 border-primary-600 text-primary-600 rounded-t-lg active font-roboto" id="platform-tab" data-tab="platform" type="button" role="tab" aria-selected="true">
+                <button class="inline-block p-4 border-b-2 border-primary-600 text-primary-600 rounded-t-lg active font-inter" id="platform-tab" data-tab="platform" type="button" role="tab" aria-selected="true">
                     Noticias de la Plataforma
                 </button>
             </li>
             <li class="mr-2" role="presentation">
-                <button class="inline-block p-4 border-b-2 border-transparent hover:text-primary-600 hover:border-primary-300 rounded-t-lg font-roboto" id="canada-tab" data-tab="canada" type="button" role="tab" aria-selected="false">
+                <button class="inline-block p-4 border-b-2 border-transparent hover:text-primary-600 hover:border-primary-300 rounded-t-lg font-inter" id="canada-tab" data-tab="canada" type="button" role="tab" aria-selected="false">
                     Noticias de Canadá
                 </button>
             </li>
@@ -63,7 +63,7 @@
     <div id="platform-content" class="tab-content active">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
             <!-- Featured News -->
-            <div class="col-span-1 md:col-span-2 bg-white rounded-xl shadow-card hover:shadow-card-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1 animate-fade-in delay-200">
+            <div class="col-span-1 md:col-span-2 bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1 animate-fade-in delay-200">
                 <div class="md:flex">
                     <div class="md:flex-shrink-0 overflow-hidden">
                         <img class="h-48 w-full object-cover md:w-48 transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/news-featured.jpg" alt="Actualización de la plataforma" onerror="this.src='../static/img/placeholder.jpg'">
@@ -90,7 +90,7 @@
             </div>
 
             <!-- Regular News Items -->
-            <div class="bg-white rounded-xl shadow-card hover:shadow-card-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1 animate-fade-in delay-300">
+            <div class="bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1 animate-fade-in delay-300">
                 <div class="overflow-hidden">
                     <img class="h-48 w-full object-cover transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/news-1.jpg" alt="Nuevos formularios" onerror="this.src='../static/img/placeholder.jpg'">
                 </div>
@@ -114,7 +114,7 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-card hover:shadow-card-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1 animate-fade-in delay-400">
+            <div class="bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1 animate-fade-in delay-400">
                 <div class="overflow-hidden">
                     <img class="h-48 w-full object-cover transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/news-2.jpg" alt="Asesorías virtuales" onerror="this.src='../static/img/placeholder.jpg'">
                 </div>
@@ -193,7 +193,7 @@
     <div id="canada-content" class="tab-content hidden">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
             <!-- Featured Canada News -->
-            <div class="col-span-1 md:col-span-2 bg-white rounded-xl shadow-card hover:shadow-card-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1">
+            <div class="col-span-1 md:col-span-2 bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1">
                 <div class="md:flex">
                     <div class="md:flex-shrink-0 overflow-hidden">
                         <img class="h-48 w-full object-cover md:w-48 transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/canada-news-featured.jpg" alt="Nuevas políticas de inmigración" onerror="this.src='../static/img/placeholder.jpg'">
@@ -220,7 +220,7 @@
             </div>
 
             <!-- Regular Canada News Items -->
-            <div class="bg-white rounded-xl shadow-card hover:shadow-card-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1">
+            <div class="bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1">
                 <div class="overflow-hidden">
                     <img class="h-48 w-full object-cover transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/canada-news-1.jpg" alt="Express Entry" onerror="this.src='../static/img/placeholder.jpg'">
                 </div>
@@ -244,7 +244,7 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-card hover:shadow-card-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1">
+            <div class="bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1">
                 <div class="overflow-hidden">
                     <img class="h-48 w-full object-cover transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/canada-news-2.jpg" alt="Visas de trabajo" onerror="this.src='../static/img/placeholder.jpg'">
                 </div>
@@ -268,7 +268,7 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-card hover:shadow-card-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1">
+            <div class="bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1">
                 <div class="overflow-hidden">
                     <img class="h-48 w-full object-cover transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/canada-news-3.jpg" alt="Provincias canadienses" onerror="this.src='../static/img/placeholder.jpg'">
                 </div>
@@ -295,71 +295,5 @@
     </div>
 
     <!-- JavaScript for tabs and notification dropdown -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Tab functionality
-            const tabs = document.querySelectorAll('[data-tab]');
-            const tabContents = document.querySelectorAll('.tab-content');
-            
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    // Remove active class from all tabs
-                    tabs.forEach(t => {
-                        t.classList.remove('border-primary-600', 'text-primary-600');
-                        t.classList.add('border-transparent', 'hover:text-primary-600', 'hover:border-primary-300');
-                        t.setAttribute('aria-selected', 'false');
-                    });
-                    
-                    // Add active class to clicked tab
-                    tab.classList.add('border-primary-600', 'text-primary-600');
-                    tab.classList.remove('border-transparent', 'hover:text-primary-600', 'hover:border-primary-300');
-                    tab.setAttribute('aria-selected', 'true');
-                    
-                    // Hide all tab contents
-                    tabContents.forEach(content => {
-                        content.classList.add('hidden');
-                        content.classList.remove('active');
-                    });
-                    
-                    // Show the selected tab content with animation
-                    const tabId = tab.getAttribute('data-tab');
-                    const activeContent = document.getElementById(`${tabId}-content`);
-                    activeContent.classList.remove('hidden');
-                    activeContent.classList.add('active');
-                    
-                    // Add animation to news cards
-                    const newsCards = activeContent.querySelectorAll('.news-card, .bg-white.rounded-xl');
-                    newsCards.forEach((card, index) => {
-                        card.style.opacity = '0';
-                        card.style.transform = 'translateY(20px)';
-                        setTimeout(() => {
-                            card.style.transition = 'all 0.5s ease-out';
-                            card.style.opacity = '1';
-                            card.style.transform = 'translateY(0)';
-                        }, 100 * index);
-                    });
-                });
-            });
-            
-            // Notification dropdown functionality
-            const notificationBtn = document.getElementById('notificationBtn');
-            const notificationDropdown = document.getElementById('notificationDropdown');
-            const notificationBadge = document.getElementById('notificationBadge');
-            
-            notificationBtn.addEventListener('click', () => {
-                notificationDropdown.classList.toggle('hidden');
-                // Clear notification count when opened
-                if (!notificationDropdown.classList.contains('hidden')) {
-                    notificationBadge.classList.add('hidden');
-                }
-            });
-            
-            // Close dropdown when clicking outside
-            document.addEventListener('click', (event) => {
-                if (!notificationBtn.contains(event.target) && !notificationDropdown.contains(event.target)) {
-                    notificationDropdown.classList.add('hidden');
-                }
-            });
-        });
-    </script>
+    <script src="../static/js/index.js"></script>
 {% endblock %}
