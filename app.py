@@ -9,6 +9,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 from pytz import timezone
 from dotenv import load_dotenv
+import random
+import string
 
 # Cargar variables de entorno desde .env
 load_dotenv()
@@ -127,18 +129,9 @@ def forgot_password():
                 if user:
                     # Generar token y fecha de expiración
                     token = secrets.token_urlsafe(32)
-                    expiration = datetime.now() + timedelta(hours=1)
-                    
-                    # Guardar token en la base de datos
-                    cursor.execute("""
-                        CREATE TABLE IF NOT EXISTS tbl_password_reset (
-                            id INT AUTO_INCREMENT PRIMARY KEY,
-                            user_id INT NOT NULL,
-                            token VARCHAR(255) NOT NULL,
-                            expiration DATETIME NOT NULL,
-                            FOREIGN KEY (user_id) REFERENCES tbl_usuario(id_usuario)
-                        """)
-                    
+                    colombia_tz = timezone('America/Bogota')
+                    expiration = datetime.now(colombia_tz) + timedelta(hours=1)
+
                     cursor.execute("""
                         INSERT INTO tbl_password_reset (user_id, token, expiration)
                         VALUES (%s, %s, %s)
@@ -298,15 +291,51 @@ def solicitantes():
     connection = create_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT s.id_solicitante, u.id_usuario, u.nombres, u.apellidos, u.correo, u.fecha_nacimiento 
-            FROM tbl_solicitante
-            JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-        """)
-        solicitante = cursor.fetchall()
-        cursor.close()
-        connection.close()
-        return render_template('solicitante.html', solicitante=solicitante)
+        try:
+            # Contar el total de solicitantes para la paginación
+            cursor.execute("SELECT COUNT(*) as total FROM tbl_solicitante")
+            total = cursor.fetchone()['total']
+            
+            # Calcular el offset para la paginación
+            offset = (page - 1) * per_page
+            
+            # Obtener los solicitantes para la página actual
+            cursor.execute("""
+                SELECT s.id_solicitante, u.id_usuario, u.nombres, u.apellidos, u.correo, u.fecha_nacimiento 
+                FROM tbl_solicitante s
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+                ORDER BY s.id_solicitante DESC
+                LIMIT %s OFFSET %s
+            """, (per_page, offset))
+            
+            solicitantes = cursor.fetchall()
+            
+            # Obtener usuarios que no son solicitantes para el formulario de agregar
+            cursor.execute("""
+                SELECT id_usuario, CONCAT(nombres, ' ', apellidos) as nombre_completo, correo
+                FROM tbl_usuario
+                WHERE id_usuario NOT IN (SELECT id_usuario FROM tbl_solicitante)
+                ORDER BY nombres
+            """)
+            
+            usuarios_disponibles = cursor.fetchall()
+            
+            # Calcular el número total de páginas
+            total_pages = (total + per_page - 1) // per_page
+            
+            return render_template(
+                'solicitudes.html', 
+                solicitantes=solicitantes,
+                usuarios_disponibles=usuarios_disponibles,
+                page=page,
+                total_pages=total_pages,
+                total=total
+            )
+        except Error as e:
+            flash(f'Error al cargar los solicitantes: {e}', 'error')
+        finally:
+            cursor.close()
+            connection.close()
     else:
         flash('Error de conexión a la base de datos', 'error')
     
@@ -360,17 +389,24 @@ def formularios():
     connection = create_connection()
     if connection:
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT fe.id_formElegibilidad, CONCAT(u.nombres, ' ', u.apellidos) as solicitante, 
-                fe.motivo_viaje, fe.codigo_pasaporte, fe.pais_residencia, fe.provincia_destino
-            FROM tbl_form_eligibilidadcva fe
-            JOIN tbl_solicitante s ON fe.id_solicitante = s.id_solicitante
-            JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-        """)
-        formularios = cursor.fetchall()
-        cursor.close()
-        connection.close()
-        return render_template('formularios.html', formularios=formularios)
+        try:
+            cursor.execute("""
+                SELECT fe.id_formElegibilidad, CONCAT(u.nombres, ' ', u.apellidos) as solicitante, 
+                    fe.motivo_viaje, fe.codigo_pasaporte, fe.pais_residencia, fe.provincia_destino
+                FROM tbl_form_eligibilidadCVA 
+                           fe
+                JOIN tbl_solicitante s ON fe.id_solicitante = s.id_solicitante
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+            """)
+            formularios = cursor.fetchall()
+            return render_template('formularios.html', formularios=formularios)
+        except Exception as e:
+            print(f"Error en la consulta: {e}")
+            flash('Error al cargar los formularios', 'error')
+            return redirect(url_for('index'))
+        finally:
+            cursor.close()
+            connection.close()
     else:
         flash('Error de conexión a la base de datos', 'error')
         return redirect(url_for('index'))
@@ -442,6 +478,93 @@ def nueva_asesoria():
         flash('Error de conexión a la base de datos', 'error')
     
     return redirect(url_for('asesorias'))  
+
+@app.route('/eliminar_asesoria/<int:codigo_asesoria>')
+def eliminar_asesoria(codigo_asesoria):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    try:
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor()
+            cursor.execute("DELETE FROM tbl_asesoria WHERE codigo_asesoria = %s", (codigo_asesoria,))
+            connection.commit()
+            cursor.close()
+            connection.close()
+            flash('Asesoría eliminada exitosamente', 'success')
+        else:
+            flash('Error de conexión a la base de datos', 'danger')
+    except Exception as e:
+        flash(f'Error al eliminar la asesoría: {str(e)}', 'danger')
+    
+    return redirect(url_for('asesorias'))
+
+@app.route('/editar_asesoria/<int:codigo_asesoria>', methods=['GET', 'POST'])
+def editar_asesoria(codigo_asesoria):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        try:
+            id_solicitante = request.form.get('id_solicitante')
+            fecha_asesoria = request.form.get('fecha_asesoria')
+            asesor_asignado = request.form.get('asesor_asignado')
+            
+            if not id_solicitante or not fecha_asesoria or not asesor_asignado:
+                flash('Todos los campos son obligatorios', 'danger')
+                return redirect(url_for('editar_asesoria', codigo_asesoria=codigo_asesoria))
+            
+            connection = create_connection()
+            if connection:
+                cursor = connection.cursor()
+                cursor.execute("""
+                    UPDATE tbl_asesoria 
+                    SET id_solicitante = %s, fecha_asesoria = %s, asesor_asignado = %s
+                    WHERE codigo_asesoria = %s
+                """, (id_solicitante, fecha_asesoria, asesor_asignado, codigo_asesoria))
+                connection.commit()
+                cursor.close()
+                connection.close()
+                flash('Asesoría actualizada exitosamente', 'success')
+            else:
+                flash('Error de conexión a la base de datos', 'danger')
+            return redirect(url_for('asesorias'))
+        except Exception as e:
+            flash(f'Error al actualizar la asesoría: {str(e)}', 'danger')
+            return redirect(url_for('asesorias'))
+    
+    try:
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute("""
+                SELECT * FROM tbl_asesoria WHERE codigo_asesoria = %s
+            """, (codigo_asesoria,))
+            asesoria = cursor.fetchone()
+            
+            cursor.execute("""
+                SELECT s.id_solicitante, CONCAT(u.nombres, ' ', u.apellidos) as nombre
+                FROM tbl_solicitante s
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+                ORDER BY u.nombres, u.apellidos
+            """)
+            solicitantes = cursor.fetchall()
+            
+            cursor.close()
+            connection.close()
+            
+            if asesoria:
+                return render_template('editar_asesoria.html', asesoria=asesoria, solicitantes=solicitantes)
+            else:
+                flash('Asesoría no encontrada', 'danger')
+                return redirect(url_for('asesorias'))
+        else:
+            flash('Error de conexión a la base de datos', 'danger')
+            return redirect(url_for('asesorias'))
+    except Exception as e:
+        flash(f'Error al cargar el formulario: {str(e)}', 'danger')
+        return redirect(url_for('asesorias'))
   
 @app.route('/pagos')
 def pagos():
@@ -621,7 +744,7 @@ def documentos():
                 d.pasaporte, d.historial_viajes, d.foto_digital, d.proposito_viaje
             FROM tbl_documentos_adjuntos d
             JOIN tbl_form_eligibilidadcva fe ON d.id_formElegibilidad = fe.id_formElegibilidad
-            JOIN tbl_solicitante ON fe.id_solicitante = s.id_solicitante
+            JOIN tbl_solicitante s ON fe.id_solicitante = s.id_solicitante
             JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
         """)
         documentos = cursor.fetchall()
