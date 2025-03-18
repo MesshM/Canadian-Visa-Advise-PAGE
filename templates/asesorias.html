@@ -17,7 +17,7 @@
             type="text" 
             id="search-input" 
             placeholder="Buscar en mis asesorías..." 
-            class="w-full py-3 pl-10 pr-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
+            class="w-full py-3 pl-10 pr-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
         >
         <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -25,20 +25,20 @@
     </div>
     
     <div class="flex flex-wrap items-center gap-3">
-        <select id="filter-status" class="py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
+        <select id="filter-status" class="py-3 px-4 border bg-white border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
             <option value="">Todos los estados</option>
             <option value="vigente">Vigente</option>
             <option value="vencida">Vencida</option>
         </select>
         
-        <select id="filter-date" class="py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
+        <select id="filter-date" class="py-3 px-4 border bg-white border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
             <option value="">Todas las fechas</option>
             <option value="today">Hoy</option>
             <option value="week">Esta semana</option>
             <option value="month">Este mes</option>
         </select>
         
-        <button onclick="resetFilters()" class="py-3 px-4 text-sm font-medium rounded-xl transition-all duration-300 bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer">
+        <button onclick="resetFilters()" class="py-3 px-6 border border-gray-200 text-sm font-medium rounded-xl transition-all duration-300 bg-white text-gray-700 hover:bg-gray-300 cursor-pointer shadow-sm">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
             </svg>
@@ -92,11 +92,11 @@
             <tbody id="asesorias-table-body">
                 {% if asesorias is defined and asesorias %}
                     {% for asesoria in asesorias %}
-                    {% set num_asesoria = loop.index %}
                     {% set current_date = now() %}
                     {% set is_expired = asesoria.fecha_asesoria|string < current_date|string %}
-                    <tr class="transition-all duration-300 hover:bg-gray-50 relative z-0" data-asesoria-id="{{ asesoria.codigo_asesoria }}" data-estado="{% if is_expired %}vencida{% else %}vigente{% endif %}" data-pago-estado="{{ asesoria.estado }}">
-                        <td class="p-4 text-sm border-b border-gray-200 text-gray-700">{{ num_asesoria }}</td>
+                    <tr class="transition-all duration-300 hover:bg-gray-50 relative z-0" data-asesoria-id="{{ asesoria.codigo_asesoria }}" data-estado="{% if is_expired %}vencida{% else %}vigente{% endif %}" data-pago-estado="{{ asesoria.estado }}" data-tipo-asesoria="{{ asesoria.tipo_asesoria }}">
+                        <!-- Cambiar la visualización del número de asesoría para usar el código interno -->
+                        <td class="p-4 text-sm border-b border-gray-200 text-gray-700 numero-asesoria"></td>
                         <td class="p-4 text-sm border-b border-gray-200 text-gray-700">
                             {% set fecha_parts = asesoria.fecha_asesoria|string|split(' ') %}
                             <div>{{ fecha_parts[0] }}</div>
@@ -107,8 +107,8 @@
                             <div class="flex items-center justify-between">
                                 <span>{{ asesoria.solicitante }}</span>
                                 {% if asesoria.estado == 'Pagada' %}
-                                <button class="ml-2 relative overflow-hidden group bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white text-xs font-medium py-1.5 px-4 rounded-lg shadow-md hover:shadow-blue-500/30 transition-all duration-300 cursor-default">
-                                    <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                                <button class="ml-2 relative overflow-hidden group bg-gradient-to-r from-blue-600 to-blue-500  text-white text-xs font-medium py-1.5 px-4 rounded-lg shadow-md hover:shadow-blue-500/30 transition-all duration-300 pagado-btn">
+                                    <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 "></span>
                                     <div class="relative flex items-center justify-center">
                                         <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -117,8 +117,8 @@
                                     </div>
                                 </button>
                                 {% elif not is_expired %}
-                                <button onclick="pagarAsesoria({{ asesoria.codigo_asesoria }})" class="ml-2 relative overflow-hidden group bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-600 text-white text-xs font-medium py-1.5 px-4 rounded-lg shadow-md hover:shadow-green-500/30 transition-all duration-300 cursor-pointer pago-btn">
-                                    <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                                <button onclick="pagarAsesoria({{ asesoria.codigo_asesoria }})" class="ml-2 relative overflow-hidden group bg-gradient-to-r from-green-600 to-green-500 text-white text-xs font-medium py-1.5 px-4 rounded-lg shadow-md hover:shadow-green-500/30 transition-all duration-300 cursor-pointer pago-btn scale-105 hover:scale-110">
+                                    <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 "></span>
                                     <div class="relative flex items-center justify-center">
                                         <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
@@ -180,18 +180,25 @@
                                     
                                     <div class="bg-white p-4 rounded-lg shadow">
                                         <h4 class="font-medium text-gray-900 mb-2">Detalles de la Asesoría</h4>
-                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Código de consulta:</span> <span class="font-mono">#{{ asesoria.codigo_asesoria }}</span></p>
+                                        <!-- Y también en la sección de detalles -->
+                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Código de consulta:</span> 
+                                            <span class="font-mono">#{{ asesoria.codigo_asesoria }}</span>
+                                        </p>
                                         <p class="text-sm text-gray-700 mb-1">
-                                            <span class="font-medium">Precio:</span> 
+                                            <span class="font-medium">Tipo de Visa:</span> 
+                                            <span>{{ asesoria.tipo_asesoria }}</span>
+                                        </p>
+                                        <p class="text-sm text-gray-700 mb-1 flex items-center">
+                                            <span class="font-medium mr-1">Precio:</span> 
                                             <span class="flex items-center">
-                                                $150.00 USD
+                                                ${{ asesoria.precio }} USD
                                                 {% if asesoria.estado == 'Pagada' %}
                                                 <svg class="w-4 h-4 ml-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                                 </svg>
                                                 {% endif %}
                                             </span>
-                                        </p>
+                                        </p>                                        
                                         {% set fecha_parts = asesoria.fecha_asesoria|string|split(' ') %}
                                         <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Fecha:</span> {{ fecha_parts[0] }}</p>
                                         <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Hora:</span> {{ fecha_parts[1] }}</p>
@@ -215,13 +222,18 @@
                                             {% endif %}
                                         </p>
                                         <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Método de Pago:</span> 
-                                            {% if asesoria.metodo_pago %}
+                                            {% if asesoria.estado == 'Pagada' and asesoria.metodo_pago_stripe %}
+                                                {{ asesoria.metodo_pago_stripe }}
+                                            {% elif asesoria.metodo_pago %}
                                                 {{ asesoria.metodo_pago }}
                                             {% else %}
                                                 Tarjeta de Crédito
                                             {% endif %}
                                         </p>
                                         <p class="text-sm text-gray-700"><span class="font-medium">Duración:</span> 60 minutos</p>
+                                        {% if asesoria.descripcion %}
+                                        <p class="text-sm text-gray-700 mt-2"><span class="font-medium">Descripción:</span> {{ asesoria.descripcion }}</p>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -275,11 +287,9 @@
             <div class="mb-4">
                 <label for="tipo_asesoria" class="block text-sm font-medium text-gray-700 mb-2">Tipo de Asesoría</label>
                 <select id="tipo_asesoria" name="tipo_asesoria" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer" required>
-                    <option value="Visa de Trabajo">Visa de Trabajo</option>
-                    <option value="Visa de Estudio">Visa de Estudio</option>
-                    <option value="Residencia Permanente">Residencia Permanente</option>
-                    <option value="Ciudadanía">Ciudadanía</option>
-                    <option value="Otro">Otro</option>
+                    {% for tipo, precio in precios_visa.items() %}
+                    <option value="{{ tipo }}" data-precio="{{ precio }}">{{ tipo }} - ${{ precio }}.00</option>
+                    {% endfor %}
                 </select>
             </div>
 
@@ -351,11 +361,9 @@
             <div class="mb-4">
                 <label for="edit_tipo_asesoria" class="block text-sm font-medium text-gray-700 mb-2">Tipo de Asesoría</label>
                 <select id="edit_tipo_asesoria" name="tipo_asesoria" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer" required>
-                    <option value="Visa de Trabajo">Visa de Trabajo</option>
-                    <option value="Visa de Estudio">Visa de Estudio</option>
-                    <option value="Residencia Permanente">Residencia Permanente</option>
-                    <option value="Ciudadanía">Ciudadanía</option>
-                    <option value="Otro">Otro</option>
+                    {% for tipo, precio in precios_visa.items() %}
+                    <option value="{{ tipo }}">{{ tipo }} - ${{ precio }}.00</option>
+                    {% endfor %}
                 </select>
             </div>
 
@@ -423,7 +431,7 @@
     </div>
 </div>
 
-<!-- Modal para Pago -->
+<!-- Modal para Pago con Stripe -->
 <div id="pagoModal" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
     <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md animate-scale-in">
         <div class="flex justify-between items-center mb-4">
@@ -435,8 +443,9 @@
             </button>
         </div>
         
-        <form id="pagoForm" action="/procesar_pago" method="POST">
+        <form id="payment-form" class="mb-4">
             <input type="hidden" id="pago_codigo_asesoria" name="codigo_asesoria">
+            <input type="hidden" id="pago_tipo_asesoria" name="tipo_asesoria">
             
             <div class="mb-4">
                 <label for="monto" class="block text-sm font-medium text-gray-700 mb-2">Monto a Pagar (USD)</label>
@@ -444,74 +453,31 @@
             </div>
             
             <div class="mb-4">
-                <label for="metodo_pago_pago" class="block text-sm font-medium text-gray-700 mb-2">Método de Pago</label>
-                <select id="metodo_pago_pago" name="metodo_pago" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer" required>
-                    <option value="Tarjeta de Crédito">Tarjeta de Crédito</option>
-                    <option value="PayPal">PayPal</option>
-                    <option value="Transferencia Bancaria">Transferencia Bancaria</option>
-                </select>
-            </div>
-            
-            <!-- Formulario para Tarjeta de Crédito -->
-            <div id="tarjeta-credito-form" class="mb-4 payment-form">
-                <label for="numero_tarjeta" class="block text-sm font-medium text-gray-700 mb-2">Número de Tarjeta</label>
-                <input type="text" id="numero_tarjeta" name="numero_tarjeta" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text" placeholder="XXXX XXXX XXXX XXXX">
-                
-                <div class="grid grid-cols-2 gap-4 mt-4">
-                    <div>
-                        <label for="fecha_expiracion" class="block text-sm font-medium text-gray-700 mb-2">Fecha de Expiración</label>
-                        <input type="text" id="fecha_expiracion" name="fecha_expiracion" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text" placeholder="MM/AA">
-                    </div>
-                    <div>
-                        <label for="cvv" class="block text-sm font-medium text-gray-700 mb-2">CVV</label>
-                        <input type="text" id="cvv" name="cvv" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text" placeholder="XXX">
-                    </div>
+                <label for="payment-element" class="block text-sm font-medium text-gray-700 mb-2">Detalles de Pago</label>
+                <div id="payment-element" class="p-4 border border-gray-200 rounded-xl">
+                    <!-- Stripe Elements se montará aquí -->
                 </div>
             </div>
 
-            <!-- Formulario para PayPal -->
-            <div id="paypal-form" class="mb-4 payment-form hidden">
-                <label for="email_paypal" class="block text-sm font-medium text-gray-700 mb-2">Correo Electrónico de PayPal</label>
-                <input type="email" id="email_paypal" name="email_paypal" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text" placeholder="tu@email.com">
-                
-                <div class="mt-4 p-4 bg-blue-50 rounded-lg">
-                    <p class="text-sm text-blue-700">Serás redirigido a PayPal para completar el pago de forma segura.</p>
-                </div>
-            </div>
-
-            <!-- Formulario para Transferencia Bancaria -->
-            <div id="transferencia-form" class="mb-4 payment-form hidden">
-                <div class="p-4 bg-gray-50 rounded-lg">
-                    <h3 class="text-sm font-medium text-gray-700 mb-2">Datos para la transferencia:</h3>
-                    <p class="text-sm text-gray-600 mb-1"><span class="font-medium">Banco:</span> Banco Nacional de Canadá</p>
-                    <p class="text-sm text-gray-600 mb-1"><span class="font-medium">Titular:</span> CVA Asesorías</p>
-                    <p class="text-sm text-gray-600 mb-1"><span class="font-medium">Cuenta:</span> 1234-5678-9012-3456</p>
-                    <p class="text-sm text-gray-600 mb-1"><span class="font-medium">SWIFT/BIC:</span> BNPAFRPPXXX</p>
-                    <p class="text-sm text-gray-600 mt-3">Una vez realizada la transferencia, por favor ingresa los datos de confirmación:</p>
-                </div>
-                
-                <div class="mt-4">
-                    <label for="comprobante_transferencia" class="block text-sm font-medium text-gray-700 mb-2">Número de Referencia</label>
-                    <input type="text" id="comprobante_transferencia" name="comprobante_transferencia" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text" placeholder="Número de referencia o comprobante">
-                </div>
-                
-                <div class="mt-4">
-                    <label for="fecha_transferencia" class="block text-sm font-medium text-gray-700 mb-2">Fecha de Transferencia</label>
-                    <input type="date" id="fecha_transferencia" name="fecha_transferencia" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
-                </div>
-            </div>
+            <div id="payment-message" class="hidden mb-4 p-3 rounded-lg text-sm"></div>
 
             <div class="flex justify-end space-x-4">
                 <button type="button" onclick="closePagoModal()" class="py-3 px-6 text-sm font-medium rounded-xl transition-all duration-300 bg-gray-200 text-gray-700 hover:bg-gray-300 cursor-pointer">
                     Cancelar
                 </button>
-                <button type="submit" class="relative overflow-hidden group bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-green-500/30 transition-all duration-300 cursor-pointer pago-submit-btn">
+                <button id="submit-button" type="submit" class="relative overflow-hidden group bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-green-500/30 transition-all duration-300 cursor-pointer scale-105 hover:scale-110">
                     <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
                     <div class="relative flex items-center justify-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
                         </svg>
-                        <span>Pagar Ahora</span>
+                        <span id="button-text">Pagar Ahora</span>
+                        <div id="spinner" class="hidden">
+                            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </div>
                     </div>
                 </button>
             </div>
@@ -520,6 +486,7 @@
 </div>
 
 <!-- JavaScript para la funcionalidad -->
+<script src="https://js.stripe.com/v3/"></script>
 <script src="../static/js/asesorias.js"></script>
 {% endblock %}
 

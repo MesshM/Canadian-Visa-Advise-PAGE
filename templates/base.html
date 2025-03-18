@@ -9,6 +9,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter&family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
     <link href="../static/css/output.css" rel="stylesheet">
+    <!-- Agregar esta línea en el head de la plantilla base -->
+    <meta name="stripe-public-key" content="{{ config.get('STRIPE_PUBLIC_KEY', '') }}">
+
 </head>
 <body class="bg-page-gradient text-gray-800 font-inter">
     <!-- Partículas de fondo (efecto decorativo) -->

@@ -1,6 +1,6 @@
 import smtplib
 from email.mime.text import MIMEText
-from flask import Flask, render_template, request, redirect, url_for, flash, session,jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 import mysql.connector
 from mysql.connector import Error
 import os
@@ -12,6 +12,9 @@ from dotenv import load_dotenv
 import random
 import string
 import json
+import stripe
+import threading
+import time
 
 # Cargar variables de entorno desde .env
 load_dotenv()
@@ -25,6 +28,20 @@ app.permanent_session_lifetime = timedelta(days=30)
 # Configuración de Zoho Mail
 ZOHO_EMAIL = os.getenv('ZOHO_EMAIL')  # Tu correo de Zoho
 ZOHO_PASSWORD = os.getenv('ZOHO_PASSWORD')  # Contraseña de aplicación de Zoho
+# Configurar Stripe con la clave secreta del .env
+app.config['STRIPE_SECRET_KEY'] = os.getenv('STRIPE_SECRET_KEY')
+app.config['STRIPE_PUBLIC_KEY'] = os.getenv('STRIPE_PUBLIC_KEY')
+
+stripe.api_key = app.config['STRIPE_SECRET_KEY']
+
+# Definir precios por tipo de visa
+PRECIOS_VISA = {
+    'Visa de Trabajo': 150.00,
+    'Visa de Estudio': 100.00,
+    'Residencia Permanente': 200.00,
+    'Ciudadanía': 250.00,
+    'Otro': 150.00
+}
 
 def send_email_via_zoho(to_email, subject, body):
     msg = MIMEText(body)
@@ -57,6 +74,37 @@ def create_connection():
     except Error as e:
         print(f"Error al conectar a MySQL: {e}")
         return None
+
+# Función para limpiar asesorías no pagadas después de 2 días
+def limpiar_asesorias_vencidas():
+    while True:
+        try:
+            print("Ejecutando limpieza de asesorías vencidas...")
+            connection = create_connection()
+            if connection:
+                cursor = connection.cursor()
+                # Obtener asesorías pendientes con más de 2 días de antigüedad
+                dos_dias_atras = datetime.now() - timedelta(days=2)
+                cursor.execute("""
+                    DELETE FROM tbl_asesoria 
+                    WHERE estado = 'Pendiente' 
+                    AND fecha_creacion < %s
+                """, (dos_dias_atras,))
+                
+                eliminadas = cursor.rowcount
+                connection.commit()
+                cursor.close()
+                connection.close()
+                print(f"Se eliminaron {eliminadas} asesorías vencidas")
+        except Exception as e:
+            print(f"Error al limpiar asesorías vencidas: {e}")
+        
+        # Esperar 12 horas antes de la próxima ejecución
+        time.sleep(12 * 60 * 60)
+
+# Iniciar el hilo de limpieza de asesorías
+limpieza_thread = threading.Thread(target=limpiar_asesorias_vencidas, daemon=True)
+limpieza_thread.start()
 
 # Definir el filtro personalizado
 @app.template_filter('split')
@@ -236,8 +284,6 @@ def logout():
     session.pop('user_name', None)
     return redirect(url_for('login'))
 
-
-
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
     if request.method == 'POST':
@@ -283,7 +329,6 @@ def registro():
         else:
             flash('Error de conexión a la base de datos', 'error')
     return render_template('registro.html')
-
 
 @app.route('/solicitantes')
 def solicitantes():
@@ -417,7 +462,6 @@ def formularios():
         flash('Error de conexión a la base de datos', 'error')
         return redirect(url_for('index'))
 
-
 # Modificación de la función asesorias para mostrar solo las asesorías del usuario logueado
 @app.route('/asesorias')
 def asesorias():
@@ -444,14 +488,23 @@ def asesorias():
         cursor.execute("""
             SELECT a.codigo_asesoria, a.fecha_asesoria, a.asesor_asignado,
                 CONCAT(u.nombres, ' ', u.apellidos) as solicitante,
-                a.id_solicitante, a.id_asesor,
-                p.metodo_pago, p.total_pago as precio,
+                a.id_solicitante, a.id_asesor, a.tipo_asesoria,
+                p.metodo_pago, 
+                COALESCE(pa.monto, CASE 
+                    WHEN a.tipo_asesoria = 'Visa de Trabajo' THEN 150.00
+                    WHEN a.tipo_asesoria = 'Visa de Estudio' THEN 100.00
+                    WHEN a.tipo_asesoria = 'Residencia Permanente' THEN 200.00
+                    WHEN a.tipo_asesoria = 'Ciudadanía' THEN 250.00
+                    ELSE 150.00
+                END) as precio,
                 'Virtual (Zoom)' as lugar,
-                a.tipo_asesoria, a.descripcion, a.estado
+                a.descripcion, a.estado,
+                pa.metodo_pago as metodo_pago_stripe
             FROM tbl_asesoria a
             JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
             JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
             LEFT JOIN tbl_pago p ON s.id_solicitante = p.id_solicitante
+            LEFT JOIN tbl_pago_asesoria pa ON a.codigo_asesoria = pa.codigo_asesoria
             WHERE a.id_solicitante = %s
             ORDER BY a.fecha_asesoria DESC
         """, (id_solicitante,))
@@ -459,12 +512,14 @@ def asesorias():
         
         cursor.close()
         connection.close()
-        return render_template('asesorias.html', asesorias=asesorias)
+        
+        # Pasar los precios de visa al template
+        return render_template('asesorias.html', asesorias=asesorias, precios_visa=PRECIOS_VISA)
     else:
         flash('Error de conexión a la base de datos', 'error')
         return redirect(url_for('index'))
 
-# Modificación de la función nueva_asesoria para incluir el número de documento
+# Modificación de la función nueva_asesoria para incluir el número de documento y precio según tipo de visa
 @app.route('/nueva_asesoria', methods=['POST'])
 def nueva_asesoria():
     if 'user_id' not in session:
@@ -479,6 +534,9 @@ def nueva_asesoria():
     metodo_pago = request.form.get('metodo_pago', 'Tarjeta de Crédito')
     tipo_documento = request.form.get('tipo_documento', 'C.C')
     numero_documento = request.form.get('numero_documento', '')
+    
+    # Obtener el precio según el tipo de visa
+    precio = PRECIOS_VISA.get(tipo_asesoria, 150.00)
     
     connection = create_connection()
     if connection:
@@ -510,12 +568,12 @@ def nueva_asesoria():
             
             pago_existente = cursor.fetchone()
             
-            # Si no existe un pago, crear uno nuevo
+            # Si no existe un pago, crear uno nuevo con el precio según el tipo de visa
             if not pago_existente:
                 cursor.execute("""
                     INSERT INTO tbl_pago (metodo_pago, total_pago, id_solicitante)
                     VALUES (%s, %s, %s)
-                """, (metodo_pago, 150.00, id_solicitante))
+                """, (metodo_pago, precio, id_solicitante))
             
             connection.commit()
             flash('Asesoría solicitada con éxito. Un asesor será asignado pronto.', 'success')
@@ -688,58 +746,194 @@ def cancelar_asesoria(codigo_asesoria):
     
     return redirect(url_for('asesorias'))
 
-# Ruta para procesar pagos
+# Ruta para crear una intención de pago con Stripe
+@app.route('/create-payment-intent', methods=['POST'])
+def create_payment_intent():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()  # Cambiado de request.json a request.get_json()
+        codigo_asesoria = data.get('codigo_asesoria')
+        tipo_asesoria = data.get('tipo_asesoria', 'Visa de Trabajo')  # Obtener el tipo de asesoría
+        
+        # Obtener el precio según el tipo de visa
+        monto = PRECIOS_VISA.get(tipo_asesoria, 150.00)
+        
+        # Crear una intención de pago con Stripe
+        intent = stripe.PaymentIntent.create(
+            amount=int(float(monto) * 100),  # Convertir a centavos
+            currency='usd',
+            metadata={
+                'codigo_asesoria': codigo_asesoria,
+                'user_id': str(session['user_id']),  # Convertir a string para evitar errores
+                'tipo_asesoria': tipo_asesoria,
+                'metodo_pago': 'Tarjeta de Crédito (Stripe)'
+            },
+            automatic_payment_methods={
+                'enabled': True,
+            },
+        )
+        
+        return jsonify({
+            'clientSecret': intent.client_secret,
+            'monto': monto
+        })
+    except Exception as e:
+        print(f"Error en create_payment_intent: {str(e)}")  # Log para depuración
+        return jsonify({'error': str(e)}), 500
+
+# Ruta para procesar pagos con Stripe
 @app.route('/procesar_pago', methods=['POST'])
 def procesar_pago():
     if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()  # Cambiado de request.json a request.get_json()
+        if not data:
+            data = request.form  # Intentar obtener datos del formulario si no hay JSON
+            
+        codigo_asesoria = data.get('codigo_asesoria')
+        monto = data.get('monto')
+        metodo_pago = data.get('metodo_pago')
+        datos_adicionales = data.get('datos_adicionales', {})
+        
+        if isinstance(datos_adicionales, str):
+            try:
+                datos_adicionales = json.loads(datos_adicionales)
+            except:
+                datos_adicionales = {}
+        
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor()
+            try:
+                # Registrar el pago
+                cursor.execute("""
+                    INSERT INTO tbl_pago_asesoria (codigo_asesoria, monto, metodo_pago, estado_pago, datos_adicionales)
+                    VALUES (%s, %s, %s, 'Completado', %s)
+                """, (codigo_asesoria, monto, metodo_pago, json.dumps(datos_adicionales)))
+                
+                # Actualizar el estado de la asesoría a "Pagada"
+                cursor.execute("""
+                    UPDATE tbl_asesoria SET estado = 'Pagada' WHERE codigo_asesoria = %s
+                """, (codigo_asesoria,))
+                
+                connection.commit()
+                
+                if request.is_json:
+                    return jsonify({'success': True, 'message': 'Pago procesado exitosamente'})
+                else:
+                    flash('Pago procesado exitosamente', 'success')
+                    return redirect(url_for('asesorias'))
+                    
+            except Error as e:
+                connection.rollback()
+                if request.is_json:
+                    return jsonify({'error': f'Error al procesar el pago: {e}'}), 500
+                else:
+                    flash(f'Error al procesar el pago: {e}', 'error')
+                    return redirect(url_for('asesorias'))
+            finally:
+                cursor.close()
+                connection.close()
+        else:
+            if request.is_json:
+                return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+            else:
+                flash('Error de conexión a la base de datos', 'error')
+                return redirect(url_for('asesorias'))
+    except Exception as e:
+        print(f"Error en procesar_pago: {str(e)}")  # Log para depuración
+        if request.is_json:
+            return jsonify({'error': str(e)}), 500
+        else:
+            flash(f'Error al procesar el pago: {e}', 'error')
+            return redirect(url_for('asesorias'))
+
+# Ruta para manejar el éxito del pago
+@app.route('/payment-success')
+def payment_success():
+    if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    codigo_asesoria = request.form.get('codigo_asesoria')
-    monto = request.form.get('monto')
-    metodo_pago = request.form.get('metodo_pago')
-    
-    # Obtener datos adicionales según el método de pago
-    datos_adicionales = {}
-    
-    if metodo_pago == 'Tarjeta de Crédito':
-        datos_adicionales['numero_tarjeta'] = request.form.get('numero_tarjeta', '')
-        datos_adicionales['fecha_expiracion'] = request.form.get('fecha_expiracion', '')
-        datos_adicionales['cvv'] = request.form.get('cvv', '')
-    elif metodo_pago == 'PayPal':
-        datos_adicionales['email_paypal'] = request.form.get('email_paypal', '')
-    elif metodo_pago == 'Transferencia Bancaria':
-        datos_adicionales['comprobante'] = request.form.get('comprobante_transferencia', '')
-        datos_adicionales['fecha_transferencia'] = request.form.get('fecha_transferencia', '')
-    
-    connection = create_connection()
-    if connection:
-        cursor = connection.cursor()
+    payment_intent_id = request.args.get('payment_intent')
+    if payment_intent_id:
         try:
-            # Registrar el pago
-            cursor.execute("""
-                INSERT INTO tbl_pago_asesoria (codigo_asesoria, monto, metodo_pago, estado_pago, datos_adicionales)
-                VALUES (%s, %s, %s, 'Completado', %s)
-            """, (codigo_asesoria, monto, metodo_pago, json.dumps(datos_adicionales)))
+            # Verificar el estado del pago con Stripe
+            payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
             
-            # Actualizar el estado de la asesoría a "Pagada"
-            cursor.execute("""
-                UPDATE tbl_asesoria SET estado = 'Pagada' WHERE codigo_asesoria = %s
-            """, (codigo_asesoria,))
-            
-            connection.commit()
-            flash('Pago procesado exitosamente', 'success')
-        except Error as e:
-            connection.rollback()
-            flash(f'Error al procesar el pago: {e}', 'error')
-        finally:
-            cursor.close()
-            connection.close()
+            if payment_intent.status == 'succeeded':
+                # Obtener el código de asesoría de los metadatos
+                codigo_asesoria = payment_intent.metadata.get('codigo_asesoria')
+                
+                if codigo_asesoria:
+                    # Actualizar el estado de la asesoría en la base de datos
+                    connection = create_connection()
+                    if connection:
+                        cursor = connection.cursor()
+                        try:
+                            # Verificar si ya existe un registro de pago para esta asesoría
+                            cursor.execute("""
+                                SELECT id_pago FROM tbl_pago_asesoria 
+                                WHERE codigo_asesoria = %s AND estado_pago = 'Completado'
+                            """, (codigo_asesoria,))
+                            
+                            existing_payment = cursor.fetchone()
+                            
+                            if not existing_payment:
+                                # Obtener el método de pago utilizado
+                                payment_method_id = payment_intent.payment_method
+                                payment_method = stripe.PaymentMethod.retrieve(payment_method_id)
+                                payment_type = payment_method.type
+                                
+                                # Formatear el método de pago para mostrar
+                                if payment_type == 'card':
+                                    brand = payment_method.card.brand.capitalize()
+                                    last4 = payment_method.card.last4
+                                    metodo_pago_detalle = f"{brand} **** {last4}"
+                                else:
+                                    metodo_pago_detalle = payment_type.capitalize()
+                                
+                                # Registrar el pago
+                                cursor.execute("""
+                                    INSERT INTO tbl_pago_asesoria (codigo_asesoria, monto, metodo_pago, estado_pago, datos_adicionales, referencia_pago)
+                                    VALUES (%s, %s, %s, 'Completado', %s, %s)
+                                """, (
+                                    codigo_asesoria, 
+                                    payment_intent.amount / 100,  # Convertir de centavos a dólares
+                                    metodo_pago_detalle, 
+                                    json.dumps({'payment_intent_id': payment_intent_id, 'payment_method': payment_method_id}),
+                                    payment_intent_id
+                                ))
+                                
+                                # Actualizar el estado de la asesoría a "Pagada"
+                                cursor.execute("""
+                                    UPDATE tbl_asesoria SET estado = 'Pagada' WHERE codigo_asesoria = %s
+                                """, (codigo_asesoria,))
+                                
+                                connection.commit()
+                            
+                            flash('Pago procesado exitosamente', 'success')
+                        except Error as e:
+                            connection.rollback()
+                            flash(f'Error al registrar el pago: {e}', 'error')
+                        finally:
+                            cursor.close()
+                            connection.close()
+                    else:
+                        flash('Error de conexión a la base de datos', 'error')
+                else:
+                    flash('No se pudo identificar la asesoría asociada al pago', 'error')
+            else:
+                flash(f'El pago no se completó correctamente. Estado: {payment_intent.status}', 'error')
+        except Exception as e:
+            flash(f'Error al verificar el pago: {str(e)}', 'error')
     else:
-        flash('Error de conexión a la base de datos', 'error')
+        flash('No se pudo identificar el pago', 'error')
     
     return redirect(url_for('asesorias'))
-
-
 
 # Función para obtener la fecha y hora actual (para usar en las plantillas)
 @app.context_processor
@@ -944,7 +1138,3 @@ def ayuda():
 if __name__ == '__main__':
     app.run(debug=True)
 
-
-
-
-    
