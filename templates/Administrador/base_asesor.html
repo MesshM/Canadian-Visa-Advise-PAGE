@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter&family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet">
-    <link href="../static/css/output.css" rel="stylesheet">
+    <link href="../../static/css/output.css" rel="stylesheet">
     <!-- Agregar esta línea en el head de la plantilla base -->
     <meta name="stripe-public-key" content="{{ config.get('STRIPE_PUBLIC_KEY', '') }}">
 
@@ -22,7 +22,8 @@
         <div class="fixed top-0 right-0 w-64 h-full bg-gradient-to-l from-primary-50/30 to-transparent pointer-events-none"></div>
     </div>
 
-    {% include 'includes/_sidebar.html' %}
+    {% include 'includes/_sidebar_asesor.html' %}
+
 
     <main class="ml-[calc(240px+40px)] p-8 min-h-screen relative z-50">
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -48,7 +49,7 @@
             {% endif %}
         {% endwith %}
         
-        {% block main %}{% endblock %}
+        {% block mainAsesor %}{% endblock %}
     </main>
 
     <footer class="bg-white border-t border-gray-200 mt-12 ml-[calc(240px+40px)] relative z-10">
