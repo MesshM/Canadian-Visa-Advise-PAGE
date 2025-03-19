@@ -2,6 +2,12 @@
 
 {% block title %} CVA | Asesorias {% endblock %}
 
+<!-- Añadir meta tag para la clave pública de Stripe -->
+{% block head %}
+{{ super() }}
+<meta name="stripe-public-key" content="{{ config.STRIPE_PUBLIC_KEY }}">
+{% endblock %}
+
 {% block main %}
 
 <!-- Main Content -->
@@ -13,44 +19,53 @@
 <!-- Barra de búsqueda y filtros -->
 <div class="flex flex-wrap items-center justify-between gap-4 mb-6 animate-fade-in delay-100">
     <div class="relative flex-grow max-w-md">
-        <input 
-            type="text" 
-            id="search-input" 
-            placeholder="Buscar en mis asesorías..." 
-            class="w-full py-3 pl-10 pr-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
-        >
-        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        <input type="text" id="search-input" placeholder="Buscar en mis asesorías..."
+            class="w-full py-3 pl-10 pr-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text">
+        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none"
+            stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
         </svg>
     </div>
-    
+
     <div class="flex flex-wrap items-center gap-3">
-        <select id="filter-status" class="py-3 px-4 border bg-white border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
+        <select id="filter-status"
+            class="py-3 px-4 border bg-white border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
             <option value="">Todos los estados</option>
             <option value="vigente">Vigente</option>
             <option value="vencida">Vencida</option>
+            <option value="pendiente">Pago Pendiente</option>
+            <option value="activo">En Proceso Activo</option>
         </select>
-        
-        <select id="filter-date" class="py-3 px-4 border bg-white border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
+
+        <select id="filter-date"
+            class="py-3 px-4 border bg-white border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
             <option value="">Todas las fechas</option>
             <option value="today">Hoy</option>
             <option value="week">Esta semana</option>
             <option value="month">Este mes</option>
         </select>
-        
-        <button onclick="resetFilters()" class="py-3 px-6 border border-gray-200 text-sm font-medium rounded-xl transition-all duration-300 bg-white text-gray-700 hover:bg-gray-300 cursor-pointer shadow-sm">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+
+        <button onclick="resetFilters()"
+            class="py-3 px-6 border border-gray-200 text-sm font-medium rounded-xl transition-all duration-300 bg-white text-gray-700 hover:bg-gray-300 cursor-pointer shadow-sm">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                </path>
             </svg>
         </button>
     </div>
 </div>
 
 <!-- Botón para abrir el formulario de pedir asesoría -->
-<button onclick="openNewAdvisoryModal()" class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 mb-6 animate-fade-in delay-200 cursor-pointer">
-    <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+<button onclick="openNewAdvisoryModal()"
+    class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 mb-6 animate-fade-in delay-200 cursor-pointer">
+    <span
+        class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
     <div class="relative flex items-center justify-center">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
         </svg>
         <span>Pedir Asesoría</span>
@@ -69,92 +84,149 @@
         <table class="w-full border-collapse">
             <thead>
                 <tr>
-                    <th class="bg-gray-50 p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                    <th
+                        class="bg-gray-50 p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
                         Nº Asesoría
                     </th>
-                    <th class="bg-gray-50 p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                    <th
+                        class="bg-gray-50 p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
                         Fecha
                     </th>
-                    <th class="bg-gray-50 p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                    <th
+                        class="bg-gray-50 p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
                         Asesor
                     </th>
-                    <th class="bg-gray-50 p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                    <th
+                        class="bg-gray-50 p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
                         Solicitante
                     </th>
-                    <th class="bg-gray-50 p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                    <th
+                        class="bg-gray-50 p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
                         Estado
                     </th>
-                    <th class="bg-gray-50 p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                    <th
+                        class="bg-gray-50 p-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
                         Acciones
                     </th>
                 </tr>
             </thead>
             <tbody id="asesorias-table-body">
                 {% if asesorias is defined and asesorias %}
-                    {% for asesoria in asesorias %}
-                    {% set current_date = now() %}
-                    {% set is_expired = asesoria.fecha_asesoria|string < current_date|string %}
-                    <tr class="transition-all duration-300 hover:bg-gray-50 relative z-0" data-asesoria-id="{{ asesoria.codigo_asesoria }}" data-estado="{% if is_expired %}vencida{% else %}vigente{% endif %}" data-pago-estado="{{ asesoria.estado }}" data-tipo-asesoria="{{ asesoria.tipo_asesoria }}">
-                        <!-- Cambiar la visualización del número de asesoría para usar el código interno -->
-                        <td class="p-4 text-sm border-b border-gray-200 text-gray-700 numero-asesoria"></td>
-                        <td class="p-4 text-sm border-b border-gray-200 text-gray-700">
-                            {% set fecha_parts = asesoria.fecha_asesoria|string|split(' ') %}
-                            <div>{{ fecha_parts[0] }}</div>
-                            <div class="text-xs text-gray-500 mt-1">{{ fecha_parts[1] }}</div>
-                        </td>
-                        <td class="p-4 text-sm border-b border-gray-200 text-gray-700">{{ asesoria.asesor_asignado }}</td>
-                        <td class="p-4 text-sm border-b border-gray-200 text-gray-700">
-                            <div class="flex items-center justify-between">
-                                <span>{{ asesoria.solicitante }}</span>
-                                {% if asesoria.estado == 'Pagada' %}
-                                <button class="ml-2 relative overflow-hidden group bg-gradient-to-r from-blue-600 to-blue-500  text-white text-xs font-medium py-1.5 px-4 rounded-lg shadow-md hover:shadow-blue-500/30 transition-all duration-300 pagado-btn">
-                                    <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 "></span>
-                                    <div class="relative flex items-center justify-center">
-                                        <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                        </svg>
-                                        <span>Pagado</span>
-                                    </div>
-                                </button>
-                                {% elif not is_expired %}
-                                <button onclick="pagarAsesoria({{ asesoria.codigo_asesoria }})" class="ml-2 relative overflow-hidden group bg-gradient-to-r from-green-600 to-green-500 text-white text-xs font-medium py-1.5 px-4 rounded-lg shadow-md hover:shadow-green-500/30 transition-all duration-300 cursor-pointer pago-btn scale-105 hover:scale-110">
-                                    <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 "></span>
-                                    <div class="relative flex items-center justify-center">
-                                        <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                        </svg>
-                                        <span>Pagar</span>
-                                    </div>
-                                </button>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td class="p-4 text-sm border-b border-gray-200">
-                            {% if is_expired %}
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-600">Vencida</span>
-                            {% else %}
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-600">Vigente</span>
+                {% for asesoria in asesorias %}
+                {% set current_date = now() %}
+                {% set is_expired = asesoria.fecha_asesoria|string < current_date|string %} <tr
+                    class="transition-all duration-300 hover:bg-gray-50 relative z-0"
+                    data-asesoria-id="{{ asesoria.codigo_asesoria }}"
+                    data-estado="{% if is_expired %}vencida{% else %}vigente{% endif %}"
+                    data-pago-estado="{{ asesoria.estado }}" data-tipo-asesoria="{{ asesoria.tipo_asesoria }}">
+                    <!-- Cambiar la visualización del número de asesoría para usar el código interno -->
+                    <td class="p-4 text-sm border-b border-gray-200 text-gray-700 numero-asesoria"></td>
+                    <td class="p-4 text-sm border-b border-gray-200 text-gray-700">
+                        {% set fecha_parts = asesoria.fecha_asesoria|string|split(' ') %}
+                        <div>{{ fecha_parts[0] }}</div>
+                        <div class="text-xs text-gray-500 mt-1">{{ fecha_parts[1] }}</div>
+                    </td>
+                    <td class="p-4 text-sm border-b border-gray-200 text-gray-700">{{ asesoria.asesor_asignado }}</td>
+                    <td class="p-4 text-sm border-b border-gray-200 text-gray-700">
+                        <div class="flex items-center justify-between">
+                            <span>{{ asesoria.solicitante }}</span>
+                            {% if asesoria.estado == 'Pagada' %}
+                            <button
+                                class="ml-2 relative overflow-hidden group bg-gradient-to-r from-blue-600 to-blue-500 text-white text-xs font-medium py-1.5 px-4 rounded-lg shadow-md hover:shadow-blue-500/30 transition-all duration-300 pagado-btn">
+                                <span
+                                    class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 "></span>
+                                <div class="relative flex items-center justify-center">
+                                    <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span>Pagado</span>
+                                </div>
+                            </button>
+                            {% elif not is_expired %}
+                            <button
+                                onclick="pagarAsesoria({{ asesoria.codigo_asesoria }}, '{{ asesoria.tipo_asesoria }}')"
+                                class="ml-2 relative overflow-hidden group bg-gradient-to-r from-green-600 to-green-500 text-white text-xs font-medium py-1.5 px-4 rounded-lg shadow-md hover:shadow-green-500/30 transition-all duration-300 cursor-pointer pago-btn scale-105 hover:scale-110">
+                                <span
+                                    class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 "></span>
+                                <div class="relative flex items-center justify-center">
+                                    <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z">
+                                        </path>
+                                    </svg>
+                                    <span>Pagar</span>
+                                </div>
+                            </button>
                             {% endif %}
-                        </td>
-                        <td class="p-4 text-sm border-b border-gray-200">
-                            <div class="flex space-x-2">
-                                <button onclick="toggleDetails({{ asesoria.codigo_asesoria }})" class="flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 transition-all duration-300 hover:text-primary-600 hover:translate-y-[-3px] relative overflow-hidden cursor-pointer" title="Ver detalles">
-                                    <span class="absolute inset-0 bg-current opacity-0 rounded-lg transition-opacity duration-300 hover:opacity-10"></span>
-                                    <svg class="relative z-10 transition-transform duration-300 hover:scale-110" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                    </svg>
-                                </button>
-                                {% if not is_expired %}
-                                <button onclick="editAsesoria({{ asesoria.codigo_asesoria }})" class="flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 transition-all duration-300 hover:text-primary-600 hover:translate-y-[-3px] relative overflow-hidden cursor-pointer" title="Editar">
-                                    <span class="absolute inset-0 bg-current opacity-0 rounded-lg transition-opacity duration-300 hover:opacity-10"></span>
-                                    <svg class="relative z-10 transition-transform duration-300 hover:scale-110" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                    </svg>
-                                </button>
-                                {% endif %}
-                            </div>
-                        </td>
+                        </div>
+                    </td>
+                    <td class="p-4 text-sm border-b border-gray-200">
+                        {% if is_expired %}
+                        <span
+                            class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-600">Vencida</span>
+                        {% elif asesoria.estado == 'Pagada' %}
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-600">En Proceso
+                            Activo</span>
+                        {% elif asesoria.estado == 'Pendiente' %}
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-600">Pago
+                            Pendiente</span>
+                        {% else %}
+                        <span
+                            class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-600">Vigente</span>
+                        {% endif %}
+                    </td>
+                    <td class="p-4 text-sm border-b border-gray-200">
+                        <div class="flex space-x-2">
+                            <button onclick="toggleDetails({{ asesoria.codigo_asesoria }})"
+                                class="flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 transition-all duration-300 hover:text-primary-600 hover:translate-y-[-3px] relative overflow-hidden cursor-pointer"
+                                title="Ver detalles">
+                                <span
+                                    class="absolute inset-0 bg-current opacity-0 rounded-lg transition-opacity duration-300 hover:opacity-10"></span>
+                                <svg class="relative z-10 transition-transform duration-300 hover:scale-110" width="18"
+                                    height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                    </path>
+                                </svg>
+                            </button>
+                            {% if not is_expired and asesoria.estado != 'Pagada' %}
+                            <button onclick="editAsesoria({{ asesoria.codigo_asesoria }})"
+                                class="flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 transition-all duration-300 hover:text-primary-600 hover:translate-y-[-3px] relative overflow-hidden cursor-pointer"
+                                title="Editar">
+                                <span
+                                    class="absolute inset-0 bg-current opacity-0 rounded-lg transition-opacity duration-300 hover:opacity-10"></span>
+                                <svg class="relative z-10 transition-transform duration-300 hover:scale-110" width="18"
+                                    height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                    </path>
+                                </svg>
+                            </button>
+                            {% endif %}
+
+                            {% if not is_expired and asesoria.estado != 'Pagada' %}
+                            <button onclick="cancelarAsesoria({{ asesoria.codigo_asesoria }})"
+                                class="flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 transition-all duration-300 hover:text-red-600 hover:translate-y-[-3px] relative overflow-hidden cursor-pointer"
+                                title="Cancelar">
+                                <span
+                                    class="absolute inset-0 bg-current opacity-0 rounded-lg transition-opacity duration-300 hover:opacity-10"></span>
+                                <svg class="relative z-10 transition-transform duration-300 hover:scale-110" width="18"
+                                    height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
                     </tr>
                     <!-- Fila de detalles (inicialmente oculta) -->
                     <tr id="details-{{ asesoria.codigo_asesoria }}" class="hidden bg-gray-50">
@@ -163,76 +235,98 @@
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div class="bg-white p-4 rounded-lg shadow">
                                         <h4 class="font-medium text-gray-900 mb-2">Detalles del Asesor</h4>
-                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Nombre:</span> {{ asesoria.asesor_asignado }}</p>
-                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Especialidad:</span> Inmigración Canadiense</p>
-                                        <p class="text-sm text-gray-700 mb-3"><span class="font-medium">Contacto:</span> asesor@cva.com</p>
-                                        
-                                        <button onclick="verHistorialChat({{ asesoria.codigo_asesoria }})" class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white text-xs font-medium py-2 px-4 rounded-lg shadow-md hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer w-full">
-                                            <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Nombre:</span>
+                                            {{ asesoria.asesor_asignado }}</p>
+                                        <p class="text-sm text-gray-700 mb-1"><span
+                                                class="font-medium">Especialidad:</span> Inmigración Canadiense</p>
+                                        <p class="text-sm text-gray-700 mb-3"><span class="font-medium">Contacto:</span>
+                                            asesor@cva.com</p>
+
+                                        <button onclick="verHistorialChat({{ asesoria.codigo_asesoria }})"
+                                            class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white text-xs font-medium py-2 px-4 rounded-lg shadow-md hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer w-full">
+                                            <span
+                                                class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
                                             <div class="relative flex items-center justify-center">
-                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                                                    </path>
                                                 </svg>
                                                 <span>Ver registro de chat</span>
                                             </div>
                                         </button>
                                     </div>
-                                    
+
                                     <div class="bg-white p-4 rounded-lg shadow">
                                         <h4 class="font-medium text-gray-900 mb-2">Detalles de la Asesoría</h4>
                                         <!-- Y también en la sección de detalles -->
-                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Código de consulta:</span> 
+                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Código de
+                                                consulta:</span>
                                             <span class="font-mono">#{{ asesoria.codigo_asesoria }}</span>
                                         </p>
                                         <p class="text-sm text-gray-700 mb-1">
-                                            <span class="font-medium">Tipo de Visa:</span> 
+                                            <span class="font-medium">Tipo de Visa:</span>
                                             <span>{{ asesoria.tipo_asesoria }}</span>
                                         </p>
                                         <p class="text-sm text-gray-700 mb-1 flex items-center">
-                                            <span class="font-medium mr-1">Precio:</span> 
+                                            <span class="font-medium mr-1">Precio:</span>
                                             <span class="flex items-center">
                                                 ${{ asesoria.precio }} USD
                                                 {% if asesoria.estado == 'Pagada' %}
-                                                <svg class="w-4 h-4 ml-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                <svg class="w-4 h-4 ml-1 text-green-500" fill="none"
+                                                    stroke="currentColor" viewBox="0 0 24 24"
+                                                    xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M5 13l4 4L19 7"></path>
                                                 </svg>
                                                 {% endif %}
                                             </span>
-                                        </p>                                        
+                                        </p>
                                         {% set fecha_parts = asesoria.fecha_asesoria|string|split(' ') %}
-                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Fecha:</span> {{ fecha_parts[0] }}</p>
-                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Hora:</span> {{ fecha_parts[1] }}</p>
+                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Fecha:</span> {{
+                                            fecha_parts[0] }}</p>
+                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Hora:</span> {{
+                                            fecha_parts[1] }}</p>
                                         <p class="text-sm text-gray-700 mb-1">
-                                            <span class="font-medium">Estado:</span> 
+                                            <span class="font-medium">Estado:</span>
                                             {% if is_expired %}
-                                                <span class="text-red-600">Vencida</span>
+                                            <span class="text-red-600">Vencida</span>
+                                            {% elif asesoria.estado == 'Pagada' %}
+                                            <span class="text-blue-600">En Proceso Activo</span>
+                                            {% elif asesoria.estado == 'Pendiente' %}
+                                            <span class="text-yellow-600">Pago Pendiente</span>
                                             {% else %}
-                                                <span class="text-green-600">Vigente</span>
+                                            <span class="text-green-600">Vigente</span>
                                             {% endif %}
                                         </p>
                                     </div>
-                                    
+
                                     <div class="bg-white p-4 rounded-lg shadow">
                                         <h4 class="font-medium text-gray-900 mb-2">Información Adicional</h4>
-                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Lugar:</span> 
+                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Lugar:</span>
                                             {% if asesoria.lugar %}
-                                                {{ asesoria.lugar }}
+                                            {{ asesoria.lugar }}
                                             {% else %}
-                                                Virtual (Zoom)
+                                            Virtual (Zoom)
                                             {% endif %}
                                         </p>
-                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Método de Pago:</span> 
+                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Método de
+                                                Pago:</span>
                                             {% if asesoria.estado == 'Pagada' and asesoria.metodo_pago_stripe %}
-                                                {{ asesoria.metodo_pago_stripe }}
+                                            {{ asesoria.metodo_pago_stripe }}
                                             {% elif asesoria.metodo_pago %}
-                                                {{ asesoria.metodo_pago }}
+                                            {{ asesoria.metodo_pago }}
                                             {% else %}
-                                                Tarjeta de Crédito
+                                            Tarjeta de Crédito
                                             {% endif %}
                                         </p>
-                                        <p class="text-sm text-gray-700"><span class="font-medium">Duración:</span> 60 minutos</p>
+                                        <p class="text-sm text-gray-700"><span class="font-medium">Duración:</span> 60
+                                            minutos</p>
                                         {% if asesoria.descripcion %}
-                                        <p class="text-sm text-gray-700 mt-2"><span class="font-medium">Descripción:</span> {{ asesoria.descripcion }}</p>
+                                        <p class="text-sm text-gray-700 mt-2"><span
+                                                class="font-medium">Descripción:</span> {{ asesoria.descripcion }}</p>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -240,13 +334,13 @@
                         </td>
                     </tr>
                     {% endfor %}
-                {% else %}
+                    {% else %}
                     <tr id="no-results">
                         <td colspan="6" class="p-4 text-sm text-center text-gray-500">
                             No hay asesorías registradas en el sistema
                         </td>
                     </tr>
-                {% endif %}
+                    {% endif %}
             </tbody>
         </table>
     </div>
@@ -254,74 +348,188 @@
 
 <!-- Modal para Nueva Asesoría -->
 <div id="newAdvisoryModal" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
-    <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md animate-scale-in">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-4xl animate-scale-in">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold text-gray-900 font-roboto">Pedir Asesoría</h2>
             <button onclick="closeNewAdvisoryModal()" class="text-gray-500 hover:text-gray-700 cursor-pointer">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
                 </svg>
             </button>
         </div>
-        <form action="/nueva_asesoria" method="POST">
-            <input type="hidden" name="id_solicitante" value="{{ session.user_id }}">
+
+        <!-- Modificar la estructura del modal de Nueva Asesoría para usar 3 columnas -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Formulario a la izquierda (primera columna) -->
+            <div>
+                <form id="advisoryForm" action="/nueva_asesoria" method="POST">
+                    <input type="hidden" name="id_solicitante" value="{{ session.user_id }}">
+                    <input type="hidden" id="selected_date" name="fecha_asesoria" value="">
+                    <input type="hidden" id="selected_asesor_id" name="id_asesor" value="">
+                    <input type="hidden" id="selected_asesor_name" name="asesor_asignado" value="">
+
+                    <div class="mb-4">
+                        <label for="documento" class="block text-sm font-medium text-gray-700 mb-2">Número de
+                            Documento</label>
+                        <div class="flex space-x-2">
+                            <select id="tipo_documento" name="tipo_documento"
+                                class="w-1/3 py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer"
+                                required>
+                                <option value="C.C">C.C</option>
+                                <option value="T.I">T.I</option>
+                                <option value="C.E">C.E</option>
+                                <option value="Pasaporte">Pasaporte</option>
+                            </select>
+                            <input type="text" id="numero_documento" name="numero_documento"
+                                class="w-2/3 py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
+                                placeholder="Número de documento" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="asesor_selector" class="block text-sm font-medium text-gray-700 mb-2">Seleccionar Asesor</label>
+                        <select id="asesor_selector"
+                            class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer"
+                            required>
+                            <option value="">Seleccione un asesor</option>
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="tipo_asesoria" class="block text-sm font-medium text-gray-700 mb-2">Tipo de
+                            Asesoría</label>
+                        <select id="tipo_asesoria" name="tipo_asesoria"
+                            class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer"
+                            required>
+                            {% for tipo, precio in precios_visa.items() %}
+                            <option value="{{ tipo }}" data-precio="{{ precio }}">{{ tipo }} - ${{ precio }}0</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-2">Descripción de tu
+                            consulta</label>
+                        <textarea id="descripcion" name="descripcion" rows="3"
+                            class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
+                            placeholder="Describe brevemente tu consulta..."></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="lugar" class="block text-sm font-medium text-gray-700 mb-2">Modalidad de
+                            Asesoría</label>
+                        <select id="lugar" name="lugar"
+                            class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer"
+                            required>
+                            <option value="Virtual (Zoom)">Virtual (Zoom)</option>
+                            <option value="Virtual (Teams)">Virtual (Teams)</option>
+                            <option value="Presencial">Presencial</option>
+                        </select>
+                    </div>
+
+                    <div class="flex justify-end space-x-4 mt-6">
+                        <button type="button" onclick="closeNewAdvisoryModal()"
+                            class="py-3 px-6 text-sm font-medium rounded-xl transition-all duration-300 bg-gray-200 text-gray-700 hover:bg-gray-300 cursor-pointer">
+                            Cancelar
+                        </button>
+                        <button type="submit" id="submitAdvisoryBtn" disabled
+                            class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer opacity-50">
+                            <span
+                                class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                            <div class="relative flex items-center justify-center">
+                                <span>Solicitar</span>
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200"
+                                    viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Calendario en el centro (segunda columna) -->
+            <div>
+                <div class="mb-4">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Selecciona fecha</h3>
+                    <p class="text-sm text-gray-500">Elige una fecha disponible para tu asesoría</p>
+                </div>
+
+                <!-- Calendario -->
+                <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 mb-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <button id="prev-month" class="text-gray-500 hover:text-primary-600 transition-colors duration-300">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                        </button>
+                        <h4 id="current-month" class="text-base font-medium text-gray-900"></h4>
+                        <button id="next-month" class="text-gray-500 hover:text-primary-600 transition-colors duration-300">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1 text-center mb-2">
+                        <div class="text-xs font-medium text-gray-500">Dom</div>
+                        <div class="text-xs font-medium text-gray-500">Lun</div>
+                        <div class="text-xs font-medium text-gray-500">Mar</div>
+                        <div class="text-xs font-medium text-gray-500">Mié</div>
+                        <div class="text-xs font-medium text-gray-500">Jue</div>
+                        <div class="text-xs font-medium text-gray-500">Vie</div>
+                        <div class="text-xs font-medium text-gray-500">Sáb</div>
+                    </div>
+                    <div id="calendar-days" class="grid grid-cols-7 gap-1"></div>
             
-            <div class="mb-4">
-                <label for="documento" class="block text-sm font-medium text-gray-700 mb-2">Número de Documento</label>
-                <div class="flex space-x-2">
-                    <select id="tipo_documento" name="tipo_documento" class="w-1/3 py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer" required>
-                        <option value="C.C">C.C</option>
-                        <option value="T.I">T.I</option>
-                        <option value="C.E">C.E</option>
-                        <option value="Pasaporte">Pasaporte</option>
-                    </select>
-                    <input type="text" id="numero_documento" name="numero_documento" class="w-2/3 py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text" placeholder="Número de documento" required>
+                    <!-- Leyenda para el calendario -->
+                    <div class="mt-3 flex flex-wrap gap-3 text-xs text-gray-500 justify-center">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-gray-50 rounded-sm mr-1"></div>
+                            <span>No disponible</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-primary-50 rounded-sm mr-1"></div>
+                            <span>Disponible</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-primary-200 rounded-sm mr-1"></div>
+                            <span>Seleccionado</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <div class="mb-4">
-                <label for="fecha_asesoria" class="block text-sm font-medium text-gray-700 mb-2">Fecha y Hora de Asesoría</label>
-                <input type="datetime-local" id="fecha_asesoria" name="fecha_asesoria" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer" required>
-            </div>
 
-            <div class="mb-4">
-                <label for="tipo_asesoria" class="block text-sm font-medium text-gray-700 mb-2">Tipo de Asesoría</label>
-                <select id="tipo_asesoria" name="tipo_asesoria" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer" required>
-                    {% for tipo, precio in precios_visa.items() %}
-                    <option value="{{ tipo }}" data-precio="{{ precio }}">{{ tipo }} - ${{ precio }}.00</option>
-                    {% endfor %}
-                </select>
-            </div>
+            <!-- Horarios y Resumen a la derecha (tercera columna) -->
+            <div>
+                <div class="mb-4">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Detalles de la cita</h3>
+                    <p class="text-sm text-gray-500">Selecciona hora y revisa el resumen</p>
+                </div>
 
-            <div class="mb-4">
-                <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-2">Descripción de tu consulta</label>
-                <textarea id="descripcion" name="descripcion" rows="3" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text" placeholder="Describe brevemente tu consulta..."></textarea>
-            </div>
+                <!-- Selector de hora -->
+                <div id="time-selector" class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 mb-4 hidden transition-all duration-300">
+                    <h4 class="text-base font-medium text-gray-900 mb-3">Horarios disponibles</h4>
+                    <div id="time-slots" class="grid grid-cols-3 gap-2"></div>
+                </div>
 
-            <div class="mb-4">
-                <label for="lugar" class="block text-sm font-medium text-gray-700 mb-2">Modalidad de Asesoría</label>
-                <select id="lugar" name="lugar" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer" required>
-                    <option value="Virtual (Zoom)">Virtual (Zoom)</option>
-                    <option value="Virtual (Teams)">Virtual (Teams)</option>
-                    <option value="Presencial">Presencial</option>
-                </select>
-            </div>
-
-            <div class="flex justify-end space-x-4">
-                <button type="button" onclick="closeNewAdvisoryModal()" class="py-3 px-6 text-sm font-medium rounded-xl transition-all duration-300 bg-gray-200 text-gray-700 hover:bg-gray-300 cursor-pointer">
-                    Cancelar
-                </button>
-                <button type="submit" class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer">
-                    <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
-                    <div class="relative flex items-center justify-center">
-                        <span>Solicitar</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                        </svg>
+                <!-- Resumen de la cita -->
+                <div id="appointment-summary" class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 hidden transition-all duration-300">
+                    <h4 class="text-base font-medium text-gray-900 mb-3">Resumen de tu cita</h4>
+                    <div class="space-y-2">
+                        <p class="text-sm"><span class="font-medium">Asesor:</span> <span id="summary-asesor" class="text-primary-600">-</span></p>
+                        <p class="text-sm"><span class="font-medium">Fecha:</span> <span id="summary-date" class="text-primary-600">-</span></p>
+                        <p class="text-sm"><span class="font-medium">Hora:</span> <span id="summary-time" class="text-primary-600">-</span></p>
+                        <p class="text-sm"><span class="font-medium">Tipo:</span> <span id="summary-type" class="text-primary-600">-</span></p>
                     </div>
-                </button>
+                </div>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 
@@ -331,36 +539,49 @@
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold text-gray-900 font-roboto">Modificar Asesoría</h2>
             <button onclick="closeEditAdvisoryModal()" class="text-gray-500 hover:text-gray-700 cursor-pointer">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
                 </svg>
             </button>
         </div>
         <form id="editForm" action="/editar_asesoria" method="POST">
             <input type="hidden" id="edit_codigo_asesoria" name="codigo_asesoria">
             <input type="hidden" name="id_solicitante" value="{{ session.user_id }}">
-            
+
             <div class="mb-4">
-                <label for="edit_documento" class="block text-sm font-medium text-gray-700 mb-2">Número de Documento</label>
+                <label for="edit_documento" class="block text-sm font-medium text-gray-700 mb-2">Número de
+                    Documento</label>
                 <div class="flex space-x-2">
-                    <select id="edit_tipo_documento" name="tipo_documento" class="w-1/3 py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer" required>
+                    <select id="edit_tipo_documento" name="tipo_documento"
+                        class="w-1/3 py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer"
+                        required>
                         <option value="C.C">C.C</option>
                         <option value="T.I">T.I</option>
                         <option value="C.E">C.E</option>
                         <option value="Pasaporte">Pasaporte</option>
                     </select>
-                    <input type="text" id="edit_numero_documento" name="numero_documento" class="w-2/3 py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text" placeholder="Número de documento" required>
+                    <input type="text" id="edit_numero_documento" name="numero_documento"
+                        class="w-2/3 py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
+                        placeholder="Número de documento" required>
                 </div>
-            </div>
-            
-            <div class="mb-4">
-                <label for="edit_fecha_asesoria" class="block text-sm font-medium text-gray-700 mb-2">Fecha y Hora de Asesoría</label>
-                <input type="datetime-local" id="edit_fecha_asesoria" name="fecha_asesoria" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer" required>
             </div>
 
             <div class="mb-4">
-                <label for="edit_tipo_asesoria" class="block text-sm font-medium text-gray-700 mb-2">Tipo de Asesoría</label>
-                <select id="edit_tipo_asesoria" name="tipo_asesoria" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer" required>
+                <label for="edit_fecha_asesoria" class="block text-sm font-medium text-gray-700 mb-2">Fecha y Hora de
+                    Asesoría</label>
+                <input type="datetime-local" id="edit_fecha_asesoria" name="fecha_asesoria"
+                    class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer"
+                    required>
+            </div>
+
+            <div class="mb-4">
+                <label for="edit_tipo_asesoria" class="block text-sm font-medium text-gray-700 mb-2">Tipo de
+                    Asesoría</label>
+                <select id="edit_tipo_asesoria" name="tipo_asesoria"
+                    class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer"
+                    required>
                     {% for tipo, precio in precios_visa.items() %}
                     <option value="{{ tipo }}">{{ tipo }} - ${{ precio }}.00</option>
                     {% endfor %}
@@ -368,13 +589,18 @@
             </div>
 
             <div class="mb-4">
-                <label for="edit_descripcion" class="block text-sm font-medium text-gray-700 mb-2">Descripción de tu consulta</label>
-                <textarea id="edit_descripcion" name="descripcion" rows="3" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"></textarea>
+                <label for="edit_descripcion" class="block text-sm font-medium text-gray-700 mb-2">Descripci��n de tu
+                    consulta</label>
+                <textarea id="edit_descripcion" name="descripcion" rows="3"
+                    class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"></textarea>
             </div>
 
             <div class="mb-4">
-                <label for="edit_lugar" class="block text-sm font-medium text-gray-700 mb-2">Modalidad de Asesoría</label>
-                <select id="edit_lugar" name="lugar" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer" required>
+                <label for="edit_lugar" class="block text-sm font-medium text-gray-700 mb-2">Modalidad de
+                    Asesoría</label>
+                <select id="edit_lugar" name="lugar"
+                    class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer"
+                    required>
                     <option value="Virtual (Zoom)">Virtual (Zoom)</option>
                     <option value="Virtual (Teams)">Virtual (Teams)</option>
                     <option value="Presencial">Presencial</option>
@@ -382,15 +608,22 @@
             </div>
 
             <div class="flex justify-end space-x-4">
-                <button type="button" onclick="closeEditAdvisoryModal()" class="py-3 px-6 text-sm font-medium rounded-xl transition-all duration-300 bg-gray-200 text-gray-700 hover:bg-gray-300 cursor-pointer">
+                <button type="button" onclick="closeEditAdvisoryModal()"
+                    class="py-3 px-6 text-sm font-medium rounded-xl transition-all duration-300 bg-gray-200 text-gray-700 hover:bg-gray-300 cursor-pointer">
                     Cancelar
                 </button>
-                <button type="submit" class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer">
-                    <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                <button type="submit"
+                    class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer">
+                    <span
+                        class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
                     <div class="relative flex items-center justify-center">
                         <span>Actualizar</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                            class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200"
+                            viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                                clip-rule="evenodd" />
                         </svg>
                     </div>
                 </button>
@@ -403,27 +636,35 @@
 <div id="chatHistorialModal" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
     <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl animate-scale-in">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-gray-900 font-roboto">Historial de Chat - Asesoría #<span id="chat-asesoria-id"></span></h2>
+            <h2 class="text-xl font-semibold text-gray-900 font-roboto">Historial de Chat - Asesoría #<span
+                    id="chat-asesoria-id"></span></h2>
             <button onclick="closeChatHistorialModal()" class="text-gray-500 hover:text-gray-700 cursor-pointer">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
                 </svg>
             </button>
         </div>
-        
+
         <div class="bg-gray-50 rounded-xl p-4 h-96 overflow-y-auto">
             <div id="chat-messages" class="space-y-4">
                 <!-- Los mensajes se cargarán dinámicamente aquí -->
             </div>
         </div>
-        
+
         <div class="mt-4 flex">
-            <input type="text" id="chat-input" placeholder="Escribe un mensaje..." class="flex-grow py-3 px-4 border border-gray-200 rounded-l-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text">
-            <button onclick="enviarMensaje()" class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-r-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer">
-                <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+            <input type="text" id="chat-input" placeholder="Escribe un mensaje..."
+                class="flex-grow py-3 px-4 border border-gray-200 rounded-l-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text">
+            <button onclick="enviarMensaje()"
+                class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-r-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer">
+                <span
+                    class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
                 <div class="relative flex items-center justify-center">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                     </svg>
                 </div>
             </button>
@@ -435,25 +676,31 @@
 <div id="pagoModal" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
     <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md animate-scale-in">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-gray-900 font-roboto">Realizar Pago - Asesoría #<span id="pago-asesoria-id"></span></h2>
+            <h2 class="text-xl font-semibold text-gray-900 font-roboto">Realizar Pago - Asesoría #<span
+                    id="pago-asesoria-id"></span></h2>
             <button onclick="closePagoModal()" class="text-gray-500 hover:text-gray-700 cursor-pointer">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
                 </svg>
             </button>
         </div>
-        
+
         <form id="payment-form" class="mb-4">
             <input type="hidden" id="pago_codigo_asesoria" name="codigo_asesoria">
             <input type="hidden" id="pago_tipo_asesoria" name="tipo_asesoria">
-            
+
             <div class="mb-4">
                 <label for="monto" class="block text-sm font-medium text-gray-700 mb-2">Monto a Pagar (USD)</label>
-                <input type="number" id="monto" name="monto" value="150.00" min="0" step="0.01" class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text" readonly>
+                <input type="number" id="monto" name="monto" value="150.00" min="0" step="0.01"
+                    class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
+                    readonly>
             </div>
-            
+
             <div class="mb-4">
-                <label for="payment-element" class="block text-sm font-medium text-gray-700 mb-2">Detalles de Pago</label>
+                <label for="payment-element" class="block text-sm font-medium text-gray-700 mb-2">Detalles de
+                    Pago</label>
                 <div id="payment-element" class="p-4 border border-gray-200 rounded-xl">
                     <!-- Stripe Elements se montará aquí -->
                 </div>
@@ -462,26 +709,78 @@
             <div id="payment-message" class="hidden mb-4 p-3 rounded-lg text-sm"></div>
 
             <div class="flex justify-end space-x-4">
-                <button type="button" onclick="closePagoModal()" class="py-3 px-6 text-sm font-medium rounded-xl transition-all duration-300 bg-gray-200 text-gray-700 hover:bg-gray-300 cursor-pointer">
+                <button type="button" onclick="closePagoModal()"
+                    class="py-3 px-6 text-sm font-medium rounded-xl transition-all duration-300 bg-gray-200 text-gray-700 hover:bg-gray-300 cursor-pointer">
                     Cancelar
                 </button>
-                <button id="submit-button" type="submit" class="relative overflow-hidden group bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-green-500/30 transition-all duration-300 cursor-pointer scale-105 hover:scale-110">
-                    <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                <button id="submit-button" type="submit"
+                    class="relative overflow-hidden group bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-green-500/30 transition-all duration-300 cursor-pointer scale-105 hover:scale-110">
+                    <span
+                        class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
                     <div class="relative flex items-center justify-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z">
+                            </path>
                         </svg>
                         <span id="button-text">Pagar Ahora</span>
                         <div id="spinner" class="hidden">
-                            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
                             </svg>
                         </div>
                     </div>
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Modal de confirmación para cancelar asesoría -->
+<div id="cancelarAsesoriaModal"
+    class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md animate-scale-in">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-gray-900 font-roboto">Confirmar Cancelación</h2>
+            <button onclick="closeCancelarAsesoriaModal()" class="text-gray-500 hover:text-gray-700 cursor-pointer">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <div class="mb-6">
+            <p class="text-gray-700">¿Estás seguro de que deseas cancelar esta asesoría? Esta acción no se puede
+                deshacer.</p>
+        </div>
+
+        <div class="flex justify-end space-x-4">
+            <button type="button" onclick="closeCancelarAsesoriaModal()"
+                class="py-3 px-6 text-sm font-medium rounded-xl transition-all duration-300 bg-gray-200 text-gray-700 hover:bg-gray-300 cursor-pointer">
+                Volver
+            </button>
+            <a id="confirmarCancelarBtn" href="#"
+                class="relative overflow-hidden group bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-red-500/30 transition-all duration-300 cursor-pointer text-center flex items-center justify-center">
+                <span
+                    class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                <div class="relative flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                    <span>Confirmar Cancelación</span>
+                </div>
+            </a>
+        </div>
     </div>
 </div>
 
