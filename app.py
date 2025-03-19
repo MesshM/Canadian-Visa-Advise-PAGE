@@ -139,6 +139,7 @@ def login():
             if user and check_password_hash(user['contrasena'], password):
                 session['user_id'] = user['id_usuario']
                 session['user_name'] = f"{user['nombres']} {user['apellidos']}"
+                session['is_admin'] = email.endswith('@cva.com')  # Guardar si es admin en la sesión
                 
                 # Si marcó "Mantener la sesión abierta", hacer la sesión permanente
                 if remember_me:
@@ -146,13 +147,29 @@ def login():
                 else:
                     session.permanent = False
                 
-                return redirect(url_for('index'))
+                # Verificar si el correo termina con @cva.com para redirigir
+                if email.endswith('@cva.com'):
+                    # Redirigir a la ruta del administrador en lugar de renderizar directamente
+                    return redirect(url_for('index_asesor'))
+                else:
+                    return redirect(url_for('/'))
             else:
                 flash('Correo o contraseña incorrectos', 'error')
         else:
             flash('Error de conexión a la base de datos', 'error')
     
     return render_template('login.html')
+
+# Ruta específica para el panel de administrador
+@app.route('/admin')
+def index_asesor():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        # Si no está logueado o no es admin, redirigir al login
+        return redirect(url_for('login'))
+    
+    # Renderizar la plantilla del administrador desde su ubicación específica
+    return render_template('Administrador/index_asesor.html')
+
 
 #generar un texto aleatorio para el captcha
 def generate_captcha_text(length=6):
