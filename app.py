@@ -121,6 +121,17 @@ def index():
         # Si hay usuario logueado, mostrar el dashboard
         return render_template('index.html', logged_in=True)
 
+# Agregar la ruta para el perfil de usuario
+@app.route('/perfil')
+def perfil():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Aquí puedes agregar lógica para cargar datos del usuario si es necesario
+    # Por ejemplo, obtener información del usuario desde la base de datos
+    
+    return render_template('perfil.html')
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':

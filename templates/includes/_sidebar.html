@@ -51,50 +51,40 @@
         </a>
     </nav>
 
-    <!-- User profile -->
-    <div class="mt-auto border-t border-gray-100">
-        {% if 'user_id' in session %}
-            <!-- Si el usuario está logueado, mostrar la información del usuario y el botón de logout -->
-            <div class="flex items-center p-6">
-                <div class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 mr-3 text-gray-500 transition-all duration-300 ease-in-out shadow-sm">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                    </svg>
-                </div>
-                <div class="flex-1">
-                    <div class="font-medium text-gray-900 font-inter">
+    <!-- Perfil de usuario en la parte inferior -->
+   <div class="mt-auto border-t border-gray-100">
+    <div class="flex items-center p-6">
+        <a href="/perfil" class="flex items-center w-full group">
+            <div class="flex items-center justify-center w-10 h-10 rounded-full bg-red-500 mr-3 text-white transition-all duration-300 ease-in-out shadow-sm group-hover:shadow-md group-hover:scale-110">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <div class="font-medium text-gray-900 group-hover:text-red-500 transition-colors duration-300">
+                    {% if session is defined and 'user_name' in session %}
                         {{ session['user_name'] }}
-                    </div>
+                    {% else %}
+                        Emiliano Mendoza
+                    {% endif %}
                 </div>
-                <!-- Icono de cerrar sesión -->
-                <a href="/logout" class="flex items-center justify-center w-8 h-8 text-gray-500 hover:text-primary-600 transition-all duration-300 ease-in-out">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                    </svg>
-                </a>
+                <div class="text-xs text-gray-500">
+                    {% if session is defined and 'user_role' in session %}
+                        {{ session['user_role'] }}
+                    {% else %}
+                        Asesor
+                    {% endif %}
+                </div>
             </div>
-        {% else %}
-            <!-- Si el usuario no está logueado, mostrar botones de Login y Signup -->
-            <div class="flex flex-col p-6 space-y-4">
-                <a href="/login" class="relative overflow-hidden group flex items-center justify-center px-4 py-2 text-white bg-gradient-to-r from-primary-600 to-primary-500 rounded-lg hover:from-primary-500 hover:to-primary-600 shadow-btn hover:shadow-btn-hover transition-all duration-300 ease-in-out font-roboto">
-                    <span class="absolute right-0 w-8 h-32 -mt-12 opacity-20 transform rotate-12 translate-x-12 bg-white transition-all duration-1000 group-hover:-translate-x-40"></span>
-                    <div class="relative flex items-center justify-center">
-                        <span>Iniciar Sesión</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                </a>
-                <a href="/registro" class="relative overflow-hidden group flex items-center justify-center px-4 py-2 text-primary-600 border border-primary-500 rounded-lg hover:bg-primary-50 transition-all duration-300 ease-in-out font-roboto">
-                    <span class="absolute right-0 w-8 h-32 -mt-12 opacity-10 transform rotate-12 translate-x-12 bg-primary-500 transition-all duration-1000 group-hover:-translate-x-40"></span>
-                    <div class="relative flex items-center justify-center">
-                        <span>Registrarse</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
-                        </svg>
-                    </div>
-                </a>
-            </div>
-        {% endif %}
+        </a>
     </div>
+
+    <a href="/logout" class="flex items-center w-full p-3 text-gray-500 border-t border-gray-100 transition-all duration-300 ease-in-out hover:text-red-500 hover:bg-gray-50 text-sm">
+        <svg class="w-5 h-5 mr-2 transition-transform duration-300 ease-in-out" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+        </svg>
+        <span>Cerrar sesión</span>
+    </a>
+</div>
 </aside>
+
