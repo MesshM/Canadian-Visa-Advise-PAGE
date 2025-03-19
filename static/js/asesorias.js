@@ -104,29 +104,29 @@ function showNotification(message, type = "success") {
 
   // Agregar el mensaje
   notification.innerHTML = `
-        <div class="flex items-center">
-            <div class="flex-shrink-0">
-                ${
-                  type === "success"
-                    ? '<svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
-                    : type === "error"
-                      ? '<svg class="h-5 w-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>'
-                      : type === "warning"
-                        ? '<svg class="h-5 w-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>'
-                        : '<svg class="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
-                }
-            </div>
-            <div class="ml-3">
-                <p class="text-sm">${message}</p>
-            </div>
-            <div class="ml-auto pl-3">
-                <button class="inline-flex text-gray-400 hover:text-gray-500 focus:outline-none cursor-pointer">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-        </div>
-    `
+      <div class="flex items-center">
+          <div class="flex-shrink-0">
+              ${
+                type === "success"
+                  ? '<svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
+                  : type === "error"
+                    ? '<svg class="h-5 w-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>'
+                    : type === "warning"
+                      ? '<svg class="h-5 w-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>'
+                      : '<svg class="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+              }
+          </div>
+          <div class="ml-3">
+              <p class="text-sm">${message}</p>
+          </div>
+          <div class="ml-auto pl-3">
+              <button class="inline-flex text-gray-400 hover:text-gray-500 focus:outline-none cursor-pointer">
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+          </div>
+      </div>
+  `
 
   // Agregar al DOM
   document.body.appendChild(notification)
@@ -208,7 +208,7 @@ function renderCalendar() {
   calendarDays.innerHTML = ""
 
   // Obtener el primer día del mes
-  const firstDay = new Date(currentYear, currentMonth, 1)
+  const firstDay = new Date(currentYear, currentMonth, 0)
   const startingDay = firstDay.getDay() // 0 = Domingo, 1 = Lunes, etc.
 
   // Obtener el número de días en el mes
@@ -397,11 +397,11 @@ async function showTimeSelector(dateString) {
 
   // Mostrar indicador de carga
   timeSlots.innerHTML = `
-    <div class="col-span-3 flex items-center justify-center py-4">
-      <div class="inline-block animate-spin h-6 w-6 border-4 border-primary-600 border-t-transparent rounded-full mr-2"></div>
-      <p class="text-gray-500">Cargando horarios disponibles...</p>
-    </div>
-  `
+  <div class="col-span-3 flex items-center justify-center py-4">
+    <div class="inline-block animate-spin h-6 w-6 border-4 border-primary-600 border-t-transparent rounded-full mr-2"></div>
+    <p class="text-gray-500">Cargando horarios disponibles...</p>
+  </div>
+`
 
   // Ocultar primero para la animación
   timeSelector.style.opacity = "0"
@@ -460,13 +460,13 @@ async function showTimeSelector(dateString) {
   } catch (error) {
     console.error("Error al cargar horarios:", error)
     timeSlots.innerHTML = `
-      <p class="text-center text-red-500 col-span-3">
-        Error al cargar horarios. 
-        <button class="text-primary-600 underline" onclick="showTimeSelector('${dateString}')">
-          Reintentar
-        </button>
-      </p>
-    `
+    <p class="text-center text-red-500 col-span-3">
+      Error al cargar horarios. 
+      <button class="text-primary-600 underline" onclick="showTimeSelector('${dateString}')">
+        Reintentar
+      </button>
+    </p>
+  `
   }
 }
 
@@ -633,8 +633,9 @@ function loadAsesorAvailability(asesorId) {
     const date = new Date()
     date.setDate(today.getDate() + i)
 
-    // Excluir fines de semana
-    if (date.getDay() !== 0 && date.getDay() !== 6) {
+    // Verificar si el día de la semana es de lunes (1) a viernes (5)
+    const dayOfWeek = date.getDay()
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
       const dateString = formatDateString(date)
       availableDates[dateString] = true
     }
@@ -650,13 +651,10 @@ function checkAvailability(dateString) {
   if (!selectedAsesorId) return false
 
   // Verificar si es fin de semana
-  // Solo excluir domingos (0) y sábados (6), permitir lunes (1)
-  const date = new Date(dateString);
-  const dayOfWeek = date.getDay();
-  if (dayOfWeek === 0 || dayOfWeek === 6) {
-      return false;
-  }
-
+  // Solo excluir domingos (0) y sábados (6)
+  const date = new Date(dateString)
+  const dayOfWeek = date.getDay()
+  if (dayOfWeek === 0 || dayOfWeek === 6) return false
 
   // Verificar si es una fecha pasada
   const today = new Date()
@@ -815,7 +813,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Redirigir a la página de pago o actualizar la lista de asesorías
         if (data.codigo_asesoria) {
           // Opción 1: Abrir modal de pago directamente
-          pagarAsesoria(data.codigo_asesoria, formDataObj.tipo_asesoria)
+          abrirModalPago(data.codigo_asesoria, formDataObj.tipo_asesoria)
 
           // Opción 2: Recargar la página para mostrar la nueva asesoría
           // setTimeout(() => {
@@ -837,66 +835,66 @@ document.addEventListener("DOMContentLoaded", () => {
   // Agregar estilos CSS personalizados para las animaciones mejoradas
   const styleElement = document.createElement("style")
   styleElement.textContent = `
-    @keyframes pulse-scale {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-    
-    @keyframes fade-in-scale {
-      0% { opacity: 0; transform: scale(0.95) translateY(10px); }
-      100% { opacity: 1; transform: scale(1) translateY(0); }
-    }
-    
-    @keyframes slide-in {
-      0% { transform: translateX(20px); opacity: 0; }
-      100% { transform: translateX(0); opacity: 1; }
-    }
-    
-    @keyframes bounce-in {
-      0% { transform: scale(0.8); opacity: 0; }
-      70% { transform: scale(1.05); opacity: 1; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-    
-    .animate-pulse-scale {
-      animation: pulse-scale 0.5s ease-in-out;
-    }
-    
-    .animate-fade-in {
-      animation: fade-in-scale 0.4s ease-out forwards;
-    }
-    
-    .animate-slide-in {
-      animation: slide-in 0.5s ease-out forwards;
-    }
-    
-    .animate-bounce-in {
-      animation: bounce-in 0.5s ease-out forwards;
-    }
-    
-    .scale-110 {
-      transform: scale(1.1);
-    }
-    
-    /* Mejorar transiciones para elementos del calendario */
-    #calendar-days > div {
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    #calendar-days > div:hover {
-      transform: translateY(-2px);
-    }
-    
-    /* Mejorar transiciones para botones de hora */
-    #time-slots button {
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    #time-slots button:hover {
-      transform: translateY(-2px);
-    }
-  `
+  @keyframes pulse-scale {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+  
+  @keyframes fade-in-scale {
+    0% { opacity: 0; transform: scale(0.95) translateY(10px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  
+  @keyframes slide-in {
+    0% { transform: translateX(20px); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+  }
+  
+  @keyframes bounce-in {
+    0% { transform: scale(0.8); opacity: 0; }
+    70% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  
+  .animate-pulse-scale {
+    animation: pulse-scale 0.5s ease-in-out;
+  }
+  
+  .animate-fade-in {
+    animation: fade-in-scale 0.4s ease-out forwards;
+  }
+  
+  .animate-slide-in {
+    animation: slide-in 0.5s ease-out forwards;
+  }
+  
+  .animate-bounce-in {
+    animation: bounce-in 0.5s ease-out forwards;
+  }
+  
+  .scale-110 {
+    transform: scale(1.1);
+  }
+  
+  /* Mejorar transiciones para elementos del calendario */
+  #calendar-days > div {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  #calendar-days > div:hover {
+    transform: translateY(-2px);
+  }
+  
+  /* Mejorar transiciones para botones de hora */
+  #time-slots button {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  #time-slots button:hover {
+    transform: translateY(-2px);
+  }
+`
   document.head.appendChild(styleElement)
 
   // Inicializar numeración de asesorías
@@ -947,6 +945,51 @@ document.addEventListener("DOMContentLoaded", () => {
       this.classList.remove("animate-pulse-slow")
     })
   })
+
+  // Agregar event listener para el formulario de edición
+  const editForm = document.getElementById("editForm")
+  if (editForm) {
+    editForm.addEventListener("submit", async (e) => {
+      e.preventDefault()
+
+      // Recopilar los datos del formulario
+      const formData = new FormData(editForm)
+      const formDataObj = {}
+      formData.forEach((value, key) => {
+        formDataObj[key] = value
+      })
+
+      try {
+        // Enviar los datos al servidor
+        const response = await fetch("/editar_asesoria", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formDataObj),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || "Error al actualizar la asesoría")
+        }
+
+        // Mostrar notificación de éxito
+        showNotification("Asesoría actualizada exitosamente", "success")
+
+        // Cerrar el modal
+        closeEditAdvisoryModalFunc()
+
+        // Recargar la página para mostrar los cambios
+        setTimeout(() => {
+          window.location.reload()
+        }, 1500)
+      } catch (error) {
+        console.error("Error al actualizar la asesoría:", error)
+        showNotification("Error al actualizar la asesoría: " + error.message, "error")
+      }
+    })
+  }
 })
 
 // Modificar la función para cerrar el modal de nueva asesoría
@@ -1078,14 +1121,13 @@ async function procesarPago(id) {
 
         // Actualizar el contenido del botón
         pagoBtn.innerHTML = `
-                    <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
-                    <div class="relative flex items-center justify-center">
-                        <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                        <span>Pagado</span>
-                    </div>
-                `
+                  <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                  <div class="relative flex items-center justify-center">
+                      <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                      <span>Pagado</span>
+                  </div>
+              `
 
         // Deshabilitar el botón
         pagoBtn.onclick = null
@@ -1113,11 +1155,11 @@ async function procesarPago(id) {
               const spanElement = p.querySelector("span:last-child")
               if (spanElement && !spanElement.querySelector("svg")) {
                 spanElement.innerHTML = `
-                  $${monto.toFixed(2)} USD
-                  <svg class="w-4 h-4 ml-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                `
+                $${monto.toFixed(2)} USD
+                <svg class="w-4 h-4 ml-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              `
               }
               break
             }
@@ -1163,16 +1205,15 @@ let currentYear = new Date().getFullYear()
 let openNewAdvisoryModal = () => {}
 let filterAsesorias = () => {}
 function enviarMensaje() {}
-function pagarAsesoria() {}
-function closePagoModal() {}
+const closePagoModal = () => {}
 let editAsesoriaFunc = () => {}
 let closeEditAdvisoryModalFunc = () => {}
 let toggleDetails = () => {}
 function resetFilters() {}
 let verHistorialChatFunc = () => {}
-function closeChatHistorialModal() {}
-function cancelarAsesoria() {}
-function closeCancelarAsesoriaModal() {}
+const closeChatHistorialModal = () => {}
+function cancelarAsesoriaModal() {}
+function closeCancelarAsesoriaModalFunc() {}
 function reiniciarPasarelaPago() {}
 
 // Exportar funciones para uso global
@@ -1185,10 +1226,10 @@ window.resetFilters = resetFilters
 window.verHistorialChat = verHistorialChatFunc
 window.closeChatHistorialModal = closeChatHistorialModal
 window.enviarMensaje = enviarMensaje
-window.pagarAsesoria = pagarAsesoria
+window.abrirModalPago = abrirModalPago
 window.closePagoModal = closePagoModal
-window.cancelarAsesoria = cancelarAsesoria
-window.closeCancelarAsesoriaModal = closeCancelarAsesoriaModal
+window.cancelarAsesoria = cancelarAsesoriaModal
+window.closeCancelarAsesoriaModal = closeCancelarAsesoriaModalFunc
 window.reiniciarPasarelaPago = reiniciarPasarelaPago
 window.showTimeSelector = showTimeSelector
 
@@ -1277,7 +1318,78 @@ filterAsesorias = () => {
     // Obtener fecha de la asesoría
     const fechaCell = row.querySelector("td:nth-child(2)")
     const fechaText = fechaCell ? fechaCell.textContent.trim() : ""
-    const fechaAsesoria = fechaCell ? new Date(fechaText.split("\n")[0]) : new Date()
+    const fechaParts = fechaText.split("\n")
+    const fecha = fechaParts[0]
+    const hora = fechaParts[1] ? fechaParts[1].trim() : "00:00"
+
+    // Obtener datos adicionales de los detalles
+    const detailsRow = document.getElementById(`details-${asesoriaId}`)
+    let tipoAsesoria = ""
+    let descripcion = ""
+    let lugar = "Virtual (Zoom)"
+    const tipoDocumento = "C.C"
+    const numeroDocumento = ""
+
+    if (detailsRow) {
+      const paragraphs = detailsRow.querySelectorAll("p")
+      paragraphs.forEach((p) => {
+        const text = p.textContent.trim()
+        if (text.includes("Tipo de Visa:")) {
+          tipoAsesoria = text.split(":")[1].trim()
+        } else if (text.includes("Descripción:")) {
+          descripcion = text.split(":")[1].trim()
+        } else if (text.includes("Lugar:")) {
+          lugar = text.split(":")[1].trim()
+        }
+      })
+    }
+
+    // Llenar el formulario
+    const editForm = document.getElementById("editForm")
+    if (editForm) {
+      const codigoInput = document.getElementById("edit_codigo_asesoria")
+      const fechaInput = document.getElementById("edit_fecha_asesoria")
+      const tipoAsesoriaSelect = document.getElementById("edit_tipo_asesoria")
+      const descripcionInput = document.getElementById("edit_descripcion")
+      const lugarSelect = document.getElementById("edit_lugar")
+      const tipoDocumentoSelect = document.getElementById("edit_tipo_documento")
+      const numeroDocumentoInput = document.getElementById("edit_numero_documento")
+
+      if (codigoInput) codigoInput.value = asesoriaId
+
+      // Formatear fecha y hora para input datetime-local
+      if (fechaInput) {
+        const fechaObj = new Date(fecha)
+        const year = fechaObj.getFullYear()
+        const month = String(fechaObj.getMonth() + 1).padStart(2, "0")
+        const day = String(fechaObj.getDate()).padStart(2, "0")
+        const [hours, minutes] = hora.split(":")
+        fechaInput.value = `${year}-${month}-${day}T${hours}:${minutes}`
+      }
+
+      if (tipoAsesoriaSelect) {
+        for (let i = 0; i < tipoAsesoriaSelect.options.length; i++) {
+          if (tipoAsesoriaSelect.options[i].value === tipoAsesoria) {
+            tipoAsesoriaSelect.selectedIndex = i
+            break
+          }
+        }
+      }
+
+      if (descripcionInput) descripcionInput.value = descripcion
+
+      if (lugarSelect) {
+        for (let i = 0; i < lugarSelect.options.length; i++) {
+          if (lugarSelect.options[i].value === lugar) {
+            lugarSelect.selectedIndex = i
+            break
+          }
+        }
+      }
+
+      if (tipoDocumentoSelect) tipoDocumentoSelect.value = tipoDocumento
+      if (numeroDocumentoInput) numeroDocumentoInput.value = numeroDocumento
+    }
 
     // Aplicar filtros
     let showRow = true
@@ -1310,11 +1422,25 @@ filterAsesorias = () => {
 
       const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
 
+      // Ensure fechaAsesoria is defined and is a Date object
+      let fechaAsesoria
+      try {
+        fechaAsesoria = new Date(fecha)
+        if (isNaN(fechaAsesoria.getTime())) {
+          showRow = false // Invalid date, hide the row
+          return
+        }
+      } catch (e) {
+        showRow = false // Error creating date, hide the row
+        return
+      }
+
       if (dateValue === "today" && fechaAsesoria.toDateString() !== today.toDateString()) {
         showRow = false
       } else if (
         dateValue === "week" &&
-        (fechaAsesoria < weekStart || fechaAsesoria > today.setDate(weekStart.getDate() + 6))
+        (fechaAsesoria < weekStart ||
+          fechaAsesoria > new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay() + 6))
       ) {
         showRow = false
       } else if (
@@ -1475,6 +1601,53 @@ closeEditAdvisoryModalFunc = () => {
   modal.classList.add("hidden")
 }
 
+// Agregar event listener para el formulario de edición
+document.addEventListener("DOMContentLoaded", () => {
+  const editForm = document.getElementById("editForm")
+  if (editForm) {
+    editForm.addEventListener("submit", async (e) => {
+      e.preventDefault()
+
+      // Recopilar los datos del formulario
+      const formData = new FormData(editForm)
+      const formDataObj = {}
+      formData.forEach((value, key) => {
+        formDataObj[key] = value
+      })
+
+      try {
+        // Enviar los datos al servidor
+        const response = await fetch("/editar_asesoria", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formDataObj),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || "Error al actualizar la asesoría")
+        }
+
+        // Mostrar notificación de éxito
+        showNotification("Asesoría actualizada exitosamente", "success")
+
+        // Cerrar el modal
+        closeEditAdvisoryModalFunc()
+
+        // Recargar la página para mostrar los cambios
+        setTimeout(() => {
+          window.location.reload()
+        }, 1500)
+      } catch (error) {
+        console.error("Error al actualizar la asesoría:", error)
+        showNotification("Error al actualizar la asesoría: " + error.message, "error")
+      }
+    })
+  }
+})
+
 // Función para ver historial de chat
 verHistorialChatFunc = (asesoriaId) => {
   const modal = document.getElementById("chatHistorialModal")
@@ -1488,10 +1661,10 @@ verHistorialChatFunc = (asesoriaId) => {
   const chatMessages = document.getElementById("chat-messages")
   if (chatMessages) {
     chatMessages.innerHTML = `
-      <div class="flex justify-center py-4">
-        <p class="text-gray-500">No hay mensajes en esta conversación</p>
-      </div>
-    `
+    <div class="flex justify-center py-4">
+      <p class="text-gray-500">No hay mensajes en esta conversación</p>
+    </div>
+  `
   }
 
   // Mostrar el modal
@@ -1533,11 +1706,11 @@ function enviarMensaje() {
   const messageElement = document.createElement("div")
   messageElement.className = "flex flex-col items-end"
   messageElement.innerHTML = `
-    <div class="bg-primary-100 text-primary-800 p-3 rounded-lg max-w-xs">
-      <p class="text-sm">${mensaje}</p>
-    </div>
-    <span class="text-xs text-gray-500 mt-1">Ahora</span>
-  `
+  <div class="bg-primary-100 text-primary-800 p-3 rounded-lg max-w-xs">
+    <p class="text-sm">${mensaje}</p>
+  </div>
+  <span class="text-xs text-gray-500 mt-1">Ahora</span>
+`
 
   // Agregar mensaje al chat
   chatMessages.appendChild(messageElement)
@@ -1565,11 +1738,11 @@ function enviarMensaje() {
     const responseElement = document.createElement("div")
     responseElement.className = "flex flex-col items-start animate-fade-in"
     responseElement.innerHTML = `
-      <div class="bg-gray-100 text-gray-800 p-3 rounded-lg max-w-xs">
-        <p class="text-sm">Gracias por tu mensaje. Un asesor te responderá pronto.</p>
-      </div>
-      <span class="text-xs text-gray-500 mt-1">Ahora</span>
-    `
+    <div class="bg-gray-100 text-gray-800 p-3 rounded-lg max-w-xs">
+      <p class="text-sm">Gracias por tu mensaje. Un asesor te responderá pronto.</p>
+    </div>
+    <span class="text-xs text-gray-500 mt-1">Ahora</span>
+  `
 
     chatMessages.appendChild(responseElement)
     chatMessages.scrollTop = chatMessages.scrollHeight
@@ -1577,7 +1750,7 @@ function enviarMensaje() {
 }
 
 // Función para procesar el pago de una asesoría
-function pagarAsesoria(asesoriaId, tipoAsesoria) {
+function abrirModalPago(asesoriaId, tipoAsesoria) {
   const modal = document.getElementById("pagoModal")
   if (!modal) return
 
@@ -1622,7 +1795,7 @@ function pagarAsesoria(asesoriaId, tipoAsesoria) {
 }
 
 // Función para cerrar el modal de pago
-function closePagoModal() {
+function closePagoModalFunc() {
   const modal = document.getElementById("pagoModal")
   if (!modal) return
 
@@ -1737,16 +1910,16 @@ function reiniciarPasarelaPago() {
       const paymentElement = document.getElementById("payment-element")
       if (paymentElement) {
         paymentElement.innerHTML = `
-        <div class="p-4 bg-red-100 text-red-700 rounded-lg">
-          <p>Error al inicializar el pago: ${error.message}</p>
-        </div>
-      `
+      <div class="p-4 bg-red-100 text-red-700 rounded-lg">
+        <p>Error al inicializar el pago: ${error.message}</p>
+      </div>
+    `
       }
     })
 }
 
 // Add the cancelarAsesoria function to delete the appointment
-function cancelarAsesoria(asesoriaId) {
+function cancelarAsesoriaModal(asesoriaId) {
   const modal = document.getElementById("cancelarAsesoriaModal")
   if (!modal) return
 
@@ -1779,7 +1952,7 @@ function cancelarAsesoria(asesoriaId) {
         showNotification("Asesoría cancelada exitosamente", "success")
 
         // Close the modal
-        closeCancelarAsesoriaModal()
+        closeCancelarAsesoriaModalFunc()
 
         // Remove the appointment from the DOM
         const row = document.querySelector(`tr[data-asesoria-id="${asesoriaId}"]`)
@@ -1813,7 +1986,7 @@ function cancelarAsesoria(asesoriaId) {
 }
 
 // Add the closeCancelarAsesoriaModal function
-function closeCancelarAsesoriaModal() {
+function closeCancelarAsesoriaModalFunc() {
   const modal = document.getElementById("cancelarAsesoriaModal")
   if (!modal) return
 
