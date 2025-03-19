@@ -130,36 +130,68 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-  if request.method == 'POST':
-      email = request.form['email']
-      password = request.form['password']
-      remember_me = request.form.get('remember_me')  # Verificar si marcó "Mantener la sesión abierta"
-      
-      connection = create_connection()
-      if connection:
-          cursor = connection.cursor(dictionary=True)
-          cursor.execute("SELECT * FROM tbl_usuario WHERE correo = %s", (email,))
-          user = cursor.fetchone()
-          cursor.close()
-          connection.close()
-          
-          if user and check_password_hash(user['contrasena'], password):
-              session['user_id'] = user['id_usuario']
-              session['user_name'] = f"{user['nombres']} {user['apellidos']}"
-              
-              # Si marcó "Mantener la sesión abierta", hacer la sesión permanente
-              if remember_me:
-                  session.permanent = True
-              else:
-                  session.permanent = False
-              
-              return redirect(url_for('index'))
-          else:
-              flash('Correo o contraseña incorrectos', 'error')
-      else:
-          flash('Error de conexión a la base de datos', 'error')
-  
-  return render_template('login.html')
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        remember_me = request.form.get('remember_me')
+        
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM tbl_usuario WHERE correo = %s", (email,))
+            user = cursor.fetchone()
+            cursor.close()
+            connection.close()
+            
+            if user and check_password_hash(user['contrasena'], password):
+                session['user_id'] = user['id_usuario']
+                session['user_name'] = f"{user['nombres']} {user['apellidos']}"
+                session['is_admin'] = email.endswith('@cva.com')
+                
+                if remember_me:
+                    session.permanent = True
+                else:
+                    session.permanent = False
+                
+                # Verificar si el correo termina con @cva.com
+                if email.endswith('@cva.com'):
+                    # Redirigir a la página de administrador
+                    return redirect(url_for('index_asesor'))
+                else:
+                    # Redirigir a la página normal
+                    return redirect(url_for('index'))
+            else:
+                flash('Correo o contraseña incorrectos', 'error')
+        else:
+            flash('Error de conexión a la base de datos', 'error')
+    
+    return render_template('login.html')
+
+# Ruta para la página de administrador
+@app.route('/admin')
+def admin_index():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('index_asesor'))
+    
+    # Depuración: Imprimir información sobre las plantillas
+    import os
+    print(f"Directorio de trabajo actual: {os.getcwd()}")
+    print(f"Carpeta de plantillas: {app.template_folder}")
+    print(f"¿Existe base_asesor.html?: {os.path.exists(os.path.join(app.template_folder, 'base_asesor.html'))}")
+    
+    try:
+        # Renderizar la plantilla de administrador
+        return render_template('index_administrador.html')
+    except Exception as e:
+        # Capturar y mostrar cualquier error
+        print(f"Error al renderizar la plantilla: {str(e)}")
+        # Mostrar el error al usuario
+        return f"Error: {str(e)}", 500
+    
+@app.route('/asesor', methods=['GET'])
+def index_asesor():
+    return render_template('Administrador/index_asesor.html')
+
 
 #generar un texto aleatorio para el captcha
 def generate_captcha_text(length=6):
@@ -225,6 +257,12 @@ def forgot_password():
   # Guardar el captcha en la sesión para validarlo después
   session['captcha_text'] = captcha_text
   return render_template('forgot_password.html', captcha_text=captcha_text)
+
+#rutas para los html
+@app.route("/pagos")
+def pagos():
+    return render_template("pagos.html")
+
 
 @app.route('/refresh_captcha')
 def refresh_captcha():
