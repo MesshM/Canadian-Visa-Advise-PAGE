@@ -109,7 +109,6 @@ limpieza_thread.start()
 # Definir el filtro personalizado
 @app.template_filter('split')
 def split_filter(s, delimiter=None):
-<<<<<<< HEAD
     return s.split(delimiter)
 
 # Rutas
@@ -946,9 +945,7 @@ def payment_success():
         flash('No se pudo identificar el pago', 'error')
     
     return redirect(url_for('asesorias'))
-=======
-  return s.split(delimiter)
->>>>>>> 683965a72a7954fba4729f64d9f25b2745793dab
+    return s.split(delimiter)
 
 # Función para obtener la fecha y hora actual (para usar en las plantillas)
 @app.context_processor
