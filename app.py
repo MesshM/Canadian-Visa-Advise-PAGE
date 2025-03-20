@@ -274,11 +274,6 @@ def forgot_password():
   session['captcha_text'] = captcha_text
   return render_template('forgot_password.html', captcha_text=captcha_text)
 
-#rutas para los html
-@app.route("/pagos")
-def pagos():
-    return render_template("pagos.html")
-
 
 @app.route('/refresh_captcha')
 def refresh_captcha():
@@ -1178,6 +1173,16 @@ def crear_payment_intent():
     except Exception as e:
         print(f"Error al crear PaymentIntent: {str(e)}")
         return jsonify({'error': str(e)}), 500
+    
+#ruta 
+@app.route('/pagos')
+def pagos():
+    return render_template('pagos.html')
+
+
+
+
+    
 
 # Añadir ruta para confirmar el pago
 @app.route('/confirmar_pago', methods=['GET'])
