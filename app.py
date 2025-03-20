@@ -157,24 +157,19 @@ def login():
             if user and check_password_hash(user['contrasena'], password):
                 session['user_id'] = user['id_usuario']
                 session['user_name'] = f"{user['nombres']} {user['apellidos']}"
-                
-                # Verificar el rol del usuario
-                if email.endswith('@cva.com'):
-                    session['user_role'] = 'Asesor'
-                    session['is_admin'] = True
-                else:
-                    session['user_role'] = 'Usuario'
-                    session['is_admin'] = False
+                session['is_admin'] = email.endswith('@cva.com')
                 
                 if remember_me:
                     session.permanent = True
                 else:
                     session.permanent = False
                 
-                # Redirigir según el rol
+                # Verificar si el correo termina con @cva.com
                 if email.endswith('@cva.com'):
+                    # Redirigir a la página de administrador
                     return redirect(url_for('index_asesor'))
                 else:
+                    # Redirigir a la página normal
                     return redirect(url_for('index'))
             else:
                 flash('Correo o contraseña incorrectos', 'error')
@@ -336,9 +331,9 @@ def reset_password(token):
 
 @app.route('/logout')
 def logout():
-    # Limpiar toda la sesión en lugar de solo user_id y user_name
-    session.clear()
-    return redirect(url_for('login'))
+  session.pop('user_id', None)
+  session.pop('user_name', None)
+  return redirect(url_for('login'))
 
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
@@ -524,6 +519,8 @@ def formularios():
 def asesorias():
   if 'user_id' not in session:
       return redirect(url_for('login'))
+  
+  
   
   connection = create_connection()
   if connection:
@@ -1204,7 +1201,9 @@ def crear_payment_intent():
 def pagos():
     return render_template('pagos.html')
 
-
+@app.route('/index_asesor')
+def index_asesor():
+    return render_template('index_asesor.html')
 
 
     
@@ -1455,9 +1454,7 @@ def perfil():
                 """, (user['id_solicitante'],))
                 asesorias = cursor.fetchall()
             
-            # Incluir CSS adicional para correcciones
-            return render_template('perfil.html', user=user, asesorias=asesorias, 
-                                  additional_css='/static/css/perfil-fixes.css')
+            return render_template('perfil.html', user=user, asesorias=asesorias)
         except Exception as e:
             flash(f'Error al cargar el perfil: {str(e)}', 'error')
         finally:
@@ -1889,4 +1886,43 @@ def obtener_detalles_asesoria(codigo_asesoria):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+@app.route('/mensajes')
+def mensajes():
+    return ""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
