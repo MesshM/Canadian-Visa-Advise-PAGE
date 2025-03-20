@@ -254,7 +254,7 @@ def forgot_password():
       else:
           flash('Error de conexión a la base de datos', 'error')
   
-  # Guardar el captcha en la sesión para validarlo después
+# Guardar el captcha en la sesión para validarlo después
   session['captcha_text'] = captcha_text
   return render_template('forgot_password.html', captcha_text=captcha_text)
 
@@ -535,6 +535,7 @@ def asesorias():
           SELECT a.codigo_asesoria, a.fecha_asesoria, a.asesor_asignado,
               CONCAT(u.nombres, ' ', u.apellidos) as solicitante,
               a.id_solicitante, a.id_asesor, a.tipo_asesoria,
+              a.especialidad, 
               p.metodo_pago, 
               COALESCE(pa.monto, CASE 
                   WHEN a.tipo_asesoria = 'Visa de Trabajo' THEN 150.00
@@ -564,7 +565,7 @@ def asesorias():
   else:
       flash('Error de conexión a la base de datos', 'error')
       return redirect(url_for('index'))
-  
+
 # Esta ruta obtiene todos los asesores de la base de datos
 @app.route('/obtener_asesores', methods=['GET'])
 def obtener_asesores():
@@ -576,7 +577,7 @@ def obtener_asesores():
       if connection:
           cursor = connection.cursor(dictionary=True)
           
-          # Obtener todos los asesores
+          # Obtener todos los asesores con su especialidad
           cursor.execute("""
               SELECT id_asesor, nombre, apellidos, correo, 
                      CASE 
@@ -774,153 +775,177 @@ def cancelar_reserva_temporal():
 # Modificación de la función nueva_asesoria para que no redirija automáticamente al pago
 @app.route('/nueva_asesoria', methods=['POST'])
 def nueva_asesoria():
-  if 'user_id' not in session:
-      if request.is_json:
-          return jsonify({'error': 'No autorizado'}), 401
-      return redirect(url_for('login'))
-  
-  try:
-      # Determinar si la solicitud es AJAX o un envío de formulario tradicional
-      if request.is_json:
-          data = request.get_json()
-          id_solicitante = data.get('id_solicitante')
-          tipo_asesoria = data.get('tipo_asesoria', 'Visa de Trabajo')
-          descripcion = data.get('descripcion', '')
-          lugar = data.get('lugar', 'Virtual (Zoom)')
-          metodo_pago = data.get('metodo_pago', 'Tarjeta de Crédito')
-          tipo_documento = data.get('tipo_documento', 'C.C')
-          numero_documento = data.get('numero_documento', '')
-          id_asesor = data.get('id_asesor', '')
-          asesor_asignado = data.get('asesor_asignado', 'Por asignar')
-          fecha_asesoria = data.get('fecha_asesoria')
-      else:
-          # Obtener datos del formulario tradicional
-          id_solicitante = request.form['id_solicitante']
-          tipo_asesoria = request.form.get('tipo_asesoria', 'Visa de Trabajo')
-          descripcion = request.form.get('descripcion', '')
-          lugar = request.form.get('lugar', 'Virtual (Zoom)')
-          metodo_pago = request.form.get('metodo_pago', 'Tarjeta de Crédito')
-          tipo_documento = request.form.get('tipo_documento', 'C.C')
-          numero_documento = request.form.get('numero_documento', '')
-          id_asesor = request.form.get('id_asesor', '')
-          asesor_asignado = request.form.get('asesor_asignado', 'Por asignar')
-          fecha_asesoria = request.form.get('fecha_asesoria')
-      
-      # Obtener el precio según el tipo de visa
-      precio = PRECIOS_VISA.get(tipo_asesoria, 150.00)
-      
-      connection = create_connection()
-      if connection:
-          cursor = connection.cursor()
-          try:
-              # Verificar si la fecha y hora ya están reservadas
-              if fecha_asesoria and id_asesor:
-                  fecha_obj = datetime.strptime(fecha_asesoria, '%Y-%m-%dT%H:%M') if isinstance(fecha_asesoria, str) else fecha_asesoria
-                  
-                  cursor.execute("""
-                      SELECT codigo_asesoria FROM tbl_asesoria 
-                      WHERE id_asesor = %s AND DATE(fecha_asesoria) = %s AND TIME(fecha_asesoria) = %s 
-                      AND estado IN ('Pendiente', 'Pagada')
-                  """, (id_asesor, fecha_obj.date(), fecha_obj.time()))
-                  
-                  existing_asesoria = cursor.fetchone()
-                  if existing_asesoria:
-                      if request.is_json:
-                          return jsonify({'error': 'Esta fecha y hora ya están reservadas'}), 400
-                      else:
-                          flash('Esta fecha y hora ya están reservadas', 'error')
-                          return redirect(url_for('asesorias'))
-              
-              # Obtener el último número de asesoría para este solicitante
-              cursor.execute("""
-                  SELECT COALESCE(MAX(numero_asesoria), 0) + 1 as next_num
-                  FROM tbl_asesoria
-                  WHERE id_solicitante = %s
-              """, (id_solicitante,))
-              
-              result = cursor.fetchone()
-              numero_asesoria = result[0] if result else 1
-              
-              # Insertar nueva asesoría con la fecha seleccionada
-              cursor.execute("""
-                  INSERT INTO tbl_asesoria (fecha_asesoria, asesor_asignado, id_solicitante, tipo_asesoria, descripcion, lugar, estado, tipo_documento, numero_documento, numero_asesoria, id_asesor, nombre_asesor)
-                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-              """, (fecha_asesoria, asesor_asignado, id_solicitante, tipo_asesoria, descripcion, lugar, "Pendiente", tipo_documento, numero_documento, numero_asesoria, id_asesor, asesor_asignado))
-              
-              # Obtener el ID de la asesoría recién creada
-              codigo_asesoria = cursor.lastrowid
-              
-              # Si hay una reserva temporal, confirmarla
-              if fecha_asesoria and id_asesor:
-                  fecha_obj = datetime.strptime(fecha_asesoria, '%Y-%m-%dT%H:%M') if isinstance(fecha_asesoria, str) else fecha_asesoria
-                  fecha = fecha_obj.date()
-                  hora = fecha_obj.time()
-                  
-                  # Buscar si existe una reserva temporal para este horario
-                  cursor.execute("""
-                      SELECT id_reserva FROM tbl_reservas_temporales
-                      WHERE id_asesor = %s AND DATE(fecha) = %s AND TIME(fecha) = %s
-                      AND id_usuario = %s AND expiracion > NOW()
-                  """, (id_asesor, fecha, hora, session['user_id']))
-                  
-                  reserva = cursor.fetchone()
-                  if reserva:
-                      reserva_id = reserva[0]
-                      
-                      # Marcar la reserva como confirmada
-                      cursor.execute("""
-                          UPDATE tbl_reservas_temporales
-                          SET confirmada = 1
-                          WHERE id_reserva = %s
-                      """, (reserva_id,))
-              
-              # Verificar si ya existe un pago para este solicitante
-              cursor.execute("""
-                  SELECT num_factura FROM tbl_pago WHERE id_solicitante = %s
-              """, (id_solicitante,))
-              
-              pago_existente = cursor.fetchone()
-              
-              # Si no existe un pago, crear uno nuevo con el precio según el tipo de visa
-              if not pago_existente:
-                  cursor.execute("""
-                      INSERT INTO tbl_pago (metodo_pago, total_pago, id_solicitante)
-                      VALUES (%s, %s, %s)
-                  """, (metodo_pago, precio, id_solicitante))
-              
-              connection.commit()
-              
-              if request.is_json:
-                  return jsonify({
-                      'success': True, 
-                      'codigo_asesoria': codigo_asesoria,
-                      'message': 'Asesoría solicitada con éxito. Puedes realizar el pago desde la lista de asesorías.'
-                  })
-              else:
-                  flash('Asesoría solicitada con éxito. Puedes realizar el pago desde la lista de asesorías.', 'success')
-          except Error as e:
-              connection.rollback()
-              if request.is_json:
-                  return jsonify({'error': f'Error al solicitar la asesoría: {e}'}), 500
-              else:
-                  flash(f'Error al solicitar la asesoría: {e}', 'error')
-          finally:
-              cursor.close()
-              connection.close()
-      else:
-          if request.is_json:
-              return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-          else:
-              flash('Error de conexión a la base de datos', 'error')
-      
-      if request.is_json:
-          return jsonify({'error': 'Error desconocido'}), 500
-      return redirect(url_for('asesorias'))
-  except Exception as e:
-      if request.is_json:
-          return jsonify({'error': f'Error: {str(e)}'}), 500
-      flash(f'Error: {str(e)}', 'error')
-      return redirect(url_for('asesorias'))
+    if 'user_id' not in session:
+        if request.is_json:
+            return jsonify({'error': 'No autorizado'}), 401
+        return redirect(url_for('login'))
+
+    try:
+        # Determinar si la solicitud es AJAX o un envío de formulario tradicional
+        if request.is_json:
+            data = request.get_json()
+            id_solicitante = data.get('id_solicitante')
+            tipo_asesoria = data.get('tipo_asesoria', 'Visa de Trabajo')
+            descripcion = data.get('descripcion', '')
+            lugar = data.get('lugar', 'Virtual (Zoom)')
+            metodo_pago = data.get('metodo_pago', 'Tarjeta de Crédito')
+            tipo_documento = data.get('tipo_documento', 'C.C')
+            numero_documento = data.get('numero_documento', '')
+            id_asesor = data.get('id_asesor', '')
+            asesor_asignado = data.get('asesor_asignado', 'Por asignar')
+            asesor_especialidad = data.get('asesor_especialidad', 'Inmigración Canadiense')
+            fecha_asesoria = data.get('fecha_asesoria')
+        else:
+            # Obtener datos del formulario tradicional
+            id_solicitante = request.form['id_solicitante']
+            tipo_asesoria = request.form.get('tipo_asesoria', 'Visa de Trabajo')
+            descripcion = request.form.get('descripcion', '')
+            lugar = request.form.get('lugar', 'Virtual (Zoom)')
+            metodo_pago = request.form.get('metodo_pago', 'Tarjeta de Crédito')
+            tipo_documento = request.form.get('tipo_documento', 'C.C')
+            numero_documento = request.form.get('numero_documento', '')
+            id_asesor = request.form.get('id_asesor', '')
+            asesor_asignado = request.form.get('asesor_asignado', 'Por asignar')
+            asesor_especialidad = request.form.get('asesor_especialidad', 'Inmigración Canadiense')
+            fecha_asesoria = request.form.get('fecha_asesoria')
+        
+        # Obtener el precio según el tipo de visa
+        precio = PRECIOS_VISA.get(tipo_asesoria, 150.00)
+        
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor()
+            try:
+                # Verificar si la fecha y hora ya están reservadas
+                if fecha_asesoria and id_asesor:
+                    fecha_obj = datetime.strptime(fecha_asesoria, '%Y-%m-%dT%H:%M') if isinstance(fecha_asesoria, str) else fecha_asesoria
+                    
+                    cursor.execute("""
+                        SELECT codigo_asesoria FROM tbl_asesoria 
+                        WHERE id_asesor = %s AND DATE(fecha_asesoria) = %s AND TIME(fecha_asesoria) = %s 
+                        AND estado IN ('Pendiente', 'Pagada')
+                    """, (id_asesor, fecha_obj.date(), fecha_obj.time()))
+                    
+                    existing_asesoria = cursor.fetchone()
+                    if existing_asesoria:
+                        if request.is_json:
+                            return jsonify({'error': 'Esta fecha y hora ya están reservadas'}), 400
+                        else:
+                            flash('Esta fecha y hora ya están reservadas', 'error')
+                            return redirect(url_for('asesorias'))
+                
+                # Obtener el último número de asesoría para este solicitante
+                cursor.execute("""
+                    SELECT COALESCE(MAX(numero_asesoria), 0) + 1 as next_num
+                    FROM tbl_asesoria
+                    WHERE id_solicitante = %s
+                """, (id_solicitante,))
+                
+                result = cursor.fetchone()
+                numero_asesoria = result[0] if result else 1
+                
+                # Verificar si la columna 'especialidad' existe en la tabla
+                cursor.execute("""
+                    SHOW COLUMNS FROM tbl_asesoria LIKE 'especialidad'
+                """)
+                
+                especialidad_column_exists = cursor.fetchone() is not None
+                
+                if especialidad_column_exists:
+                    # Insertar nueva asesoría con la fecha seleccionada y la especialidad
+                    cursor.execute("""
+                        INSERT INTO tbl_asesoria (fecha_asesoria, asesor_asignado, id_solicitante, tipo_asesoria, 
+                        descripcion, lugar, estado, tipo_documento, numero_documento, numero_asesoria, id_asesor, 
+                        nombre_asesor, especialidad)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """, (fecha_asesoria, asesor_asignado, id_solicitante, tipo_asesoria, descripcion, lugar, 
+                         "Pendiente", tipo_documento, numero_documento, numero_asesoria, id_asesor, 
+                         asesor_asignado, asesor_especialidad))
+                else:
+                    # Insertar nueva asesoría sin la columna especialidad
+                    cursor.execute("""
+                        INSERT INTO tbl_asesoria (fecha_asesoria, asesor_asignado, id_solicitante, tipo_asesoria, 
+                        descripcion, lugar, estado, tipo_documento, numero_documento, numero_asesoria, id_asesor, 
+                        nombre_asesor)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """, (fecha_asesoria, asesor_asignado, id_solicitante, tipo_asesoria, descripcion, lugar, 
+                         "Pendiente", tipo_documento, numero_documento, numero_asesoria, id_asesor, 
+                         asesor_asignado))
+                
+                # Obtener el ID de la asesoría recién creada
+                codigo_asesoria = cursor.lastrowid
+                
+                # Si hay una reserva temporal, confirmarla
+                if fecha_asesoria and id_asesor:
+                    fecha_obj = datetime.strptime(fecha_asesoria, '%Y-%m-%dT%H:%M') if isinstance(fecha_asesoria, str) else fecha_asesoria
+                    fecha = fecha_obj.date()
+                    hora = fecha_obj.time()
+                    
+                    # Buscar si existe una reserva temporal para este horario
+                    cursor.execute("""
+                        SELECT id_reserva FROM tbl_reservas_temporales
+                        WHERE id_asesor = %s AND DATE(fecha) = %s AND TIME(fecha) = %s
+                        AND id_usuario = %s AND expiracion > NOW()
+                    """, (id_asesor, fecha, hora, session['user_id']))
+                    
+                    reserva = cursor.fetchone()
+                    if reserva:
+                        reserva_id = reserva[0]
+                        
+                        # Marcar la reserva como confirmada
+                        cursor.execute("""
+                            UPDATE tbl_reservas_temporales
+                            SET confirmada = 1
+                            WHERE id_reserva = %s
+                        """, (reserva_id,))
+                
+                # Verificar si ya existe un pago para este solicitante
+                cursor.execute("""
+                    SELECT num_factura FROM tbl_pago WHERE id_solicitante = %s
+                """, (id_solicitante,))
+                
+                pago_existente = cursor.fetchone()
+                
+                # Si no existe un pago, crear uno nuevo con el precio según el tipo de visa
+                if not pago_existente:
+                    cursor.execute("""
+                        INSERT INTO tbl_pago (metodo_pago, total_pago, id_solicitante)
+                        VALUES (%s, %s, %s)
+                    """, (metodo_pago, precio, id_solicitante))
+                
+                connection.commit()
+                
+                if request.is_json:
+                    return jsonify({
+                        'success': True, 
+                        'codigo_asesoria': codigo_asesoria,
+                        'message': 'Asesoría solicitada con éxito. Tienes 5 minutos para realizar el pago.'
+                    })
+                else:
+                    flash('Asesoría solicitada con éxito. Tienes 5 minutos para realizar el pago.', 'success')
+            except Error as e:
+                connection.rollback()
+                if request.is_json:
+                    return jsonify({'error': f'Error al solicitar la asesoría: {e}'}), 500
+                else:
+                    flash(f'Error al solicitar la asesoría: {e}', 'error')
+            finally:
+                cursor.close()
+                connection.close()
+        else:
+            if request.is_json:
+                return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+            else:
+                flash('Error de conexión a la base de datos', 'error')
+        
+        if request.is_json:
+            return jsonify({'error': 'Error desconocido'}), 500
+        return redirect(url_for('asesorias'))
+    except Exception as e:
+        if request.is_json:
+            return jsonify({'error': f'Error: {str(e)}'}), 500
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('asesorias'))
 
 # Modificar la ruta de procesar_pago para actualizar tbl_calendario_asesorias
 @app.route('/procesar_pago', methods=['POST'])

@@ -4,13 +4,15 @@ let elements
 let paymentElement
 let clientSecret
 
-// Variables para el calendario
-const currentDate = new Date()
-let selectedDate = null
-let selectedTime = null
+// Variables para el formulario de asesoría y calendario
 let selectedAsesorId = null
 let selectedAsesorName = null
-let availableDates = {}
+let selectedAsesorEspecialidad = null
+let selectedDate = null
+let selectedTime = null
+const reservationId = null
+let paymentTimer = null
+let paymentTimeLeft = 300 // 5 minutos en segundos
 
 // Función para formatear fechas en un formato legible
 function formatDate(dateString) {
@@ -55,7 +57,7 @@ function generateAvatar(name) {
   return name[0]
 }
 
-// Función para enumerar
+// Función para enumerar y ordenar asesorías
 function ordenarYNumerarAsesorias() {
   const tbody = document.getElementById("asesorias-table-body")
   if (!tbody) return // Evitar errores si no existe el elemento
@@ -160,681 +162,704 @@ function showNotification(message, type = "success") {
   })
 }
 
-// Exportar funciones para uso en otros archivos
-window.formatDate = formatDate
-window.isAsesoriaVigente = isAsesoriaVigente
-window.getRandomColor = getRandomColor
-window.generateAvatar = generateAvatar
-window.showNotification = showNotification
-
 // ==================== FUNCIONES DEL CALENDARIO ====================
 
-// Inicializar el calendario
-function initCalendar() {
-  const calendarDays = document.getElementById("calendar-days")
-  const currentMonthElement = document.getElementById("current-month")
+// Función para inicializar el calendario
+function initializeCalendar() {
+  console.log("Inicializando calendario...")
+  const calendarContainer = document.getElementById("calendar-container")
+  if (!calendarContainer) {
+    console.error("No se encontró el contenedor del calendario")
+    return
+  }
 
-  if (!calendarDays || !currentMonthElement) return
+  // Limpiar cualquier contenido previo
+  calendarContainer.innerHTML = `
+    <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
+      <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+      </svg>
+      Seleccione una fecha
+    </h4>
+  `
 
-  renderCalendar()
-  setupEventListeners()
+  // Crear el calendario con mejor diseño
+  const currentDate = new Date()
+  const currentMonth = currentDate.getMonth()
+  const currentYear = currentDate.getFullYear()
+
+  // Crear el encabezado del mes con mejor diseño
+  const monthHeader = document.createElement("div")
+  monthHeader.className = "flex justify-between items-center mb-4 bg-primary-50 p-3 rounded-lg"
+  monthHeader.innerHTML = `
+    <button id="prev-month" class="p-2 rounded-lg text-primary-600 hover:bg-primary-100 transition-all duration-200 transform hover:scale-110">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+      </svg>
+    </button>
+    <h3 class="text-lg font-semibold text-primary-700 capitalize" id="month-year">
+      ${new Date(currentYear, currentMonth).toLocaleDateString("es-ES", { month: "long", year: "numeric" })}
+    </h3>
+    <button id="next-month" class="p-2 rounded-lg text-primary-600 hover:bg-primary-100 transition-all duration-200 transform hover:scale-110">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+      </svg>
+    </button>
+  `
+  calendarContainer.appendChild(monthHeader)
+
+  // Crear la cuadrícula de días de la semana con mejor diseño
+  const weekdaysGrid = document.createElement("div")
+  weekdaysGrid.className = "grid grid-cols-7 gap-1 mb-2"
+  const weekdays = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+  weekdays.forEach((day) => {
+    const dayElement = document.createElement("div")
+    dayElement.className = "text-center text-sm font-medium text-gray-600 py-2 border-b border-gray-200"
+    dayElement.textContent = day
+    weekdaysGrid.appendChild(dayElement)
+  })
+  calendarContainer.appendChild(weekdaysGrid)
+
+  // Crear la cuadrícula de días del mes con mejor diseño
+  const daysGrid = document.createElement("div")
+  daysGrid.className = "grid grid-cols-7 gap-1"
+  daysGrid.id = "days-grid"
+  calendarContainer.appendChild(daysGrid)
+
+  // Guardar el año y mes actual en el encabezado para referencia
+  const monthYearHeader = document.getElementById("month-year")
+  if (monthYearHeader) {
+    monthYearHeader.dataset.current = `${currentYear}-${currentMonth}`
+  }
+
+  // Renderizar el mes actual
+  renderMonth(currentYear, currentMonth)
+
+  // Agregar event listeners para los botones de navegación
+  document.getElementById("prev-month")?.addEventListener("click", () => {
+    const monthYearEl = document.getElementById("month-year")
+    if (!monthYearEl || !monthYearEl.dataset.current) return
+
+    const [year, month] = monthYearEl.dataset.current.split("-").map(Number)
+    let newMonth = month - 1
+    let newYear = year
+    if (newMonth < 0) {
+      newMonth = 11
+      newYear--
+    }
+    renderMonth(newYear, newMonth)
+  })
+
+  document.getElementById("next-month")?.addEventListener("click", () => {
+    const monthYearEl = document.getElementById("month-year")
+    if (!monthYearEl || !monthYearEl.dataset.current) return
+
+    const [year, month] = monthYearEl.dataset.current.split("-").map(Number)
+    let newMonth = month + 1
+    let newYear = year
+    if (newMonth > 11) {
+      newMonth = 0
+      newYear++
+    }
+    renderMonth(newYear, newMonth)
+  })
+
+  // Inicializar la sección de horarios disponibles
+  const timeSlotContainer = document.getElementById("time-slots-container")
+  if (timeSlotContainer) {
+    timeSlotContainer.classList.remove("hidden")
+    timeSlotContainer.innerHTML = `
+      <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
+        <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        Horarios Disponibles
+      </h4>
+      <div id="time-slots" class="grid grid-cols-3 gap-2"></div>
+      <div id="no-slots-message" class="text-center text-gray-500 py-4 hidden">
+        No hay horarios disponibles para esta fecha
+      </div>
+    `
+  }
+
+  console.log("Calendario inicializado correctamente")
 }
 
-// Renderizar el calendario
-function renderCalendar() {
-  const calendarDays = document.getElementById("calendar-days")
-  const currentMonthElement = document.getElementById("current-month")
+// Función para renderizar el mes
+function renderMonth(year, month) {
+  console.log(`Renderizando mes: ${month}/${year}`)
+  const daysGrid = document.getElementById("days-grid")
+  if (!daysGrid) {
+    console.error("No se encontró la cuadrícula de días")
+    return
+  }
 
-  if (!calendarDays || !currentMonthElement) return
+  // Limpiar la cuadrícula
+  daysGrid.innerHTML = ""
 
-  // Actualizar el título del mes
-  const monthNames = [
-    "Enero",
-    "Febrero",
-    "Marzo",
-    "Abril",
-    "Mayo",
-    "Junio",
-    "Julio",
-    "Agosto",
-    "Septiembre",
-    "Octubre",
-    "Noviembre",
-    "Diciembre",
-  ]
-  currentMonthElement.textContent = `${monthNames[currentMonth]} ${currentYear}`
+  // Actualizar el encabezado del mes
+  const monthYearHeader = document.getElementById("month-year")
+  if (monthYearHeader) {
+    monthYearHeader.textContent = new Date(year, month).toLocaleDateString("es-ES", { month: "long", year: "numeric" })
+    monthYearHeader.dataset.current = `${year}-${month}`
+  }
 
-  // Limpiar el calendario
-  calendarDays.innerHTML = ""
+  // Obtener el primer día del mes y el número de días
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+  const daysInMonth = lastDay.getDate()
 
-  // Obtener el primer día del mes
-  const firstDay = new Date(currentYear, currentMonth, 0)
-  const startingDay = firstDay.getDay() // 0 = Domingo, 1 = Lunes, etc.
-
-  // Obtener el número de días en el mes
-  const lastDay = new Date(currentYear, currentMonth + 1, 0)
-  const totalDays = lastDay.getDate()
+  // Ajustar para que la semana comience en lunes (0 = lunes, 6 = domingo)
+  let firstDayIndex = firstDay.getDay() - 1
+  if (firstDayIndex < 0) firstDayIndex = 6 // Si es domingo (0), convertir a 6
 
   // Agregar celdas vacías para los días anteriores al primer día del mes
-  for (let i = 0; i < startingDay; i++) {
-    const emptyCell = document.createElement("div")
-    emptyCell.className = "h-10 flex items-center justify-center text-sm text-gray-300"
-    calendarDays.appendChild(emptyCell)
+  for (let i = 0; i < firstDayIndex; i++) {
+    const emptyDay = document.createElement("div")
+    emptyDay.className = "h-12 rounded-lg"
+    daysGrid.appendChild(emptyDay)
   }
 
-  // Agregar los días del mes
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  // Obtener la fecha actual para resaltarla
+  const currentDate = new Date()
+  const currentDay = currentDate.getDate()
+  const currentMonth = currentDate.getMonth()
+  const currentYear = currentDate.getFullYear()
 
-  for (let day = 1; day <= totalDays; day++) {
-    const date = new Date(currentYear, currentMonth, day)
-    const dateString = formatDateString(date)
-    const dayCell = document.createElement("div")
+  // Agregar los días del mes con mejor diseño
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day)
+    const dayElement = document.createElement("div")
+
+    // Verificar si es fin de semana (0 = domingo, 6 = sábado)
+    const isWeekend = date.getDay() === 0 || date.getDay() === 6
 
     // Verificar si la fecha es anterior a hoy
-    const isPastDate = date < today
-    // Verificar si es fin de semana (0 = Domingo, 6 = Sábado)
-    const isWeekend = date.getDay() === 0 || date.getDay() === 6
-    // Verificar si hay disponibilidad para esta fecha
-    const hasAvailability = checkAvailability(dateString)
+    const isPast = date < new Date(currentYear, currentMonth, currentDay)
 
-    dayCell.className =
-      "h-10 flex items-center justify-center text-sm rounded-lg transition-all duration-300 cursor-pointer"
-
-    if (isPastDate || isWeekend || !hasAvailability) {
-      // Fecha no disponible
-      dayCell.className += " text-gray-300 bg-gray-50 cursor-not-allowed"
+    // Aplicar clases según las condiciones con mejor diseño
+    if (isWeekend || isPast) {
+      dayElement.className =
+        "h-12 flex items-center justify-center rounded-lg text-gray-400 bg-gray-100 cursor-not-allowed transform transition-transform duration-300"
     } else {
-      // Fecha disponible - Mejorado el estilo para diferenciar claramente
-      dayCell.className +=
-        " text-primary-600 bg-primary-50 hover:bg-primary-100 hover:text-primary-700 border border-transparent hover:border-primary-300 hover:shadow-sm"
+      dayElement.className =
+        "h-12 flex items-center justify-center rounded-lg hover:bg-primary-100 hover:text-primary-600 cursor-pointer transition-all duration-300 border border-transparent hover:border-primary-200 transform hover:scale-105"
+      dayElement.classList.add("day-selectable")
 
-      // Si es la fecha seleccionada
-      if (selectedDate && dateString === formatDateString(selectedDate)) {
-        dayCell.className += " bg-primary-200 text-primary-700 border border-primary-400 font-medium shadow-inner"
-      }
-
-      // Agregar evento click con animación
-      dayCell.addEventListener("click", () => {
-        // Agregar clase para animación
-        dayCell.classList.add("scale-110", "bg-primary-300")
-
-        // Quitar la animación después de completarse
+      // Agregar evento de clic para seleccionar el día
+      dayElement.addEventListener("click", () => {
+        selectDate(date)
+        dayElement.classList.add("animate-pulse-scale")
         setTimeout(() => {
-          dayCell.classList.remove("scale-110", "bg-primary-300")
-          selectDate(date)
-        }, 300)
+          dayElement.classList.remove("animate-pulse-scale")
+        }, 500)
       })
     }
 
-    dayCell.textContent = day
-    calendarDays.appendChild(dayCell)
+    // Resaltar el día actual con mejor diseño
+    if (day === currentDay && month === currentMonth && year === currentYear) {
+      dayElement.classList.add(
+        "bg-primary-50",
+        "text-primary-600",
+        "font-semibold",
+        "border",
+        "border-primary-300",
+        "ring-2",
+        "ring-primary-300/50",
+      )
+    }
+
+    dayElement.textContent = day
+    dayElement.dataset.date = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+    daysGrid.appendChild(dayElement)
+  }
+
+  // Ocultar el mensaje de carga
+  const loadingElement = document.getElementById("calendar-loading")
+  if (loadingElement) {
+    loadingElement.style.display = "none"
   }
 }
 
-// Configurar event listeners
-function setupEventListeners() {
-  const prevMonthButton = document.getElementById("prev-month")
-  const nextMonthButton = document.getElementById("next-month")
-  const asesorSelector = document.getElementById("asesor_selector")
-  const tipoAsesoriaSelect = document.getElementById("tipo_asesoria")
-
-  if (prevMonthButton) {
-    prevMonthButton.addEventListener("click", () => {
-      currentMonth--
-      if (currentMonth < 0) {
-        currentMonth = 11
-        currentYear--
-      }
-      renderCalendar()
-    })
-  }
-
-  if (nextMonthButton) {
-    nextMonthButton.addEventListener("click", () => {
-      currentMonth++
-      if (currentMonth > 11) {
-        currentMonth = 0
-        currentYear++
-      }
-      renderCalendar()
-    })
-  }
-
-  if (asesorSelector) {
-    asesorSelector.addEventListener("change", function () {
-      selectedAsesorId = this.value
-      selectedAsesorName = this.options[this.selectedIndex].getAttribute("data-name")
-
-      if (selectedAsesorId) {
-        // Guardar el asesor seleccionado
-        const selectedAsesorIdInput = document.getElementById("selected_asesor_id")
-        const selectedAsesorNameInput = document.getElementById("selected_asesor_name")
-
-        if (selectedAsesorIdInput) selectedAsesorIdInput.value = selectedAsesorId
-        if (selectedAsesorNameInput) selectedAsesorNameInput.value = selectedAsesorName
-
-        // Cargar disponibilidad del asesor
-        loadAsesorAvailability(selectedAsesorId)
-
-        // Actualizar resumen
-        updateSummary()
-
-        // Habilitar el botón si se ha seleccionado fecha y hora
-        checkFormCompletion()
-      }
-    })
-  }
-
-  if (tipoAsesoriaSelect) {
-    tipoAsesoriaSelect.addEventListener("change", updateSummary)
-  }
-}
-
-// Seleccionar una fecha
+// Función para seleccionar una fecha
 function selectDate(date) {
-  selectedDate = date
-  const dateString = formatDateString(date)
+  // Limpiar selección anterior
+  document.querySelectorAll(".day-selected").forEach((el) => {
+    el.classList.remove("day-selected", "bg-primary-600", "text-white", "border-primary-600", "scale-105")
+    el.classList.add("hover:bg-primary-100", "hover:text-primary-600", "border-transparent")
+  })
 
-  // Actualizar la UI del calendario
-  renderCalendar()
-
-  // Mostrar selector de hora con animación mejorada
-  showTimeSelector(dateString)
-
-  // Actualizar resumen
-  updateSummary()
-}
-
-// Añadir función para obtener horarios disponibles del servidor
-async function obtenerHorariosDisponibles(asesorId, fecha) {
-  if (!asesorId || !fecha) return []
-
-  try {
-    const response = await fetch(`/obtener_horarios_disponibles?id_asesor=${asesorId}&fecha=${fecha}`)
-
-    if (!response.ok) {
-      throw new Error("Error al obtener horarios disponibles")
-    }
-
-    const data = await response.json()
-    return data.horarios || []
-  } catch (error) {
-    console.error("Error al obtener horarios disponibles:", error)
-    return []
-  }
-}
-
-// Modificar la función getAvailableHours para usar la API
-async function getAvailableHoursFromAPI(dateString) {
-  // Si no hay asesor seleccionado, devolver un array vacío
-  if (!selectedAsesorId) return []
-
-  // Verificar si tenemos horarios disponibles en caché
-  if (window.cachedAvailableHours && window.cachedAvailableHours[dateString]) {
-    return window.cachedAvailableHours[dateString]
+  // Resaltar el día seleccionado con mejor diseño
+  const dateString = date.toISOString().split("T")[0]
+  const dayElement = document.querySelector(`[data-date="${dateString}"]`)
+  if (dayElement) {
+    dayElement.classList.add("day-selected", "bg-primary-600", "text-white", "border-primary-600", "scale-105")
+    dayElement.classList.remove("hover:bg-primary-100", "hover:text-primary-600", "border-transparent")
   }
 
-  // Obtener horarios disponibles del servidor
-  const horarios = await obtenerHorariosDisponibles(selectedAsesorId, dateString)
+  // Guardar la fecha seleccionada
+  selectedDate = dateString
 
-  // Guardar en caché para futuras consultas
-  if (!window.cachedAvailableHours) window.cachedAvailableHours = {}
-  window.cachedAvailableHours[dateString] = horarios
+  // Limpiar la selección de hora
+  selectedTime = null
 
-  return horarios
+  // Mostrar los horarios disponibles para esta fecha
+  loadAvailableTimeSlots(selectedDate)
+
+  // Actualizar los detalles de la asesoría
+  updateAppointmentDetails()
 }
 
-// Modificar la función showTimeSelector para usar la API
-async function showTimeSelector(dateString) {
-  const timeSelector = document.getElementById("time-selector")
+// Función para cargar los horarios disponibles
+function loadAvailableTimeSlots(date) {
+  const timeSlotContainer = document.getElementById("time-slots-container")
   const timeSlots = document.getElementById("time-slots")
+  const noSlotsMessage = document.getElementById("no-slots-message")
 
-  if (!timeSelector || !timeSlots) return
+  if (!timeSlotContainer) return
 
-  // Limpiar slots de tiempo
-  timeSlots.innerHTML = ""
+  // Limpiar el contenedor
+  timeSlotContainer.innerHTML = ""
 
-  // Mostrar indicador de carga
-  timeSlots.innerHTML = `
-  <div class="col-span-3 flex items-center justify-center py-4">
-    <div class="inline-block animate-spin h-6 w-6 border-4 border-primary-600 border-t-transparent rounded-full mr-2"></div>
-    <p class="text-gray-500">Cargando horarios disponibles...</p>
-  </div>
-`
-
-  // Ocultar primero para la animación
-  timeSelector.style.opacity = "0"
-  timeSelector.style.transform = "translateY(20px)"
-  timeSelector.classList.remove("hidden")
-
-  // Forzar reflow para que la animación funcione
-  void timeSelector.offsetWidth
-
-  // Mostrar con animación
-  timeSelector.style.transition = "opacity 0.4s ease, transform 0.4s ease"
-  timeSelector.style.opacity = "1"
-  timeSelector.style.transform = "translateY(0)"
-
-  // Obtener horarios disponibles para esta fecha
-  try {
-    const availableHours = await getAvailableHoursFromAPI(dateString)
-
-    // Limpiar slots de tiempo nuevamente
-    timeSlots.innerHTML = ""
-
-    if (availableHours.length === 0) {
-      timeSlots.innerHTML =
-        '<p class="text-center text-gray-500 col-span-3">No hay horarios disponibles para esta fecha</p>'
-    } else {
-      // Crear botones para cada hora disponible
-      availableHours.forEach((hour) => {
-        const timeButton = document.createElement("button")
-        timeButton.type = "button"
-        timeButton.className =
-          "py-2 px-3 text-sm font-medium rounded-lg transition-all duration-300 border border-gray-200 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-600 hover:shadow-sm"
-
-        // Si es la hora seleccionada
-        if (selectedTime === hour) {
-          timeButton.className =
-            "py-2 px-3 text-sm font-medium rounded-lg transition-all duration-300 bg-primary-200 text-primary-700 border border-primary-400 shadow-inner"
-        }
-
-        timeButton.textContent = formatHour(hour)
-
-        // Agregar animación al hacer clic
-        timeButton.addEventListener("click", () => {
-          // Agregar clase para animación
-          timeButton.classList.add("scale-110", "bg-primary-300")
-
-          // Quitar la animación después de completarse
-          setTimeout(() => {
-            timeButton.classList.remove("scale-110", "bg-primary-300")
-            selectTime(hour)
-          }, 300)
-        })
-
-        timeSlots.appendChild(timeButton)
-      })
-    }
-  } catch (error) {
-    console.error("Error al cargar horarios:", error)
-    timeSlots.innerHTML = `
-    <p class="text-center text-red-500 col-span-3">
-      Error al cargar horarios. 
-      <button class="text-primary-600 underline" onclick="showTimeSelector('${dateString}')">
-        Reintentar
-      </button>
-    </p>
+  // Mostrar un indicador de carga con mejor diseño
+  timeSlotContainer.innerHTML = `
+    <div class="col-span-3 flex justify-center py-6">
+      <svg class="animate-spin h-8 w-8 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+    </div>
   `
+
+  // Obtener el asesor seleccionado
+  const asesorSelector = document.getElementById("asesor_selector")
+  if (!asesorSelector || !asesorSelector.value) {
+    timeSlotContainer.innerHTML = `
+      <div class="col-span-3 text-center text-gray-500 py-6 bg-gray-50 rounded-lg">
+        <svg class="w-10 h-10 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+        </svg>
+        <p>Por favor, seleccione un asesor primero</p>
+      </div>
+    `
+    return
   }
-}
 
-// Seleccionar una hora
-function selectTime(hour) {
-  selectedTime = hour
-  const timeSlots = document.getElementById("time-slots")
-  const selectedDateInput = document.getElementById("selected_date")
-  const appointmentSummary = document.getElementById("appointment-summary")
-  const submitButton = document.getElementById("submitAdvisoryBtn")
+  selectedAdvisorId = asesorSelector.value
 
-  // Actualizar UI del selector de hora
-  if (timeSlots) {
-    const timeButtons = timeSlots.querySelectorAll("button")
-    timeButtons.forEach((button) => {
-      if (button.textContent === formatHour(hour)) {
-        button.className =
-          "py-2 px-3 text-sm font-medium rounded-lg transition-all duration-300 bg-primary-200 text-primary-700 border border-primary-400 shadow-inner"
+  // Realizar la solicitud para obtener los horarios disponibles
+  fetch(`/obtener_horarios_disponibles?id_asesor=${selectedAdvisorId}&fecha=${date}`)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Error al obtener horarios disponibles")
+      }
+      return response.json()
+    })
+    .then((data) => {
+      // Limpiar el contenedor
+      timeSlotContainer.innerHTML = ""
+
+      if (data.horarios && data.horarios.length > 0) {
+        // Crear un contenedor para los horarios con diseño de grid
+        const timeSlotsGrid = document.createElement("div")
+        timeSlotsGrid.className = "grid grid-cols-3 gap-2"
+        timeSlotContainer.appendChild(timeSlotsGrid)
+
+        // Mostrar los horarios disponibles con mejor diseño
+        data.horarios.forEach((hora) => {
+          const timeSlot = document.createElement("div")
+          timeSlot.className =
+            "time-slot p-3 text-center border border-gray-200 rounded-lg hover:bg-primary-50 hover:border-primary-300 cursor-pointer transition-all duration-300 text-gray-700 hover:text-primary-700 font-medium transform hover:scale-105"
+          timeSlot.textContent = hora
+          timeSlot.dataset.time = hora
+
+          // Agregar evento de clic para seleccionar la hora
+          timeSlot.addEventListener("click", () => {
+            selectTimeSlot(hora)
+            timeSlot.classList.add("animate-pulse-scale")
+            setTimeout(() => {
+              timeSlot.classList.remove("animate-pulse-scale")
+            }, 500)
+          })
+
+          timeSlotsGrid.appendChild(timeSlot)
+        })
       } else {
-        button.className =
-          "py-2 px-3 text-sm font-medium rounded-lg transition-all duration-300 border border-gray-200 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-600"
+        // Mostrar mensaje de no hay horarios disponibles con mejor diseño
+        timeSlotContainer.innerHTML = `
+          <div class="flex flex-col items-center justify-center py-6 bg-gray-50 rounded-lg">
+            <svg class="w-10 h-10 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <p class="text-gray-500">No hay horarios disponibles para esta fecha</p>
+            <p class="text-xs text-gray-400 mt-1">Por favor, seleccione otra fecha</p>
+          </div>
+        `
       }
     })
+    .catch((error) => {
+      console.error("Error:", error)
+      timeSlotContainer.innerHTML = `
+        <div class="text-center text-red-500 py-6 bg-red-50 rounded-lg">
+          <svg class="w-10 h-10 mx-auto mb-2 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <p>Error al cargar los horarios disponibles</p>
+        </div>
+      `
+    })
+}
+
+// Función para seleccionar un horario
+function selectTimeSlot(time) {
+  // Limpiar selección anterior
+  document.querySelectorAll(".time-slot").forEach((el) => {
+    el.classList.remove("bg-primary-100", "border-primary-500", "text-primary-700", "scale-105")
+    el.classList.add("border-gray-200", "text-gray-700")
+  })
+
+  // Resaltar el horario seleccionado con mejor diseño
+  const timeSlot = document.querySelector(`.time-slot[data-time="${time}"]`)
+  if (timeSlot) {
+    timeSlot.classList.remove("border-gray-200", "text-gray-700")
+    timeSlot.classList.add("bg-primary-100", "border-primary-500", "text-primary-700", "scale-105")
   }
 
-  // Actualizar el campo oculto con fecha y hora
-  if (selectedDateInput && selectedDate) {
-    const dateTime = new Date(selectedDate)
-    const [hours, minutes] = hour.split(":")
-    dateTime.setHours(Number.parseInt(hours), Number.parseInt(minutes), 0, 0)
-    selectedDateInput.value = formatDateTimeForInput(dateTime)
+  // Guardar la hora seleccionada
+  selectedTime = time
 
-    // Reservar temporalmente el horario
-    reservarHorarioTemporal(selectedAsesorId, formatDateString(selectedDate), hour)
-  }
+  // Crear una reserva temporal para este horario
+  createTemporaryReservation()
 
-  // Actualizar resumen
-  updateSummary()
+  // Actualizar los detalles de la cita
+  updateAppointmentDetails()
 
-  // Mostrar resumen de la cita
-  if (appointmentSummary) {
-    // Ocultar primero para la animación
-    appointmentSummary.style.opacity = "0"
-    appointmentSummary.style.transform = "translateY(20px)"
-    appointmentSummary.classList.remove("hidden")
-
-    // Forzar reflow para que la animación funcione
-    void appointmentSummary.offsetWidth
-
-    // Mostrar con animación
-    appointmentSummary.style.transition = "opacity 0.4s ease, transform 0.4s ease"
-    appointmentSummary.style.opacity = "1"
-    appointmentSummary.style.transform = "translateY(0)"
-  }
-
-  // Habilitar el botón si se ha seleccionado asesor, fecha y hora
+  // Habilitar el botón si se ha seleccionado fecha y hora
   checkFormCompletion()
 }
 
-// Función para reservar temporalmente un horario
-async function reservarHorarioTemporal(asesorId, fecha, hora) {
-  if (!asesorId || !fecha || !hora) return
+// Función para actualizar los detalles de la asesoría
+function updateAppointmentDetails() {
+  const appointmentDetailsContent = document.getElementById("appointment-details-content")
+  if (!appointmentDetailsContent) return
 
-  try {
-    const response = await fetch("/reservar_horario_temporal", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        id_asesor: asesorId,
-        fecha: fecha,
-        hora: hora,
-      }),
-    })
+  // Obtener datos del formulario
+  const tipoDocumento = document.getElementById("tipo_documento")?.value || ""
+  const numeroDocumento = document.getElementById("numero_documento")?.value || ""
+  const descripcion = document.getElementById("descripcion")?.value || ""
+  const lugar = document.getElementById("lugar")?.value || "Virtual (Zoom)"
 
-    if (!response.ok) {
-      const errorData = await response.json()
-      console.error("Error al reservar horario temporal:", errorData.error)
-      // No mostramos notificación para no interrumpir el flujo del usuario
-    } else {
-      console.log("Horario reservado temporalmente por 10 minutos")
+  // Obtener el nombre del asesor
+  const asesorSelector = document.getElementById("asesor_selector")
+  const selectedOption = asesorSelector?.options[asesorSelector.selectedIndex]
+  const asesorName = selectedOption ? selectedOption.getAttribute("data-name") : ""
 
-      // Obtener el ID de reserva temporal para poder cancelarla si el usuario cambia de opinión
-      const data = await response.json()
-      if (data.reserva_id) {
-        window.reservaTemporalId = data.reserva_id
-      }
-    }
-  } catch (error) {
-    console.error("Error al reservar horario temporal:", error)
-  }
-}
+  // Obtener la especialidad del asesor
+  const asesorEspecialidad = selectedOption
+    ? selectedOption.getAttribute("data-especialidad") || "Inmigración Canadiense"
+    : ""
 
-// Actualizar el resumen de la cita
-function updateSummary() {
-  const appointmentSummary = document.getElementById("appointment-summary")
-  const summaryAsesor = document.getElementById("summary-asesor")
-  const summaryDate = document.getElementById("summary-date")
-  const summaryTime = document.getElementById("summary-time")
-  const summaryType = document.getElementById("summary-type")
+  // Obtener el tipo de asesoría y precio
   const tipoAsesoriaSelect = document.getElementById("tipo_asesoria")
+  const tipoAsesoria =
+    tipoAsesoriaSelect && tipoAsesoriaSelect.selectedIndex >= 0
+      ? tipoAsesoriaSelect.options[tipoAsesoriaSelect.selectedIndex].text
+      : ""
+  const precioAsesoria =
+    tipoAsesoriaSelect && tipoAsesoriaSelect.selectedIndex >= 0
+      ? tipoAsesoriaSelect.options[tipoAsesoriaSelect.selectedIndex].getAttribute("data-precio")
+      : "150"
 
-  if (!appointmentSummary) return
-
-  // Actualizar asesor
-  if (summaryAsesor && selectedAsesorName) {
-    summaryAsesor.textContent = selectedAsesorName
+  // Si no hay asesor seleccionado, mostrar mensaje de selección
+  if (!asesorName) {
+    appointmentDetailsContent.innerHTML = `
+      <div class="p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
+        <p class="text-center">Seleccione un asesor, fecha y hora para ver los detalles de la asesoría</p>
+      </div>
+    `
+    return
   }
 
-  // Actualizar fecha
-  if (summaryDate && selectedDate) {
-    summaryDate.textContent = formatDateForDisplay(selectedDate)
+  // Formatear la fecha si está seleccionada
+  let fechaFormateada = "No seleccionada"
+  let diaSemana = ""
+  let diaMes = ""
+  let mesAnio = ""
+
+  if (selectedDate) {
+    const dateObj = new Date(selectedDate)
+    fechaFormateada = dateObj.toLocaleDateString("es-ES", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
+
+    // Obtener partes de la fecha para un formato más estético
+    diaSemana = dateObj.toLocaleDateString("es-ES", { weekday: "long" })
+    diaMes = dateObj.getDate()
+    mesAnio = dateObj.toLocaleDateString("es-ES", { month: "long", year: "numeric" })
   }
 
-  // Actualizar hora
-  if (summaryTime && selectedTime) {
-    summaryTime.textContent = formatHour(selectedTime)
-  }
+  // Actualizar el contenido con mejor diseño inspirado en la imagen de referencia
+  appointmentDetailsContent.innerHTML = `
+    <div class="bg-white rounded-lg">
+      <h3 class="text-md font-semibold text-gray-800 mb-4 flex items-center">
+        <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+        </svg>
+        Detalles de Asesoría
+      </h3>
+      
+      <div class="mb-4">
+        <div class="flex items-center mb-2">
+          <svg class="w-5 h-5 mr-2 text-primary-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
+          <div>
+            <p class="text-sm font-medium">Asesor: ${asesorName || "No seleccionado"}</p>
+            <p class="text-xs text-gray-500">${asesorEspecialidad}</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <div class="flex items-center mb-1">
+            <svg class="w-4 h-4 mr-1 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <span class="text-xs font-medium text-gray-600">Tipo:</span>
+          </div>
+          <p class="text-sm ml-5">${tipoAsesoria.split(" - ")[0] || "No seleccionado"}</p>
+        </div>
+        
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <div class="flex items-center mb-1">
+            <svg class="w-4 h-4 mr-1 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            <span class="text-xs font-medium text-gray-600">Precio:</span>
+          </div>
+          <p class="text-sm ml-5 font-medium text-primary-600">$${precioAsesoria} USD</p>
+        </div>
+        
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <div class="flex items-center mb-1">
+            <svg class="w-4 h-4 mr-1 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+            <span class="text-xs font-medium text-gray-600">Fecha:</span>
+          </div>
+          <p class="text-sm ml-5">${selectedDate ? `${diaSemana}, ${diaMes} de ${mesAnio}` : "No seleccionada"}</p>
+        </div>
+        
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <div class="flex items-center mb-1">
+            <svg class="w-4 h-4 mr-1 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span class="text-xs font-medium text-gray-600">Hora:</span>
+          </div>
+          <p class="text-sm ml-5">${selectedTime || "No seleccionada"}</p>
+        </div>
+        
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <div class="flex items-center mb-1">
+            <svg class="w-4 h-4 mr-1 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path>
+            </svg>
+            <span class="text-xs font-medium text-gray-600">Documento:</span>
+          </div>
+          <p class="text-sm ml-5">${tipoDocumento} ${numeroDocumento}</p>
+        </div>
+        
+        <div class="bg-gray-50 p-3 rounded-lg">
+          <div class="flex items-center mb-1">
+            <svg class="w-4 h-4 mr-1 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+            </svg>
+            <span class="text-xs font-medium text-gray-600">Modalidad:</span>
+          </div>
+          <p class="text-sm ml-5">${lugar}</p>
+        </div>
+      </div>
+      
+      <div class="bg-gray-50 p-3 rounded-lg mb-4">
+        <div class="flex items-center mb-1">
+          <svg class="w-4 h-4 mr-1 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path>
+          </svg>
+          <span class="text-xs font-medium text-gray-600">Descripción:</span>
+        </div>
+        <p class="text-sm ml-5">${descripcion || "Sin descripción"}</p>
+      </div>
+      
+      ${
+        selectedDate && selectedTime
+          ? `
+      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start">
+        <svg class="w-5 h-5 mr-2 text-yellow-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+        </svg>
+        <div>
+          <p class="text-sm text-yellow-700 font-medium">Esta reserva es temporal.</p>
+          <p class="text-xs text-yellow-600">Tendrás 5 minutos para completar el pago una vez solicites la asesoría.</p>
+        </div>
+      </div>
+      `
+          : ""
+      }
+    </div>
+  `
+}
 
-  // Actualizar tipo de asesoría
-  if (summaryType && tipoAsesoriaSelect) {
-    const selectedOption = tipoAsesoriaSelect.options[tipoAsesoriaSelect.selectedIndex]
-    summaryType.textContent = selectedOption ? selectedOption.text : "-"
+// Función para iniciar el temporizador de pago después de solicitar la asesoría
+function startPaymentTimerAfterRequest(asesoriaId) {
+  // Iniciar el temporizador de pago (5 minutos)
+  paymentTimeLeft = 300 // 5 minutos en segundos
+
+  // Crear un elemento para mostrar el temporizador en la lista de asesorías
+  const statusCell = document.querySelector(`tr[data-asesoria-id="${asesoriaId}"] td:nth-child(5)`)
+  if (statusCell) {
+    // Crear el elemento del temporizador
+    const timerElement = document.createElement("div")
+    timerElement.id = `payment-timer-${asesoriaId}`
+    timerElement.className = "mt-2 flex items-center justify-center"
+    timerElement.innerHTML = `
+      <div class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium flex items-center">
+        <svg class="w-3.5 h-3.5 mr-1 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span id="timer-value-${asesoriaId}" class="font-mono">05:00</span>
+      </div>
+    `
+
+    // Agregar el temporizador al estado
+    statusCell.appendChild(timerElement)
+
+    // Iniciar el intervalo para actualizar el temporizador cada segundo
+    paymentTimer = setInterval(() => {
+      paymentTimeLeft--
+
+      // Actualizar la visualización del temporizador
+      updatePaymentTimerInList(asesoriaId)
+
+      // Si el tiempo se agota, cancelar la reserva
+      if (paymentTimeLeft <= 0) {
+        clearInterval(paymentTimer)
+        paymentTimer = null
+
+        // Cancelar la reserva temporal
+        cancelTemporaryReservation()
+
+        // Mostrar mensaje de tiempo agotado
+        showNotification("El tiempo para realizar el pago ha expirado. Por favor, seleccione otro horario.", "warning")
+
+        // Eliminar el temporizador de la lista
+        const timerElement = document.getElementById(`payment-timer-${asesoriaId}`)
+        if (timerElement) {
+          timerElement.remove()
+        }
+
+        // Actualizar el estado a "Vencida"
+        if (statusCell) {
+          statusCell.innerHTML = `<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-600">Vencida</span>`
+        }
+      }
+    }, 1000)
   }
 }
 
-// Verificar si el formulario está completo
-function checkFormCompletion() {
-  const submitButton = document.getElementById("submitAdvisoryBtn")
+// Función para actualizar el temporizador en la lista de asesorías
+function updatePaymentTimerInList(asesoriaId) {
+  const timerValueElement = document.getElementById(`timer-value-${asesoriaId}`)
+  if (!timerValueElement) return
 
-  if (!submitButton) return
+  // Calcular minutos y segundos
+  const minutes = Math.floor(paymentTimeLeft / 60)
+  const seconds = paymentTimeLeft % 60
 
-  if (selectedAsesorId && selectedDate && selectedTime) {
-    submitButton.disabled = false
-    submitButton.classList.remove("opacity-50")
-  } else {
-    submitButton.disabled = true
-    submitButton.classList.add("opacity-50")
-  }
-}
+  // Formatear el tiempo
+  const formattedTime = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
 
-// Cargar disponibilidad del asesor
-function loadAsesorAvailability(asesorId) {
-  // Reiniciar selección de fecha y hora
-  selectedDate = null
-  selectedTime = null
+  // Actualizar el elemento
+  timerValueElement.textContent = formattedTime
 
-  // Ocultar selector de hora y resumen
-  const timeSelector = document.getElementById("time-selector")
-  const appointmentSummary = document.getElementById("appointment-summary")
-
-  if (timeSelector) timeSelector.classList.add("hidden")
-  if (appointmentSummary) appointmentSummary.classList.add("hidden")
-
-  // Limpiar caché de horarios disponibles
-  window.cachedAvailableHours = {}
-
-  // Simular disponibilidad para los próximos 30 días
-  availableDates = {}
-  const today = new Date()
-
-  for (let i = 0; i < 30; i++) {
-    const date = new Date()
-    date.setDate(today.getDate() + i)
-
-    // Verificar si el día de la semana es de lunes (1) a viernes (5)
-    const dayOfWeek = date.getDay()
-    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-      const dateString = formatDateString(date)
-      availableDates[dateString] = true
+  // Cambiar el color según el tiempo restante
+  const timerContainer = document.getElementById(`payment-timer-${asesoriaId}`)
+  if (timerContainer) {
+    if (paymentTimeLeft <= 60) {
+      // Último minuto
+      timerContainer.innerHTML = `
+        <div class="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium flex items-center">
+          <svg class="w-3.5 h-3.5 mr-1 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span id="timer-value-${asesoriaId}" class="font-mono">${formattedTime}</span>
+        </div>
+      `
+    } else if (paymentTimeLeft <= 120) {
+      // Últimos 2 minutos
+      timerContainer.innerHTML = `
+        <div class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium flex items-center">
+          <svg class="w-3.5 h-3.5 mr-1 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span id="timer-value-${asesoriaId}" class="font-mono">${formattedTime}</span>
+        </div>
+      `
     }
   }
-
-  // Actualizar el calendario
-  renderCalendar()
 }
 
-// Verificar disponibilidad para una fecha
-function checkAvailability(dateString) {
-  // If no hay asesor seleccionado, no hay disponibilidad
-  if (!selectedAsesorId) return false
+// Actualizar la visualización del temporizador de pago
+function updatePaymentTimerDisplay() {
+  const timerElement = document.getElementById("payment-timer")
+  if (!timerElement) return
 
-  // Verificar si es fin de semana
-  // Solo excluir domingos (0) y sábados (6)
-  const date = new Date(dateString)
-  const dayOfWeek = date.getDay()
-  if (dayOfWeek === 0 || dayOfWeek === 6) return false
+  // Calcular minutos y segundos
+  const minutes = Math.floor(paymentTimeLeft / 60)
+  const seconds = paymentTimeLeft % 60
 
-  // Verificar si es una fecha pasada
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  if (date < today) return false
+  // Formatear el tiempo
+  const formattedTime = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
 
-  // Si llegamos aquí, la fecha podría estar disponible
-  // La disponibilidad real de horarios se verificará en getAvailableHoursFromAPI
-  return availableDates[dateString] === true
-}
+  // Actualizar el elemento
+  timerElement.textContent = formattedTime
 
-// Función para obtener horas disponibles para una fecha
-function getAvailableHours(dateString) {
-  // Verificar si tenemos horarios disponibles en caché
-  if (window.cachedAvailableHours && window.cachedAvailableHours[dateString]) {
-    return window.cachedAvailableHours[dateString]
+  // Cambiar el color según el tiempo restante
+  if (paymentTimeLeft <= 60) {
+    // Último minuto
+    timerElement.classList.remove("text-green-600", "text-yellow-600")
+    timerElement.classList.add("text-red-600")
+  } else if (paymentTimeLeft <= 120) {
+    // Últimos 2 minutos
+    timerElement.classList.remove("text-green-600", "text-red-600")
+    timerElement.classList.add("text-yellow-600")
+  } else {
+    timerElement.classList.remove("text-yellow-600", "text-red-600")
+    timerElement.classList.add("text-green-600")
   }
-
-  // Si no hay caché, hacer la petición al servidor (simulado por ahora)
-  // En una implementación real, esto sería una llamada AJAX
-
-  // Horario de 7am a 4pm con descanso de 1pm a 2pm
-  const hours = ["07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00"]
-
-  // Simular algunas horas ya ocupadas
-  const date = new Date(dateString)
-  const dayOfWeek = date.getDay()
-
-  // Diferentes patrones de disponibilidad según el día de la semana
-  let availableHours = [...hours]
-
-  // Simular algunas horas ocupadas según el día
-  if (dayOfWeek === 1) {
-    // Lunes
-    availableHours = availableHours.filter((h) => h !== "09:00" && h !== "14:00")
-  } else if (dayOfWeek === 2) {
-    // Martes
-    availableHours = availableHours.filter((h) => h !== "11:00" && h !== "15:00")
-  } else if (dayOfWeek === 3) {
-    // Miércoles
-    availableHours = availableHours.filter((h) => h !== "10:00" && h !== "16:00")
-  } else if (dayOfWeek === 4) {
-    // Jueves
-    availableHours = availableHours.filter((h) => h !== "08:00" && h !== "12:00")
-  } else if (dayOfWeek === 5) {
-    // Viernes
-    availableHours = availableHours.filter((h) => h !== "07:00" && h !== "15:00")
-  }
-
-  // En una implementación real, aquí se consultaría al servidor por los horarios disponibles
-  // fetch(`/obtener_horarios_disponibles?fecha=${dateString}&id_asesor=${selectedAsesorId}`)
-  //   .then(response => response.json())
-  //   .then(data => {
-  //     // Guardar en caché
-  //     if (!window.cachedAvailableHours) window.cachedAvailableHours = {};
-  //     window.cachedAvailableHours[dateString] = data.horarios;
-  //     return data.horarios;
-  //   });
-
-  // Guardar en caché para futuras consultas
-  if (!window.cachedAvailableHours) window.cachedAvailableHours = {}
-  window.cachedAvailableHours[dateString] = availableHours
-
-  return availableHours
 }
 
-// Formatear fecha para mostrar
-function formatDateForDisplay(date) {
-  const options = { weekday: "long", year: "numeric", month: "long", day: "numeric" }
-  return date.toLocaleDateString("es-ES", options)
+// Función para crear una reserva temporal
+function createTemporaryReservation() {
+  // Implementa la lógica para crear una reserva temporal aquí
+  console.log("createTemporaryReservation function called")
 }
 
-// Formatear hora para mostrar
-function formatHour(hourString) {
-  const [hours, minutes] = hourString.split(":")
-  return `${hours}:${minutes}`
+// Función para cancelar una reserva temporal
+function cancelTemporaryReservation() {
+  // Implementa la lógica para cancelar una reserva temporal aquí
+  console.log("cancelTemporaryReservation function called")
 }
 
-// Formatear fecha como string YYYY-MM-DD
-function formatDateString(date) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const day = String(date.getDate()).padStart(2, "0")
-  return `${year}-${month}-${day}`
-}
+// ==================== FUNCIONES DE LA INTERFAZ DE USUARIO ====================
 
-// Formatear fecha y hora para input datetime-local
-function formatDateTimeForInput(date) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const day = String(date.getDate()).padStart(2, "0")
-  const hours = String(date.getHours()).padStart(2, "0")
-  const minutes = String(date.getMinutes()).padStart(2, "0")
-
-  return `${year}-${month}-${day}T${hours}:${minutes}`
-}
-
-// Función para formatear fecha y hora para mostrar en el listado
-function formatDateTimeForDisplay(date) {
-  const options = {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }
-  return date.toLocaleDateString("es-ES", options)
-}
-
-// Función para procesar el formulario de nueva asesoría
-document.addEventListener("DOMContentLoaded", () => {
-  const advisoryForm = document.getElementById("advisoryForm")
-  if (advisoryForm) {
-    advisoryForm.addEventListener("submit", async (e) => {
-      e.preventDefault() // Prevenir el envío normal del formulario
-
-      // Asegurarse de que la fecha y hora seleccionadas se guarden correctamente
-      const selectedDateInput = document.getElementById("selected_date")
-      if (selectedDateInput && selectedDate && selectedTime) {
-        const dateTime = new Date(selectedDate)
-        const [hours, minutes] = selectedTime.split(":")
-        dateTime.setHours(Number.parseInt(hours), Number.parseInt(minutes), 0, 0)
-        selectedDateInput.value = formatDateTimeForInput(dateTime)
-      }
-
-      // Recopilar los datos del formulario
-      const formData = new FormData(advisoryForm)
-      const formDataObj = {}
-      formData.forEach((value, key) => {
-        formDataObj[key] = value
-      })
-
-      try {
-        // Enviar los datos al servidor
-        const response = await fetch("/nueva_asesoria", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formDataObj),
-        })
-
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || "Error al crear la asesoría")
-        }
-
-        const data = await response.json()
-
-        // Mostrar notificación de éxito
-        showNotification("Asesoría creada exitosamente. Tienes 10 minutos para realizar el pago.", "success")
-
-        // Cerrar el modal
-        closeNewAdvisoryModal()
-
-        // Redirigir a la página de pago o actualizar la lista de asesorías
-        if (data.codigo_asesoria) {
-          // Opción 1: Abrir modal de pago directamente
-          abrirModalPago(data.codigo_asesoria, formDataObj.tipo_asesoria)
-
-          // Opción 2: Recargar la página para mostrar la nueva asesoría
-          // setTimeout(() => {
-          //   window.location.reload();
-          // }, 1500);
-        } else {
-          // Recargar la página para mostrar la nueva asesoría
-          setTimeout(() => {
-            window.location.reload()
-          }, 1500)
-        }
-      } catch (error) {
-        console.error("Error al crear la asesoría:", error)
-        showNotification("Error al crear la asesoría: " + error.message, "error")
-      }
-    })
-  }
-
-  // Agregar estilos CSS personalizados para las animaciones mejoradas
-  const styleElement = document.createElement("style")
-  styleElement.textContent = `
+// Agregar estilos CSS personalizados para las animaciones mejoradas
+const styleElement = document.createElement("style")
+styleElement.textContent = `
   @keyframes pulse-scale {
     0% { transform: scale(1); }
     50% { transform: scale(1.05); }
@@ -876,28 +901,11 @@ document.addEventListener("DOMContentLoaded", () => {
   .scale-110 {
     transform: scale(1.1);
   }
-  
-  /* Mejorar transiciones para elementos del calendario */
-  #calendar-days > div {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  #calendar-days > div:hover {
-    transform: translateY(-2px);
-  }
-  
-  /* Mejorar transiciones para botones de hora */
-  #time-slots button {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  #time-slots button:hover {
-    transform: translateY(-2px);
-  }
 `
-  document.head.appendChild(styleElement)
+document.head.appendChild(styleElement)
 
-  // Inicializar numeración de asesorías
+// Inicializar numeración de asesorías
+document.addEventListener("DOMContentLoaded", () => {
   ordenarYNumerarAsesorias()
 
   // Agregar event listeners para los filtros
@@ -978,7 +986,7 @@ document.addEventListener("DOMContentLoaded", () => {
         showNotification("Asesoría actualizada exitosamente", "success")
 
         // Cerrar el modal
-        closeEditAdvisoryModalFunc()
+        closeEditAdvisoryModal()
 
         // Recargar la página para mostrar los cambios
         setTimeout(() => {
@@ -990,251 +998,25 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     })
   }
+
+  // Añadir event listener para actualizar el precio cuando cambie el tipo de asesoría
+  const tipoAsesoriaSelect = document.getElementById("tipo_asesoria")
+  if (tipoAsesoriaSelect) {
+    tipoAsesoriaSelect.addEventListener("change", updateAppointmentPrice)
+  }
+
+  // Añadir event listeners para actualizar los detalles en tiempo real
+  const formInputs = document.querySelectorAll("#advisoryForm input, #advisoryForm select, #advisoryForm textarea")
+  formInputs.forEach((input) => {
+    input.addEventListener("change", updateAppointmentDetails)
+    if (input.tagName === "INPUT" || input.tagName === "TEXTAREA") {
+      input.addEventListener("keyup", updateAppointmentDetails)
+    }
+  })
 })
 
-// Modificar la función para cerrar el modal de nueva asesoría
-function closeNewAdvisoryModal() {
-  const modal = document.getElementById("newAdvisoryModal")
-  if (!modal) return
-
-  // Cancelar la reserva temporal si existe
-  if (window.reservaTemporalId) {
-    cancelarReservaTemporal(window.reservaTemporalId)
-    window.reservaTemporalId = null
-  }
-
-  modal.classList.remove("flex")
-  modal.classList.add("hidden")
-
-  // Resetear selecciones
-  selectedDate = null
-  selectedTime = null
-  selectedAsesorId = null
-  selectedAsesorName = null
-
-  const selectedDateInput = document.getElementById("selected_date")
-  const selectedAsesorIdInput = document.getElementById("selected_asesor_id")
-  const selectedAsesorNameInput = document.getElementById("selected_asesor_name")
-  const asesorSelector = document.getElementById("asesor_selector")
-  const submitBtn = document.getElementById("submitAdvisoryBtn")
-  const timeSelector = document.getElementById("time-selector")
-  const appointmentSummary = document.getElementById("appointment-summary")
-
-  if (selectedDateInput) selectedDateInput.value = ""
-  if (selectedAsesorIdInput) selectedAsesorIdInput.value = ""
-  if (selectedAsesorNameInput) selectedAsesorNameInput.value = ""
-  if (asesorSelector) asesorSelector.value = ""
-  if (submitBtn) {
-    submitBtn.disabled = true
-    submitBtn.classList.add("opacity-50")
-  }
-
-  // Ocultar selector de hora y resumen
-  if (timeSelector) timeSelector.classList.add("hidden")
-  if (appointmentSummary) appointmentSummary.classList.add("hidden")
-}
-
-// Función para cancelar una reserva temporal
-async function cancelarReservaTemporal(reservaId) {
-  if (!reservaId) return
-
-  try {
-    const response = await fetch("/cancelar_reserva_temporal", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        reserva_id: reservaId,
-      }),
-    })
-
-    if (!response.ok) {
-      console.error("Error al cancelar reserva temporal")
-    } else {
-      console.log("Reserva temporal cancelada correctamente")
-    }
-  } catch (error) {
-    console.error("Error al cancelar reserva temporal:", error)
-  }
-}
-
-// Modificar la función para procesar el pago y actualizar la UI
-async function procesarPago(id) {
-  try {
-    const montoInput = document.getElementById("monto")
-    const monto = montoInput ? Number.parseFloat(montoInput.value) : 0
-
-    // Obtener la fecha y hora seleccionada
-    const selectedDateInput = document.getElementById("selected_date")
-    const selectedDate = selectedDateInput ? selectedDateInput.value : null
-    const selectedAsesorId = document.getElementById("selected_asesor_id")?.value
-
-    // Enviar solicitud al servidor para registrar el pago
-    const response = await fetch("/procesar_pago", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        codigo_asesoria: id,
-        monto: monto,
-        metodo_pago: "Tarjeta de Crédito (Stripe)",
-        datos_adicionales: {
-          payment_intent: clientSecret ? clientSecret.split("_secret_")[0] : null,
-        },
-        fecha_asesoria: selectedDate,
-        id_asesor: selectedAsesorId,
-      }),
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.error || "Error al registrar el pago en el servidor")
-    }
-
-    // Buscar el botón de pago correspondiente
-    const row = document.querySelector(`tr[data-asesoria-id="${id}"]`)
-    if (row) {
-      const pagoBtn = row.querySelector(".pago-btn")
-      if (pagoBtn) {
-        // Cambiar el estilo y texto del botón
-        pagoBtn.classList.remove(
-          "bg-gradient-to-r",
-          "from-green-600",
-          "to-green-500",
-          "hover:from-green-500",
-          "hover:to-green-600",
-          "to-green-500",
-          "hover:from-green-500",
-          "hover:to-green-600",
-          "hover:shadow-green-500/30",
-        )
-        pagoBtn.classList.add(
-          "bg-gradient-to-r",
-          "from-blue-600",
-          "to-blue-500",
-          "hover:from-blue-500",
-          "hover:to-blue-600",
-          "hover:shadow-blue-500/30",
-        )
-
-        // Actualizar el contenido del botón
-        pagoBtn.innerHTML = `
-                  <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
-                  <div class="relative flex items-center justify-center">
-                      <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                      <span>Pagado</span>
-                  </div>
-              `
-
-        // Deshabilitar el botón
-        pagoBtn.onclick = null
-        pagoBtn.style.cursor = "default"
-        pagoBtn.classList.remove("pago-btn")
-
-        // Actualizar el estado de la asesoría
-        row.setAttribute("data-pago-estado", "Pagada")
-
-        // Actualizar el estado en la tabla
-        const estadoCell = row.querySelector("td:nth-child(5)")
-        if (estadoCell) {
-          estadoCell.innerHTML = `<span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-600">En Proceso Activo</span>`
-        }
-
-        // Actualizar el ícono de verificación en los detalles
-        const detailsRow = document.getElementById(`details-${id}`)
-        if (detailsRow) {
-          // Buscar todos los párrafos en los detalles
-          const paragraphs = detailsRow.querySelectorAll("p")
-
-          // Buscar el párrafo que contiene "Precio:"
-          for (const p of paragraphs) {
-            if (p.textContent.includes("Precio:")) {
-              const spanElement = p.querySelector("span:last-child")
-              if (spanElement && !spanElement.querySelector("svg")) {
-                spanElement.innerHTML = `
-                $${monto.toFixed(2)} USD
-                <svg class="w-4 h-4 ml-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              `
-              }
-              break
-            }
-          }
-
-          // Actualizar el estado en los detalles
-          for (const p of paragraphs) {
-            if (p.textContent.includes("Estado:")) {
-              const spanElement = p.querySelector("span:last-child")
-              if (spanElement) {
-                spanElement.className = "text-blue-600"
-                spanElement.textContent = "En Proceso Activo"
-              }
-              break
-            }
-          }
-        }
-
-        // Ocultar el botón de cancelar
-        const cancelarBtn = row.querySelector('button[title="Cancelar"]')
-        if (cancelarBtn) {
-          cancelarBtn.style.display = "none"
-        }
-      }
-    }
-
-    // Mostrar notificación de éxito
-    showNotification("Pago procesado exitosamente", "success")
-
-    // Cerrar el modal de pago
-    closePagoModal()
-  } catch (error) {
-    console.error("Error al procesar el pago:", error)
-    showNotification("Error al procesar el pago: " + error.message, "error")
-  }
-}
-
-// Variables globales para el calendario
-let currentMonth = new Date().getMonth()
-let currentYear = new Date().getFullYear()
-
-// Declaración de funciones faltantes
-let openNewAdvisoryModal = () => {}
-let filterAsesorias = () => {}
-function enviarMensaje() {}
-const closePagoModal = () => {}
-let editAsesoriaFunc = () => {}
-let closeEditAdvisoryModalFunc = () => {}
-let toggleDetails = () => {}
-function resetFilters() {}
-let verHistorialChatFunc = () => {}
-const closeChatHistorialModal = () => {}
-function cancelarAsesoriaModal() {}
-function closeCancelarAsesoriaModalFunc() {}
-function reiniciarPasarelaPago() {}
-
-// Exportar funciones para uso global
-window.openNewAdvisoryModal = openNewAdvisoryModal
-window.closeNewAdvisoryModal = closeNewAdvisoryModal
-window.editAsesoria = editAsesoriaFunc
-window.closeEditAdvisoryModal = closeEditAdvisoryModalFunc
-window.toggleDetails = toggleDetails
-window.resetFilters = resetFilters
-window.verHistorialChat = verHistorialChatFunc
-window.closeChatHistorialModal = closeChatHistorialModal
-window.enviarMensaje = enviarMensaje
-window.abrirModalPago = abrirModalPago
-window.closePagoModal = closePagoModal
-window.cancelarAsesoria = cancelarAsesoriaModal
-window.closeCancelarAsesoriaModal = closeCancelarAsesoriaModalFunc
-window.reiniciarPasarelaPago = reiniciarPasarelaPago
-window.showTimeSelector = showTimeSelector
-
-// Modificar la función para abrir el modal de nueva asesoría
-openNewAdvisoryModal = () => {
+// Función para abrir el modal de nueva asesoría
+function openNewAdvisoryModal() {
   const modal = document.getElementById("newAdvisoryModal")
   if (!modal) return
 
@@ -1245,8 +1027,94 @@ openNewAdvisoryModal = () => {
   // Cargar los asesores disponibles
   loadAsesores()
 
-  // Inicializar el calendario
-  initCalendar()
+  // Inicializar el calendario inmediatamente
+  console.log("Inicializando calendario...")
+
+  // Asegurarse de que el contenedor del calendario esté visible
+  const calendarContainer = document.getElementById("calendar-container")
+  if (calendarContainer) {
+    calendarContainer.style.display = "block"
+  }
+
+  // Inicializar el calendario con un pequeño retraso para asegurar que el DOM esté listo
+  setTimeout(() => {
+    try {
+      initializeCalendar()
+      console.log("Calendario inicializado")
+    } catch (error) {
+      console.error("Error al inicializar el calendario:", error)
+    }
+
+    // Inicializar los detalles de la asesoría
+    const appointmentDetailsContent = document.getElementById("appointment-details-content")
+    if (appointmentDetailsContent) {
+      appointmentDetailsContent.innerHTML = `
+        <div class="p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
+          <p class="text-center">Seleccione un asesor, fecha y hora para ver los detalles de la asesoría</p>
+        </div>
+      `
+    }
+  }, 100)
+}
+
+// Función para cerrar el modal de nueva asesoría
+function closeNewAdvisoryModal() {
+  const modal = document.getElementById("newAdvisoryModal")
+  if (!modal) return
+
+  modal.classList.remove("flex")
+  modal.classList.add("hidden")
+
+  // Resetear selecciones
+  selectedAsesorId = null
+  selectedAsesorName = null
+  selectedAsesorEspecialidad = null
+  selectedDate = null
+  selectedTime = null
+
+  const selectedDateInput = document.getElementById("selected_date")
+  const selectedAsesorIdInput = document.getElementById("selected_asesor_id")
+  const selectedAsesorNameInput = document.getElementById("selected_asesor_name")
+  const selectedAsesorEspecialidadInput = document.getElementById("selected_asesor_especialidad")
+  const asesorSelector = document.getElementById("asesor_selector")
+  const submitBtn = document.getElementById("submitAdvisoryBtn")
+
+  if (selectedDateInput) selectedDateInput.value = ""
+  if (selectedAsesorIdInput) selectedAsesorIdInput.value = ""
+  if (selectedAsesorNameInput) selectedAsesorNameInput.value = ""
+  if (selectedAsesorEspecialidadInput) selectedAsesorEspecialidadInput.value = ""
+  if (asesorSelector) asesorSelector.value = ""
+  if (submitBtn) {
+    submitBtn.disabled = true
+    submitBtn.classList.add("opacity-50")
+  }
+
+  // Limpiar los horarios disponibles
+  const timeSlotsContainer = document.getElementById("time-slots-container")
+  if (timeSlotsContainer) {
+    timeSlotsContainer.innerHTML = ""
+  }
+
+  // Limpiar los detalles de la asesoría
+  const appointmentDetailsContent = document.getElementById("appointment-details-content")
+  if (appointmentDetailsContent) {
+    appointmentDetailsContent.innerHTML = `
+      <div class="p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
+        <p class="text-center">Seleccione un asesor, fecha y hora para ver los detalles de la asesoría</p>
+      </div>
+    `
+  }
+
+  // Cancelar cualquier reserva temporal
+  if (reservationId) {
+    cancelTemporaryReservation()
+  }
+
+  // Detener cualquier temporizador de pago
+  if (paymentTimer) {
+    clearInterval(paymentTimer)
+    paymentTimer = null
+  }
 }
 
 // Función para cargar los asesores disponibles
@@ -1280,18 +1148,63 @@ async function loadAsesores() {
         const option = document.createElement("option")
         option.value = asesor.id_asesor
         option.setAttribute("data-name", `${asesor.nombre} ${asesor.apellidos}`)
+        option.setAttribute("data-especialidad", asesor.especialidad)
         option.textContent = `${asesor.nombre} ${asesor.apellidos} - ${asesor.especialidad}`
         asesorSelector.appendChild(option)
       })
     }
+
+    // Agregar event listener para el selector de asesor
+    asesorSelector.addEventListener("change", function () {
+      selectedAsesorId = this.value
+      selectedAsesorName = this.options[this.selectedIndex].getAttribute("data-name")
+      selectedAsesorEspecialidad = this.options[this.selectedIndex].getAttribute("data-especialidad")
+
+      if (selectedAsesorId) {
+        // Guardar el asesor seleccionado
+        const selectedAsesorIdInput = document.getElementById("selected_asesor_id")
+        const selectedAsesorNameInput = document.getElementById("selected_asesor_name")
+        const selectedAsesorEspecialidadInput = document.getElementById("selected_asesor_especialidad")
+
+        if (selectedAsesorIdInput) selectedAsesorIdInput.value = selectedAsesorId
+        if (selectedAsesorNameInput) selectedAsesorNameInput.value = selectedAsesorName
+        if (selectedAsesorEspecialidadInput) selectedAsesorEspecialidadInput.value = selectedAsesorEspecialidad
+
+        // Si ya hay una fecha seleccionada, cargar los horarios disponibles
+        if (selectedDate) {
+          loadAvailableTimeSlots(selectedDate)
+        }
+
+        // Actualizar los detalles de la asesoría
+        updateAppointmentDetails()
+
+        // Habilitar el botón si se ha seleccionado fecha y hora
+        checkFormCompletion()
+      }
+    })
   } catch (error) {
     console.error("Error al cargar asesores:", error)
     asesorSelector.innerHTML = '<option value="">Error al cargar asesores</option>'
   }
 }
 
+// Verificar si el formulario está completo
+function checkFormCompletion() {
+  const submitButton = document.getElementById("submitAdvisoryBtn")
+
+  if (!submitButton) return
+
+  if (selectedAsesorId && selectedDate) {
+    submitButton.disabled = false
+    submitButton.classList.remove("opacity-50")
+  } else {
+    submitButton.disabled = true
+    submitButton.classList.add("opacity-50")
+  }
+}
+
 // Función para filtrar asesorías
-filterAsesorias = () => {
+function filterAsesorias() {
   const searchInput = document.getElementById("search-input")
   const statusFilter = document.getElementById("filter-status")
   const dateFilter = document.getElementById("filter-date")
@@ -1321,75 +1234,6 @@ filterAsesorias = () => {
     const fechaParts = fechaText.split("\n")
     const fecha = fechaParts[0]
     const hora = fechaParts[1] ? fechaParts[1].trim() : "00:00"
-
-    // Obtener datos adicionales de los detalles
-    const detailsRow = document.getElementById(`details-${asesoriaId}`)
-    let tipoAsesoria = ""
-    let descripcion = ""
-    let lugar = "Virtual (Zoom)"
-    const tipoDocumento = "C.C"
-    const numeroDocumento = ""
-
-    if (detailsRow) {
-      const paragraphs = detailsRow.querySelectorAll("p")
-      paragraphs.forEach((p) => {
-        const text = p.textContent.trim()
-        if (text.includes("Tipo de Visa:")) {
-          tipoAsesoria = text.split(":")[1].trim()
-        } else if (text.includes("Descripción:")) {
-          descripcion = text.split(":")[1].trim()
-        } else if (text.includes("Lugar:")) {
-          lugar = text.split(":")[1].trim()
-        }
-      })
-    }
-
-    // Llenar el formulario
-    const editForm = document.getElementById("editForm")
-    if (editForm) {
-      const codigoInput = document.getElementById("edit_codigo_asesoria")
-      const fechaInput = document.getElementById("edit_fecha_asesoria")
-      const tipoAsesoriaSelect = document.getElementById("edit_tipo_asesoria")
-      const descripcionInput = document.getElementById("edit_descripcion")
-      const lugarSelect = document.getElementById("edit_lugar")
-      const tipoDocumentoSelect = document.getElementById("edit_tipo_documento")
-      const numeroDocumentoInput = document.getElementById("edit_numero_documento")
-
-      if (codigoInput) codigoInput.value = asesoriaId
-
-      // Formatear fecha y hora para input datetime-local
-      if (fechaInput) {
-        const fechaObj = new Date(fecha)
-        const year = fechaObj.getFullYear()
-        const month = String(fechaObj.getMonth() + 1).padStart(2, "0")
-        const day = String(fechaObj.getDate()).padStart(2, "0")
-        const [hours, minutes] = hora.split(":")
-        fechaInput.value = `${year}-${month}-${day}T${hours}:${minutes}`
-      }
-
-      if (tipoAsesoriaSelect) {
-        for (let i = 0; i < tipoAsesoriaSelect.options.length; i++) {
-          if (tipoAsesoriaSelect.options[i].value === tipoAsesoria) {
-            tipoAsesoriaSelect.selectedIndex = i
-            break
-          }
-        }
-      }
-
-      if (descripcionInput) descripcionInput.value = descripcion
-
-      if (lugarSelect) {
-        for (let i = 0; i < lugarSelect.options.length; i++) {
-          if (lugarSelect.options[i].value === lugar) {
-            lugarSelect.selectedIndex = i
-            break
-          }
-        }
-      }
-
-      if (tipoDocumentoSelect) tipoDocumentoSelect.value = tipoDocumento
-      if (numeroDocumentoInput) numeroDocumentoInput.value = numeroDocumento
-    }
 
     // Aplicar filtros
     let showRow = true
@@ -1483,7 +1327,7 @@ filterAsesorias = () => {
 }
 
 // Función para mostrar/ocultar detalles de una asesoría
-toggleDetails = (asesoriaId) => {
+function toggleDetails(asesoriaId) {
   const detailsRow = document.getElementById(`details-${asesoriaId}`)
   if (!detailsRow) return
 
@@ -1503,7 +1347,7 @@ toggleDetails = (asesoriaId) => {
 }
 
 // Función para editar una asesoría
-editAsesoriaFunc = (asesoriaId) => {
+function editAsesoria(asesoriaId) {
   const modal = document.getElementById("editAdvisoryModal")
   if (!modal) return
 
@@ -1593,7 +1437,7 @@ editAsesoriaFunc = (asesoriaId) => {
 }
 
 // Función para cerrar el modal de editar asesoría
-closeEditAdvisoryModalFunc = () => {
+function closeEditAdvisoryModal() {
   const modal = document.getElementById("editAdvisoryModal")
   if (!modal) return
 
@@ -1601,55 +1445,8 @@ closeEditAdvisoryModalFunc = () => {
   modal.classList.add("hidden")
 }
 
-// Agregar event listener para el formulario de edición
-document.addEventListener("DOMContentLoaded", () => {
-  const editForm = document.getElementById("editForm")
-  if (editForm) {
-    editForm.addEventListener("submit", async (e) => {
-      e.preventDefault()
-
-      // Recopilar los datos del formulario
-      const formData = new FormData(editForm)
-      const formDataObj = {}
-      formData.forEach((value, key) => {
-        formDataObj[key] = value
-      })
-
-      try {
-        // Enviar los datos al servidor
-        const response = await fetch("/editar_asesoria", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formDataObj),
-        })
-
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || "Error al actualizar la asesoría")
-        }
-
-        // Mostrar notificación de éxito
-        showNotification("Asesoría actualizada exitosamente", "success")
-
-        // Cerrar el modal
-        closeEditAdvisoryModalFunc()
-
-        // Recargar la página para mostrar los cambios
-        setTimeout(() => {
-          window.location.reload()
-        }, 1500)
-      } catch (error) {
-        console.error("Error al actualizar la asesoría:", error)
-        showNotification("Error al actualizar la asesoría: " + error.message, "error")
-      }
-    })
-  }
-})
-
 // Función para ver historial de chat
-verHistorialChatFunc = (asesoriaId) => {
+function verHistorialChat(asesoriaId) {
   const modal = document.getElementById("chatHistorialModal")
   if (!modal) return
 
@@ -1680,7 +1477,7 @@ verHistorialChatFunc = (asesoriaId) => {
 }
 
 // Función para cerrar el modal de historial de chat
-closeChatHistorialModalFunc = () => {
+function closeChatHistorialModal() {
   const modal = document.getElementById("chatHistorialModal")
   if (!modal) return
 
@@ -1749,8 +1546,86 @@ function enviarMensaje() {
   }, 1000)
 }
 
-// Función para procesar el pago de una asesoría
-function abrirModalPago(asesoriaId, tipoAsesoria) {
+// Función para actualizar el precio en tiempo real
+function updateAppointmentPrice() {
+  const tipoAsesoriaSelect = document.getElementById("tipo_asesoria")
+  const precioAsesoriaElement = document.getElementById("precio-asesoria")
+
+  if (tipoAsesoriaSelect && precioAsesoriaElement) {
+    const precioAsesoria = tipoAsesoriaSelect.options[tipoAsesoriaSelect.selectedIndex].getAttribute("data-precio")
+    precioAsesoriaElement.textContent = `$${precioAsesoria} USD`
+  } else if (tipoAsesoriaSelect) {
+    // Si no existe el elemento de precio pero sí el selector, actualizar los detalles completos
+    updateAppointmentDetails()
+  }
+}
+
+// Modificar la función para el envío del formulario
+const advisoryFormSubmit = (event) => {
+  if (event) {
+    event.preventDefault()
+  }
+
+  const form = document.getElementById("advisoryForm")
+  if (!form) return
+
+  // Recopilar los datos del formulario
+  const formData = new FormData(form)
+  const formDataObj = {}
+  formData.forEach((value, key) => {
+    formDataObj[key] = value
+  })
+
+  // Mostrar el contenedor del temporizador antes de enviar la solicitud
+  const timerContainer = document.getElementById("payment-timer-container")
+  if (timerContainer) {
+    timerContainer.classList.remove("hidden")
+  }
+
+  // Enviar la solicitud al servidor
+  fetch("/nueva_asesoria", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(formDataObj),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        return response.json().then((data) => {
+          throw new Error(data.error || "Error al solicitar la asesoría")
+        })
+      }
+      return response.json()
+    })
+    .then((data) => {
+      // Mostrar notificación de éxito
+      showNotification(data.message || "Asesoría solicitada con éxito", "success")
+
+      // Iniciar el temporizador de pago después de solicitar la asesoría
+      startPaymentTimerAfterRequest(data.codigo_asesoria)
+
+      // Cerrar el modal
+      closeNewAdvisoryModal()
+
+      // Recargar la página para mostrar la nueva asesoría
+      setTimeout(() => {
+        window.location.reload()
+      }, 1500)
+    })
+    .catch((error) => {
+      console.error("Error al solicitar la asesoría:", error)
+      showNotification(error.message, "error")
+
+      // Ocultar el contenedor del temporizador en caso de error
+      if (timerContainer) {
+        timerContainer.classList.add("hidden")
+      }
+    })
+}
+
+// Función para pagar una asesoría
+function pagarAsesoria(asesoriaId, tipoAsesoria) {
   const modal = document.getElementById("pagoModal")
   if (!modal) return
 
@@ -1790,29 +1665,121 @@ function abrirModalPago(asesoriaId, tipoAsesoria) {
   modal.classList.remove("hidden")
   modal.classList.add("flex")
 
-  // Inicializar Stripe (simulado)
+  // Inicializar Stripe
   reiniciarPasarelaPago()
 }
 
 // Función para cerrar el modal de pago
-function closePagoModalFunc() {
+function closePagoModal() {
   const modal = document.getElementById("pagoModal")
+  if (!modal) return
+
+  // Detener el temporizador si está activo
+  if (paymentTimer) {
+    clearInterval(paymentTimer)
+    paymentTimer = null
+  }
+
+  modal.classList.remove("flex")
+  modal.classList.add("hidden")
+}
+
+// Función para cancelar una asesoría
+function cancelarAsesoria(asesoriaId) {
+  const modal = document.getElementById("cancelarAsesoriaModal")
+  if (!modal) return
+
+  // Mostrar el modal
+  modal.classList.remove("hidden")
+  modal.classList.add("flex")
+
+  // Configurar la acción del botón de confirmación
+  const confirmBtn = document.getElementById("confirmarCancelarBtn")
+  if (confirmBtn) {
+    confirmBtn.onclick = async () => {
+      try {
+        // Enviar solicitud para eliminar la asesoría
+        const response = await fetch("/cancelar_asesoria", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            codigo_asesoria: asesoriaId,
+          }),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || "Error al cancelar la asesoría")
+        }
+
+        // Mostrar notificación de éxito
+        showNotification("Asesoría cancelada exitosamente", "success")
+
+        // Cerrar el modal
+        closeCancelarAsesoriaModal()
+
+        // Eliminar la asesoría del DOM
+        const row = document.querySelector(`tr[data-asesoria-id="${asesoriaId}"]`)
+        if (row) {
+          row.remove()
+        }
+
+        // También eliminar la fila de detalles si existe
+        const detailsRow = document.getElementById(`details-${asesoriaId}`)
+        if (detailsRow) {
+          detailsRow.remove()
+        }
+
+        // Verificar si no hay más asesorías y mostrar el mensaje de no resultados
+        const visibleRows = document.querySelectorAll("#asesorias-table-body tr[data-asesoria-id]:not(.hidden)")
+        if (visibleRows.length === 0) {
+          const noResults = document.getElementById("no-results")
+          if (noResults) {
+            noResults.classList.remove("hidden")
+          }
+        }
+
+        // Renumerar las asesorías restantes
+        ordenarYNumerarAsesorias()
+      } catch (error) {
+        console.error("Error al cancelar la asesoría:", error)
+        showNotification("Error al cancelar la asesoría: " + error.message, "error")
+      }
+    }
+  }
+}
+
+// Función para cerrar el modal de cancelar asesoría
+function closeCancelarAsesoriaModal() {
+  const modal = document.getElementById("cancelarAsesoriaModal")
   if (!modal) return
 
   modal.classList.remove("flex")
   modal.classList.add("hidden")
 }
 
-// Modificar la función para reiniciar la pasarela de pago con Stripe
+// Función para reiniciar la pasarela de pago con Stripe
 function reiniciarPasarelaPago() {
   // Obtener la clave pública de Stripe del meta tag
-  const stripePublicKey = document.querySelector('meta[name="stripe-public-key"]').content
+  const stripePublicKey = document.querySelector('meta[name="stripe-public-key"]')?.content
+
+  if (!stripePublicKey) {
+    console.error("No se encontró la clave pública de Stripe")
+    return
+  }
 
   // Inicializar Stripe con la clave pública
   stripe = Stripe(stripePublicKey)
 
-  const asesoriaId = document.getElementById("pago_codigo_asesoria").value
-  const monto = document.getElementById("monto").value
+  const asesoriaId = document.getElementById("pago_codigo_asesoria")?.value
+  const monto = document.getElementById("monto")?.value
+
+  if (!asesoriaId || !monto) {
+    console.error("Faltan datos para inicializar la pasarela de pago")
+    return
+  }
 
   // Crear un PaymentIntent en el servidor
   fetch("/crear_payment_intent", {
@@ -1918,79 +1885,66 @@ function reiniciarPasarelaPago() {
     })
 }
 
-// Add the cancelarAsesoria function to delete the appointment
-function cancelarAsesoriaModal(asesoriaId) {
-  const modal = document.getElementById("cancelarAsesoriaModal")
-  if (!modal) return
+// Función para resetear filtros
+function resetFilters() {
+  const searchInput = document.getElementById("search-input")
+  const statusFilter = document.getElementById("filter-status")
+  const dateFilter = document.getElementById("filter-date")
 
-  // Show the modal
-  modal.classList.remove("hidden")
-  modal.classList.add("flex")
+  if (searchInput) searchInput.value = ""
+  if (statusFilter) statusFilter.value = ""
+  if (dateFilter) dateFilter.value = ""
 
-  // Set the confirmation button's action
-  const confirmBtn = document.getElementById("confirmarCancelarBtn")
-  if (confirmBtn) {
-    confirmBtn.onclick = async () => {
-      try {
-        // Send request to delete the appointment
-        const response = await fetch("/cancelar_asesoria", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            codigo_asesoria: asesoriaId,
-          }),
-        })
-
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || "Error al cancelar la asesoría")
-        }
-
-        // Show success notification
-        showNotification("Asesoría cancelada exitosamente", "success")
-
-        // Close the modal
-        closeCancelarAsesoriaModalFunc()
-
-        // Remove the appointment from the DOM
-        const row = document.querySelector(`tr[data-asesoria-id="${asesoriaId}"]`)
-        if (row) {
-          row.remove()
-        }
-
-        // Also remove the details row if it exists
-        const detailsRow = document.getElementById(`details-${asesoriaId}`)
-        if (detailsRow) {
-          detailsRow.remove()
-        }
-
-        // Check if there are no more appointments and show the no results message
-        const visibleRows = document.querySelectorAll("#asesorias-table-body tr[data-asesoria-id]:not(.hidden)")
-        if (visibleRows.length === 0) {
-          const noResults = document.getElementById("no-results")
-          if (noResults) {
-            noResults.classList.remove("hidden")
-          }
-        }
-
-        // Re-number the remaining appointments
-        ordenarYNumerarAsesorias()
-      } catch (error) {
-        console.error("Error al cancelar la asesoría:", error)
-        showNotification("Error al cancelar la asesoría: " + error.message, "error")
-      }
-    }
-  }
+  // Aplicar filtros (mostrará todas las asesorías)
+  filterAsesorias()
 }
 
-// Add the closeCancelarAsesoriaModal function
-function closeCancelarAsesoriaModalFunc() {
-  const modal = document.getElementById("cancelarAsesoriaModal")
-  if (!modal) return
+// Función para manejar el cambio de fecha en el calendario
+function handleDateChange(date) {
+  selectedDate = date
 
-  modal.classList.remove("flex")
-  modal.classList.add("hidden")
+  // Guardar la fecha seleccionada
+  const selectedDateInput = document.getElementById("selected_date")
+  if (selectedDateInput) selectedDateInput.value = date
+
+  // Cargar los horarios disponibles para la fecha seleccionada
+  loadAvailableTimeSlots(date)
+
+  // Actualizar los detalles de la asesoría
+  updateAppointmentDetails()
+
+  // Habilitar el botón si se ha seleccionado fecha y hora
+  checkFormCompletion()
 }
+
+// Exportar funciones para uso global
+window.formatDate = formatDate
+window.isAsesoriaVigente = isAsesoriaVigente
+window.getRandomColor = getRandomColor
+window.generateAvatar = generateAvatar
+window.showNotification = showNotification
+window.initializeCalendar = initializeCalendar
+window.selectDate = selectDate
+window.selectTimeSlot = selectTimeSlot
+window.createTemporaryReservation = createTemporaryReservation
+window.cancelTemporaryReservation = cancelTemporaryReservation
+window.openNewAdvisoryModal = openNewAdvisoryModal
+window.closeNewAdvisoryModal = closeNewAdvisoryModal
+window.editAsesoria = editAsesoria
+window.closeEditAdvisoryModal = closeEditAdvisoryModal
+window.toggleDetails = toggleDetails
+window.resetFilters = resetFilters
+window.verHistorialChat = verHistorialChat
+window.closeChatHistorialModal = closeChatHistorialModal
+window.enviarMensaje = enviarMensaje
+window.pagarAsesoria = pagarAsesoria
+window.closePagoModal = closePagoModal
+window.cancelarAsesoria = cancelarAsesoria
+window.closeCancelarAsesoriaModal = closeCancelarAsesoriaModal
+window.reiniciarPasarelaPago = reiniciarPasarelaPago
+window.handleDateChange = handleDateChange
+window.loadAvailableTimeSlots = loadAvailableTimeSlots
+window.updateAppointmentDetails = updateAppointmentDetails
+window.updateAppointmentPrice = updateAppointmentPrice
+window.advisoryFormSubmit = advisoryFormSubmit
 
