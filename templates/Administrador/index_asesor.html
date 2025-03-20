@@ -1,22 +1,20 @@
-<!-- index.html -->
+<!-- index_asesor.html -->
 {% extends '/Administrador/base_asesor.html' %}
 
-{% block title %}CVA | Inicio{% endblock %}
+{% block title %}CVA | Panel de Administración{% endblock %}
 
 {% block mainAsesor %}
-
-
-    <!-- Main content with margin to accommodate sidebar -->
-    <div class="ml-72">
-        <!-- Header with notification icon -->
-        <div class="flex justify-between items-center mb-8 animate-fade-in">
-            <h1 class="text-3xl font-bold text-gray-900 font-roboto">Inicio</h1>
+    <!-- Main content area -->
+    <div class="space-y-6">
+        <!-- Header with admin title and notification icon -->
+        <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow">
+            <h1 class="text-2xl font-bold text-gray-900 font-roboto">Panel de Administración</h1>
             <div class="relative">
-                <button id="notificationBtn" class="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-md text-gray-500 hover:text-primary-600 hover:shadow-lg transition-all duration-300 ease-in-out">
+                <button id="notificationBtn" class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-700 hover:bg-primary-100 hover:text-primary-600 transition-all duration-300 ease-in-out">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                     </svg>
-                    <span id="notificationBadge" class="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-primary-600 text-xs font-bold text-white animate-pulse-slow">3</span>
+                    <span id="notificationBadge" class="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">3</span>
                 </button>
                 <!-- Notification dropdown -->
                 <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 border border-gray-100">
@@ -24,17 +22,17 @@
                         <h3 class="font-medium text-gray-900 font-roboto">Notificaciones</h3>
                     </div>
                     <div class="max-h-64 overflow-y-auto">
-                        <a href="#" class="block p-4 border-b border-gray-100 hover:bg-primary-50 transition-colors duration-200">
+                        <a href="#" class="block p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200">
                             <p class="text-sm font-medium text-gray-900">Actualización de formulario</p>
                             <p class="text-xs text-gray-500 mt-1">Se ha actualizado el formulario de elegibilidad.</p>
                             <p class="text-xs text-gray-400 mt-1">Hace 2 horas</p>
                         </a>
-                        <a href="#" class="block p-4 border-b border-gray-100 hover:bg-primary-50 transition-colors duration-200">
+                        <a href="#" class="block p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200">
                             <p class="text-sm font-medium text-gray-900">Nueva asesoría programada</p>
                             <p class="text-xs text-gray-500 mt-1">Tu asesoría ha sido programada para el 15 de marzo.</p>
                             <p class="text-xs text-gray-400 mt-1">Hace 1 día</p>
                         </a>
-                        <a href="#" class="block p-4 hover:bg-primary-50 transition-colors duration-200">
+                        <a href="#" class="block p-4 hover:bg-gray-50 transition-colors duration-200">
                             <p class="text-sm font-medium text-gray-900">Pago confirmado</p>
                             <p class="text-xs text-gray-500 mt-1">Tu pago ha sido procesado exitosamente.</p>
                             <p class="text-xs text-gray-400 mt-1">Hace 3 días</p>
@@ -47,258 +45,346 @@
             </div>
         </div>
 
-        <!-- News Tabs -->
-        <div class="mb-8 animate-fade-in delay-100">
-            <ul class="flex flex-wrap -mb-px text-sm font-medium text-center border-b border-gray-200" id="newsTabs" role="tablist">
-                <li class="mr-2" role="presentation">
-                    <button class="inline-block p-4 border-b-2 border-primary-600 text-primary-600 rounded-t-lg active font-inter" id="platform-tab" data-tab="platform" type="button" role="tab" aria-selected="true">
-                        Noticias de la Plataforma
-                    </button>
-                </li>
-                <li class="mr-2" role="presentation">
-                    <button class="inline-block p-4 border-b-2 border-transparent hover:text-primary-600 hover:border-primary-300 rounded-t-lg font-inter" id="canada-tab" data-tab="canada" type="button" role="tab" aria-selected="false">
-                        Noticias de Canadá
-                    </button>
-                </li>
-            </ul>
-        </div>
-
-        <!-- Platform News Tab Content -->
-        <div id="platform-content" class="tab-content active">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-                <!-- Featured News -->
-                <div class="col-span-1 md:col-span-2 bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1 animate-fade-in delay-200">
-                    <div class="md:flex">
-                        <div class="md:flex-shrink-0 overflow-hidden">
-                            <img class="h-48 w-full object-cover md:w-48 transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/news-featured.jpg" alt="Actualización de la plataforma" onerror="this.src='../static/img/placeholder.jpg'">
-                        </div>
-                        <div class="p-6">
-                            <div class="flex items-center">
-                                <span class="bg-primary-100 text-primary-600 text-xs px-2 py-1 rounded-full uppercase font-semibold tracking-wide">Destacado</span>
-                                <p class="ml-2 text-xs text-gray-500">Marzo 10, 2025</p>
-                            </div>
-                            <a href="#" class="block mt-2 group">
-                                <h3 class="text-xl font-semibold text-gray-900 font-roboto group-hover:text-primary-600 transition-colors duration-300">Actualización importante de la plataforma CVA</h3>
-                                <p class="mt-3 text-gray-600">Hemos actualizado nuestra plataforma con nuevas funcionalidades para mejorar tu experiencia en el proceso de solicitud de visa canadiense.</p>
-                            </a>
-                            <div class="mt-4">
-                                <a href="#" class="text-primary-600 hover:text-primary-700 font-medium text-sm inline-flex items-center group">
-                                    Leer más
-                                    <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                                    </svg>
-                                </a>
-                            </div>
-                        </div>
+        <!-- Admin Dashboard Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <!-- Card 1: Total Solicitudes -->
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-gray-500">Total Solicitudes</p>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1">125</h3>
                     </div>
-                </div>
-
-                <!-- Regular News Items -->
-                <div class="bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1 animate-fade-in delay-300">
-                    <div class="overflow-hidden">
-                        <img class="h-48 w-full object-cover transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/news-1.jpg" alt="Nuevos formularios" onerror="this.src='../static/img/placeholder.jpg'">
-                    </div>
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <span class="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full uppercase font-semibold tracking-wide">Formularios</span>
-                            <p class="ml-2 text-xs text-gray-500">Marzo 8, 2025</p>
-                        </div>
-                        <a href="#" class="block mt-2 group">
-                            <h3 class="text-lg font-semibold text-gray-900 font-roboto group-hover:text-primary-600 transition-colors duration-300">Nuevos formularios disponibles</h3>
-                            <p class="mt-3 text-gray-600">Hemos añadido nuevos formularios para facilitar el proceso de solicitud de visa de trabajo.</p>
-                        </a>
-                        <div class="mt-4">
-                            <a href="#" class="text-primary-600 hover:text-primary-700 font-medium text-sm inline-flex items-center group">
-                                Leer más
-                                <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1 animate-fade-in delay-400">
-                    <div class="overflow-hidden">
-                        <img class="h-48 w-full object-cover transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/news-2.jpg" alt="Asesorías virtuales" onerror="this.src='../static/img/placeholder.jpg'">
-                    </div>
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <span class="bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full uppercase font-semibold tracking-wide">Asesorías</span>
-                            <p class="ml-2 text-xs text-gray-500">Marzo 5, 2025</p>
-                        </div>
-                        <a href="#" class="block mt-2 group">
-                            <h3 class="text-lg font-semibold text-gray-900 font-roboto group-hover:text-primary-600 transition-colors duration-300">Asesorías virtuales disponibles</h3>
-                            <p class="mt-3 text-gray-600">Ahora puedes programar asesorías virtuales con nuestros expertos en inmigración canadiense.</p>
-                        </a>
-                        <div class="mt-4">
-                            <a href="#" class="text-primary-600 hover:text-primary-700 font-medium text-sm inline-flex items-center group">
-                                Leer más
-                                <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Service Cards -->
-            <h2 class="text-2xl font-bold text-gray-900 mb-6 font-roboto animate-fade-in delay-500">Nuestros Servicios</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="bg-white rounded-xl shadow-card p-6 hover:-translate-y-2 transition-all duration-300 ease-in-out animate-slide-in delay-100">
-                    <div class="flex items-center justify-center h-14 w-14 rounded-full bg-primary-100 text-primary-600 mb-5 mx-auto">
-                        <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-lg font-medium text-gray-900 text-center mb-3 font-roboto">Solicitantes</h3>
-                    <p class="text-gray-600 text-center mb-5">Gestiona la información de los solicitantes de visas canadienses.</p>
-                    <div class="text-center">
-                        <a href="../solicitudes.html"" class="btn-primary inline-block">Ver solicitantes</a>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-card p-6 hover:-translate-y-2 transition-all duration-300 ease-in-out animate-slide-in delay-200">
-                    <div class="flex items-center justify-center h-14 w-14 rounded-full bg-primary-100 text-primary-600 mb-5 mx-auto">
-                        <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <div class="p-2 bg-blue-100 rounded-lg">
+                        <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900 text-center mb-3 font-roboto">Formularios</h3>
-                    <p class="text-gray-600 text-center mb-5">Revisa los formularios de elegibilidad para inmigración a Canadá.</p>
-                    <div class="text-center">
-                        <a href="{{ url_for('formularios') }}" class="relative overflow-hidden inline-flex items-center justify-center px-5 py-2 text-white bg-gradient-to-r from-primary-600 to-primary-500 rounded-lg hover:from-primary-500 hover:to-primary-600 shadow-btn hover:shadow-btn-hover transition-all duration-300 ease-in-out font-roboto group">
-                            <span class="absolute right-0 w-8 h-32 -mt-12 opacity-20 transform rotate-12 translate-x-12 bg-white transition-all duration-1000 group-hover:-translate-x-40"></span>
-                            <span class="relative z-10">Ver formularios</span>
-                        </a>
-                    </div>
                 </div>
-
-                <div class="bg-white rounded-xl shadow-card p-6 hover:-translate-y-2 transition-all duration-300 ease-in-out animate-slide-in delay-300">
-                    <div class="flex items-center justify-center h-14 w-14 rounded-full bg-primary-100 text-primary-600 mb-5 mx-auto">
-                        <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                <div class="mt-2 flex items-center text-sm">
+                    <span class="text-green-500 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                        </svg>
+                        8.2%
+                    </span>
+                    <span class="text-gray-500 ml-2">vs mes anterior</span>
+                </div>
+            </div>
+            
+            <!-- Card 2: Asesorías Pendientes -->
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-gray-500">Asesorías Pendientes</p>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1">42</h3>
+                    </div>
+                    <div class="p-2 bg-yellow-100 rounded-lg">
+                        <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900 text-center mb-3 font-roboto">Asesorías</h3>
-                    <p class="text-gray-600 text-center mb-5">Administra las asesorías para los solicitantes de visas.</p>
-                    <div class="text-center">
-                        <a href="{{ url_for('asesorias') }}" class="relative overflow-hidden inline-flex items-center justify-center px-5 py-2 text-white bg-gradient-to-r from-primary-600 to-primary-500 rounded-lg hover:from-primary-500 hover:to-primary-600 shadow-btn hover:shadow-btn-hover transition-all duration-300 ease-in-out font-roboto group">
-                            <span class="absolute right-0 w-8 h-32 -mt-12 opacity-20 transform rotate-12 translate-x-12 bg-white transition-all duration-1000 group-hover:-translate-x-40"></span>
-                            <span class="relative z-10">Ver asesorías</span>
+                </div>
+                <div class="mt-2 flex items-center text-sm">
+                    <span class="text-yellow-500 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                        </svg>
+                        0%
+                    </span>
+                    <span class="text-gray-500 ml-2">sin cambios</span>
+                </div>
+            </div>
+            
+            <!-- Card 3: Formularios Completados -->
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-gray-500">Formularios Completados</p>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1">87</h3>
+                    </div>
+                    <div class="p-2 bg-green-100 rounded-lg">
+                        <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="mt-2 flex items-center text-sm">
+                    <span class="text-green-500 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                        </svg>
+                        12.5%
+                    </span>
+                    <span class="text-gray-500 ml-2">vs mes anterior</span>
+                </div>
+            </div>
+            
+            <!-- Card 4: Visas Aprobadas -->
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-gray-500">Visas Aprobadas</p>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1">32</h3>
+                    </div>
+                    <div class="p-2 bg-purple-100 rounded-lg">
+                        <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="mt-2 flex items-center text-sm">
+                    <span class="text-green-500 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                        </svg>
+                        5.3%
+                    </span>
+                    <span class="text-gray-500 ml-2">vs mes anterior</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Tabs -->
+        <div class="bg-white rounded-lg shadow mb-6">
+            <div class="border-b border-gray-200">
+                <ul class="flex flex-wrap -mb-px text-sm font-medium" id="adminTabs" role="tablist">
+                    <li class="mr-2" role="presentation">
+                        <button class="inline-block p-4 border-b-2 border-primary-600 text-primary-600 rounded-t-lg active font-inter" id="platform-tab" data-tab="platform" type="button" role="tab" aria-selected="true">
+                            Solicitudes Recientes
+                        </button>
+                    </li>
+                    <li class="mr-2" role="presentation">
+                        <button class="inline-block p-4 border-b-2 border-transparent hover:text-primary-600 hover:border-primary-300 rounded-t-lg font-inter" id="canada-tab" data-tab="canada" type="button" role="tab" aria-selected="false">
+                            Noticias y Actualizaciones
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Tab Content: Recent Applications -->
+            <div id="platform-content" class="tab-content active p-6">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solicitante</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo de Visa</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="h-10 w-10 flex-shrink-0 bg-gray-200 rounded-full text-gray-500 flex items-center justify-center">
+                                            JD
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900">Juan Pérez</div>
+                                            <div class="text-sm text-gray-500">juan.perez@example.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Visa de Trabajo</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">15 Mar, 2025</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        Aprobada
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="#" class="text-primary-600 hover:text-primary-900">Ver detalles</a>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="h-10 w-10 flex-shrink-0 bg-gray-200 rounded-full text-gray-500 flex items-center justify-center">
+                                            MR
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900">María Rodríguez</div>
+                                            <div class="text-sm text-gray-500">maria.rodriguez@example.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Visa de Estudiante</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">14 Mar, 2025</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                        En Proceso
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="#" class="text-primary-600 hover:text-primary-900">Ver detalles</a>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="h-10 w-10 flex-shrink-0 bg-gray-200 rounded-full text-gray-500 flex items-center justify-center">
+                                            CS
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900">Carlos Sánchez</div>
+                                            <div class="text-sm text-gray-500">carlos.sanchez@example.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Express Entry</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">12 Mar, 2025</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                        Rechazada
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="#" class="text-primary-600 hover:text-primary-900">Ver detalles</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="flex justify-center mt-6">
+                    <a href="#" class="inline-flex items-center px-4 py-2 border border-primary-300 text-sm font-medium rounded-md text-primary-700 bg-white hover:bg-primary-50">
+                        Ver todas las solicitudes
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Tab Content: News -->
+            <div id="canada-content" class="tab-content hidden p-6">
+                <div class="space-y-6">
+                    <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-300">
+                        <div class="flex items-center mb-2">
+                            <span class="bg-primary-100 text-primary-600 text-xs px-2 py-1 rounded-full uppercase font-semibold tracking-wide">Actualización</span>
+                            <p class="ml-2 text-xs text-gray-500">12 Mar, 2025</p>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Nuevas políticas de inmigración para 2025</h3>
+                        <p class="text-gray-600 mb-3">El gobierno canadiense ha anunciado cambios significativos en sus políticas de inmigración que facilitarán el proceso para trabajadores calificados.</p>
+                        <a href="#" class="text-primary-600 hover:text-primary-700 font-medium text-sm inline-flex items-center">
+                            Leer más
+                            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                            </svg>
+                        </a>
+                    </div>
+                    
+                    <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-300">
+                        <div class="flex items-center mb-2">
+                            <span class="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full uppercase font-semibold tracking-wide">Plataforma</span>
+                            <p class="ml-2 text-xs text-gray-500">10 Mar, 2025</p>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Actualización importante de la plataforma CVA</h3>
+                        <p class="text-gray-600 mb-3">Hemos actualizado nuestra plataforma con nuevas funcionalidades para mejorar tu experiencia en el proceso de solicitud de visa canadiense.</p>
+                        <a href="#" class="text-primary-600 hover:text-primary-700 font-medium text-sm inline-flex items-center">
+                            Leer más
+                            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                            </svg>
                         </a>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Canada News Tab Content -->
-        <div id="canada-content" class="tab-content hidden">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-                <!-- Featured Canada News -->
-                <div class="col-span-1 md:col-span-2 bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1">
-                    <div class="md:flex">
-                        <div class="md:flex-shrink-0 overflow-hidden">
-                            <img class="h-48 w-full object-cover md:w-48 transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/canada-news-featured.jpg" alt="Nuevas políticas de inmigración" onerror="this.src='../static/img/placeholder.jpg'">
-                        </div>
-                        <div class="p-6">
-                            <div class="flex items-center">
-                                <span class="bg-primary-100 text-primary-600 text-xs px-2 py-1 rounded-full uppercase font-semibold tracking-wide">Destacado</span>
-                                <p class="ml-2 text-xs text-gray-500">Marzo 12, 2025</p>
-                            </div>
-                            <a href="#" class="block mt-2 group">
-                                <h3 class="text-xl font-semibold text-gray-900 font-roboto group-hover:text-primary-600 transition-colors duration-300">Canadá anuncia nuevas políticas de inmigración para 2025</h3>
-                                <p class="mt-3 text-gray-600">El gobierno canadiense ha anunciado cambios significativos en sus políticas de inmigración que facilitarán el proceso para trabajadores calificados.</p>
-                            </a>
-                            <div class="mt-4">
-                                <a href="#" class="text-primary-600 hover:text-primary-700 font-medium text-sm inline-flex items-center group">
-                                    Leer más
-                                    <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                                    </svg>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+        <!-- Quick Action Cards -->
+        <h2 class="text-xl font-bold text-gray-900 mb-4 font-roboto">Acciones Rápidas</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-300">
+                <div class="flex items-center justify-center h-12 w-12 rounded-lg bg-primary-100 text-primary-600 mb-4 mx-auto">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
                 </div>
-
-                <!-- Regular Canada News Items -->
-                <div class="bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1">
-                    <div class="overflow-hidden">
-                        <img class="h-48 w-full object-cover transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/canada-news-1.jpg" alt="Express Entry" onerror="this.src='../static/img/placeholder.jpg'">
-                    </div>
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <span class="bg-purple-100 text-purple-600 text-xs px-2 py-1 rounded-full uppercase font-semibold tracking-wide">Express Entry</span>
-                            <p class="ml-2 text-xs text-gray-500">Marzo 9, 2025</p>
-                        </div>
-                        <a href="#" class="block mt-2 group">
-                            <h3 class="text-lg font-semibold text-gray-900 font-roboto group-hover:text-primary-600 transition-colors duration-300">Nuevos sorteos de Express Entry</h3>
-                            <p class="mt-3 text-gray-600">Canadá ha realizado un nuevo sorteo de Express Entry con puntajes mínimos más bajos que en meses anteriores.</p>
-                        </a>
-                        <div class="mt-4">
-                            <a href="#" class="text-primary-600 hover:text-primary-700 font-medium text-sm inline-flex items-center group">
-                                Leer más
-                                <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
+                <h3 class="text-lg font-medium text-gray-900 text-center mb-2 font-roboto">Nueva Solicitud</h3>
+                <p class="text-gray-600 text-center mb-4">Crear una nueva solicitud de visa para un cliente.</p>
+                <div class="text-center">
+                    <a href="../solicitudes.html" class="inline-flex items-center justify-center px-4 py-2 text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors duration-300 font-roboto text-sm">
+                        Crear solicitud
+                    </a>
                 </div>
+            </div>
 
-                <div class="bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1">
-                    <div class="overflow-hidden">
-                        <img class="h-48 w-full object-cover transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/canada-news-2.jpg" alt="Visas de trabajo" onerror="this.src='../static/img/placeholder.jpg'">
-                    </div>
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <span class="bg-yellow-100 text-yellow-600 text-xs px-2 py-1 rounded-full uppercase font-semibold tracking-wide">Visas</span>
-                            <p class="ml-2 text-xs text-gray-500">Marzo 7, 2025</p>
-                        </div>
-                        <a href="#" class="block mt-2 group">
-                            <h3 class="text-lg font-semibold text-gray-900 font-roboto group-hover:text-primary-600 transition-colors duration-300">Cambios en visas de trabajo temporales</h3>
-                            <p class="mt-3 text-gray-600">El gobierno canadiense ha implementado cambios en el programa de visas de trabajo temporales para ciertos sectores.</p>
-                        </a>
-                        <div class="mt-4">
-                            <a href="#" class="text-primary-600 hover:text-primary-700 font-medium text-sm inline-flex items-center group">
-                                Leer más
-                                <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
+            <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-300">
+                <div class="flex items-center justify-center h-12 w-12 rounded-lg bg-green-100 text-green-600 mb-4 mx-auto">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
                 </div>
+                <h3 class="text-lg font-medium text-gray-900 text-center mb-2 font-roboto">Agendar Asesoría</h3>
+                <p class="text-gray-600 text-center mb-4">Programar una nueva asesoría con un cliente.</p>
+                <div class="text-center">
+                    <a href="{{ url_for('asesorias') }}" class="inline-flex items-center justify-center px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-300 font-roboto text-sm">
+                        Agendar ahora
+                    </a>
+                </div>
+            </div>
 
-                <div class="bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1">
-                    <div class="overflow-hidden">
-                        <img class="h-48 w-full object-cover transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/canada-news-3.jpg" alt="Provincias canadienses" onerror="this.src='../static/img/placeholder.jpg'">
-                    </div>
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <span class="bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full uppercase font-semibold tracking-wide">Provincial</span>
-                            <p class="ml-2 text-xs text-gray-500">Marzo 4, 2025</p>
-                        </div>
-                        <a href="#" class="block mt-2 group">
-                            <h3 class="text-lg font-semibold text-gray-900 font-roboto group-hover:text-primary-600 transition-colors duration-300">Ontario amplía su programa provincial</h3>
-                            <p class="mt-3 text-gray-600">La provincia de Ontario ha anunciado la ampliación de su Programa de Nominación Provincial con nuevas categorías.</p>
-                        </a>
-                        <div class="mt-4">
-                            <a href="#" class="text-primary-600 hover:text-primary-700 font-medium text-sm inline-flex items-center group">
-                                Leer más
-                                <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
+            <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-300">
+                <div class="flex items-center justify-center h-12 w-12 rounded-lg bg-blue-100 text-blue-600 mb-4 mx-auto">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 text-center mb-2 font-roboto">Generar Reporte</h3>
+                <p class="text-gray-600 text-center mb-4">Generar un reporte de solicitudes y asesorías.</p>
+                <div class="text-center">
+                    <a href="#" class="inline-flex items-center justify-center px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-300 font-roboto text-sm">
+                        Generar reporte
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- JavaScript for tabs and notification dropdown -->
-    <script src="../static/js/index.js"></script>
+    <script>
+        // Tab switching functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('[data-tab]');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    tabs.forEach(t => {
+                        t.classList.remove('border-primary-600', 'text-primary-600');
+                        t.classList.add('border-transparent', 'hover:text-primary-600', 'hover:border-primary-300');
+                        t.setAttribute('aria-selected', 'false');
+                    });
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('border-primary-600', 'text-primary-600');
+                    this.classList.remove('border-transparent', 'hover:text-primary-600', 'hover:border-primary-300');
+                    this.setAttribute('aria-selected', 'true');
+                    
+                    // Hide all tab contents
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.add('hidden');
+                    });
+                    
+                    // Show selected tab content
+                    document.getElementById(this.getAttribute('data-tab') + '-content').classList.remove('hidden');
+                });
+            });
+            
+            // Notification dropdown toggle
+            const notificationBtn = document.getElementById('notificationBtn');
+            const notificationDropdown = document.getElementById('notificationDropdown');
+            
+            if (notificationBtn && notificationDropdown) {
+                notificationBtn.addEventListener('click', function() {
+                    notificationDropdown.classList.toggle('hidden');
+                });
+                
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (!notificationBtn.contains(event.target) && !notificationDropdown.contains(event.target)) {
+                        notificationDropdown.classList.add('hidden');
+                    }
+                });
+            }
+        });
+    </script>
 {% endblock %}
