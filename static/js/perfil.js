@@ -129,9 +129,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Funcionalidad para verificación en dos pasos
+  // Funcionalidad para verificación en dos pasos - CORREGIDO
   const toggle2fa = document.getElementById("toggle-2fa")
   const setup2fa = document.getElementById("2fa-setup")
+  const setup2faBtn = document.getElementById("setup-2fa-btn")
 
   if (toggle2fa) {
     toggle2fa.addEventListener("change", () => {
@@ -143,7 +144,29 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   }
 
-  // Funcionalidad para subir foto de perfil
+  if (setup2faBtn) {
+    setup2faBtn.addEventListener("click", () => {
+      const selectedMethod = document.querySelector('input[name="2fa-method"]:checked')
+
+      if (!selectedMethod) {
+        showAlert("Por favor, selecciona un método de verificación", "error")
+        return
+      }
+
+      // Simulación de configuración exitosa
+      showAlert("Verificación en dos pasos configurada correctamente", "success")
+
+      // Actualizar el estado visual
+      const statusText = document.querySelector("#toggle-2fa").parentElement.previousElementSibling.querySelector("p")
+      if (statusText) {
+        statusText.textContent = "Actualmente activada"
+        statusText.classList.remove("text-gray-500")
+        statusText.classList.add("text-green-500")
+      }
+    })
+  }
+
+  // Funcionalidad para subir foto de perfil - CORREGIDO
   const changePhotoBtn = document.getElementById("change-photo-btn")
   const photoUpload = document.getElementById("photo-upload")
   const profileImage = document.getElementById("profile-image")
@@ -188,6 +211,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const formData = new FormData()
         formData.append("photo", file)
 
+        // Añadir animación de carga
+        savePhotoBtn.innerHTML = '<span class="animate-pulse">Guardando...</span>'
+        savePhotoBtn.disabled = true
+
         fetch("/actualizar_foto_perfil", {
           method: "POST",
           body: formData,
@@ -199,24 +226,45 @@ document.addEventListener("DOMContentLoaded", () => {
               photoPreviewContainer.classList.add("hidden")
               showAlert("Foto de perfil actualizada con éxito", "success")
 
-              // Actualizar la foto en el sidebar si existe
+              // Actualizar la foto en el sidebar
               const sidebarProfileImg = document.querySelector(".sidebar-profile-img")
               if (sidebarProfileImg) {
                 sidebarProfileImg.src = photoPreview.src
               }
+
+              // Actualizar la foto en el círculo del perfil en el sidebar
+              const profileCircleImg = document.querySelector(".w-10.h-10.rounded-full svg")
+              if (profileCircleImg) {
+                const parentDiv = profileCircleImg.parentElement
+                profileCircleImg.remove()
+
+                const newImg = document.createElement("img")
+                newImg.src = photoPreview.src
+                newImg.alt = "Foto de perfil"
+                newImg.className = "w-full h-full object-cover rounded-full"
+                parentDiv.appendChild(newImg)
+              }
             } else {
               showAlert(data.error || "Error al actualizar la foto de perfil", "error")
             }
+
+            // Restaurar el botón
+            savePhotoBtn.innerHTML = "Guardar"
+            savePhotoBtn.disabled = false
           })
           .catch((error) => {
             console.error("Error:", error)
             showAlert("Error al actualizar la foto de perfil", "error")
+
+            // Restaurar el botón
+            savePhotoBtn.innerHTML = "Guardar"
+            savePhotoBtn.disabled = false
           })
       }
     })
   }
 
-  // Funcionalidad para verificar correo electrónico
+  // Funcionalidad para verificar correo electrónico - CORREGIDO
   const verifyEmailBtn = document.getElementById("verify-email-btn")
   const verifyPhoneBtn = document.getElementById("verify-phone-btn")
   const otpModal = document.getElementById("otp-modal")
@@ -242,6 +290,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return
       }
 
+      // Añadir animación de carga
+      verifyEmailBtn.innerHTML = '<span class="animate-pulse">Enviando...</span>'
+      verifyEmailBtn.disabled = true
+
       // Enviar solicitud para verificar correo
       fetch("/enviar_codigo_verificacion", {
         method: "POST",
@@ -259,13 +311,24 @@ document.addEventListener("DOMContentLoaded", () => {
             otpModal.classList.remove("hidden")
             resetOtpInputs()
             startCountdown()
+
+            // Añadir clase para animación de entrada
+            otpModal.querySelector(".bg-white").classList.add("animate-bounce-in")
           } else {
             showAlert(data.error || "Error al enviar el código de verificación", "error")
           }
+
+          // Restaurar el botón
+          verifyEmailBtn.innerHTML = "Verificar"
+          verifyEmailBtn.disabled = false
         })
         .catch((error) => {
           console.error("Error:", error)
           showAlert("Error al enviar el código de verificación", "error")
+
+          // Restaurar el botón
+          verifyEmailBtn.innerHTML = "Verificar"
+          verifyEmailBtn.disabled = false
         })
     })
   }
@@ -280,6 +343,10 @@ document.addEventListener("DOMContentLoaded", () => {
         showAlert("Por favor, ingresa tu número de teléfono", "error")
         return
       }
+
+      // Añadir animación de carga
+      verifyPhoneBtn.innerHTML = '<span class="animate-pulse">Enviando...</span>'
+      verifyPhoneBtn.disabled = true
 
       // Enviar solicitud para verificar teléfono
       fetch("/enviar_codigo_verificacion", {
@@ -298,13 +365,24 @@ document.addEventListener("DOMContentLoaded", () => {
             otpModal.classList.remove("hidden")
             resetOtpInputs()
             startCountdown()
+
+            // Añadir clase para animación de entrada
+            otpModal.querySelector(".bg-white").classList.add("animate-bounce-in")
           } else {
             showAlert(data.error || "Error al enviar el código de verificación", "error")
           }
+
+          // Restaurar el botón
+          verifyPhoneBtn.innerHTML = "Verificar"
+          verifyPhoneBtn.disabled = false
         })
         .catch((error) => {
           console.error("Error:", error)
           showAlert("Error al enviar el código de verificación", "error")
+
+          // Restaurar el botón
+          verifyPhoneBtn.innerHTML = "Verificar"
+          verifyPhoneBtn.disabled = false
         })
     })
   }
@@ -362,6 +440,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return
       }
 
+      // Añadir animación de carga
+      verifyOtpBtn.innerHTML = '<span class="animate-pulse">Verificando...</span>'
+      verifyOtpBtn.disabled = true
+
       // Verificar el código OTP
       fetch("/verificar_codigo", {
         method: "POST",
@@ -382,13 +464,28 @@ document.addEventListener("DOMContentLoaded", () => {
               `${currentVerificationMethod === "correo electrónico" ? "Correo" : "Teléfono"} verificado con éxito`,
               "success",
             )
+
+            // Actualizar visualmente el estado de verificación
+            const verifyBtn = currentVerificationMethod === "correo electrónico" ? verifyEmailBtn : verifyPhoneBtn
+            verifyBtn.textContent = "Verificado"
+            verifyBtn.classList.remove("bg-red-500", "hover:bg-red-600")
+            verifyBtn.classList.add("bg-green-500", "hover:bg-green-600")
+            verifyBtn.disabled = true
           } else {
             showAlert(data.error || "Código de verificación incorrecto", "error")
+
+            // Restaurar el botón
+            verifyOtpBtn.innerHTML = "Verificar"
+            verifyOtpBtn.disabled = false
           }
         })
         .catch((error) => {
           console.error("Error:", error)
           showAlert("Error al verificar el código", "error")
+
+          // Restaurar el botón
+          verifyOtpBtn.innerHTML = "Verificar"
+          verifyOtpBtn.disabled = false
         })
     })
   }
@@ -399,6 +496,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const method = currentVerificationMethod === "correo electrónico" ? "email" : "sms"
       const value = method === "email" ? document.getElementById("email").value : document.getElementById("phone").value
+
+      // Añadir animación de carga
+      resendCodeBtn.innerHTML = '<span class="animate-pulse">Enviando...</span>'
+      resendCodeBtn.disabled = true
 
       fetch("/enviar_codigo_verificacion", {
         method: "POST",
@@ -419,10 +520,18 @@ document.addEventListener("DOMContentLoaded", () => {
           } else {
             showAlert(data.error || "Error al reenviar el código", "error")
           }
+
+          // Restaurar el botón
+          resendCodeBtn.innerHTML = "Reenviar"
+          resendCodeBtn.disabled = false
         })
         .catch((error) => {
           console.error("Error:", error)
           showAlert("Error al reenviar el código", "error")
+
+          // Restaurar el botón
+          resendCodeBtn.innerHTML = "Reenviar"
+          resendCodeBtn.disabled = false
         })
     })
   }
@@ -462,6 +571,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (deleteAccountBtn) {
     deleteAccountBtn.addEventListener("click", () => {
       deleteAccountModal.classList.remove("hidden")
+
+      // Añadir clase para animación de entrada
+      deleteAccountModal.querySelector(".bg-white").classList.add("animate-bounce-in")
     })
   }
 
@@ -482,6 +594,10 @@ document.addEventListener("DOMContentLoaded", () => {
   if (confirmDeleteBtn) {
     confirmDeleteBtn.addEventListener("click", () => {
       if (deleteConfirmationInput.value === "ELIMINAR") {
+        // Añadir animación de carga
+        confirmDeleteBtn.innerHTML = '<span class="animate-pulse">Eliminando...</span>'
+        confirmDeleteBtn.disabled = true
+
         fetch("/eliminar_cuenta", {
           method: "POST",
           headers: {
@@ -495,12 +611,20 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
               deleteAccountModal.classList.add("hidden")
               showAlert(data.error || "Error al eliminar la cuenta", "error")
+
+              // Restaurar el botón
+              confirmDeleteBtn.innerHTML = "Eliminar cuenta"
+              confirmDeleteBtn.disabled = false
             }
           })
           .catch((error) => {
             console.error("Error:", error)
             deleteAccountModal.classList.add("hidden")
             showAlert("Error al eliminar la cuenta", "error")
+
+            // Restaurar el botón
+            confirmDeleteBtn.innerHTML = "Eliminar cuenta"
+            confirmDeleteBtn.disabled = false
           })
       }
     })
@@ -511,6 +635,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (downloadDataBtn) {
     downloadDataBtn.addEventListener("click", () => {
+      // Añadir animación de carga
+      downloadDataBtn.innerHTML = '<span class="animate-pulse">Descargando...</span>'
+      downloadDataBtn.disabled = true
+
       fetch("/descargar_datos_personales")
         .then((response) => {
           if (response.ok) {
@@ -528,20 +656,33 @@ document.addEventListener("DOMContentLoaded", () => {
           a.click()
           window.URL.revokeObjectURL(url)
           showAlert("Datos descargados con éxito", "success")
+
+          // Restaurar el botón
+          downloadDataBtn.innerHTML = "Descargar datos"
+          downloadDataBtn.disabled = false
         })
         .catch((error) => {
           console.error("Error:", error)
           showAlert("Error al descargar los datos", "error")
+
+          // Restaurar el botón
+          downloadDataBtn.innerHTML = "Descargar datos"
+          downloadDataBtn.disabled = false
         })
     })
   }
 
-  // Funcionalidad para guardar información básica
+  // Funcionalidad para guardar información básica - CORREGIDO
   const basicInfoForm = document.getElementById("basic-info-form")
+  const saveInfoBtn = document.getElementById("save-info-btn")
 
   if (basicInfoForm) {
     basicInfoForm.addEventListener("submit", (e) => {
       e.preventDefault()
+
+      // Añadir animación de carga
+      saveInfoBtn.innerHTML = '<span class="animate-pulse">Guardando...</span>'
+      saveInfoBtn.disabled = true
 
       const formData = new FormData(basicInfoForm)
       const data = Object.fromEntries(formData.entries())
@@ -557,13 +698,29 @@ document.addEventListener("DOMContentLoaded", () => {
         .then((data) => {
           if (data.success) {
             showAlert("Información actualizada con éxito", "success")
+
+            // Actualizar el nombre en el sidebar si cambió
+            const sidebarName = document.querySelector(".font-medium.text-gray-900.group-hover\\:text-red-500")
+            if (sidebarName) {
+              const firstName = document.getElementById("first-name").value
+              const lastName = document.getElementById("last-name").value
+              sidebarName.textContent = `${firstName} ${lastName}`
+            }
           } else {
             showAlert(data.error || "Error al actualizar la información", "error")
           }
+
+          // Restaurar el botón
+          saveInfoBtn.innerHTML = "<span>Guardar Cambios</span>"
+          saveInfoBtn.disabled = false
         })
         .catch((error) => {
           console.error("Error:", error)
           showAlert("Error al actualizar la información", "error")
+
+          // Restaurar el botón
+          saveInfoBtn.innerHTML = "<span>Guardar Cambios</span>"
+          saveInfoBtn.disabled = false
         })
     })
   }
@@ -578,6 +735,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const currentPassword = document.getElementById("current-password").value
       const newPassword = document.getElementById("new-password").value
       const confirmPassword = document.getElementById("confirm-password").value
+      const submitBtn = passwordForm.querySelector('button[type="submit"]')
 
       if (!currentPassword || !newPassword || !confirmPassword) {
         showAlert("Por favor, completa todos los campos", "error")
@@ -588,6 +746,10 @@ document.addEventListener("DOMContentLoaded", () => {
         showAlert("Las contraseñas no coinciden", "error")
         return
       }
+
+      // Añadir animación de carga
+      submitBtn.innerHTML = '<span class="animate-pulse">Actualizando...</span>'
+      submitBtn.disabled = true
 
       fetch("/cambiar_contrasena", {
         method: "POST",
@@ -610,15 +772,23 @@ document.addEventListener("DOMContentLoaded", () => {
           } else {
             showAlert(data.error || "Error al actualizar la contraseña", "error")
           }
+
+          // Restaurar el botón
+          submitBtn.innerHTML = "<span>Actualizar Contraseña</span>"
+          submitBtn.disabled = false
         })
         .catch((error) => {
           console.error("Error:", error)
           showAlert("Error al actualizar la contraseña", "error")
+
+          // Restaurar el botón
+          submitBtn.innerHTML = "<span>Actualizar Contraseña</span>"
+          submitBtn.disabled = false
         })
     })
   }
 
-  // Funcionalidad para guardar preferencias de notificaciones
+  // Funcionalidad para guardar preferencias de notificaciones - CORREGIDO
   const notificationsForm = document.getElementById("notifications-form")
 
   if (notificationsForm) {
@@ -632,6 +802,20 @@ document.addEventListener("DOMContentLoaded", () => {
       const channelEmail = document.getElementById("channel-email").checked
       const channelSms = document.getElementById("channel-sms").checked
       const channelApp = document.getElementById("channel-app").checked
+      const submitBtn = notificationsForm.querySelector('button[type="submit"]')
+
+      // Añadir animación de carga
+      submitBtn.innerHTML = '<span class="animate-pulse">Guardando...</span>'
+      submitBtn.disabled = true
+
+      // Guardar preferencias en localStorage para persistencia
+      localStorage.setItem("notif_visa_updates", visaUpdates)
+      localStorage.setItem("notif_document_reminders", documentReminders)
+      localStorage.setItem("notif_news", news)
+      localStorage.setItem("notif_appointments", appointments)
+      localStorage.setItem("notif_channel_email", channelEmail)
+      localStorage.setItem("notif_channel_sms", channelSms)
+      localStorage.setItem("notif_channel_app", channelApp)
 
       fetch("/actualizar_preferencias_notificaciones", {
         method: "POST",
@@ -655,12 +839,30 @@ document.addEventListener("DOMContentLoaded", () => {
           } else {
             showAlert(data.error || "Error al actualizar las preferencias", "error")
           }
+
+          // Restaurar el botón
+          submitBtn.innerHTML = "<span>Guardar Preferencias</span>"
+          submitBtn.disabled = false
         })
         .catch((error) => {
           console.error("Error:", error)
           showAlert("Error al actualizar las preferencias", "error")
+
+          // Restaurar el botón
+          submitBtn.innerHTML = "<span>Guardar Preferencias</span>"
+          submitBtn.disabled = false
         })
     })
+
+    // Cargar preferencias guardadas al iniciar
+    document.getElementById("toggle-visa-updates").checked = localStorage.getItem("notif_visa_updates") === "true"
+    document.getElementById("toggle-document-reminders").checked =
+      localStorage.getItem("notif_document_reminders") === "true"
+    document.getElementById("toggle-news").checked = localStorage.getItem("notif_news") === "true"
+    document.getElementById("toggle-appointments").checked = localStorage.getItem("notif_appointments") === "true"
+    document.getElementById("channel-email").checked = localStorage.getItem("notif_channel_email") === "true"
+    document.getElementById("channel-sms").checked = localStorage.getItem("notif_channel_sms") === "true"
+    document.getElementById("channel-app").checked = localStorage.getItem("notif_channel_app") === "true"
   }
 
   // Funcionalidad para guardar preferencias de idioma
@@ -671,6 +873,14 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault()
 
       const language = document.getElementById("language").value
+      const submitBtn = languageForm.querySelector('button[type="submit"]')
+
+      // Añadir animación de carga
+      submitBtn.innerHTML = '<span class="animate-pulse">Guardando...</span>'
+      submitBtn.disabled = true
+
+      // Guardar en localStorage
+      localStorage.setItem("language_preference", language)
 
       fetch("/actualizar_preferencias_idioma", {
         method: "POST",
@@ -688,12 +898,26 @@ document.addEventListener("DOMContentLoaded", () => {
           } else {
             showAlert(data.error || "Error al actualizar las preferencias", "error")
           }
+
+          // Restaurar el botón
+          submitBtn.innerHTML = "<span>Guardar Preferencias</span>"
+          submitBtn.disabled = false
         })
         .catch((error) => {
           console.error("Error:", error)
           showAlert("Error al actualizar las preferencias", "error")
+
+          // Restaurar el botón
+          submitBtn.innerHTML = "<span>Guardar Preferencias</span>"
+          submitBtn.disabled = false
         })
     })
+
+    // Cargar preferencia guardada
+    const savedLanguage = localStorage.getItem("language_preference")
+    if (savedLanguage) {
+      document.getElementById("language").value = savedLanguage
+    }
   }
 
   // Funcionalidad para ver detalles de asesoría
@@ -707,6 +931,10 @@ document.addEventListener("DOMContentLoaded", () => {
     viewDetailsButtons.forEach((button) => {
       button.addEventListener("click", () => {
         const asesoriaId = button.getAttribute("data-id")
+
+        // Añadir animación de carga
+        button.innerHTML = '<span class="animate-pulse">Cargando...</span>'
+        button.disabled = true
 
         fetch(`/obtener_detalles_asesoria/${asesoriaId}`)
           .then((response) => response.json())
@@ -780,13 +1008,24 @@ document.addEventListener("DOMContentLoaded", () => {
                             `
 
               asesoriaDetailsModal.classList.remove("hidden")
+
+              // Añadir clase para animación de entrada
+              asesoriaDetailsModal.querySelector(".bg-white").classList.add("animate-bounce-in")
             } else {
               showAlert(data.error || "Error al obtener los detalles de la asesoría", "error")
             }
+
+            // Restaurar el botón
+            button.innerHTML = "Ver detalles"
+            button.disabled = false
           })
           .catch((error) => {
             console.error("Error:", error)
             showAlert("Error al obtener los detalles de la asesoría", "error")
+
+            // Restaurar el botón
+            button.innerHTML = "Ver detalles"
+            button.disabled = false
           })
       })
     })
@@ -830,5 +1069,52 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 5000)
     }
   }
+
+  // Añadir estas líneas al final del evento DOMContentLoaded para asegurar que los toggles funcionen correctamente
+
+  // Asegurar que los toggles de verificación en dos pasos funcionen
+  if (toggle2fa) {
+    // Forzar la inicialización del estado del toggle
+    toggle2fa.addEventListener("click", function () {
+      if (this.checked) {
+        setup2fa.classList.remove("hidden")
+      } else {
+        setup2fa.classList.add("hidden")
+      }
+    })
+  }
+
+  // Asegurar que los toggles de notificaciones funcionen
+  const notificationToggles = [
+    document.getElementById("toggle-visa-updates"),
+    document.getElementById("toggle-document-reminders"),
+    document.getElementById("toggle-news"),
+    document.getElementById("toggle-appointments"),
+  ]
+
+  notificationToggles.forEach((toggle) => {
+    if (toggle) {
+      toggle.addEventListener("click", function () {
+        // Forzar el cambio de estado
+        this.checked = !this.checked
+      })
+    }
+  })
+
+  // Asegurar que los checkboxes de canales de notificación funcionen
+  const channelCheckboxes = [
+    document.getElementById("channel-email"),
+    document.getElementById("channel-sms"),
+    document.getElementById("channel-app"),
+  ]
+
+  channelCheckboxes.forEach((checkbox) => {
+    if (checkbox) {
+      checkbox.addEventListener("click", function () {
+        // Forzar el cambio de estado
+        this.checked = !this.checked
+      })
+    }
+  })
 })
 

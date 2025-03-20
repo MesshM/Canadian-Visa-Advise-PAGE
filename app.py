@@ -157,19 +157,24 @@ def login():
             if user and check_password_hash(user['contrasena'], password):
                 session['user_id'] = user['id_usuario']
                 session['user_name'] = f"{user['nombres']} {user['apellidos']}"
-                session['is_admin'] = email.endswith('@cva.com')
+                
+                # Verificar el rol del usuario
+                if email.endswith('@cva.com'):
+                    session['user_role'] = 'Asesor'
+                    session['is_admin'] = True
+                else:
+                    session['user_role'] = 'Usuario'
+                    session['is_admin'] = False
                 
                 if remember_me:
                     session.permanent = True
                 else:
                     session.permanent = False
                 
-                # Verificar si el correo termina con @cva.com
+                # Redirigir según el rol
                 if email.endswith('@cva.com'):
-                    # Redirigir a la página de administrador
                     return redirect(url_for('index_asesor'))
                 else:
-                    # Redirigir a la página normal
                     return redirect(url_for('index'))
             else:
                 flash('Correo o contraseña incorrectos', 'error')
@@ -336,9 +341,9 @@ def reset_password(token):
 
 @app.route('/logout')
 def logout():
-  session.pop('user_id', None)
-  session.pop('user_name', None)
-  return redirect(url_for('login'))
+    # Limpiar toda la sesión en lugar de solo user_id y user_name
+    session.clear()
+    return redirect(url_for('login'))
 
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
@@ -1418,7 +1423,9 @@ def perfil():
                 """, (user['id_solicitante'],))
                 asesorias = cursor.fetchall()
             
-            return render_template('perfil.html', user=user, asesorias=asesorias)
+            # Incluir CSS adicional para correcciones
+            return render_template('perfil.html', user=user, asesorias=asesorias, 
+                                  additional_css='/static/css/perfil-fixes.css')
         except Exception as e:
             flash(f'Error al cargar el perfil: {str(e)}', 'error')
         finally:
