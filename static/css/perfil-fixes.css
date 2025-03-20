@@ -1,0 +1,166 @@
+/* Estilos adicionales para corregir problemas de diseño */
+
+/* Mejorar inputs para que sean más anchos y rectangulares */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+select {
+  height: 45px !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Corregir posición de botones de verificación */
+#verify-email-btn,
+#verify-phone-btn {
+  position: absolute !important;
+  right: 8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  padding: 4px 8px !important;
+  font-weight: 500 !important;
+  z-index: 10 !important;
+  font-size: 0.75rem !important;
+}
+
+/* Asegurar que los inputs con botones de verificación tengan suficiente padding */
+#email,
+#phone {
+  padding-right: 80px !important;
+}
+
+/* Corregir el toggle de verificación en dos pasos */
+#toggle-2fa {
+  cursor: pointer !important;
+}
+
+/* Corregir los toggles de preferencias de notificaciones */
+#toggle-visa-updates,
+#toggle-document-reminders,
+#toggle-news,
+#toggle-appointments,
+#channel-email,
+#channel-sms,
+#channel-app {
+  cursor: pointer !important;
+}
+
+/* Animaciones para feedback visual */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.animate-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.4s ease-in-out;
+}
+
+/* Mejorar integración visual con el sidebar */
+.max-w-7xl.mx-auto {
+  background-color: transparent !important;
+}
+
+.bg-white.rounded-xl.shadow-sm {
+  border-radius: 0.75rem !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  transition: all 0.3s ease-in-out !important;
+}
+
+.bg-white.rounded-xl.shadow-sm:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Mejorar botones con transiciones */
+button {
+  transition: all 0.2s ease-in-out !important;
+}
+
+button:active {
+  transform: scale(0.98) !important;
+}
+
+/* Mejorar inputs de OTP */
+.otp-input {
+  transition: all 0.2s ease-in-out !important;
+}
+
+.otp-input:focus {
+  transform: scale(1.05) !important;
+  border-color: #ef4444 !important;
+}
+
+/* Mejorar toggles */
+.relative.inline-block.w-12.h-6 span.absolute.inset-0 {
+  transition: background-color 0.3s ease-in-out !important;
+}
+
+.relative.inline-block.w-12.h-6 span.absolute.inset-y-0 {
+  transition: transform 0.3s ease-in-out !important;
+}
+
+/* Mejorar visualización de pestañas */
+.tab-button {
+  transition: all 0.3s ease-in-out !important;
+}
+
+.tab-button:hover {
+  background-color: rgba(239, 68, 68, 0.05) !important;
+}
+
+/* Mejorar visualización de alertas */
+#alert {
+  border-left-width: 4px !important;
+}
+
+/* Mejorar visualización de modales */
+.fixed.inset-0.bg-black.bg-opacity-50 {
+  backdrop-filter: blur(2px) !important;
+}
+
+.fixed.inset-0.bg-black.bg-opacity-50 .bg-white {
+  border-radius: 1rem !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Corregir la posición relativa para los contenedores de inputs con botones */
+.relative {
+  position: relative !important;
+}
+

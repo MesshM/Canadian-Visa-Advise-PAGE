@@ -1,6 +1,6 @@
 import smtplib
 from email.mime.text import MIMEText
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file
 import mysql.connector
 from mysql.connector import Error
 import os
@@ -15,6 +15,8 @@ import json
 import stripe
 import threading
 import time
+from werkzeug.utils import secure_filename
+import io
 
 # Cargar variables de entorno desde .env
 load_dotenv()
@@ -31,6 +33,15 @@ ZOHO_PASSWORD = os.getenv('ZOHO_PASSWORD')  # Contraseña de aplicación de Zoho
 # Configurar Stripe con la clave secreta del .env
 app.config['STRIPE_SECRET_KEY'] = os.getenv('STRIPE_SECRET_KEY')
 app.config['STRIPE_PUBLIC_KEY'] = os.getenv('STRIPE_PUBLIC_KEY')
+
+# Configuración para subida de archivos
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static/uploads')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB max
+
+# Asegurarse de que el directorio de uploads exista
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 stripe.api_key = app.config['STRIPE_SECRET_KEY']
 
@@ -146,19 +157,24 @@ def login():
             if user and check_password_hash(user['contrasena'], password):
                 session['user_id'] = user['id_usuario']
                 session['user_name'] = f"{user['nombres']} {user['apellidos']}"
-                session['is_admin'] = email.endswith('@cva.com')
+                
+                # Verificar el rol del usuario
+                if email.endswith('@cva.com'):
+                    session['user_role'] = 'Asesor'
+                    session['is_admin'] = True
+                else:
+                    session['user_role'] = 'Usuario'
+                    session['is_admin'] = False
                 
                 if remember_me:
                     session.permanent = True
                 else:
                     session.permanent = False
                 
-                # Verificar si el correo termina con @cva.com
+                # Redirigir según el rol
                 if email.endswith('@cva.com'):
-                    # Redirigir a la página de administrador
                     return redirect(url_for('index_asesor'))
                 else:
-                    # Redirigir a la página normal
                     return redirect(url_for('index'))
             else:
                 flash('Correo o contraseña incorrectos', 'error')
@@ -258,11 +274,6 @@ def forgot_password():
   session['captcha_text'] = captcha_text
   return render_template('forgot_password.html', captcha_text=captcha_text)
 
-#rutas para los html
-@app.route("/pagos")
-def pagos():
-    return render_template("pagos.html")
-
 
 @app.route('/refresh_captcha')
 def refresh_captcha():
@@ -325,9 +336,9 @@ def reset_password(token):
 
 @app.route('/logout')
 def logout():
-  session.pop('user_id', None)
-  session.pop('user_name', None)
-  return redirect(url_for('login'))
+    # Limpiar toda la sesión en lugar de solo user_id y user_name
+    session.clear()
+    return redirect(url_for('login'))
 
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
@@ -1187,6 +1198,16 @@ def crear_payment_intent():
     except Exception as e:
         print(f"Error al crear PaymentIntent: {str(e)}")
         return jsonify({'error': str(e)}), 500
+    
+#ruta 
+@app.route('/pagos')
+def pagos():
+    return render_template('pagos.html')
+
+
+
+
+    
 
 # Añadir ruta para confirmar el pago
 @app.route('/confirmar_pago', methods=['GET'])
@@ -1397,6 +1418,474 @@ def cancelar_asesoria_route():
         return jsonify({'error': str(e)}), 500
     
 
+
+# Rutas para la página de perfil
+@app.route('/perfil')
+def perfil():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    connection = create_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        try:
+            # Obtener información del usuario
+            cursor.execute("""
+                SELECT u.*, s.id_solicitante 
+                FROM tbl_usuario u
+                LEFT JOIN tbl_solicitante s ON u.id_usuario = s.id_usuario
+                WHERE u.id_usuario = %s
+            """, (session['user_id'],))
+            
+            user = cursor.fetchone()
+            
+            if not user:
+                flash('Usuario no encontrado', 'error')
+                return redirect(url_for('index'))
+            
+            # Obtener asesorías del usuario si es solicitante
+            asesorias = []
+            if user['id_solicitante']:
+                cursor.execute("""
+                    SELECT a.codigo_asesoria, a.fecha_asesoria, a.tipo_asesoria, 
+                           a.asesor_asignado, a.estado, a.descripcion
+                    FROM tbl_asesoria a
+                    WHERE a.id_solicitante = %s
+                    ORDER BY a.fecha_asesoria DESC
+                """, (user['id_solicitante'],))
+                asesorias = cursor.fetchall()
+            
+            # Incluir CSS adicional para correcciones
+            return render_template('perfil.html', user=user, asesorias=asesorias, 
+                                  additional_css='/static/css/perfil-fixes.css')
+        except Exception as e:
+            flash(f'Error al cargar el perfil: {str(e)}', 'error')
+        finally:
+            cursor.close()
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos', 'error')
+    
+    return redirect(url_for('index'))
+
+# Función para verificar si un archivo tiene una extensión permitida
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Ruta para actualizar la foto de perfil
+@app.route('/actualizar_foto_perfil', methods=['POST'])
+def actualizar_foto_perfil():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        if 'photo' not in request.files:
+            return jsonify({'error': 'No se envió ninguna foto'}), 400
+        
+        file = request.files['photo']
+        
+        if file.filename == '':
+            return jsonify({'error': 'No se seleccionó ningún archivo'}), 400
+        
+        if file and allowed_file(file.filename):
+            # Crear un nombre de archivo seguro
+            filename = secure_filename(f"profile_{session['user_id']}_{int(time.time())}.{file.filename.rsplit('.', 1)[1].lower()}")
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            
+            # Guardar el archivo
+            file.save(filepath)
+            
+            # Actualizar la ruta de la foto en la base de datos (si tienes una tabla para eso)
+            # Por ahora, solo guardamos la ruta en la sesión
+            session['profile_photo'] = f"/static/uploads/{filename}"
+            
+            return jsonify({'success': True, 'photo_url': session['profile_photo']})
+        else:
+            return jsonify({'error': 'Tipo de archivo no permitido. Solo se permiten imágenes (png, jpg, jpeg, gif)'}), 400
+    except Exception as e:
+        print(f"Error al actualizar foto de perfil: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Ruta para actualizar información básica del usuario
+@app.route('/actualizar_informacion_basica', methods=['POST'])
+def actualizar_informacion_basica():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        # Obtener los datos del formulario
+        nombres = data.get('first-name')
+        apellidos = data.get('last-name')
+        tipo_documento = data.get('document-type')
+        numero_documento = data.get('id-document')
+        correo = data.get('email')
+        telefono = data.get('phone')
+        direccion = data.get('address')
+        
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor()
+            
+            # Actualizar la información del usuario
+            cursor.execute("""
+                UPDATE tbl_usuario 
+                SET nombres = %s, apellidos = %s, correo = %s
+                WHERE id_usuario = %s
+            """, (nombres, apellidos, correo, session['user_id']))
+            
+            # Actualizar la sesión con el nuevo nombre
+            session['user_name'] = f"{nombres} {apellidos}"
+            
+            connection.commit()
+            cursor.close()
+            connection.close()
+            
+            return jsonify({'success': True, 'message': 'Información actualizada con éxito'})
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al actualizar información básica: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Ruta para cambiar la contraseña
+@app.route('/cambiar_contrasena', methods=['POST'])
+def cambiar_contrasena():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+        
+        if not current_password or not new_password:
+            return jsonify({'error': 'Faltan parámetros requeridos'}), 400
+        
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Verificar la contraseña actual
+            cursor.execute("SELECT contrasena FROM tbl_usuario WHERE id_usuario = %s", (session['user_id'],))
+            user = cursor.fetchone()
+            
+            if not user or not check_password_hash(user['contrasena'], current_password):
+                return jsonify({'error': 'La contraseña actual es incorrecta'}), 400
+            
+            # Actualizar la contraseña
+            hashed_password = generate_password_hash(new_password)
+            cursor.execute("UPDATE tbl_usuario SET contrasena = %s WHERE id_usuario = %s", 
+                          (hashed_password, session['user_id']))
+            
+            connection.commit()
+            cursor.close()
+            connection.close()
+            
+            return jsonify({'success': True, 'message': 'Contraseña actualizada con éxito'})
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al cambiar contraseña: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Ruta para enviar código de verificación (email o SMS)
+@app.route('/enviar_codigo_verificacion', methods=['POST'])
+def enviar_codigo_verificacion():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        method = data.get('method')
+        
+        if method not in ['email', 'sms']:
+            return jsonify({'error': 'Método de verificación no válido'}), 400
+        
+        # Generar código OTP de 6 dígitos
+        otp = ''.join(random.choices(string.digits, k=6))
+        
+        # Guardar el OTP en la sesión para verificarlo después
+        session[f'otp_{method}'] = otp
+        session[f'otp_{method}_expiry'] = (datetime.now() + timedelta(minutes=10)).timestamp()
+        
+        if method == 'email':
+            email = data.get('email')
+            if not email:
+                return jsonify({'error': 'Falta el correo electrónico'}), 400
+            
+            # Enviar el código por correo
+            subject = "Código de verificación - Canadian Visa Advise"
+            body = f"""
+            Hola {session.get('user_name', 'Usuario')},
+            
+            Tu código de verificación es: {otp}
+            
+            Este código expirará en 10 minutos.
+            
+            Atentamente,
+            Equipo CVA
+            """
+            
+            if send_email_via_zoho(email, subject, body):
+                return jsonify({'success': True, 'message': 'Código enviado al correo electrónico'})
+            else:
+                return jsonify({'error': 'Error al enviar el correo electrónico'}), 500
+        
+        elif method == 'sms':
+            phone = data.get('phone')
+            if not phone:
+                return jsonify({'error': 'Falta el número de teléfono'}), 400
+            
+            # Aquí iría la lógica para enviar SMS (requiere un servicio externo como Twilio)
+            # Por ahora, simulamos que se envió correctamente
+            return jsonify({'success': True, 'message': 'Código enviado al teléfono (simulado)'})
+        
+    except Exception as e:
+        print(f"Error al enviar código de verificación: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Ruta para verificar el código OTP
+@app.route('/verificar_codigo', methods=['POST'])
+def verificar_codigo():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        otp = data.get('otp')
+        method = data.get('method')
+        
+        if not otp or not method:
+            return jsonify({'error': 'Faltan parámetros requeridos'}), 400
+        
+        # Verificar que el OTP existe en la sesión y no ha expirado
+        session_otp = session.get(f'otp_{method}')
+        expiry = session.get(f'otp_{method}_expiry')
+        
+        if not session_otp or not expiry:
+            return jsonify({'error': 'No hay un código de verificación activo'}), 400
+        
+        if datetime.now().timestamp() > expiry:
+            # Limpiar el OTP expirado
+            session.pop(f'otp_{method}', None)
+            session.pop(f'otp_{method}_expiry', None)
+            return jsonify({'error': 'El código ha expirado'}), 400
+        
+        if otp != session_otp:
+            return jsonify({'error': 'Código incorrecto'}), 400
+        
+        # Código correcto, marcar como verificado
+        session[f'{method}_verified'] = True
+        
+        # Limpiar el OTP usado
+        session.pop(f'otp_{method}', None)
+        session.pop(f'otp_{method}_expiry', None)
+        
+        return jsonify({'success': True, 'message': 'Verificación exitosa'})
+    except Exception as e:
+        print(f"Error al verificar código: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Ruta para actualizar preferencias de notificaciones
+@app.route('/actualizar_preferencias_notificaciones', methods=['POST'])
+def actualizar_preferencias_notificaciones():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        # Aquí iría la lógica para guardar las preferencias en la base de datos
+        # Por ahora, solo simulamos que se guardaron correctamente
+        
+        return jsonify({'success': True, 'message': 'Preferencias actualizadas con éxito'})
+    except Exception as e:
+        print(f"Error al actualizar preferencias: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Ruta para actualizar preferencias de idioma
+@app.route('/actualizar_preferencias_idioma', methods=['POST'])
+def actualizar_preferencias_idioma():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        language = data.get('language')
+        
+        # Guardar la preferencia de idioma en la sesión
+        session['language'] = language
+        
+        return jsonify({'success': True, 'message': 'Preferencias de idioma actualizadas con éxito'})
+    except Exception as e:
+        print(f"Error al actualizar preferencias de idioma: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Ruta para descargar datos personales
+@app.route('/descargar_datos_personales')
+def descargar_datos_personales():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    try:
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Obtener información del usuario
+            cursor.execute("""
+                SELECT u.id_usuario, u.nombres, u.apellidos, u.correo, u.fecha_nacimiento,
+                       s.id_solicitante
+                FROM tbl_usuario u
+                LEFT JOIN tbl_solicitante s ON u.id_usuario = s.id_usuario
+                WHERE u.id_usuario = %s
+            """, (session['user_id'],))
+            
+            user_data = cursor.fetchone()
+            
+            if not user_data:
+                flash('Usuario no encontrado', 'error')
+                return redirect(url_for('perfil'))
+            
+            # Si es solicitante, obtener sus asesorías
+            asesorias = []
+            if user_data.get('id_solicitante'):
+                cursor.execute("""
+                    SELECT a.codigo_asesoria, a.fecha_asesoria, a.tipo_asesoria, 
+                           a.asesor_asignado, a.estado, a.descripcion, a.lugar
+                    FROM tbl_asesoria a
+                    WHERE a.id_solicitante = %s
+                    ORDER BY a.fecha_asesoria DESC
+                """, (user_data['id_solicitante'],))
+                asesorias = cursor.fetchall()
+            
+            # Crear un diccionario con todos los datos
+            data = {
+                'usuario': user_data,
+                'asesorias': asesorias
+            }
+            
+            # Convertir a JSON
+            json_data = json.dumps(data, default=str, indent=4)
+            
+            # Crear un archivo en memoria
+            mem_file = io.BytesIO()
+            mem_file.write(json_data.encode('utf-8'))
+            mem_file.seek(0)
+            
+            cursor.close()
+            connection.close()
+            
+            return send_file(
+                mem_file,
+                mimetype='application/json',
+                as_attachment=True,
+                download_name=f'datos_personales_{session["user_id"]}.json'
+            )
+        else:
+            flash('Error de conexión a la base de datos', 'error')
+            return redirect(url_for('perfil'))
+    except Exception as e:
+        flash(f'Error al descargar datos: {str(e)}', 'error')
+        return redirect(url_for('perfil'))
+
+# Ruta para eliminar cuenta
+@app.route('/eliminar_cuenta', methods=['POST'])
+def eliminar_cuenta():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor()
+            
+            # Iniciar transacción
+            connection.start_transaction()
+            
+            # Obtener el id_solicitante si existe
+            cursor.execute("SELECT id_solicitante FROM tbl_solicitante WHERE id_usuario = %s", (session['user_id'],))
+            solicitante = cursor.fetchone()
+            
+            if solicitante:
+                id_solicitante = solicitante[0]
+                
+                # Eliminar registros relacionados en orden para evitar errores de clave foránea
+                cursor.execute("DELETE FROM tbl_pago_asesoria WHERE codigo_asesoria IN (SELECT codigo_asesoria FROM tbl_asesoria WHERE id_solicitante = %s)", (id_solicitante,))
+                cursor.execute("DELETE FROM tbl_calendario_asesorias WHERE codigo_asesoria IN (SELECT codigo_asesoria FROM tbl_asesoria WHERE id_solicitante = %s)", (id_solicitante,))
+                cursor.execute("DELETE FROM tbl_asesoria WHERE id_solicitante = %s", (id_solicitante,))
+                cursor.execute("DELETE FROM tbl_pago WHERE id_solicitante = %s", (id_solicitante,))
+                cursor.execute("DELETE FROM tbl_solicitante WHERE id_solicitante = %s", (id_solicitante,))
+            
+            # Eliminar reservas temporales
+            cursor.execute("DELETE FROM tbl_reservas_temporales WHERE id_usuario = %s", (session['user_id'],))
+            
+            # Eliminar tokens de restablecimiento de contraseña
+            cursor.execute("DELETE FROM tbl_password_reset WHERE user_id = %s", (session['user_id'],))
+            
+            # Finalmente, eliminar el usuario
+            cursor.execute("DELETE FROM tbl_usuario WHERE id_usuario = %s", (session['user_id'],))
+            
+            # Confirmar transacción
+            connection.commit()
+            
+            cursor.close()
+            connection.close()
+            
+            # Limpiar la sesión
+            session.clear()
+            
+            return jsonify({'success': True, 'message': 'Cuenta eliminada con éxito'})
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al eliminar cuenta: {str(e)}")
+        
+        # Si hay una conexión activa, hacer rollback
+        if connection and connection.is_connected():
+            connection.rollback()
+            cursor.close()
+            connection.close()
+        
+        return jsonify({'error': str(e)}), 500
+
+# Ruta para obtener detalles de una asesoría
+@app.route('/obtener_detalles_asesoria/<int:codigo_asesoria>')
+def obtener_detalles_asesoria(codigo_asesoria):
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Verificar que la asesoría pertenece al usuario actual
+            cursor.execute("""
+                SELECT a.*, pa.monto, pa.metodo_pago as metodo_pago_stripe
+                FROM tbl_asesoria a
+                LEFT JOIN tbl_pago_asesoria pa ON a.codigo_asesoria = pa.codigo_asesoria
+                JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
+                WHERE a.codigo_asesoria = %s AND s.id_usuario = %s
+            """, (codigo_asesoria, session['user_id']))
+            
+            asesoria = cursor.fetchone()
+            
+            cursor.close()
+            connection.close()
+            
+            if not asesoria:
+                return jsonify({'error': 'Asesoría no encontrada o no autorizada'}), 404
+            
+            return jsonify({'success': True, 'asesoria': asesoria})
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al obtener detalles de asesoría: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
