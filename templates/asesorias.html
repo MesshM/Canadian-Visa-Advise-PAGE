@@ -2,12 +2,6 @@
 
 {% block title %} CVA | Asesorias {% endblock %}
 
-<!-- Añadir meta tag para la clave pública de Stripe -->
-{% block head %}
-{{ super() }}
-<meta name="stripe-public-key" content="{{ config.STRIPE_PUBLIC_KEY }}">
-{% endblock %}
-
 {% block main %}
 
 <!-- Main Content -->
@@ -229,117 +223,110 @@
                     </td>
                     </tr>
                     <!-- Fila de detalles (inicialmente oculta) -->
-                    
-<tr id="details-{{ asesoria.codigo_asesoria }}" class="hidden bg-gray-50">
-    <td colspan="6" class="p-0 border-b border-gray-200">
-        <div class="p-6 animate-fade-in">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white p-4 rounded-lg shadow">
-                    <h4 class="font-medium text-gray-900 mb-2">Detalles del Asesor</h4>
-                    <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Nombre:</span>
-                        {{ asesoria.asesor_asignado }}</p>
-                    <p class="text-sm text-gray-700 mb-1"><span
-                            class="font-medium">Especialidad:</span> 
-                            {% if asesoria.especialidad %}
-                            {{ asesoria.especialidad }}
-                            {% else %}
-                            Inmigración Canadiense
-                            {% endif %}
-                    </p>
-                    <p class="text-sm text-gray-700 mb-3"><span class="font-medium">Contacto:</span>
-                        asesor@cva.com</p>
+                    <tr id="details-{{ asesoria.codigo_asesoria }}" class="hidden bg-gray-50">
+                        <td colspan="6" class="p-0 border-b border-gray-200">
+                            <div class="p-6 animate-fade-in">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div class="bg-white p-4 rounded-lg shadow">
+                                        <h4 class="font-medium text-gray-900 mb-2">Detalles del Asesor</h4>
+                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Nombre:</span>
+                                            {{ asesoria.asesor_asignado }}</p>
+                                        <p class="text-sm text-gray-700 mb-1"><span
+                                                class="font-medium">Especialidad:</span> Inmigración Canadiense</p>
+                                        <p class="text-sm text-gray-700 mb-3"><span class="font-medium">Contacto:</span>
+                                            asesor@cva.com</p>
 
-                    <button onclick="verHistorialChat({{ asesoria.codigo_asesoria }})"
-                        class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white text-xs font-medium py-2 px-4 rounded-lg shadow-md hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer w-full">
-                        <span
-                            class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
-                        <div class="relative flex items-center justify-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
-                                </path>
-                            </svg>
-                            <span>Ver registro de chat</span>
-                        </div>
-                    </button>
-                </div>
+                                        <button onclick="verHistorialChat({{ asesoria.codigo_asesoria }})"
+                                            class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white text-xs font-medium py-2 px-4 rounded-lg shadow-md hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer w-full">
+                                            <span
+                                                class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                                            <div class="relative flex items-center justify-center">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                                                    </path>
+                                                </svg>
+                                                <span>Ver registro de chat</span>
+                                            </div>
+                                        </button>
+                                    </div>
 
-                <div class="bg-white p-4 rounded-lg shadow">
-                    <h4 class="font-medium text-gray-900 mb-2">Detalles de la Asesoría</h4>
-                    <!-- Y también en la sección de detalles -->
-                    <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Código de
-                            consulta:</span>
-                        <span class="font-mono">#{{ asesoria.codigo_asesoria }}</span>
-                    </p>
-                    <p class="text-sm text-gray-700 mb-1">
-                        <span class="font-medium">Tipo de Visa:</span>
-                        <span>{{ asesoria.tipo_asesoria }}</span>
-                    </p>
-                    <p class="text-sm text-gray-700 mb-1 flex items-center">
-                        <span class="font-medium mr-1">Precio:</span>
-                        <span class="flex items-center">
-                            ${{ asesoria.precio }} USD
-                            {% if asesoria.estado == 'Pagada' %}
-                            <svg class="w-4 h-4 ml-1 text-green-500" fill="none"
-                                stroke="currentColor" viewBox="0 0 24 24"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            {% endif %}
-                        </span>
-                    </p>
-                    {% set fecha_parts = asesoria.fecha_asesoria|string|split(' ') %}
-                    <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Fecha:</span> {{
-                        fecha_parts[0] }}</p>
-                    <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Hora:</span> {{
-                        fecha_parts[1] }}</p>
-                    <p class="text-sm text-gray-700 mb-1">
-                        <span class="font-medium">Estado:</span>
-                        {% if is_expired %}
-                        <span class="text-red-600">Vencida</span>
-                        {% elif asesoria.estado == 'Pagada' %}
-                        <span class="text-blue-600">En Proceso Activo</span>
-                        {% elif asesoria.estado == 'Pendiente' %}
-                        <span class="text-yellow-600">Pago Pendiente</span>
-                        {% else %}
-                        <span class="text-green-600">Vigente</span>
-                        {% endif %}
-                    </p>
-                </div>
+                                    <div class="bg-white p-4 rounded-lg shadow">
+                                        <h4 class="font-medium text-gray-900 mb-2">Detalles de la Asesoría</h4>
+                                        <!-- Y también en la sección de detalles -->
+                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Código de
+                                                consulta:</span>
+                                            <span class="font-mono">#{{ asesoria.codigo_asesoria }}</span>
+                                        </p>
+                                        <p class="text-sm text-gray-700 mb-1">
+                                            <span class="font-medium">Tipo de Visa:</span>
+                                            <span>{{ asesoria.tipo_asesoria }}</span>
+                                        </p>
+                                        <p class="text-sm text-gray-700 mb-1 flex items-center">
+                                            <span class="font-medium mr-1">Precio:</span>
+                                            <span class="flex items-center">
+                                                ${{ asesoria.precio }} USD
+                                                {% if asesoria.estado == 'Pagada' %}
+                                                <svg class="w-4 h-4 ml-1 text-green-500" fill="none"
+                                                    stroke="currentColor" viewBox="0 0 24 24"
+                                                    xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                </svg>
+                                                {% endif %}
+                                            </span>
+                                        </p>
+                                        {% set fecha_parts = asesoria.fecha_asesoria|string|split(' ') %}
+                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Fecha:</span> {{
+                                            fecha_parts[0] }}</p>
+                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Hora:</span> {{
+                                            fecha_parts[1] }}</p>
+                                        <p class="text-sm text-gray-700 mb-1">
+                                            <span class="font-medium">Estado:</span>
+                                            {% if is_expired %}
+                                            <span class="text-red-600">Vencida</span>
+                                            {% elif asesoria.estado == 'Pagada' %}
+                                            <span class="text-blue-600">En Proceso Activo</span>
+                                            {% elif asesoria.estado == 'Pendiente' %}
+                                            <span class="text-yellow-600">Pago Pendiente</span>
+                                            {% else %}
+                                            <span class="text-green-600">Vigente</span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
 
-                <div class="bg-white p-4 rounded-lg shadow">
-                    <h4 class="font-medium text-gray-900 mb-2">Información Adicional</h4>
-                    <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Lugar:</span>
-                        {% if asesoria.lugar %}
-                        {{ asesoria.lugar }}
-                        {% else %}
-                        Virtual (Zoom)
-                        {% endif %}
-                    </p>
-                    <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Método de
-                            Pago:</span>
-                        {% if asesoria.estado == 'Pagada' and asesoria.metodo_pago_stripe %}
-                        {{ asesoria.metodo_pago_stripe }}
-                        {% elif asesoria.metodo_pago %}
-                        {{ asesoria.metodo_pago }}
-                        {% else %}
-                        Tarjeta de Crédito
-                        {% endif %}
-                    </p>
-                    <p class="text-sm text-gray-700"><span class="font-medium">Duración:</span> 60
-                        minutos</p>
-                    {% if asesoria.descripcion %}
-                    <p class="text-sm text-gray-700 mt-2"><span
-                            class="font-medium">Descripción:</span> {{ asesoria.descripcion }}</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </td>
-</tr>
+                                    <div class="bg-white p-4 rounded-lg shadow">
+                                        <h4 class="font-medium text-gray-900 mb-2">Información Adicional</h4>
+                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Lugar:</span>
+                                            {% if asesoria.lugar %}
+                                            {{ asesoria.lugar }}
+                                            {% else %}
+                                            Virtual (Zoom)
+                                            {% endif %}
+                                        </p>
+                                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Método de
+                                                Pago:</span>
+                                            {% if asesoria.estado == 'Pagada' and asesoria.metodo_pago_stripe %}
+                                            {{ asesoria.metodo_pago_stripe }}
+                                            {% elif asesoria.metodo_pago %}
+                                            {{ asesoria.metodo_pago }}
+                                            {% else %}
+                                            Tarjeta de Crédito
+                                            {% endif %}
+                                        </p>
+                                        <p class="text-sm text-gray-700"><span class="font-medium">Duración:</span> 60
+                                            minutos</p>
+                                        {% if asesoria.descripcion %}
+                                        <p class="text-sm text-gray-700 mt-2"><span
+                                                class="font-medium">Descripción:</span> {{ asesoria.descripcion }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
                     {% endfor %}
                     {% else %}
                     <tr id="no-results">
@@ -350,163 +337,6 @@
                     {% endif %}
             </tbody>
         </table>
-    </div>
-</div>
-
-<!-- Modificar la estructura del modal de Nueva Asesoría para tener 3 columnas con la distribución solicitada -->
-<div id="newAdvisoryModal" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
-    <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-6xl animate-scale-in">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-gray-900 font-roboto">Pedir Asesoría</h2>
-            <button onclick="closeNewAdvisoryModal()" class="text-gray-500 hover:text-gray-700 cursor-pointer">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                    </path>
-                </svg>
-            </button>
-        </div>
-
-        <!-- Estructura de 3 columnas: formulario, calendario y horarios disponibles/detalles -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Formulario a la izquierda (primera columna) -->
-            <div class="bg-white p-4 rounded-lg shadow-md">
-                <h3 class="text-md font-semibold text-gray-800 mb-4 flex items-center">
-                    <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    Información de la Asesoría
-                </h3>
-                <form id="advisoryForm" action="/nueva_asesoria" method="POST">
-                    <input type="hidden" name="id_solicitante" value="{{ session.user_id }}">
-                    <input type="hidden" id="selected_date" name="fecha_asesoria" value="">
-                    <input type="hidden" id="selected_asesor_id" name="id_asesor" value="">
-                    <input type="hidden" id="selected_asesor_name" name="asesor_asignado" value="">
-                    <input type="hidden" id="selected_asesor_especialidad" name="asesor_especialidad" value="">
-
-                    <div class="mb-4">
-                        <label for="documento" class="block text-sm font-medium text-gray-700 mb-2">Número de
-                            Documento</label>
-                        <div class="flex space-x-2">
-                            <select id="tipo_documento" name="tipo_documento"
-                                class="w-1/3 py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer"
-                                required>
-                                <option value="C.C">C.C</option>
-                                <option value="T.I">T.I</option>
-                                <option value="C.E">C.E</option>
-                                <option value="Pasaporte">Pasaporte</option>
-                            </select>
-                            <input type="text" id="numero_documento" name="numero_documento"
-                                class="w-2/3 py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
-                                placeholder="Número de documento" required>
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="asesor_selector" class="block text-sm font-medium text-gray-700 mb-2">Seleccionar Asesor</label>
-                        <select id="asesor_selector"
-                            class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer"
-                            required>
-                            <option value="">Seleccione un asesor</option>
-                            </option>
-                        </select>
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="tipo_asesoria" class="block text-sm font-medium text-gray-700 mb-2">Tipo de
-                            Asesoría</label>
-                        <select id="tipo_asesoria" name="tipo_asesoria" onchange="updateAppointmentPrice()"
-                            class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer"
-                            required>
-                            {% for tipo, precio in precios_visa.items() %}
-                            <option value="{{ tipo }}" data-precio="{{ precio }}">{{ tipo }} - ${{ precio }}0</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-2">Descripción de tu
-                            consulta</label>
-                        <textarea id="descripcion" name="descripcion" rows="3"
-                            class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
-                            placeholder="Describe brevemente tu consulta..."></textarea>
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="lugar" class="block text-sm font-medium text-gray-700 mb-2">Modalidad de
-                            Asesoría</label>
-                        <select id="lugar" name="lugar"
-                            class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer"
-                            required>
-                            <option value="Virtual (Zoom)">Virtual (Zoom)</option>
-                            <option value="Virtual (Teams)">Virtual (Teams)</option>
-                            <option value="Presencial">Presencial</option>
-                        </select>
-                    </div>
-
-                    <div class="flex justify-end space-x-4 mt-6">
-                        <button type="button" onclick="closeNewAdvisoryModal()"
-                            class="py-3 px-6 text-sm font-medium rounded-xl transition-all duration-300 bg-gray-200 text-gray-700 hover:bg-gray-300 cursor-pointer">
-                            Cancelar
-                        </button>
-                        <button type="submit" id="submitAdvisoryBtn" disabled
-                            class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer opacity-50">
-                            <span
-                                class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
-                            <div class="relative flex items-center justify-center">
-                                <span>Solicitar</span>
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                    class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200"
-                                    viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd"
-                                        d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Calendario en el centro (segunda columna) -->
-            <div>
-                <div id="calendar-container" class="bg-white p-4 rounded-lg shadow-md">
-                    <!-- El calendario se generará dinámicamente aquí -->
-                </div>
-            </div>
-
-            <!-- Tercera columna: Horarios disponibles y detalles de asesoría -->
-            <div class="flex flex-col space-y-4">
-                <!-- Horarios disponibles -->
-                <div id="time-slots-container" class="bg-white p-4 rounded-lg shadow-md hidden">
-                    <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        Horarios Disponibles
-                    </h4>
-                    <div id="time-slots" class="grid grid-cols-3 gap-2"></div>
-                    <div id="no-slots-message" class="text-center text-gray-500 py-4 hidden">
-                        No hay horarios disponibles para esta fecha
-                    </div>
-                </div>
-
-                <!-- Detalles de la asesoría -->
-                <div id="appointment-details" class="bg-white p-4 rounded-lg shadow-md">
-                    <h4 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                        </svg>
-                        Detalles de Asesoría
-                    </h4>
-                    <div id="appointment-details-content" class="space-y-3 animate-fade-in">
-                        <div class="p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
-                            <p class="text-center">Seleccione un asesor, fecha y hora para ver los detalles de la asesoría</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -761,113 +591,302 @@
     </div>
 </div>
 
+<!-- Modal para Solicitar Nueva Asesoría con Stepper -->
+<!-- Modificar el modal para que sea más angosto y tenga un diseño más moderno -->
+<div id="newAdvisoryModal" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-xl animate-scale-in">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold text-gray-900 font-roboto">Solicitar Nueva Asesoría</h2>
+            <button onclick="closeNewAdvisoryModal()" class="text-gray-500 hover:text-gray-700 cursor-pointer">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Stepper -->
+        <div class="mb-8">
+            <div class="stepper-container">
+                <div class="stepper-progress-bar relative h-1 bg-gray-200 rounded-full mb-6">
+                    <div class="progress absolute top-0 left-0 h-full bg-primary-600 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <div class="stepper-steps flex justify-between">
+                    <div class="stepper-step active flex flex-col items-center">
+                        <div class="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white mb-2 transition-colors duration-300">
+                            <span>1</span>
+                        </div>
+                        <span class="text-sm font-medium">Datos</span>
+                    </div>
+                    <div class="stepper-step flex flex-col items-center">
+                        <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 mb-2 transition-colors duration-300">
+                            <span>2</span>
+                        </div>
+                        <span class="text-sm font-medium">Fecha y Hora</span>
+                    </div>
+                    <div class="stepper-step flex flex-col items-center">
+                        <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 mb-2 transition-colors duration-300">
+                            <span>3</span>
+                        </div>
+                        <span class="text-sm font-medium">Confirmación</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido del Stepper -->
+        <div class="stepper-content-container">
+            <!-- Paso 1: Formulario de datos -->
+            <div class="stepper-content">
+                <form id="asesoria-form" data-solicitante-id="{{ session.user_id if session.user_id else '' }}">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="mb-4">
+                            <label for="tipo_asesoria" class="block text-sm font-medium text-gray-700 mb-2">
+                                Tipo de Asesoría <span class="text-red-500">*</span>
+                            </label>
+                            <select id="tipo_asesoria" name="tipo_asesoria"
+                                class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer"
+                                required>
+                                <option value="">Seleccione un tipo de asesoría</option>
+                                {% for tipo, precio in precios_visa.items() %}
+                                <option value="{{ tipo }}" data-precio="{{ precio }}">{{ tipo }} - ${{ precio }}.00</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="asesor_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                Asesor <span class="text-red-500">*</span>
+                            </label>
+                            <select id="asesor_id" name="asesor_id"
+                                class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer"
+                                required>
+                                <option value="">Seleccione un asesor</option>
+                                <!-- Los asesores se cargarán dinámicamente -->
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="tipo_documento" class="block text-sm font-medium text-gray-700 mb-2">
+                                Tipo de Documento <span class="text-red-500">*</span>
+                            </label>
+                            <select id="tipo_documento" name="tipo_documento"
+                                class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer"
+                                required>
+                                <option value="C.C">C.C</option>
+                                <option value="T.I">T.I</option>
+                                <option value="C.E">C.E</option>
+                                <option value="Pasaporte">Pasaporte</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="numero_documento" class="block text-sm font-medium text-gray-700 mb-2">
+                                Número de Documento <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="numero_documento" name="numero_documento"
+                                class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
+                                placeholder="Ingrese su número de documento" required>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="lugar" class="block text-sm font-medium text-gray-700 mb-2">
+                                Modalidad de Asesoría <span class="text-red-500">*</span>
+                            </label>
+                            <select id="lugar" name="lugar"
+                                class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer"
+                                required>
+                                <option value="Virtual (Zoom)">Virtual (Zoom)</option>
+                                <option value="Virtual (Teams)">Virtual (Teams)</option>
+                                <option value="Presencial">Presencial</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4 md:col-span-2">
+                            <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-2">
+                                Descripción de tu consulta
+                            </label>
+                            <textarea id="descripcion" name="descripcion" rows="3"
+                                class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
+                                placeholder="Describe brevemente tu consulta (opcional)"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Paso 2: Selección de fecha y hora -->
+            <!-- Modificar el paso 2: Selección de fecha y hora para poner las horas a la derecha del calendario -->
+<div class="stepper-content hidden">
+    <!-- Título con animación sutil -->
+    <div class="mb-4 bg-gradient-to-r from-primary-50 to-white p-3 rounded-lg border-l-4 border-primary-500 animate-fade-in">
+        <h3 class="text-base font-medium text-primary-800">Selecciona la fecha y hora para tu asesoría</h3>
+        <p class="text-sm text-gray-600">Elige un día y horario que se ajuste a tu disponibilidad</p>
+    </div>
+    
+    <div class="flex flex-col md:flex-row gap-6">
+        <div class="md:w-3/5">
+            <h3 class="text-base font-medium text-gray-800 mb-3 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                Selecciona una fecha
+            </h3>
+            <div id="calendar-container" class="bg-white p-4 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300"></div>
+            
+            <!-- Leyenda del calendario -->
+            <div class="mt-3 flex flex-wrap gap-3 text-xs text-gray-600">
+                <div class="flex items-center">
+                    <div class="w-4 h-4 rounded-full bg-primary-600 mr-1"></div>
+                    <span>Hoy</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 rounded-full bg-primary-100 border border-primary-500 mr-1"></div>
+                    <span>Seleccionado</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 rounded-full bg-gray-50 mr-1"></div>
+                    <span>No disponible</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 rounded-full bg-white border border-gray-200 mr-1"></div>
+                    <span>Disponible</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="md:w-2/5">
+            <h3 class="text-base font-medium text-gray-800 mb-3 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Horarios disponibles
+            </h3>
+            <div id="time-container" class="bg-white p-4 rounded-lg shadow-md border border-gray-200 h-[280px] overflow-y-auto hover:shadow-lg transition-shadow duration-300">
+                <p class="text-gray-500 text-center">Seleccione una fecha para ver los horarios disponibles</p>
+            </div>
+            
+            <!-- Indicador de reserva temporal -->
+            <div class="mt-3 bg-yellow-50 p-2 rounded-lg border border-yellow-200 hidden" id="reservation-indicator">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span class="text-sm text-yellow-700">Reserva temporal:</span>
+                    </div>
+                    <div class="text-sm font-medium text-yellow-800" id="payment-timer">5:00</div>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                    <div class="bg-yellow-500 h-1.5 rounded-full" id="timer-progress" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Añadir una nota informativa -->
+    <div class="mt-4 bg-blue-50 p-3 rounded-lg border border-blue-200 flex items-start">
+        <svg class="w-5 h-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <div>
+            <p class="text-sm text-blue-700">Seleccione una fecha y hora para su asesoría. Las citas están disponibles de lunes a viernes en horario laboral.</p>
+            <p class="text-xs text-blue-600 mt-1">Recuerde que debe completar el proceso de pago dentro de los 5 minutos siguientes a la reserva.</p>
+        </div>
+    </div>
+    
+    <!-- Botón para mostrar consejos útiles -->
+    <div class="mt-3 flex justify-center">
+        <button id="show-tips-btn" class="flex items-center justify-center px-4 py-2 bg-primary-50 text-primary-700 rounded-lg border border-primary-200 hover:bg-primary-100 transition-all duration-300">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>Ver consejos útiles</span>
+        </button>
+    </div>
+    
+    <!-- Consejos para la selección de horario (inicialmente ocultos) -->
+    <div id="booking-tips" class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 hidden">
+        <div class="bg-green-50 p-2 rounded-lg border border-green-200 flex items-center">
+            <svg class="w-5 h-5 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <p class="text-xs text-green-700">Los horarios se muestran en su zona horaria local.</p>
+        </div>
+        <div class="bg-purple-50 p-2 rounded-lg border border-purple-200 flex items-center">
+            <svg class="w-5 h-5 text-purple-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <p class="text-xs text-purple-700">Puede reprogramar su cita hasta 24 horas antes.</p>
+        </div>
+        <div class="bg-amber-50 p-2 rounded-lg border border-amber-200 flex items-center">
+            <svg class="w-5 h-5 text-amber-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <p class="text-xs text-amber-700">Las asesorías tienen una duración de 60 minutos.</p>
+        </div>
+        <div class="bg-sky-50 p-2 rounded-lg border border-sky-200 flex items-center">
+            <svg class="w-5 h-5 text-sky-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+            </svg>
+            <p class="text-xs text-sky-700">Las asesorías virtuales se realizan por Zoom o Teams.</p>
+        </div>
+    </div>
+</div>
+
+            <!-- Paso 3: Resumen y confirmación -->
+            <!-- Modificar el paso 3: Resumen y confirmación para que coincida con la imagen -->
+<div class="stepper-content hidden">
+    <div id="summary-container" class="space-y-4">
+        <!-- El resumen se cargará dinámicamente -->
+    </div>
+</div>
+        </div>
+
+        <!-- Botones del Stepper -->
+        <div class="flex justify-between mt-8">
+            <button id="stepper-prev-btn" class="hidden py-3 px-6 text-sm font-medium rounded-xl transition-all duration-300 bg-gray-200 text-gray-700 hover:bg-gray-300 cursor-pointer">
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    <span>Atrás</span>
+                </div>
+            </button>
+            <div class="flex-grow"></div>
+            <button id="stepper-next-btn" class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer opacity-50 cursor-not-allowed" disabled>
+                <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                <div class="relative flex items-center justify-center">
+                    <span>Siguiente</span>
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200"
+                        viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </button>
+            <button id="stepper-submit-btn" class="hidden relative overflow-hidden group bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-green-500/30 transition-all duration-300 cursor-pointer">
+                <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                <div class="relative flex items-center justify-center">
+                    <span>Agendar Cita</span>
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200"
+                        viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- JavaScript para la funcionalidad -->
 <script src="https://js.stripe.com/v3/"></script>
 <script src="../static/js/asesorias.js"></script>
-<script src="../static/js/calendario-asesorias.js"></script>
-<!-- Modificar la función loadAsesores para incluir la especialidad -->
-<script>
-// Modificar la función loadAsesores para incluir la especialidad
-function loadAsesores() {
-  const asesorSelector = document.getElementById("asesor_selector");
-  if (!asesorSelector) return;
 
-  try {
-    // Limpiar opciones existentes excepto la primera
-    while (asesorSelector.options.length > 1) {
-      asesorSelector.remove(1);
-    }
-
-    // Mostrar indicador de carga
-    asesorSelector.innerHTML = '<option value="">Cargando asesores...</option>';
-
-    // Obtener asesores del servidor
-    fetch("/obtener_asesores")
-      .then(response => {
-        if (!response.ok) {
-          throw new Error("Error al cargar asesores");
-        }
-        return response.json();
-      })
-      .then(data => {
-        // Limpiar opciones existentes
-        asesorSelector.innerHTML = '<option value="">Seleccione un asesor</option>';
-
-        // Agregar opciones para cada asesor
-        if (data.asesores && data.asesores.length > 0) {
-          data.asesores.forEach((asesor) => {
-            const option = document.createElement("option");
-            option.value = asesor.id_asesor;
-            option.setAttribute("data-name", `${asesor.nombre} ${asesor.apellidos}`);
-            option.setAttribute("data-especialidad", asesor.especialidad);
-            option.textContent = `${asesor.nombre} ${asesor.apellidos} - ${asesor.especialidad}`;
-            asesorSelector.appendChild(option);
-          });
-        }
-
-        // Agregar event listener para el selector de asesor
-        asesorSelector.addEventListener("change", function () {
-          selectedAdvisorId = this.value;
-          selectedAsesorName = this.options[this.selectedIndex].getAttribute("data-name");
-          selectedAsesorEspecialidad = this.options[this.selectedIndex].getAttribute("data-especialidad");
-
-          if (selectedAdvisorId) {
-            // Guardar el asesor seleccionado
-            const selectedAsesorIdInput = document.getElementById("selected_asesor_id");
-            const selectedAsesorNameInput = document.getElementById("selected_asesor_name");
-            const selectedAsesorEspecialidadInput = document.getElementById("selected_asesor_especialidad");
-
-            if (selectedAsesorIdInput) selectedAsesorIdInput.value = selectedAdvisorId;
-            if (selectedAsesorNameInput) selectedAsesorNameInput.value = selectedAsesorName;
-            if (selectedAsesorEspecialidadInput) selectedAsesorEspecialidadInput.value = selectedAsesorEspecialidad;
-
-            // Si ya hay una fecha seleccionada, cargar los horarios disponibles
-            if (selectedDate) {
-              loadAvailableTimeSlots(selectedDate);
-            }
-
-            // Actualizar los detalles de la asesoría
-            updateAppointmentDetails();
-
-            // Habilitar el botón si se ha seleccionado fecha y hora
-            checkFormCompletion();
-          }
-        });
-      })
-      .catch(error => {
-        console.error("Error al cargar asesores:", error);
-        asesorSelector.innerHTML = '<option value="">Error al cargar asesores</option>';
-      });
-  } catch (error) {
-    console.error("Error al cargar asesores:", error);
-    asesorSelector.innerHTML = '<option value="">Error al cargar asesores</option>';
-  }
-}
-
-// Función para actualizar el precio en tiempo real
-function updateAppointmentPrice() {
-  const tipoAsesoriaSelect = document.getElementById('tipo_asesoria');
-  const precioAsesoriaElement = document.getElementById('precio-asesoria');
-  
-  if (tipoAsesoriaSelect && precioAsesoriaElement) {
-    const precioAsesoria = tipoAsesoriaSelect.options[tipoAsesoriaSelect.selectedIndex].getAttribute('data-precio');
-    precioAsesoriaElement.textContent = `$${precioAsesoria} USD`;
-  } else if (tipoAsesoriaSelect) {
-    // Si no existe el elemento de precio pero sí el selector, actualizar los detalles completos
-    updateAppointmentDetails();
-  }
-}
-
-// Inicializar los asesores cuando se carga la página
-document.addEventListener('DOMContentLoaded', function() {
-  loadAsesores();
-  
-  // Añadir event listener para actualizar el precio cuando cambie el tipo de asesoría
-  const tipoAsesoriaSelect = document.getElementById('tipo_asesoria');
-  if (tipoAsesoriaSelect) {
-    tipoAsesoriaSelect.addEventListener('change', updateAppointmentPrice);
-  }
-});
-</script>
 {% endblock %}
 
