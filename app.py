@@ -129,16 +129,14 @@ def utility_processor():
       return datetime.now()
   return dict(now=now)
 
-# Rutas
+# Ruta principal
 @app.route('/')
 def index():
-  if 'user_id' not in session:
-      # Si no hay usuario logueado, mostrar la página de inicio con botones de registro y login
-      return render_template('index.html', logged_in=False)
-  else:
-      # Si hay usuario logueado, mostrar el dashboard
-      return render_template('index.html', logged_in=True)
+    if 'user_id' not in session:
+        return render_template('index.html', logged_in=False)
+    return render_template('index.html', logged_in=True)
 
+# Ruta de login
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -166,8 +164,12 @@ def login():
                 
                 # Verificar si el correo termina con @cva.com
                 if email.endswith('@cva.com'):
+<<<<<<< HEAD
                     # Redirigir a la página de administrador
                     return redirect(url_for('index_asesor'))
+=======
+                    return redirect(url_for('/index_asesor'))
+>>>>>>> 2c54c59 (cambios de vista con errores en los links)
                 else:
                     # Redirigir a la página normal
                     return redirect(url_for('index'))
@@ -177,32 +179,6 @@ def login():
             flash('Error de conexión a la base de datos', 'error')
     
     return render_template('login.html')
-
-# Ruta para la página de administrador
-@app.route('/admin')
-def admin_index():
-    if 'user_id' not in session or not session.get('is_admin', False):
-        return redirect(url_for('index_asesor'))
-    
-    # Depuración: Imprimir información sobre las plantillas
-    import os
-    print(f"Directorio de trabajo actual: {os.getcwd()}")
-    print(f"Carpeta de plantillas: {app.template_folder}")
-    print(f"¿Existe base_asesor.html?: {os.path.exists(os.path.join(app.template_folder, 'base_asesor.html'))}")
-    
-    try:
-        # Renderizar la plantilla de administrador
-        return render_template('index_administrador.html')
-    except Exception as e:
-        # Capturar y mostrar cualquier error
-        print(f"Error al renderizar la plantilla: {str(e)}")
-        # Mostrar el error al usuario
-        return f"Error: {str(e)}", 500
-    
-@app.route('/asesor', methods=['GET'])
-def index_asesor():
-    return render_template('Administrador/index_asesor.html')
-
 
 #generar un texto aleatorio para el captcha
 def generate_captcha_text(length=6):
@@ -1196,17 +1172,16 @@ def crear_payment_intent():
         print(f"Error al crear PaymentIntent: {str(e)}")
         return jsonify({'error': str(e)}), 500
     
-#ruta 
-@app.route('/pagos')
-def pagos():
-    return render_template('pagos.html')
 
+<<<<<<< HEAD
 @app.route('/index_asesor')
 def index_asesor():
     return render_template('index_asesor.html')
 
 
     
+=======
+>>>>>>> 2c54c59 (cambios de vista con errores en los links)
 
 # Añadir ruta para confirmar el pago
 @app.route('/confirmar_pago', methods=['GET'])
@@ -1887,6 +1862,7 @@ def obtener_detalles_asesoria(codigo_asesoria):
 if __name__ == '__main__':
     app.run(debug=True)
 
+<<<<<<< HEAD
 @app.route('/mensajes')
 def mensajes():
     return ""
@@ -1926,3 +1902,139 @@ def mensajes():
 
 
 
+=======
+
+# Ruta para la página de clientes
+
+@app.route('/clientes')
+def clientes():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('login'))
+    
+    connection = create_connection()
+    if connection:
+        with connection.cursor(dictionary=True) as cursor:
+            cursor.execute("""
+                SELECT s.id_solicitante, u.nombres, u.apellidos, u.correo, u.fecha_nacimiento 
+                FROM tbl_solicitante s
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+                ORDER BY s.id_solicitante DESC
+            """)
+            clientes = cursor.fetchall()
+        connection.close()
+        return render_template('Administrador/clientes.html', clientes=clientes)
+    
+    flash('Error de conexión a la base de datos', 'error')
+    return redirect(url_for('index_asesor'))
+
+# Ruta para la página de asesorías
+@app.route('/asesorias_admin')
+def asesorias_admin():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('login'))
+    
+    connection = create_connection()
+    if connection:
+        with connection.cursor(dictionary=True) as cursor:
+            cursor.execute("""
+                SELECT a.codigo_asesoria, a.fecha_asesoria, a.tipo_asesoria,
+                       CONCAT(u.nombres, ' ', u.apellidos) AS solicitante,
+                       a.estado, a.descripcion
+                FROM tbl_asesoria a
+                JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+                ORDER BY a.fecha_asesoria DESC
+            """)
+            asesorias = cursor.fetchall()
+        connection.close()
+        return render_template('Administrador/asesorias_admin.html', asesorias=asesorias)
+    
+    flash('Error de conexión a la base de datos', 'error')
+    return redirect(url_for('index_asesor'))
+
+# Ruta para la página de documentos
+@app.route('/documentos_asesor')
+def documentos():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    return render_template('Administrador/documentos_asesor.html')
+
+# Ruta para la página de pagos
+@app.route('/pagos_admin')
+def pagos_admin():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('login'))
+    
+    connection = create_connection()
+    if connection:
+        with connection.cursor(dictionary=True) as cursor:
+            cursor.execute("""
+                SELECT p.num_factura, CONCAT(u.nombres, ' ', u.apellidos) AS solicitante,
+                       p.metodo_pago, p.total_pago
+                FROM tbl_pago p
+                JOIN tbl_solicitante s ON p.id_solicitante = s.id_solicitante
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+                ORDER BY p.num_factura DESC
+            """)
+            pagos = cursor.fetchall()
+        connection.close()
+        return render_template('Administrador/pagos_admin.html', pagos=pagos)
+    
+    flash('Error de conexión a la base de datos', 'error')
+    return redirect(url_for('index_asesor'))
+
+# Añadir esta nueva ruta a tu app.py
+@app.route('/index_asesor')
+def index_asesor():
+    try:
+        if 'user_id' not in session or not session.get('is_admin', False):
+            return redirect('/')
+        return render_template('Administrador/index_asesor.html')
+    except Exception as e:
+        # Registrar el error para depuración
+        print(f"Error en index_asesor: {str(e)}")
+        # Redirigir a una página segura
+        return redirect('/asesorias_admin')
+
+# Ruta para la página de solicitudes
+@app.route('/solicitudes')
+def solicitudes():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('login'))
+    
+    connection = create_connection()
+    if connection:
+        with connection.cursor(dictionary=True) as cursor:
+            cursor.execute("""
+                SELECT s.id_solicitud, s.fecha_solicitud, s.estado,
+                       CONCAT(u.nombres, ' ', u.apellidos) AS solicitante,
+                       s.tipo_solicitud, s.descripcion
+                FROM tbl_solicitud s
+                JOIN tbl_solicitante sol ON s.id_solicitante = sol.id_solicitante
+                JOIN tbl_usuario u ON sol.id_usuario = u.id_usuario
+                ORDER BY s.fecha_solicitud DESC
+            """)
+            solicitudes = cursor.fetchall()
+        connection.close()
+        return render_template('Administrador/solicitudes.html', solicitudes=solicitudes)
+    
+    flash('Error de conexión a la base de datos', 'error')
+    return redirect(url_for('index_asesor'))
+
+@app.route('/reportes')
+def reportes():
+    return render_template('reportes.html')
+
+# Añadir esta nueva ruta a tu app.py
+@app.route('/dashboard_asesor')
+def dashboard_asesor():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect('/login')
+    try:
+        return render_template('Administrador/index_asesor.html')  # Ruta correcta
+    except Exception as e:
+        print(f"Error al renderizar la plantilla: {str(e)}")
+        # Redirigir a una página segura si hay un error
+        return redirect('/asesorias_admin')
+>>>>>>> 2c54c59 (cambios de vista con errores en los links)
