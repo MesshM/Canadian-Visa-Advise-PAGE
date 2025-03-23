@@ -129,14 +129,16 @@ def utility_processor():
       return datetime.now()
   return dict(now=now)
 
-# Ruta principal
+# Rutas
 @app.route('/')
 def index():
-    if 'user_id' not in session:
-        return render_template('index.html', logged_in=False)
-    return render_template('index.html', logged_in=True)
+  if 'user_id' not in session:
+      # Si no hay usuario logueado, mostrar la página de inicio con botones de registro y login
+      return render_template('index.html', logged_in=False)
+  else:
+      # Si hay usuario logueado, mostrar el dashboard
+      return render_template('index.html', logged_in=True)
 
-# Ruta de login
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -155,23 +157,24 @@ def login():
             if user and check_password_hash(user['contrasena'], password):
                 session['user_id'] = user['id_usuario']
                 session['user_name'] = f"{user['nombres']} {user['apellidos']}"
-                session['is_admin'] = email.endswith('@cva.com')
+                
+                # Verificar el rol del usuario
+                if email.endswith('@cva.com'):
+                    session['user_role'] = 'Asesor'
+                    session['is_admin'] = True
+                else:
+                    session['user_role'] = 'Usuario'
+                    session['is_admin'] = False
                 
                 if remember_me:
                     session.permanent = True
                 else:
                     session.permanent = False
                 
-                # Verificar si el correo termina con @cva.com
+                # Redirigir según el rol
                 if email.endswith('@cva.com'):
-<<<<<<< HEAD
-                    # Redirigir a la página de administrador
                     return redirect(url_for('index_asesor'))
-=======
-                    return redirect(url_for('/index_asesor'))
->>>>>>> 2c54c59 (cambios de vista con errores en los links)
                 else:
-                    # Redirigir a la página normal
                     return redirect(url_for('index'))
             else:
                 flash('Correo o contraseña incorrectos', 'error')
@@ -179,6 +182,32 @@ def login():
             flash('Error de conexión a la base de datos', 'error')
     
     return render_template('login.html')
+
+# Ruta para la página de administrador
+@app.route('/admin')
+def admin_index():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('index_asesor'))
+    
+    # Depuración: Imprimir información sobre las plantillas
+    import os
+    print(f"Directorio de trabajo actual: {os.getcwd()}")
+    print(f"Carpeta de plantillas: {app.template_folder}")
+    print(f"¿Existe base_asesor.html?: {os.path.exists(os.path.join(app.template_folder, 'base_asesor.html'))}")
+    
+    try:
+        # Renderizar la plantilla de administrador
+        return render_template('index_administrador.html')
+    except Exception as e:
+        # Capturar y mostrar cualquier error
+        print(f"Error al renderizar la plantilla: {str(e)}")
+        # Mostrar el error al usuario
+        return f"Error: {str(e)}", 500
+    
+@app.route('/asesor', methods=['GET'])
+def index_asesor():
+    return render_template('Administrador/index_asesor.html')
+
 
 #generar un texto aleatorio para el captcha
 def generate_captcha_text(length=6):
@@ -307,9 +336,9 @@ def reset_password(token):
 
 @app.route('/logout')
 def logout():
-  session.pop('user_id', None)
-  session.pop('user_name', None)
-  return redirect(url_for('login'))
+    # Limpiar toda la sesión en lugar de solo user_id y user_name
+    session.clear()
+    return redirect(url_for('login'))
 
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
@@ -495,8 +524,6 @@ def formularios():
 def asesorias():
   if 'user_id' not in session:
       return redirect(url_for('login'))
-  
-  
   
   connection = create_connection()
   if connection:
@@ -1172,16 +1199,15 @@ def crear_payment_intent():
         print(f"Error al crear PaymentIntent: {str(e)}")
         return jsonify({'error': str(e)}), 500
     
+#ruta 
+@app.route('/pagos')
+def pagos():
+    return render_template('pagos.html')
 
-<<<<<<< HEAD
-@app.route('/index_asesor')
-def index_asesor():
-    return render_template('index_asesor.html')
+
 
 
     
-=======
->>>>>>> 2c54c59 (cambios de vista con errores en los links)
 
 # Añadir ruta para confirmar el pago
 @app.route('/confirmar_pago', methods=['GET'])
@@ -1429,7 +1455,9 @@ def perfil():
                 """, (user['id_solicitante'],))
                 asesorias = cursor.fetchall()
             
-            return render_template('perfil.html', user=user, asesorias=asesorias)
+            # Incluir CSS adicional para correcciones
+            return render_template('perfil.html', user=user, asesorias=asesorias, 
+                                  additional_css='/static/css/perfil-fixes.css')
         except Exception as e:
             flash(f'Error al cargar el perfil: {str(e)}', 'error')
         finally:
@@ -1861,49 +1889,6 @@ def obtener_detalles_asesoria(codigo_asesoria):
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-<<<<<<< HEAD
-@app.route('/mensajes')
-def mensajes():
-    return ""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-=======
-
 # Ruta para la página de clientes
 
 @app.route('/clientes')
@@ -2037,4 +2022,3 @@ def dashboard_asesor():
         print(f"Error al renderizar la plantilla: {str(e)}")
         # Redirigir a una página segura si hay un error
         return redirect('/asesorias_admin')
->>>>>>> 2c54c59 (cambios de vista con errores en los links)
