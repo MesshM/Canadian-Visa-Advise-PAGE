@@ -519,6 +519,59 @@ def formularios():
       flash('Error de conexión a la base de datos', 'error')
       return redirect(url_for('index'))
 
+# Añade esta ruta a tu archivo app.py para obtener el ID del solicitante del usuario actual
+
+@app.route('/obtener_id_solicitante', methods=['GET'])
+def obtener_id_solicitante():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Obtener el id_solicitante del usuario actual
+            cursor.execute("""
+                SELECT id_solicitante FROM tbl_solicitante WHERE id_usuario = %s
+            """, (session['user_id'],))
+            
+            result = cursor.fetchone()
+            cursor.close()
+            connection.close()
+            
+            if result:
+                return jsonify({'id_solicitante': result['id_solicitante']})
+            else:
+                # Si el usuario no tiene un registro en tbl_solicitante, crearlo
+                connection = create_connection()
+                if connection:
+                    cursor = connection.cursor()
+                    try:
+                        cursor.execute("""
+                            INSERT INTO tbl_solicitante (id_usuario) VALUES (%s)
+                        """, (session['user_id'],))
+                        
+                        id_solicitante = cursor.lastrowid
+                        connection.commit()
+                        cursor.close()
+                        connection.close()
+                        
+                        return jsonify({'id_solicitante': id_solicitante})
+                    except Exception as e:
+                        connection.rollback()
+                        cursor.close()
+                        connection.close()
+                        return jsonify({'error': f'Error al crear solicitante: {str(e)}'}), 500
+                else:
+                    return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+
 # Modificación de la función asesorias para mostrar solo las asesorías del usuario logueado
 @app.route('/asesorias')
 def asesorias():
