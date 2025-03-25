@@ -1947,24 +1947,89 @@ def documentos():
 
 # Ruta para la página de pagos
 @app.route('/pagos_admin')
-def pagos_admin():
+def pagos():
     if 'user_id' not in session or not session.get('is_admin', False):
         return redirect(url_for('login'))
     
     connection = create_connection()
     if connection:
         with connection.cursor(dictionary=True) as cursor:
+            # Get payment statistics
             cursor.execute("""
-                SELECT p.num_factura, CONCAT(u.nombres, ' ', u.apellidos) AS solicitante,
-                       p.metodo_pago, p.total_pago
-                FROM tbl_pago p
-                JOIN tbl_solicitante s ON p.id_solicitante = s.id_solicitante
+                SELECT 
+                    COALESCE(SUM(pa.monto), 0) as total_recibido,
+                    COUNT(CASE WHEN pa.estado_pago = 'Completado' THEN 1 END) as pagos_completados,
+                    COUNT(CASE WHEN pa.estado_pago = 'Pendiente' THEN 1 END) as pagos_pendientes,
+                    COUNT(CASE WHEN pa.estado_pago = 'Rechazado' THEN 1 END) as pagos_rechazados
+                FROM tbl_pago_asesoria pa
+            """)
+            stats = cursor.fetchone()
+            
+            # Get all payments with client information
+            cursor.execute("""
+                SELECT pa.id_pago, pa.codigo_asesoria, pa.monto, pa.metodo_pago, pa.estado_pago, 
+                       pa.fecha_pago, a.tipo_asesoria,
+                       CONCAT(u.nombres, ' ', u.apellidos) as cliente_nombre,
+                       u.correo as cliente_email
+                FROM tbl_pago_asesoria pa
+                JOIN tbl_asesoria a ON pa.codigo_asesoria = a.codigo_asesoria
+                JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
                 JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-                ORDER BY p.num_factura DESC
+                ORDER BY pa.fecha_pago DESC
             """)
             pagos = cursor.fetchall()
+            
+            # Process payments for display
+            for pago in pagos:
+                # Generate initials for avatar
+                nombres = pago['cliente_nombre'].split()
+                initials = ''.join([n[0] for n in nombres if n])[:2].upper()
+                pago['initials'] = initials
+                
+                # Format date
+                if pago['fecha_pago']:
+                    fecha = pago['fecha_pago']
+                    pago['fecha_formateada'] = fecha.strftime("%d %b, %Y")
+                else:
+                    pago['fecha_formateada'] = "N/A"
+                
+                # Format payment ID
+                pago['id_formateado'] = f"PAG-{pago['id_pago']:04d}"
+                
+                # Assign avatar background color based on initial
+                colors = {
+                    'A': 'bg-red-100 text-red-600',
+                    'B': 'bg-blue-100 text-blue-600',
+                    'C': 'bg-green-100 text-green-600',
+                    'D': 'bg-yellow-100 text-yellow-600',
+                    'E': 'bg-purple-100 text-purple-600',
+                    'F': 'bg-pink-100 text-pink-600',
+                    'G': 'bg-indigo-100 text-indigo-600',
+                    'H': 'bg-gray-100 text-gray-600',
+                    'I': 'bg-red-100 text-red-600',
+                    'J': 'bg-blue-100 text-blue-600',
+                    'K': 'bg-green-100 text-green-600',
+                    'L': 'bg-yellow-100 text-yellow-600',
+                    'M': 'bg-purple-100 text-purple-600',
+                    'N': 'bg-pink-100 text-pink-600',
+                    'O': 'bg-indigo-100 text-indigo-600',
+                    'P': 'bg-gray-100 text-gray-600',
+                    'Q': 'bg-red-100 text-red-600',
+                    'R': 'bg-blue-100 text-blue-600',
+                    'S': 'bg-green-100 text-green-600',
+                    'T': 'bg-yellow-100 text-yellow-600',
+                    'U': 'bg-purple-100 text-purple-600',
+                    'V': 'bg-pink-100 text-pink-600',
+                    'W': 'bg-indigo-100 text-indigo-600',
+                    'X': 'bg-gray-100 text-gray-600',
+                    'Y': 'bg-red-100 text-red-600',
+                    'Z': 'bg-blue-100 text-blue-600',
+                }
+                first_letter = initials[0] if initials else 'A'
+                pago['avatar_class'] = colors.get(first_letter, 'bg-gray-100 text-gray-600')
+        
         connection.close()
-        return render_template('Administrador/pagos_admin.html', pagos=pagos)
+        return render_template('pagos.html', pagos=pagos, stats=stats)
     
     flash('Error de conexión a la base de datos', 'error')
     return redirect(url_for('index_asesor'))
@@ -1983,29 +2048,453 @@ def index_asesor():
         return redirect('/asesorias_admin')
 
 # Ruta para la página de solicitudes
-@app.route('/solicitudes')
-def solicitudes():
+@app.route('/documentos/<int:id_solicitante>')
+def documentos(id_solicitante):
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('login'))
+
+    connection = create_connection()
+    if connection:
+        with connection.cursor(dictionary=True) as cursor:
+            # Get client information
+            cursor.execute("""
+                SELECT 
+                    s.id_solicitante, 
+                    s.codigo_expediente,
+                    s.estado, 
+                    s.pais,
+                    s.tipo_visa,
+                    CONCAT(u.nombres, ' ', u.apellidos) as nombre_completo,
+                    u.correo
+                FROM tbl_solicitante s
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+                WHERE s.id_solicitante = %s
+            """, (id_solicitante,))
+            cliente = cursor.fetchone()
+            
+            if not cliente:
+                flash('Cliente no encontrado', 'error')
+                return redirect(url_for('clientes'))
+            
+            # Get documents for this client
+            cursor.execute("""
+                SELECT 
+                    d.id_documento,
+                    d.nombre_documento,
+                    d.nombre_archivo,
+                    d.tipo_archivo,
+                    d.fecha_carga,
+                    d.estado_documento,
+                    d.observaciones,
+                    d.ruta_archivo
+                FROM tbl_documento d
+                WHERE d.id_solicitante = %s
+                ORDER BY d.fecha_carga DESC
+            """, (id_solicitante,))
+            documentos = cursor.fetchall()
+            
+            # Process documents for display
+            for doc in documentos:
+                # Format date
+                if doc['fecha_carga']:
+                    doc['fecha_formateada'] = doc['fecha_carga'].strftime("%d/%m/%Y")
+                else:
+                    doc['fecha_formateada'] = "N/A"
+                
+                # Determine document icon based on file type
+                if doc['tipo_archivo'] in ['jpg', 'jpeg', 'png', 'gif']:
+                    doc['icon_type'] = 'image'
+                elif doc['tipo_archivo'] in ['pdf']:
+                    doc['icon_type'] = 'pdf'
+                else:
+                    doc['icon_type'] = 'document'
+            
+            # Calculate document statistics
+            total_docs = len(documentos)
+            aprobados = sum(1 for doc in documentos if doc['estado_documento'] == 'Aprobado')
+            pendientes = sum(1 for doc in documentos if doc['estado_documento'] == 'Pendiente')
+            rechazados = sum(1 for doc in documentos if doc['estado_documento'] == 'Requiere corrección')
+            
+            # Determine overall status
+            if total_docs == 0:
+                estado_documentacion = "Sin documentos"
+                estado_class = "bg-gray-100 text-gray-800"
+            elif aprobados == total_docs:
+                estado_documentacion = "Documentación completa"
+                estado_class = "bg-green-100 text-green-800"
+            elif rechazados > 0:
+                estado_documentacion = "Requiere correcciones"
+                estado_class = "bg-red-100 text-red-800"
+            else:
+                estado_documentacion = "Documentación incompleta"
+                estado_class = "bg-yellow-100 text-yellow-800"
+            
+        connection.close()
+        return render_template('documentos_asesor.html', 
+                              cliente=cliente, 
+                              documentos=documentos, 
+                              total_docs=total_docs,
+                              aprobados=aprobados,
+                              pendientes=pendientes,
+                              rechazados=rechazados,
+                              estado_documentacion=estado_documentacion,
+                              estado_class=estado_class)
+
+    flash('Error de conexión a la base de datos', 'error')
+    return redirect(url_for('clientes'))
+
+
+@app.route('/actualizar_estado_documento', methods=['POST'])
+def actualizar_estado_documento():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return jsonify({'error': 'No autorizado'}), 403
+
+    # Get form data
+    id_documento = request.form.get('id_documento')
+    nuevo_estado = request.form.get('estado')
+    observaciones = request.form.get('observaciones')
+    id_solicitante = request.form.get('id_solicitante')
+    
+    # Validate required fields
+    if not all([id_documento, nuevo_estado, id_solicitante]):
+        flash('Todos los campos son obligatorios', 'error')
+        return redirect(url_for('documentos', id_solicitante=id_solicitante))
+    
+    connection = create_connection()
+    if connection:
+        try:
+            with connection.cursor() as cursor:
+                # Update document status
+                cursor.execute("""
+                    UPDATE tbl_documento 
+                    SET estado_documento = %s, observaciones = %s
+                    WHERE id_documento = %s
+                """, (nuevo_estado, observaciones, id_documento))
+                
+                connection.commit()
+                flash('Estado del documento actualizado correctamente', 'success')
+        except Exception as e:
+            connection.rollback()
+            flash(f'Error al actualizar el estado del documento: {str(e)}', 'error')
+        finally:
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos', 'error')
+    
+    return redirect(url_for('documentos', id_solicitante=id_solicitante))
+
+
+@app.route('/descargar_documento/<int:id_documento>')
+def descargar_documento(id_documento):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    connection = create_connection()
+    if connection:
+        with connection.cursor(dictionary=True) as cursor:
+            # Get document information
+            cursor.execute("""
+                SELECT nombre_archivo, ruta_archivo, tipo_archivo
+                FROM tbl_documento
+                WHERE id_documento = %s
+            """, (id_documento,))
+            documento = cursor.fetchone()
+            
+            if documento:
+                # Construct file path
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], documento['ruta_archivo'])
+                
+                # Check if file exists
+                if os.path.exists(file_path):
+                    return send_file(file_path, 
+                                    as_attachment=True, 
+                                    download_name=documento['nombre_archivo'],
+                                    mimetype=f'application/{documento["tipo_archivo"]}')
+                else:
+                    flash('El archivo no existe en el servidor', 'error')
+            else:
+                flash('Documento no encontrado', 'error')
+        
+        connection.close()
+    
+    # If we get here, something went wrong
+    return redirect(url_for('clientes'))
+
+
+@app.route('/generar_reporte/<int:id_solicitante>')
+def generar_reporte(id_solicitante):
     if 'user_id' not in session or not session.get('is_admin', False):
         return redirect(url_for('login'))
     
     connection = create_connection()
     if connection:
         with connection.cursor(dictionary=True) as cursor:
+            # Get client information
             cursor.execute("""
-                SELECT s.id_solicitud, s.fecha_solicitud, s.estado,
-                       CONCAT(u.nombres, ' ', u.apellidos) AS solicitante,
-                       s.tipo_solicitud, s.descripcion
-                FROM tbl_solicitud s
-                JOIN tbl_solicitante sol ON s.id_solicitante = sol.id_solicitante
-                JOIN tbl_usuario u ON sol.id_usuario = u.id_usuario
-                ORDER BY s.fecha_solicitud DESC
-            """)
-            solicitudes = cursor.fetchall()
+                SELECT 
+                    s.id_solicitante, 
+                    s.codigo_expediente,
+                    s.estado, 
+                    s.pais,
+                    s.tipo_visa,
+                    CONCAT(u.nombres, ' ', u.apellidos) as nombre_completo,
+                    u.correo
+                FROM tbl_solicitante s
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+                WHERE s.id_solicitante = %s
+            """, (id_solicitante,))
+            cliente = cursor.fetchone()
+            
+            # Get documents for this client
+            cursor.execute("""
+                SELECT 
+                    d.id_documento,
+                    d.nombre_documento,
+                    d.nombre_archivo,
+                    d.fecha_carga,
+                    d.estado_documento,
+                    d.observaciones
+                FROM tbl_documento d
+                WHERE d.id_solicitante = %s
+                ORDER BY d.fecha_carga DESC
+            """, (id_solicitante,))
+            documentos = cursor.fetchall()
+            
+            # Process documents for the report
+            for doc in documentos:
+                if doc['fecha_carga']:
+                    doc['fecha_formateada'] = doc['fecha_carga'].strftime("%d/%m/%Y")
+                else:
+                    doc['fecha_formateada'] = "N/A"
+        
         connection.close()
-        return render_template('Administrador/solicitudes.html', solicitudes=solicitudes)
+        
+        # Generate PDF report (this would require a PDF library like ReportLab or WeasyPrint)
+        # For now, we'll just return a simple HTML report
+        return render_template('reporte_documentos.html', cliente=cliente, documentos=documentos)
     
     flash('Error de conexión a la base de datos', 'error')
+    return redirect(url_for('clientes'))
+
+    connection = create_connection()
+    if connection:
+        with connection.cursor(dictionary=True) as cursor:
+            # Get all clients with their information
+            cursor.execute("""
+                SELECT 
+                    s.id_solicitante, 
+                    s.fecha_registro, 
+                    s.estado, 
+                    s.pais,
+                    s.tipo_visa,
+                    s.telefono,
+                    u.id_usuario,
+                    u.nombres,
+                    u.apellidos,
+                    u.correo
+                FROM tbl_solicitante s
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+                ORDER BY u.nombres, u.apellidos
+            """)
+            clientes_data = cursor.fetchall()
+            
+            # Process clients for display
+            clientes = []
+            for cliente in clientes_data:
+                # Format client ID
+                cliente_id = f"CL-{datetime.now().year}-{cliente['id_solicitante']:03d}"
+                
+                # Generate initials for avatar
+                nombres = f"{cliente['nombres']} {cliente['apellidos']}".split()
+                initials = ''.join([n[0] for n in nombres if n])[:2].upper()
+                
+                # Format registration date
+                if cliente['fecha_registro']:
+                    fecha = cliente['fecha_registro']
+                    fecha_formateada = fecha.strftime("%b %Y")
+                else:
+                    fecha_formateada = "N/A"
+                
+                # Assign avatar background color based on initial
+                colors = {
+                    'A': 'bg-red-100 text-red-600',
+                    'B': 'bg-blue-100 text-blue-600',
+                    'C': 'bg-green-100 text-green-600',
+                    'D': 'bg-yellow-100 text-yellow-600',
+                    'E': 'bg-purple-100 text-purple-600',
+                    'F': 'bg-pink-100 text-pink-600',
+                    'G': 'bg-indigo-100 text-indigo-600',
+                    'H': 'bg-gray-100 text-gray-600',
+                    'I': 'bg-red-100 text-red-600',
+                    'J': 'bg-blue-100 text-blue-600',
+                    'K': 'bg-green-100 text-green-600',
+                    'L': 'bg-yellow-100 text-yellow-600',
+                    'M': 'bg-purple-100 text-purple-600',
+                    'N': 'bg-pink-100 text-pink-600',
+                    'O': 'bg-indigo-100 text-indigo-600',
+                    'P': 'bg-gray-100 text-gray-600',
+                    'Q': 'bg-red-100 text-red-600',
+                    'R': 'bg-blue-100 text-blue-600',
+                    'S': 'bg-green-100 text-green-600',
+                    'T': 'bg-yellow-100 text-yellow-600',
+                    'U': 'bg-purple-100 text-purple-600',
+                    'V': 'bg-pink-100 text-pink-600',
+                    'W': 'bg-indigo-100 text-indigo-600',
+                    'X': 'bg-gray-100 text-gray-600',
+                    'Y': 'bg-red-100 text-red-600',
+                    'Z': 'bg-blue-100 text-blue-600',
+                }
+                first_letter = initials[0] if initials else 'A'
+                avatar_class = colors.get(first_letter, 'bg-gray-100 text-gray-600')
+                
+                # Determine visa type class
+                visa_classes = {
+                    'Visa de Trabajo': 'bg-blue-50 text-blue-700',
+                    'Visa de Estudiante': 'bg-purple-50 text-purple-700',
+                    'Express Entry': 'bg-indigo-50 text-indigo-700',
+                    'Residencia Permanente': 'bg-green-50 text-green-700',
+                    'Visa de Turismo': 'bg-yellow-50 text-yellow-700',
+                }
+                visa_class = visa_classes.get(cliente['tipo_visa'], 'bg-gray-50 text-gray-700')
+                
+                # Prepare client object
+                cliente_obj = {
+                    'id': cliente_id,
+                    'id_solicitante': cliente['id_solicitante'],
+                    'nombre': f"{cliente['nombres']} {cliente['apellidos']}",
+                    'correo': cliente['correo'],
+                    'telefono': cliente['telefono'],
+                    'pais': cliente['pais'],
+                    'tipo_visa': cliente['tipo_visa'],
+                    'estado': cliente['estado'],
+                    'fecha_registro': fecha_formateada,
+                    'initials': initials,
+                    'avatar_class': avatar_class,
+                    'visa_class': visa_class
+                }
+                
+                clientes.append(cliente_obj)
+        
+        connection.close()
+        return render_template('clientes.html', clientes=clientes)
+
+    flash('Error de conexión a la base de datos', 'error')
     return redirect(url_for('index_asesor'))
+
+
+@app.route('/obtener_cliente/<int:id_solicitante>')
+def obtener_cliente(id_solicitante):
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return jsonify({'error': 'No autorizado'}), 403
+
+    connection = create_connection()
+    if connection:
+        with connection.cursor(dictionary=True) as cursor:
+            # Get client details
+            cursor.execute("""
+                SELECT 
+                    s.id_solicitante, 
+                    s.fecha_registro, 
+                    s.estado, 
+                    s.pais,
+                    s.tipo_visa,
+                    s.telefono,
+                    s.direccion,
+                    s.fecha_nacimiento,
+                    s.datos_adicionales,
+                    u.id_usuario,
+                    u.nombres,
+                    u.apellidos,
+                    u.correo
+                FROM tbl_solicitante s
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+                WHERE s.id_solicitante = %s
+            """, (id_solicitante,))
+            cliente = cursor.fetchone()
+            
+            if cliente:
+                # Format client ID
+                cliente['id_formateado'] = f"CL-{datetime.now().year}-{cliente['id_solicitante']:03d}"
+                
+                # Format dates
+                if cliente['fecha_registro']:
+                    cliente['fecha_registro_formateada'] = cliente['fecha_registro'].strftime("%d/%m/%Y")
+                else:
+                    cliente['fecha_registro_formateada'] = "N/A"
+                    
+                if cliente['fecha_nacimiento']:
+                    cliente['fecha_nacimiento_formateada'] = cliente['fecha_nacimiento'].strftime("%d/%m/%Y")
+                else:
+                    cliente['fecha_nacimiento_formateada'] = "N/A"
+                
+                # Get client's asesorias
+                cursor.execute("""
+                    SELECT 
+                        codigo_asesoria,
+                        tipo_asesoria,
+                        fecha_inicio,
+                        estado
+                    FROM tbl_asesoria
+                    WHERE id_solicitante = %s
+                    ORDER BY fecha_inicio DESC
+                """, (id_solicitante,))
+                asesorias = cursor.fetchall()
+                
+                # Format asesorias dates
+                for asesoria in asesorias:
+                    if asesoria['fecha_inicio']:
+                        asesoria['fecha_inicio_formateada'] = asesoria['fecha_inicio'].strftime("%d/%m/%Y")
+                    else:
+                        asesoria['fecha_inicio_formateada'] = "N/A"
+                
+                cliente['asesorias'] = asesorias
+            
+        connection.close()
+        
+        if cliente:
+            return jsonify(cliente)
+        else:
+            return jsonify({'error': 'Cliente no encontrado'}), 404
+
+    return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+
+
+@app.route('/cambiar_estado_cliente', methods=['POST'])
+def cambiar_estado_cliente():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return jsonify({'error': 'No autorizado'}), 403
+
+    # Get form data
+    id_solicitante = request.form.get('id_solicitante')
+    nuevo_estado = request.form.get('estado')
+    
+    # Validate required fields
+    if not all([id_solicitante, nuevo_estado]):
+        flash('El ID del cliente y el estado son obligatorios', 'error')
+        return redirect(url_for('clientes'))
+    
+    connection = create_connection()
+    if connection:
+        try:
+            with connection.cursor() as cursor:
+                # Update client status
+                cursor.execute("""
+                    UPDATE tbl_solicitante 
+                    SET estado = %s
+                    WHERE id_solicitante = %s
+                """, (nuevo_estado, id_solicitante))
+                
+                connection.commit()
+                flash('Estado del cliente actualizado correctamente', 'success')
+        except Exception as e:
+            connection.rollback()
+            flash(f'Error al actualizar el estado del cliente: {str(e)}', 'error')
+        finally:
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos', 'error')
+    
+    return redirect(url_for('clientes'))
 
 @app.route('/reportes')
 def reportes():
