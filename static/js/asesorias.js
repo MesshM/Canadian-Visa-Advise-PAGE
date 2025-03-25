@@ -162,7 +162,93 @@ function showNotification(message, type = "success") {
   })
 }
 
-// Inicializar el sistema de pasos cuando se carga la página
+// Implementación del tooltip flotante para consejos útiles
+
+// Función para mostrar el tooltip con consejos útiles
+function showTipsTooltip(event) {
+  // Eliminar cualquier tooltip existente
+  const existingTooltip = document.getElementById("tips-tooltip")
+  if (existingTooltip) {
+    existingTooltip.remove()
+  }
+
+  // Crear el tooltip
+  const tooltip = document.createElement("div")
+  tooltip.id = "tips-tooltip"
+  tooltip.className = "fixed z-50 bg-white rounded-xl shadow-2xl p-4 max-w-md border border-gray-200 animate-fade-in"
+  tooltip.style.width = "320px"
+
+  // Contenido del tooltip
+  tooltip.innerHTML = `
+    <div class="flex justify-between items-start mb-3">
+      <h4 class="text-sm font-medium text-gray-900">Consejos útiles</h4>
+      <button id="close-tooltip" class="text-gray-400 hover:text-gray-600">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+    <p class="text-sm text-blue-700 mb-3">Seleccione una fecha y hora para su asesoría. Las citas están disponibles de lunes a viernes en horario laboral. Recuerde que debe completar el proceso de pago dentro de los 5 minutos siguientes a la reserva.</p>
+    <div class="grid grid-cols-1 gap-2">
+      <div class="bg-green-50 p-2 rounded-lg border border-green-200 flex items-center">
+        <svg class="w-4 h-4 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <p class="text-xs text-green-700">Los horarios se muestran en su zona horaria local.</p>
+      </div>
+      <div class="bg-purple-50 p-2 rounded-lg border border-purple-200 flex items-center">
+        <svg class="w-4 h-4 text-purple-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <p class="text-xs text-purple-700">Puede reprogramar su cita hasta 24 horas antes.</p>
+      </div>
+      <div class="bg-amber-50 p-2 rounded-lg border border-amber-200 flex items-center">
+        <svg class="w-4 h-4 text-amber-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <p class="text-xs text-amber-700">Las asesorías tienen una duración de 60 minutos.</p>
+      </div>
+      <div class="bg-sky-50 p-2 rounded-lg border border-sky-200 flex items-center">
+        <svg class="w-4 h-4 text-sky-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+        </svg>
+        <p class="text-xs text-sky-700">Las asesorías virtuales se realizan por Zoom o Teams.</p>
+      </div>
+    </div>
+  `
+
+  // Posicionar el tooltip cerca del botón que lo activó
+  const buttonRect = event.target.closest("button").getBoundingClientRect()
+  tooltip.style.top = `${buttonRect.bottom + 10}px`
+  tooltip.style.left = `${buttonRect.left - 150}px` // Centrar aproximadamente
+
+  // Asegurarse de que el tooltip no se salga de la pantalla
+  document.body.appendChild(tooltip)
+  const tooltipRect = tooltip.getBoundingClientRect()
+
+  if (tooltipRect.right > window.innerWidth) {
+    tooltip.style.left = `${window.innerWidth - tooltipRect.width - 10}px`
+  }
+
+  if (tooltipRect.bottom > window.innerHeight) {
+    tooltip.style.top = `${buttonRect.top - tooltipRect.height - 10}px`
+  }
+
+  // Agregar evento para cerrar el tooltip
+  document.getElementById("close-tooltip").addEventListener("click", () => {
+    tooltip.remove()
+  })
+
+  // Cerrar el tooltip al hacer clic fuera de él
+  document.addEventListener("click", function closeTooltip(e) {
+    if (!tooltip.contains(e.target) && e.target !== event.target && !event.target.contains(e.target)) {
+      tooltip.remove()
+      document.removeEventListener("click", closeTooltip)
+    }
+  })
+}
+
+// Inicializar los botones de consejos útiles cuando se carga la página
 document.addEventListener("DOMContentLoaded", () => {
   // Inicializar el resto de funcionalidades
   ordenarYNumerarAsesorias()
@@ -208,6 +294,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Validar campos al cargar la página
   validateRequiredFields()
+
+  // Inicializar el botón principal de consejos útiles
+  const mainTipsBtn = document.getElementById("show-tips-btn-main")
+  if (mainTipsBtn) {
+    mainTipsBtn.addEventListener("click", showTipsTooltip)
+  }
 })
 
 // Función para filtrar asesorías
@@ -1300,99 +1392,117 @@ function loadCalendar() {
 
     // Obtener el primer día del mes
     const firstDayOfMonth = new Date(displayYear, displayMonth, 1)
-    
+
     // Ajustar para que la semana comience en lunes (0 = lunes, 6 = domingo)
     // getDay() devuelve 0 para domingo, 1 para lunes, etc.
     let firstDayIndex = firstDayOfMonth.getDay() - 1
     if (firstDayIndex < 0) firstDayIndex = 6 // Si es domingo (0-1=-1), ajustar a 6
-    
+
     // Número de días en el mes actual
     const daysInMonth = new Date(displayYear, displayMonth + 1, 0).getDate()
-    
+
     // Obtener todos los elementos de día
     const dayElements = document.querySelectorAll(".calendar-day")
-    
+
     // Limpiar todos los días
-    dayElements.forEach(day => {
+    dayElements.forEach((day) => {
       day.textContent = ""
       day.className = "calendar-day text-center py-2 rounded-md"
       day.removeAttribute("data-date")
       day.onclick = null // Eliminar eventos de clic anteriores
     })
-    
+
     // Llenar los días del mes actual
     for (let i = 1; i <= daysInMonth; i++) {
       const dayIndex = firstDayIndex + i - 1
       if (dayIndex >= dayElements.length) break // Protección contra errores
-      
+
       const dayElement = dayElements[dayIndex]
       const date = new Date(displayYear, displayMonth, i)
       const dateStr = `${displayYear}-${String(displayMonth + 1).padStart(2, "0")}-${String(i).padStart(2, "0")}`
-      
+
       // Establecer el texto y atributo de fecha
       dayElement.textContent = i
       dayElement.setAttribute("data-date", dateStr)
-      
+
       // Verificar si es el día actual
       const isToday = displayYear === currentYear && displayMonth === currentMonth && i === currentDay
-      
+
       // Verificar si es un día pasado
       const isPastDay = date < new Date().setHours(0, 0, 0, 0)
-      
+
       // Verificar si es fin de semana (0 = domingo, 6 = sábado)
       const dayOfWeek = date.getDay()
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
-      
+
       // Aplicar estilos según el tipo de día
       if (isToday) {
         // Destacar el día actual con un estilo distintivo
-        dayElement.className = "calendar-day text-center py-2 rounded-md bg-primary-600 text-white font-bold transform scale-105 shadow-md text-base relative z-10"
-        
+        dayElement.className =
+          "calendar-day text-center py-2 rounded-md bg-primary-600 text-white font-bold transform scale-105 shadow-md text-base relative z-10"
+
         // Si el día actual es seleccionable (no es fin de semana y no es pasado)
         if (!isWeekend) {
           dayElement.className += " cursor-pointer hover:bg-primary-700 transition-all duration-300"
-          
+
           // Agregar evento de clic
-          dayElement.onclick = function() {
+          dayElement.onclick = function () {
             // Deseleccionar día anterior
-            document.querySelectorAll(".calendar-day.selected").forEach(el => {
+            document.querySelectorAll(".calendar-day.selected").forEach((el) => {
               if (el !== this) {
                 el.classList.remove("selected", "ring-2", "ring-primary-500", "ring-offset-1")
               }
             })
-            
+
             // Seleccionar este día (mantener el estilo de día actual)
             this.classList.add("selected", "ring-2", "ring-primary-500", "ring-offset-1")
-            
+
             // Guardar la fecha seleccionada
             selectedDate = dateStr
-            
+
             // Cargar horarios disponibles
             loadAvailableTimes(selectedDate)
           }
         }
       } else if (isPastDay) {
-        dayElement.className = "calendar-day text-center py-2 rounded-md text-gray-400 cursor-default text-base bg-gray-50"
+        dayElement.className =
+          "calendar-day text-center py-2 rounded-md text-gray-400 cursor-default text-base bg-gray-50"
       } else if (isWeekend) {
-        dayElement.className = "calendar-day text-center py-2 rounded-md text-gray-400 cursor-default text-base bg-gray-50"
+        dayElement.className =
+          "calendar-day text-center py-2 rounded-md text-gray-400 cursor-default text-base bg-gray-50"
         dayElement.title = "No disponible en fin de semana"
       } else {
         // Día seleccionable (lunes a viernes)
-        dayElement.className = "calendar-day text-center py-2 rounded-md cursor-pointer hover:bg-primary-50 transition-all duration-300 text-base hover:shadow-sm"
-        
+        dayElement.className =
+          "calendar-day text-center py-2 rounded-md cursor-pointer hover:bg-primary-50 transition-all duration-300 text-base hover:shadow-sm"
+
         // Agregar evento de clic
-        dayElement.onclick = function() {
+        dayElement.onclick = function () {
           // Deseleccionar día anterior
-          document.querySelectorAll(".calendar-day.selected").forEach(el => {
-            el.classList.remove("selected", "bg-primary-100", "text-primary-800", "ring-2", "ring-primary-500", "ring-offset-1")
+          document.querySelectorAll(".calendar-day.selected").forEach((el) => {
+            el.classList.remove(
+              "selected",
+              "bg-primary-100",
+              "text-primary-800",
+              "ring-2",
+              "ring-primary-500",
+              "ring-offset-1",
+            )
           })
-          
+
           // Seleccionar este día
-          this.classList.add("selected", "bg-primary-100", "text-primary-800", "ring-2", "ring-primary-500", "ring-offset-1")
-          
+          this.classList.add(
+            "selected",
+            "bg-primary-100",
+            "text-primary-800",
+            "ring-2",
+            "ring-primary-500",
+            "ring-offset-1",
+          )
+
           // Guardar la fecha seleccionada
           selectedDate = dateStr
-          
+
           // Cargar horarios disponibles
           loadAvailableTimes(selectedDate)
         }
@@ -1405,7 +1515,7 @@ function loadCalendar() {
     // Añadir efecto visual al botón
     prevMonthBtn.classList.add("scale-90")
     setTimeout(() => prevMonthBtn.classList.remove("scale-90"), 150)
-    
+
     displayMonth--
     if (displayMonth < 0) {
       displayMonth = 11
@@ -1418,7 +1528,7 @@ function loadCalendar() {
     // Añadir efecto visual al botón
     nextMonthBtn.classList.add("scale-90")
     setTimeout(() => nextMonthBtn.classList.remove("scale-90"), 150)
-    
+
     displayMonth++
     if (displayMonth > 11) {
       displayMonth = 0
@@ -1446,11 +1556,11 @@ function loadAvailableTimes(date) {
 
   // Formatear la fecha para mostrarla
   const dateObj = new Date(date)
-  const formattedDate = dateObj.toLocaleDateString('es-ES', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
+  const formattedDate = dateObj.toLocaleDateString("es-ES", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   })
 
   // Cargar horarios disponibles desde el servidor
@@ -1464,7 +1574,7 @@ function loadAvailableTimes(date) {
     .then((data) => {
       // Limpiar contenedor
       timeContainer.innerHTML = ""
-      
+
       // Añadir la fecha seleccionada como encabezado
       const dateHeader = document.createElement("div")
       dateHeader.className = "bg-primary-50 p-2 rounded-lg mb-3 text-center text-primary-800 font-medium text-sm"
@@ -1489,9 +1599,9 @@ function loadAvailableTimes(date) {
           timeButton.className = isEven
             ? "time-slot py-3 px-4 rounded-md border border-gray-200 hover:bg-primary-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-base w-full text-left flex items-center"
             : "time-slot py-3 px-4 rounded-md border border-gray-200 bg-gray-50 hover:bg-primary-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-base w-full text-left flex items-center"
-          
+
           timeButton.setAttribute("data-time", hora)
-          
+
           // Añadir icono de reloj junto a la hora
           timeButton.innerHTML = `
             <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1504,11 +1614,25 @@ function loadAvailableTimes(date) {
           timeButton.addEventListener("click", () => {
             // Deseleccionar horario anterior
             document.querySelectorAll(".time-slot.selected").forEach((el) => {
-              el.classList.remove("selected", "bg-primary-100", "text-primary-800", "border-primary-500", "shadow-md", "scale-105")
+              el.classList.remove(
+                "selected",
+                "bg-primary-100",
+                "text-primary-800",
+                "border-primary-500",
+                "shadow-md",
+                "scale-105",
+              )
             })
 
             // Seleccionar este horario con animación
-            timeButton.classList.add("selected", "bg-primary-100", "text-primary-800", "border-primary-500", "shadow-md", "scale-105")
+            timeButton.classList.add(
+              "selected",
+              "bg-primary-100",
+              "text-primary-800",
+              "border-primary-500",
+              "shadow-md",
+              "scale-105",
+            )
 
             // Guardar el horario seleccionado
             selectedTime = hora
@@ -1840,56 +1964,70 @@ function submitAsesoria() {
   const fechaAsesoria = `${selectedDate}T${selectedTime}`
 
   // Crear objeto con los datos de la asesoría
-  const asesoriaData = {
-    id_solicitante: form.getAttribute("data-solicitante-id"),
-    tipo_asesoria: tipoAsesoria,
-    descripcion: descripcion,
-    lugar: lugar,
-    tipo_documento: tipoDocumento,
-    numero_documento: numeroDocumento,
-    id_asesor: selectedAsesorId,
-    asesor_asignado: selectedAsesorName,
-    asesor_especialidad: selectedAsesorEspecialidad,
-    fecha_asesoria: fechaAsesoria,
-  }
-
-  // Enviar solicitud al servidor
-  fetch("/nueva_asesoria", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(asesoriaData),
-  })
-    .then((response) => {
-      if (!response.ok) {
-        return response.json().then((data) => {
-          throw new Error(data.error || "Error al agendar la asesoría")
-        })
-      }
-      return response.json()
-    })
+  // Obtener el id_solicitante del usuario actual mediante una petición al servidor
+  fetch("/obtener_id_solicitante")
+    .then((response) => response.json())
     .then((data) => {
-      if (data.success) {
-        // Mostrar notificación de éxito
-        showNotification(data.message || "Asesoría agendada con éxito", "success")
-
-        // Iniciar temporizador de 5 minutos
-        startPaymentTimer()
-
-        // Mostrar notificación de tiempo
-        showNotification("Tienes 5 minutos para completar el pago", "warning")
-
-        // Cerrar el modal
-        closeNewAdvisoryModal()
-
-        // Redirigir a la página de pago
-        pagarAsesoria(data.codigo_asesoria, tipoAsesoria)
+      if (data.error) {
+        showNotification(data.error, "error")
+        return
       }
+
+      const asesoriaData = {
+        id_solicitante: data.id_solicitante, // Usar el ID obtenido del servidor
+        tipo_asesoria: tipoAsesoria,
+        descripcion: descripcion,
+        lugar: lugar,
+        tipo_documento: tipoDocumento,
+        numero_documento: numeroDocumento,
+        id_asesor: selectedAsesorId,
+        asesor_asignado: selectedAsesorName,
+        asesor_especialidad: selectedAsesorEspecialidad,
+        fecha_asesoria: fechaAsesoria,
+      }
+
+      // Enviar solicitud al servidor
+      fetch("/nueva_asesoria", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(asesoriaData),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            return response.json().then((data) => {
+              throw new Error(data.error || "Error al agendar la asesoría")
+            })
+          }
+          return response.json()
+        })
+        .then((data) => {
+          if (data.success) {
+            // Mostrar notificación de éxito
+            showNotification(data.message || "Asesoría agendada con éxito", "success")
+
+            // Iniciar temporizador de 5 minutos
+            startPaymentTimer()
+
+            // Mostrar notificación de tiempo
+            showNotification("Tienes 5 minutos para completar el pago", "warning")
+
+            // Cerrar el modal
+            closeNewAdvisoryModal()
+
+            // Redirigir a la página de pago
+            pagarAsesoria(data.codigo_asesoria, tipoAsesoria)
+          }
+        })
+        .catch((error) => {
+          console.error("Error al agendar asesoría:", error)
+          showNotification(error.message, "error")
+        })
     })
     .catch((error) => {
-      console.error("Error al agendar asesoría:", error)
-      showNotification(error.message, "error")
+      console.error("Error al obtener ID de solicitante:", error)
+      showNotification("Error al obtener información del usuario", "error")
     })
 }
 
@@ -1910,7 +2048,7 @@ window.pagarAsesoria = pagarAsesoria
 window.closePagoModal = closePagoModal
 window.cancelarAsesoria = cancelarAsesoria
 window.closeCancelarAsesoriaModal = closeCancelarAsesoriaModal
-window.reiniciarPasarelaPago = reiniciarPasarelaPago
-window.updateAppointmentPrice = updateAppointmentPrice
 window.openNewAdvisoryModal = openNewAdvisoryModal
 window.closeNewAdvisoryModal = closeNewAdvisoryModal
+window.showTipsTooltip = showTipsTooltip
+

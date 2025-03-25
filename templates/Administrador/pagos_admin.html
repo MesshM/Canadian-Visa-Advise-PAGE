@@ -4,14 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pagos - Canadian Visa Advise</title>
-    <link href="/static/css/output.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease;
+        }
+    </style>
 </head>
 <body class="font-['Inter'] bg-gray-50 text-gray-700 overflow-x-hidden m-0 p-0">
-    <!-- Sidebar -->
-    {% include 'includes/_sidebar_asesor.html' %}
-
     <!-- Main Content -->
     <main class="ml-[calc(240px+40px)] p-8 min-h-screen">
         <div class="mb-8 flex justify-between items-center">
@@ -34,7 +39,7 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm text-gray-500">Total Recibido</p>
-                        <h3 class="text-2xl font-bold text-gray-900 mt-1">$15,750</h3>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1">${{ "%.2f"|format(stats.total_recibido|float) }}</h3>
                     </div>
                     <div class="p-2 bg-green-100 rounded-lg">
                         <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -58,7 +63,7 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm text-gray-500">Pagos Pendientes</p>
-                        <h3 class="text-2xl font-bold text-gray-900 mt-1">$3,200</h3>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ stats.pagos_pendientes }}</h3>
                     </div>
                     <div class="p-2 bg-yellow-100 rounded-lg">
                         <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -80,7 +85,7 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm text-gray-500">Pagos Completados</p>
-                        <h3 class="text-2xl font-bold text-gray-900 mt-1">42</h3>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ stats.pagos_completados }}</h3>
                     </div>
                     <div class="p-2 bg-blue-100 rounded-lg">
                         <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -104,7 +109,7 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm text-gray-500">Pagos Rechazados</p>
-                        <h3 class="text-2xl font-bold text-gray-900 mt-1">3</h3>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ stats.pagos_rechazados }}</h3>
                     </div>
                     <div class="p-2 bg-red-100 rounded-lg">
                         <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -132,13 +137,13 @@
                     <button class="filter-btn active px-4 py-2 rounded-lg text-sm font-medium bg-red-50 text-red-600 border border-red-200" data-filter="all">
                         Todos
                     </button>
-                    <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-50 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200" data-filter="pendiente">
+                    <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-50 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200" data-filter="Pendiente">
                         Pendientes
                     </button>
-                    <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-50 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200" data-filter="completado">
+                    <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-50 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200" data-filter="Completado">
                         Completados
                     </button>
-                    <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-50 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200" data-filter="rechazado">
+                    <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-50 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200" data-filter="Rechazado">
                         Rechazados
                     </button>
                 </div>
@@ -168,250 +173,93 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                        <!-- Pago 1 -->
-                        <tr class="hover:bg-gray-50 transition-colors payment-row" data-status="completado">
-                            <td class="py-3 px-4 text-sm">PAG-2025-001</td>
-                            <td class="py-3 px-4">
-                                <div class="flex items-center">
-                                    <div class="h-10 w-10 flex-shrink-0 bg-red-100 rounded-full text-red-600 flex items-center justify-center font-medium">
-                                        JP
-                                    </div>
-                                    <div class="ml-3">
-                                        <p class="text-sm font-medium text-gray-900">Juan Pérez</p>
-                                        <p class="text-xs text-gray-500">juan.perez@example.com</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="py-3 px-4 text-sm">
-                                <div>
-                                    <p class="text-gray-900">25 Mar, 2025</p>
-                                </div>
-                            </td>
-                            <td class="py-3 px-4 text-sm font-medium">$1,200</td>
-                            <td class="py-3 px-4 text-sm">
-                                <div class="flex items-center">
-                                    <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-                                    </svg>
-                                    Tarjeta
-                                </div>
-                            </td>
-                            <td class="py-3 px-4 text-sm">Visa de Trabajo</td>
-                            <td class="py-3 px-4 text-sm">
-                                <span class="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs">Completado</span>
-                            </td>
-                            <td class="py-3 px-4 text-right">
-                                <div class="flex justify-end space-x-2">
-                                    <button class="view-btn p-1 text-gray-500 hover:text-red-600 transition-colors" data-id="PAG-2025-001">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                        </svg>
-                                    </button>
-                                    <button class="receipt-btn p-1 text-gray-500 hover:text-blue-600 transition-colors" data-id="PAG-2025-001">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        
-                        <!-- Pago 2 -->
-                        <tr class="hover:bg-gray-50 transition-colors payment-row" data-status="pendiente">
-                            <td class="py-3 px-4 text-sm">PAG-2025-002</td>
-                            <td class="py-3 px-4">
-                                <div class="flex items-center">
-                                    <div class="h-10 w-10 flex-shrink-0 bg-blue-100 rounded-full text-blue-600 flex items-center justify-center font-medium">
-                                        MR
-                                    </div>
-                                    <div class="ml-3">
-                                        <p class="text-sm font-medium text-gray-900">María Rodríguez</p>
-                                        <p class="text-xs text-gray-500">maria.rodriguez@example.com</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="py-3 px-4 text-sm">
-                                <div>
-                                    <p class="text-gray-900">20 Mar, 2025</p>
-                                </div>
-                            </td>
-                            <td class="py-3 px-4 text-sm font-medium">$800</td>
-                            <td class="py-3 px-4 text-sm">
-                                <div class="flex items-center">
-                                    <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                    </svg>
-                                    Transferencia
-                                </div>
-                            </td>
-                            <td class="py-3 px-4 text-sm">Visa de Estudiante</td>
-                            <td class="py-3 px-4 text-sm">
-                                <span class="px-2 py-1 bg-yellow-50 text-yellow-700 rounded-full text-xs">Pendiente</span>
-                            </td>
-                            <td class="py-3 px-4 text-right">
-                                <div class="flex justify-end space-x-2">
-                                    <button class="view-btn p-1 text-gray-500 hover:text-red-600 transition-colors" data-id="PAG-2025-002">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                        </svg>
-                                    </button>
-                                    <button class="status-btn p-1 text-gray-500 hover:text-green-600 transition-colors" data-id="PAG-2025-002">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        
-                        <!-- Pago 3 -->
-                        <tr class="hover:bg-gray-50 transition-colors payment-row" data-status="rechazado">
-                            <td class="py-3 px-4 text-sm">PAG-2025-003</td>
-                            <td class="py-3 px-4">
-                                <div class="flex items-center">
-                                    <div class="h-10 w-10 flex-shrink-0 bg-green-100 rounded-full text-green-600 flex items-center justify-center font-medium">
-                                        CS
-                                    </div>
-                                    <div class="ml-3">
-                                        <p class="text-sm font-medium text-gray-900">Carlos Sánchez</p>
-                                        <p class="text-xs text-gray-500">carlos.sanchez@example.com</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="py-3 px-4 text-sm">
-                                <div>
-                                    <p class="text-gray-900">18 Mar, 2025</p>
-                                </div>
-                            </td>
-                            <td class="py-3 px-4 text-sm font-medium">$1,500</td>
-                            <td class="py-3 px-4 text-sm">
-                                <div class="flex items-center">
-                                    <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-                                    </svg>
-                                    Tarjeta
-                                </div>
-                            </td>
-                            <td class="py-3 px-4 text-sm">Express Entry</td>
-                            <td class="py-3 px-4 text-sm">
-                                <span class="px-2 py-1 bg-red-50 text-red-700 rounded-full text-xs">Rechazado</span>
-                            </td>
-                            <td class="py-3 px-4 text-right">
-                                <div class="flex justify-end space-x-2">
-                                    <button class="view-btn p-1 text-gray-500 hover:text-red-600 transition-colors" data-id="PAG-2025-003">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                        </svg>
-                                    </button>
-                                    <button class="status-btn p-1 text-gray-500 hover:text-green-600 transition-colors" data-id="PAG-2025-003">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        
-                        <!-- Pago 4 -->
-                        <tr class="hover:bg-gray-50 transition-colors payment-row" data-status="completado">
-                            <td class="py-3 px-4 text-sm">PAG-2025-004</td>
-                            <td class="py-3 px-4">
-                                <div class="flex items-center">
-                                    <div class="h-10 w-10 flex-shrink-0 bg-purple-100 rounded-full text-purple-600 flex items-center justify-center font-medium">
-                                        LG
-                                    </div>
-                                    <div class="ml-3">
-                                        <p class="text-sm font-medium text-gray-900">Laura Gómez</p>
-                                        <p class="text-xs text-gray-500">laura.gomez@example.com</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="py-3 px-4 text-sm">
-                                <div>
-                                    <p class="text-gray-900">15 Mar, 2025</p>
-                                </div>
-                            </td>
-                            <td class="py-3 px-4 text-sm font-medium">$950</td>
-                            <td class="py-3 px-4 text-sm">
-                                <div class="flex items-center">
-                                    <svg class="w-5 h-5 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    Efectivo
-                                </div>
-                            </td>
-                            <td class="py-3 px-4 text-sm">Visa de Trabajo</td>
-                            <td class="py-3 px-4 text-sm">
-                                <span class="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs">Completado</span>
-                            </td>
-                            <td class="py-3 px-4 text-right">
-                                <div class="flex justify-end space-x-2">
-                                    <button class="view-btn p-1 text-gray-500 hover:text-red-600 transition-colors" data-id="PAG-2025-004">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                        </svg>
-                                    </button>
-                                    <button class="receipt-btn p-1 text-gray-500 hover:text-blue-600 transition-colors" data-id="PAG-2025-004">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        
-                        <!-- Pago 5 -->
-                        <tr class="hover:bg-gray-50 transition-colors payment-row" data-status="pendiente">
-                            <td class="py-3 px-4 text-sm">PAG-2025-005</td>
-                            <td class="py-3 px-4">
-                                <div class="flex items-center">
-                                    <div class="h-10 w-10 flex-shrink-0 bg-orange-100 rounded-full text-orange-600 flex items-center justify-center font-medium">
-                                        AM
-                                    </div>
-                                    <div class="ml-3">
-                                        <p class="text-sm font-medium text-gray-900">Andrés Martínez</p>
-                                        <p class="text-xs text-gray-500">andres.martinez@example.com</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="py-3 px-4 text-sm">
-                                <div>
-                                    <p class="text-gray-900">10 Mar, 2025</p>
-                                </div>
-                            </td>
-                            <td class="py-3 px-4 text-sm font-medium">$2,400</td>
-                            <td class="py-3 px-4 text-sm">
-                                <div class="flex items-center">
-                                    <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                    </svg>
-                                    Transferencia
-                                </div>
-                            </td>
-                            <td class="py-3 px-4 text-sm">Residencia Permanente</td>
-                            <td class="py-3 px-4 text-sm">
-                                <span class="px-2 py-1 bg-yellow-50 text-yellow-700 rounded-full text-xs">Pendiente</span>
-                            </td>
-                            <td class="py-3 px-4 text-right">
-                                <div class="flex justify-end space-x-2">
-                                    <button class="view-btn p-1 text-gray-500 hover:text-red-600 transition-colors" data-id="PAG-2025-005">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                        </svg>
-                                    </button>
-                                    <button class="status-btn p-1 text-gray-500 hover:text-green-600 transition-colors" data-id="PAG-2025-005">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                        {% if pagos %}
+                            {% for pago in pagos %}
+                                <tr class="hover:bg-gray-50 transition-colors payment-row" data-status="{{ pago.estado_pago }}">
+                                    <td class="py-3 px-4 text-sm">{{ pago.id_formateado }}</td>
+                                    <td class="py-3 px-4">
+                                        <div class="flex items-center">
+                                            <div class="h-10 w-10 flex-shrink-0 {{ pago.avatar_class }} rounded-full flex items-center justify-center font-medium">
+                                                {{ pago.initials }}
+                                            </div>
+                                            <div class="ml-3">
+                                                <p class="text-sm font-medium text-gray-900">{{ pago.cliente_nombre }}</p>
+                                                <p class="text-xs text-gray-500">{{ pago.cliente_email }}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-4 text-sm">
+                                        <div>
+                                            <p class="text-gray-900">{{ pago.fecha_formateada }}</p>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-4 text-sm font-medium">${{ "%.2f"|format(pago.monto|float) }}</td>
+                                    <td class="py-3 px-4 text-sm">
+                                        <div class="flex items-center">
+                                            {% if 'Tarjeta' in pago.metodo_pago %}
+                                                <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                                                </svg>
+                                            {% elif 'Transferencia' in pago.metodo_pago %}
+                                                <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                                </svg>
+                                            {% elif 'Efectivo' in pago.metodo_pago %}
+                                                <svg class="w-5 h-5 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                            {% else %}
+                                                <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                            {% endif %}
+                                            {{ pago.metodo_pago }}
+                                        </div>
+                                    </td>
+                                    <td class="py-3 px-4 text-sm">{{ pago.tipo_asesoria }}</td>
+                                    <td class="py-3 px-4 text-sm">
+                                        {% if pago.estado_pago == 'Completado' %}
+                                            <span class="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs">Completado</span>
+                                        {% elif pago.estado_pago == 'Pendiente' %}
+                                            <span class="px-2 py-1 bg-yellow-50 text-yellow-700 rounded-full text-xs">Pendiente</span>
+                                        {% elif pago.estado_pago == 'Rechazado' %}
+                                            <span class="px-2 py-1 bg-red-50 text-red-700 rounded-full text-xs">Rechazado</span>
+                                        {% else %}
+                                            <span class="px-2 py-1 bg-gray-50 text-gray-700 rounded-full text-xs">{{ pago.estado_pago }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-3 px-4 text-right">
+                                        <div class="flex justify-end space-x-2">
+                                            <button class="view-btn p-1 text-gray-500 hover:text-red-600 transition-colors" data-id="{{ pago.id_pago }}">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                </svg>
+                                            </button>
+                                            {% if pago.estado_pago == 'Completado' %}
+                                                <button class="receipt-btn p-1 text-gray-500 hover:text-blue-600 transition-colors" data-id="{{ pago.id_pago }}">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                    </svg>
+                                                </button>
+                                            {% else %}
+                                                <button class="status-btn p-1 text-gray-500 hover:text-green-600 transition-colors" data-id="{{ pago.id_pago }}">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="py-6 text-center text-gray-500">
+                                    No se encontraron pagos
+                                </td>
+                            </tr>
+                        {% endif %}
                     </tbody>
                 </table>
             </div>
@@ -419,8 +267,9 @@
             <!-- Paginación -->
             <div class="flex justify-between items-center mt-6">
                 <div class="text-sm text-gray-500">
-                    Mostrando <span class="font-medium">5</span> de <span class="font-medium">25</span> pagos
+                    Mostrando <span class="font-medium">{{ pagos|length }}</span> de <span class="font-medium">{{ pagos|length }}</span> pagos
                 </div>
+                {% if pagos|length > 5 %}
                 <div class="flex space-x-1">
                     <button class="px-3 py-1 rounded-md bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -436,6 +285,7 @@
                         </svg>
                     </button>
                 </div>
+                {% endif %}
             </div>
         </div>
     </main>
@@ -454,25 +304,21 @@
                 </div>
             </div>
             <div class="p-6">
-                <form id="payment-form">
+                <form id="payment-form" action="/registrar_pago" method="post">
                     <div class="space-y-4">
                         <!-- Cliente -->
                         <div>
                             <label for="client" class="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
-                            <select id="client" name="client" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                            <select id="client" name="client" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
                                 <option value="" disabled selected>Seleccionar cliente</option>
-                                <option value="1">Juan Pérez</option>
-                                <option value="2">María Rodríguez</option>
-                                <option value="3">Carlos Sánchez</option>
-                                <option value="4">Laura Gómez</option>
-                                <option value="5">Andrés Martínez</option>
+                                <!-- Aquí se cargarían los clientes desde la base de datos -->
                             </select>
                         </div>
                         
                         <!-- Concepto -->
                         <div>
                             <label for="concept" class="block text-sm font-medium text-gray-700 mb-1">Concepto</label>
-                            <select id="concept" name="concept" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                            <select id="concept" name="concept" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
                                 <option value="" disabled selected>Seleccionar concepto</option>
                                 <option value="trabajo">Visa de Trabajo</option>
                                 <option value="estudiante">Visa de Estudiante</option>
@@ -490,14 +336,14 @@
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="text-gray-500 sm:text-sm">$</span>
                                 </div>
-                                <input type="number" id="amount" name="amount" class="w-full pl-7 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="0.00" step="0.01">
+                                <input type="number" id="amount" name="amount" class="w-full pl-7 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="0.00" step="0.01" required>
                             </div>
                         </div>
                         
                         <!-- Método de pago -->
                         <div>
                             <label for="method" class="block text-sm font-medium text-gray-700 mb-1">Método de pago</label>
-                            <select id="method" name="method" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                            <select id="method" name="method" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
                                 <option value="" disabled selected>Seleccionar método</option>
                                 <option value="tarjeta">Tarjeta de crédito/débito</option>
                                 <option value="transferencia">Transferencia bancaria</option>
@@ -509,7 +355,7 @@
                         <!-- Fecha -->
                         <div>
                             <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
-                            <input type="date" id="date" name="date" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                            <input type="date" id="date" name="date" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
                         </div>
                         
                         <!-- Notas -->
@@ -549,41 +395,39 @@
                 <div class="space-y-4">
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-medium text-gray-500">ID:</span>
-                        <span id="view-id" class="text-sm font-medium text-gray-900">PAG-2025-001</span>
+                        <span id="view-id" class="text-sm font-medium text-gray-900"></span>
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-medium text-gray-500">Cliente:</span>
-                        <span id="view-client" class="text-sm font-medium text-gray-900">Juan Pérez</span>
+                        <span id="view-client" class="text-sm font-medium text-gray-900"></span>
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-medium text-gray-500">Correo:</span>
-                        <span id="view-email" class="text-sm font-medium text-gray-900">juan.perez@example.com</span>
+                        <span id="view-email" class="text-sm font-medium text-gray-900"></span>
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-medium text-gray-500">Concepto:</span>
-                        <span id="view-concept" class="text-sm font-medium text-gray-900">Visa de Trabajo</span>
+                        <span id="view-concept" class="text-sm font-medium text-gray-900"></span>
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-medium text-gray-500">Monto:</span>
-                        <span id="view-amount" class="text-sm font-medium text-gray-900">$1,200</span>
+                        <span id="view-amount" class="text-sm font-medium text-gray-900"></span>
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-medium text-gray-500">Método:</span>
-                        <span id="view-method" class="text-sm font-medium text-gray-900">Tarjeta de crédito</span>
+                        <span id="view-method" class="text-sm font-medium text-gray-900"></span>
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-medium text-gray-500">Fecha:</span>
-                        <span id="view-date" class="text-sm font-medium text-gray-900">25 Mar, 2025</span>
+                        <span id="view-date" class="text-sm font-medium text-gray-900"></span>
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-medium text-gray-500">Estado:</span>
-                        <span id="view-status" class="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs">Completado</span>
+                        <span id="view-status" class="px-2 py-1 rounded-full text-xs"></span>
                     </div>
                     <div>
                         <span class="text-sm font-medium text-gray-500 block mb-2">Notas:</span>
-                        <p id="view-notes" class="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
-                            Pago por servicios de asesoría para visa de trabajo. Cliente requiere factura.
-                        </p>
+                        <p id="view-notes" class="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg"></p>
                     </div>
                 </div>
                 
@@ -610,15 +454,15 @@
                 </div>
             </div>
             <div class="p-6">
-                <form id="status-form">
+                <form id="status-form" action="/actualizar_estado_pago" method="post">
                     <input type="hidden" id="payment-id" name="payment-id" value="">
                     
                     <div class="mb-4">
                         <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Nuevo Estado</label>
                         <select id="status" name="status" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
-                            <option value="pendiente">Pendiente</option>
-                            <option value="completado">Completado</option>
-                            <option value="rechazado">Rechazado</option>
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="Completado">Completado</option>
+                            <option value="Rechazado">Rechazado</option>
                         </select>
                     </div>
                     
@@ -697,6 +541,17 @@
             
             newPaymentBtn.addEventListener('click', function() {
                 newPaymentModal.classList.remove('hidden');
+                // Cargar clientes desde la base de datos
+                fetch('/obtener_clientes')
+                    .then(response => response.json())
+                    .then(data => {
+                        const clientSelect = document.getElementById('client');
+                        clientSelect.innerHTML = '<option value="" disabled selected>Seleccionar cliente</option>';
+                        data.clientes.forEach(cliente => {
+                            clientSelect.innerHTML += `<option value="${cliente.id_solicitante}">${cliente.nombre}</option>`;
+                        });
+                    })
+                    .catch(error => console.error('Error:', error));
             });
             
             closeModalBtn.addEventListener('click', function() {
@@ -704,13 +559,6 @@
             });
             
             cancelBtn.addEventListener('click', function() {
-                newPaymentModal.classList.add('hidden');
-            });
-            
-            paymentForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                // Aquí iría la lógica para guardar el pago
-                alert('Pago registrado correctamente');
                 newPaymentModal.classList.add('hidden');
             });
             
@@ -723,8 +571,34 @@
             viewButtons.forEach(button => {
                 button.addEventListener('click', function() {
                     const id = this.getAttribute('data-id');
-                    // Aquí se cargarían los datos reales del pago
-                    document.getElementById('view-id').textContent = id;
+                    // Cargar datos del pago desde la base de datos
+                    fetch(`/obtener_pago/${id}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            document.getElementById('view-id').textContent = data.id_formateado;
+                            document.getElementById('view-client').textContent = data.cliente_nombre;
+                            document.getElementById('view-email').textContent = data.cliente_email;
+                            document.getElementById('view-concept').textContent = data.tipo_asesoria;
+                            document.getElementById('view-amount').textContent = `$${parseFloat(data.monto).toFixed(2)}`;
+                            document.getElementById('view-method').textContent = data.metodo_pago;
+                            document.getElementById('view-date').textContent = data.fecha_formateada;
+                            
+                            const statusElement = document.getElementById('view-status');
+                            statusElement.textContent = data.estado_pago;
+                            
+                            if (data.estado_pago === 'Completado') {
+                                statusElement.className = 'px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs';
+                            } else if (data.estado_pago === 'Pendiente') {
+                                statusElement.className = 'px-2 py-1 bg-yellow-50 text-yellow-700 rounded-full text-xs';
+                            } else if (data.estado_pago === 'Rechazado') {
+                                statusElement.className = 'px-2 py-1 bg-red-50 text-red-700 rounded-full text-xs';
+                            } else {
+                                statusElement.className = 'px-2 py-1 bg-gray-50 text-gray-700 rounded-full text-xs';
+                            }
+                            
+                            document.getElementById('view-notes').textContent = data.datos_adicionales || 'No hay notas disponibles';
+                        })
+                        .catch(error => console.error('Error:', error));
                     
                     viewModal.classList.remove('hidden');
                 });
@@ -759,13 +633,6 @@
             });
             
             cancelStatusBtn.addEventListener('click', function() {
-                statusModal.classList.add('hidden');
-            });
-            
-            statusForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                // Aquí iría la lógica para cambiar el estado
-                alert('Estado actualizado correctamente');
                 statusModal.classList.add('hidden');
             });
             
