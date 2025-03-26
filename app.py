@@ -519,59 +519,6 @@ def formularios():
       flash('Error de conexión a la base de datos', 'error')
       return redirect(url_for('index'))
 
-# Añade esta ruta a tu archivo app.py para obtener el ID del solicitante del usuario actual
-
-@app.route('/obtener_id_solicitante', methods=['GET'])
-def obtener_id_solicitante():
-    if 'user_id' not in session:
-        return jsonify({'error': 'No autorizado'}), 401
-    
-    try:
-        connection = create_connection()
-        if connection:
-            cursor = connection.cursor(dictionary=True)
-            
-            # Obtener el id_solicitante del usuario actual
-            cursor.execute("""
-                SELECT id_solicitante FROM tbl_solicitante WHERE id_usuario = %s
-            """, (session['user_id'],))
-            
-            result = cursor.fetchone()
-            cursor.close()
-            connection.close()
-            
-            if result:
-                return jsonify({'id_solicitante': result['id_solicitante']})
-            else:
-                # Si el usuario no tiene un registro en tbl_solicitante, crearlo
-                connection = create_connection()
-                if connection:
-                    cursor = connection.cursor()
-                    try:
-                        cursor.execute("""
-                            INSERT INTO tbl_solicitante (id_usuario) VALUES (%s)
-                        """, (session['user_id'],))
-                        
-                        id_solicitante = cursor.lastrowid
-                        connection.commit()
-                        cursor.close()
-                        connection.close()
-                        
-                        return jsonify({'id_solicitante': id_solicitante})
-                    except Exception as e:
-                        connection.rollback()
-                        cursor.close()
-                        connection.close()
-                        return jsonify({'error': f'Error al crear solicitante: {str(e)}'}), 500
-                else:
-                    return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-        else:
-            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-
 # Modificación de la función asesorias para mostrar solo las asesorías del usuario logueado
 @app.route('/asesorias')
 def asesorias():
@@ -1942,10 +1889,30 @@ def obtener_detalles_asesoria(codigo_asesoria):
 
 if __name__ == '__main__':
     app.run(debug=True)
-# Ruta para la página de clientes
 
+# Rutas de
+
+@app.route('/index_asesor')
+def index_asesor_route():
+    return render_template('Administrador/index_asesor.html')
+
+# Esta ruta ya existe, pero la mantenemos como alternativa
+@app.route('/asesor', methods=['GET'])
+def index_asesor():
+    return render_template('Administrador/index_asesor.html')
+
+# Esta ruta ya existe, pero la mantenemos como alternativa
+@app.route('/dashboard_asesor')
+def dashboard_asesor():
+    return render_template('Administrador/index_asesor.html')
+
+@app.route('/asesorias_admin')
+def asesorias_admin():
+    return render_template('Administrador/asesorias_admin.html')
+
+# Ruta para la página de clientes
 @app.route('/clientes')
-def clientes():
+def clientes_admin():  # Cambiar de 'clientes' a 'clientes_admin' para mantener consistencia
     if 'user_id' not in session or not session.get('is_admin', False):
         return redirect(url_for('login'))
     
@@ -1965,42 +1932,9 @@ def clientes():
     flash('Error de conexión a la base de datos', 'error')
     return redirect(url_for('index_asesor'))
 
-# Ruta para la página de asesorías
-@app.route('/asesorias_admin')
-def asesorias_admin():
-    if 'user_id' not in session or not session.get('is_admin', False):
-        return redirect(url_for('login'))
-    
-    connection = create_connection()
-    if connection:
-        with connection.cursor(dictionary=True) as cursor:
-            cursor.execute("""
-                SELECT a.codigo_asesoria, a.fecha_asesoria, a.tipo_asesoria,
-                       CONCAT(u.nombres, ' ', u.apellidos) AS solicitante,
-                       a.estado, a.descripcion
-                FROM tbl_asesoria a
-                JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
-                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-                ORDER BY a.fecha_asesoria DESC
-            """)
-            asesorias = cursor.fetchall()
-        connection.close()
-        return render_template('Administrador/asesorias_admin.html', asesorias=asesorias)
-    
-    flash('Error de conexión a la base de datos', 'error')
-    return redirect(url_for('index_asesor'))
-
-# Ruta para la página de documentos
-@app.route('/documentos_asesor')
-def documentos():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    return render_template('Administrador/documentos_asesor.html')
-
 # Ruta para la página de pagos
 @app.route('/pagos_admin')
-def pagos():
+def pagos_admin():  # Cambiar de 'pagos' a 'pagos_admin' para mantener consistencia
     if 'user_id' not in session or not session.get('is_admin', False):
         return redirect(url_for('login'))
     
@@ -2082,27 +2016,22 @@ def pagos():
                 pago['avatar_class'] = colors.get(first_letter, 'bg-gray-100 text-gray-600')
         
         connection.close()
-        return render_template('pagos.html', pagos=pagos, stats=stats)
+        return render_template('Administrador/pagos_admin.html')  # Corregir la ruta de la plantilla
     
     flash('Error de conexión a la base de datos', 'error')
     return redirect(url_for('index_asesor'))
 
-# Añadir esta nueva ruta a tu app.py
-@app.route('/index_asesor')
-def index_asesor():
-    try:
-        if 'user_id' not in session or not session.get('is_admin', False):
-            return redirect('/')
-        return render_template('Administrador/index_asesor.html')
-    except Exception as e:
-        # Registrar el error para depuración
-        print(f"Error en index_asesor: {str(e)}")
-        # Redirigir a una página segura
-        return redirect('/asesorias_admin')
+# Ruta para la página de documentos
+@app.route('/documentos_asesor')
+def documentos_asesor():  # Cambiar de 'documentos' a 'documentos_asesor' para mantener consistencia
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    return render_template('Administrador/documentos_asesor.html')
 
-# Ruta para la página de solicitudes
+# Ruta para la página de documentos de un cliente específico
 @app.route('/documentos/<int:id_solicitante>')
-def documentos(id_solicitante):
+def documentos_cliente(id_solicitante):  # Renombrar para evitar conflicto con documentos_asesor
     if 'user_id' not in session or not session.get('is_admin', False):
         return redirect(url_for('login'))
 
@@ -2127,7 +2056,7 @@ def documentos(id_solicitante):
             
             if not cliente:
                 flash('Cliente no encontrado', 'error')
-                return redirect(url_for('clientes'))
+                return redirect(url_for('clientes_admin'))  # Actualizar a clientes_admin
             
             # Get documents for this client
             cursor.execute("""
@@ -2183,7 +2112,7 @@ def documentos(id_solicitante):
                 estado_class = "bg-yellow-100 text-yellow-800"
             
         connection.close()
-        return render_template('documentos_asesor.html', 
+        return render_template('Administrador/documentos_asesor.html',  # Corregir la ruta de la plantilla
                               cliente=cliente, 
                               documentos=documentos, 
                               total_docs=total_docs,
@@ -2194,9 +2123,17 @@ def documentos(id_solicitante):
                               estado_class=estado_class)
 
     flash('Error de conexión a la base de datos', 'error')
-    return redirect(url_for('clientes'))
+    return redirect(url_for('clientes_admin'))  # Actualizar a clientes_admin
 
+# Ruta para la página de reportes
+@app.route('/reportes')
+def reportes_admin():  # Cambiar de 'reportes' a 'reportes_admin' para mantener consistencia
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('login'))
+    
+    return render_template('Administrador/reportes.html')  # Corregir la ruta de la plantilla
 
+# Asegurarse de que las referencias a url_for() usen los nombres de función correctos
 @app.route('/actualizar_estado_documento', methods=['POST'])
 def actualizar_estado_documento():
     if 'user_id' not in session or not session.get('is_admin', False):
@@ -2211,7 +2148,7 @@ def actualizar_estado_documento():
     # Validate required fields
     if not all([id_documento, nuevo_estado, id_solicitante]):
         flash('Todos los campos son obligatorios', 'error')
-        return redirect(url_for('documentos', id_solicitante=id_solicitante))
+        return redirect(url_for('documentos_cliente', id_solicitante=id_solicitante))  # Actualizar a documentos_cliente
     
     connection = create_connection()
     if connection:
@@ -2234,8 +2171,7 @@ def actualizar_estado_documento():
     else:
         flash('Error de conexión a la base de datos', 'error')
     
-    return redirect(url_for('documentos', id_solicitante=id_solicitante))
-
+    return redirect(url_for('documentos_cliente', id_solicitante=id_solicitante))  # Actualizar a documentos_cliente
 
 @app.route('/descargar_documento/<int:id_documento>')
 def descargar_documento(id_documento):
@@ -2271,8 +2207,7 @@ def descargar_documento(id_documento):
         connection.close()
     
     # If we get here, something went wrong
-    return redirect(url_for('clientes'))
-
+    return redirect(url_for('clientes_admin'))  # Actualizar a clientes_admin
 
 @app.route('/generar_reporte/<int:id_solicitante>')
 def generar_reporte(id_solicitante):
@@ -2324,116 +2259,47 @@ def generar_reporte(id_solicitante):
         
         # Generate PDF report (this would require a PDF library like ReportLab or WeasyPrint)
         # For now, we'll just return a simple HTML report
-        return render_template('reporte_documentos.html', cliente=cliente, documentos=documentos)
+        return render_template('Administrador/reporte_documentos.html', cliente=cliente, documentos=documentos)  # Corregir la ruta de la plantilla
     
     flash('Error de conexión a la base de datos', 'error')
-    return redirect(url_for('clientes'))
+    return redirect(url_for('clientes_admin'))  # Actualizar a clientes_admin
 
+@app.route('/cambiar_estado_cliente', methods=['POST'])
+def cambiar_estado_cliente():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return jsonify({'error': 'No autorizado'}), 403
+
+    # Get form data
+    id_solicitante = request.form.get('id_solicitante')
+    nuevo_estado = request.form.get('estado')
+    
+    # Validate required fields
+    if not all([id_solicitante, nuevo_estado]):
+        flash('El ID del cliente y el estado son obligatorios', 'error')
+        return redirect(url_for('clientes_admin'))  # Actualizar a clientes_admin
+    
     connection = create_connection()
     if connection:
-        with connection.cursor(dictionary=True) as cursor:
-            # Get all clients with their information
-            cursor.execute("""
-                SELECT 
-                    s.id_solicitante, 
-                    s.fecha_registro, 
-                    s.estado, 
-                    s.pais,
-                    s.tipo_visa,
-                    s.telefono,
-                    u.id_usuario,
-                    u.nombres,
-                    u.apellidos,
-                    u.correo
-                FROM tbl_solicitante s
-                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-                ORDER BY u.nombres, u.apellidos
-            """)
-            clientes_data = cursor.fetchall()
-            
-            # Process clients for display
-            clientes = []
-            for cliente in clientes_data:
-                # Format client ID
-                cliente_id = f"CL-{datetime.now().year}-{cliente['id_solicitante']:03d}"
+        try:
+            with connection.cursor() as cursor:
+                # Update client status
+                cursor.execute("""
+                    UPDATE tbl_solicitante 
+                    SET estado = %s
+                    WHERE id_solicitante = %s
+                """, (nuevo_estado, id_solicitante))
                 
-                # Generate initials for avatar
-                nombres = f"{cliente['nombres']} {cliente['apellidos']}".split()
-                initials = ''.join([n[0] for n in nombres if n])[:2].upper()
-                
-                # Format registration date
-                if cliente['fecha_registro']:
-                    fecha = cliente['fecha_registro']
-                    fecha_formateada = fecha.strftime("%b %Y")
-                else:
-                    fecha_formateada = "N/A"
-                
-                # Assign avatar background color based on initial
-                colors = {
-                    'A': 'bg-red-100 text-red-600',
-                    'B': 'bg-blue-100 text-blue-600',
-                    'C': 'bg-green-100 text-green-600',
-                    'D': 'bg-yellow-100 text-yellow-600',
-                    'E': 'bg-purple-100 text-purple-600',
-                    'F': 'bg-pink-100 text-pink-600',
-                    'G': 'bg-indigo-100 text-indigo-600',
-                    'H': 'bg-gray-100 text-gray-600',
-                    'I': 'bg-red-100 text-red-600',
-                    'J': 'bg-blue-100 text-blue-600',
-                    'K': 'bg-green-100 text-green-600',
-                    'L': 'bg-yellow-100 text-yellow-600',
-                    'M': 'bg-purple-100 text-purple-600',
-                    'N': 'bg-pink-100 text-pink-600',
-                    'O': 'bg-indigo-100 text-indigo-600',
-                    'P': 'bg-gray-100 text-gray-600',
-                    'Q': 'bg-red-100 text-red-600',
-                    'R': 'bg-blue-100 text-blue-600',
-                    'S': 'bg-green-100 text-green-600',
-                    'T': 'bg-yellow-100 text-yellow-600',
-                    'U': 'bg-purple-100 text-purple-600',
-                    'V': 'bg-pink-100 text-pink-600',
-                    'W': 'bg-indigo-100 text-indigo-600',
-                    'X': 'bg-gray-100 text-gray-600',
-                    'Y': 'bg-red-100 text-red-600',
-                    'Z': 'bg-blue-100 text-blue-600',
-                }
-                first_letter = initials[0] if initials else 'A'
-                avatar_class = colors.get(first_letter, 'bg-gray-100 text-gray-600')
-                
-                # Determine visa type class
-                visa_classes = {
-                    'Visa de Trabajo': 'bg-blue-50 text-blue-700',
-                    'Visa de Estudiante': 'bg-purple-50 text-purple-700',
-                    'Express Entry': 'bg-indigo-50 text-indigo-700',
-                    'Residencia Permanente': 'bg-green-50 text-green-700',
-                    'Visa de Turismo': 'bg-yellow-50 text-yellow-700',
-                }
-                visa_class = visa_classes.get(cliente['tipo_visa'], 'bg-gray-50 text-gray-700')
-                
-                # Prepare client object
-                cliente_obj = {
-                    'id': cliente_id,
-                    'id_solicitante': cliente['id_solicitante'],
-                    'nombre': f"{cliente['nombres']} {cliente['apellidos']}",
-                    'correo': cliente['correo'],
-                    'telefono': cliente['telefono'],
-                    'pais': cliente['pais'],
-                    'tipo_visa': cliente['tipo_visa'],
-                    'estado': cliente['estado'],
-                    'fecha_registro': fecha_formateada,
-                    'initials': initials,
-                    'avatar_class': avatar_class,
-                    'visa_class': visa_class
-                }
-                
-                clientes.append(cliente_obj)
-        
-        connection.close()
-        return render_template('clientes.html', clientes=clientes)
-
-    flash('Error de conexión a la base de datos', 'error')
-    return redirect(url_for('index_asesor'))
-
+                connection.commit()
+                flash('Estado del cliente actualizado correctamente', 'success')
+        except Exception as e:
+            connection.rollback()
+            flash(f'Error al actualizar el estado del cliente: {str(e)}', 'error')
+        finally:
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos', 'error')
+    
+    return redirect(url_for('clientes_admin'))  # Actualizar a clientes_admin
 
 @app.route('/obtener_cliente/<int:id_solicitante>')
 def obtener_cliente(id_solicitante):
@@ -2510,57 +2376,3 @@ def obtener_cliente(id_solicitante):
             return jsonify({'error': 'Cliente no encontrado'}), 404
 
     return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-
-
-@app.route('/cambiar_estado_cliente', methods=['POST'])
-def cambiar_estado_cliente():
-    if 'user_id' not in session or not session.get('is_admin', False):
-        return jsonify({'error': 'No autorizado'}), 403
-
-    # Get form data
-    id_solicitante = request.form.get('id_solicitante')
-    nuevo_estado = request.form.get('estado')
-    
-    # Validate required fields
-    if not all([id_solicitante, nuevo_estado]):
-        flash('El ID del cliente y el estado son obligatorios', 'error')
-        return redirect(url_for('clientes'))
-    
-    connection = create_connection()
-    if connection:
-        try:
-            with connection.cursor() as cursor:
-                # Update client status
-                cursor.execute("""
-                    UPDATE tbl_solicitante 
-                    SET estado = %s
-                    WHERE id_solicitante = %s
-                """, (nuevo_estado, id_solicitante))
-                
-                connection.commit()
-                flash('Estado del cliente actualizado correctamente', 'success')
-        except Exception as e:
-            connection.rollback()
-            flash(f'Error al actualizar el estado del cliente: {str(e)}', 'error')
-        finally:
-            connection.close()
-    else:
-        flash('Error de conexión a la base de datos', 'error')
-    
-    return redirect(url_for('clientes'))
-
-@app.route('/reportes')
-def reportes():
-    return render_template('reportes.html')
-
-# Añadir esta nueva ruta a tu app.py
-@app.route('/dashboard_asesor')
-def dashboard_asesor():
-    if 'user_id' not in session or not session.get('is_admin', False):
-        return redirect('/login')
-    try:
-        return render_template('Administrador/index_asesor.html')  # Ruta correcta
-    except Exception as e:
-        print(f"Error al renderizar la plantilla: {str(e)}")
-        # Redirigir a una página segura si hay un error
-        return redirect('/asesorias_admin')
