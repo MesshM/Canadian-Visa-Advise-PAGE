@@ -1,209 +1,143 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, send_file
+from database import create_connection
+from config import Config
+from utils.file_utils import allowed_file
 from werkzeug.utils import secure_filename
 import os
 import time
-import sys
-import logging
+from datetime import datetime
 
-# Add project root to Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+document_bp = Blueprint('document', __name__)
 
-from database import create_connection, close_connection
-from config import UPLOAD_FOLDER
-from utils.file_utils import save_uploaded_file, validate_document
-
-# Configure logging
-logging.basicConfig(level=logging.INFO, 
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-# Register the Blueprint
-document_bp = Blueprint('document', __name__, url_prefix='/document')
-
-def allowed_file(filename):
-    """
-    Verifies if the file has an allowed extension.
-    
-    Args:
-        filename (str): Name of the file to check
-    
-    Returns:
-        bool: True if file extension is allowed, False otherwise
-    """
-    ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'}
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-@document_bp.route('/subir_documento', methods=['GET', 'POST'])
-def subir_documento():
-    """
-    Uploads a document associated with an applicant.
-    
-    Returns:
-        Renders upload template or redirects based on upload status
-    """
-    # Check user authentication
+@document_bp.route('/solicitantes')
+def solicitantes():
     if 'user_id' not in session:
-        flash('Debe iniciar sesión para subir documentos', 'error')
         return redirect(url_for('auth.login'))
-
-    if request.method == 'POST':
-        # Validate file upload
-        if 'file' not in request.files:
-            flash('No se envió ningún archivo', 'error')
-            return redirect(request.url)
-
-        file = request.files['file']
-        id_solicitante = request.form.get('id_solicitante')
-        tipo_documento = request.form.get('tipo_documento')
-
-        # Additional validation
-        if not id_solicitante or not tipo_documento:
-            flash('Información del solicitante o tipo de documento faltante', 'error')
-            return redirect(request.url)
-
-        if file.filename == '':
-            flash('No se seleccionó ningún archivo', 'error')
-            return redirect(request.url)
-
-        connection = None
+    
+    # Obtener parámetros de paginación
+    page = request.args.get('page', 1, type=int)
+    per_page = 10  # Número de solicitantes por página
+    
+    connection = create_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
         try:
-            if file and allowed_file(file.filename):
-                # Generate a secure filename
-                file_extension = file.filename.rsplit('.', 1)[1].lower()
-                filename = secure_filename(f"{id_solicitante}_{tipo_documento}_{int(time.time())}.{file_extension}")
-                filepath = os.path.join(UPLOAD_FOLDER, filename)
-
-                # Save the file
-                file.save(filepath)
-
-                # Optional: Validate document content
-                if not validate_document(file):
-                    os.remove(filepath)
-                    flash('El archivo no cumple con los requisitos', 'error')
-                    return redirect(request.url)
-
-                # Database connection and insert
-                connection = create_connection()
-                if connection:
-                    with connection.cursor() as cursor:
-                        cursor.execute("""
-                            INSERT INTO tbl_documento 
-                            (id_solicitante, nombre_documento, tipo_archivo, ruta_archivo, estado_documento, fecha_carga)
-                            VALUES (%s, %s, %s, %s, 'Pendiente', NOW())
-                        """, (id_solicitante, tipo_documento, file.mimetype, f"/static/uploads/{filename}"))
-                        connection.commit()
-                        flash('Documento subido correctamente', 'success')
-                        logger.info(f"Document uploaded: {filename} for applicant {id_solicitante}")
-
-                return redirect(url_for('document.listar_documentos', id_solicitante=id_solicitante))
-
-        except Exception as e:
-            logger.error(f"Error uploading document: {str(e)}")
-            flash(f'Error al subir el documento: {str(e)}', 'error')
-            if os.path.exists(filepath):
-                os.remove(filepath)
-
+            # Contar el total de solicitantes para la paginación
+            cursor.execute("SELECT COUNT(*) as total FROM tbl_solicitante")
+            total = cursor.fetchone()['total']
+            
+            # Calcular el offset para la paginación
+            offset = (page - 1) * per_page
+            
+            # Obtener los solicitantes para la página actual
+            cursor.execute("""
+                SELECT s.id_solicitante, u.id_usuario, u.nombres, u.apellidos, u.correo, u.fecha_nacimiento 
+                FROM tbl_solicitante s
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+                ORDER BY s.id_solicitante DESC
+                LIMIT %s OFFSET %s
+            """, (per_page, offset))
+            
+            solicitantes = cursor.fetchall()
+            
+            # Obtener usuarios que no son solicitantes para el formulario de agregar
+            cursor.execute("""
+                SELECT id_usuario, CONCAT(nombres, ' ', apellidos) as nombre_completo, correo
+                FROM tbl_usuario
+                WHERE id_usuario NOT IN (SELECT id_usuario FROM tbl_solicitante)
+                ORDER BY nombres
+            """)
+            
+            usuarios_disponibles = cursor.fetchall()
+            
+            # Calcular el número total de páginas
+            total_pages = (total + per_page - 1) // per_page
+            
+            return render_template(
+                'solicitudes.html', 
+                solicitantes=solicitantes,
+                usuarios_disponibles=usuarios_disponibles,
+                page=page,
+                total_pages=total_pages,
+                total=total
+            )
+        except Error as e:
+            flash(f'Error al cargar los solicitantes: {e}', 'error')
         finally:
-            if connection:
-                close_connection(connection)
-
-    return render_template('document/subir_documento.html')
-
-@document_bp.route('/documentos')
-def listar_documentos():
-    """
-    Lists documents associated with an applicant.
+            cursor.close()
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos', 'error')
     
-    Returns:
-        Renders document list template or redirects
-    """
+    return redirect(url_for('auth.index'))
+
+@document_bp.route('/agregar_solicitante', methods=['POST'])
+def agregar_solicitante():
     if 'user_id' not in session:
-        flash('Debe iniciar sesión para ver documentos', 'error')
         return redirect(url_for('auth.login'))
-
-    id_solicitante = request.args.get('id_solicitante')
-    if not id_solicitante:
-        flash('ID del solicitante no proporcionado', 'error')
-        return redirect(url_for('index'))
-
-    connection = None
-    try:
-        connection = create_connection()
-        if connection:
-            with connection.cursor(dictionary=True) as cursor:
-                cursor.execute("""
-                    SELECT * FROM tbl_documento 
-                    WHERE id_solicitante = %s
-                    ORDER BY fecha_carga DESC
-                """, (id_solicitante,))
-                documentos = cursor.fetchall()
-
-                # Format dates for better visualization
-                for doc in documentos:
-                    doc['fecha_formateada'] = doc['fecha_carga'].strftime("%d/%m/%Y %H:%M") if doc['fecha_carga'] else "N/A"
-
-            return render_template('document/listar_documentos.html', documentos=documentos)
-
-    except Exception as e:
-        logger.error(f"Error listing documents: {str(e)}")
-        flash(f'Error al cargar los documentos: {str(e)}', 'error')
-
-    finally:
-        if connection:
-            close_connection(connection)
-
-    return redirect(url_for('index'))
-
-@document_bp.route('/actualizar_estado_documento', methods=['POST'])
-def actualizar_estado_documento():
-    """
-    Updates the status of a document.
     
-    Returns:
-        JSON response about document status update
-    """
-    # Authorization check
-    if 'user_id' not in session or not session.get('is_admin', False):
-        return jsonify({'error': 'No autorizado'}), 403
-
-    # Validate input
-    id_documento = request.form.get('id_documento')
-    nuevo_estado = request.form.get('estado')
-    observaciones = request.form.get('observaciones')
-    id_solicitante = request.form.get('id_solicitante')
-
-    if not all([id_documento, nuevo_estado, id_solicitante]):
-        return jsonify({'error': 'Todos los campos son obligatorios'}), 400
-
-    connection = None
-    try:
-        connection = create_connection()
-        if connection:
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    UPDATE tbl_documento 
-                    SET estado_documento = %s, observaciones = %s
-                    WHERE id_documento = %s
-                """, (nuevo_estado, observaciones, id_documento))
-                connection.commit()
-                logger.info(f"Document {id_documento} status updated to {nuevo_estado}")
-                return jsonify({
-                    'success': True, 
-                    'message': 'Estado del documento actualizado correctamente'
-                })
-
-    except Exception as e:
-        logger.error(f"Error updating document status: {str(e)}")
-        if connection:
+    # Obtener el ID del usuario seleccionado
+    id_usuario = request.form.get('id_usuario')
+    
+    if not id_usuario:
+        flash('Debes seleccionar un usuario', 'error')
+        return redirect(url_for('document.solicitantes'))
+    
+    connection = create_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        try:
+            # Verificar si el usuario ya es un solicitante
+            cursor.execute("SELECT * FROM tbl_solicitante WHERE id_usuario = %s", (id_usuario,))
+            existing_solicitante = cursor.fetchone()
+            
+            if existing_solicitante:
+                flash('Este usuario ya es un solicitante', 'error')
+                return redirect(url_for('document.solicitantes'))
+            
+            # Insertar nuevo solicitante
+            cursor.execute("INSERT INTO tbl_solicitante (id_usuario) VALUES (%s)", (id_usuario,))
+            
+            connection.commit()
+            flash('Usuario agregado como solicitante con éxito', 'success')
+        except Error as e:
             connection.rollback()
-        return jsonify({
-            'error': f'Error al actualizar el estado del documento: {str(e)}'
-        }), 500
+            flash(f'Error al agregar solicitante: {e}', 'error')
+        finally:
+            cursor.close()
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos', 'error')
+    
+    return redirect(url_for('document.solicitantes'))
 
-    finally:
-        if connection:
-            close_connection(connection)
-
-    return jsonify({
-        'error': 'Error de conexión a la base de datos'
-    }), 500
+@document_bp.route('/formularios')
+def formularios():
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+    
+    connection = create_connection()
+    if connection:
+        cursor = connection.cursor(dictionary=True)
+        try:
+            cursor.execute("""
+                SELECT fe.id_formElegibilidad, CONCAT(u.nombres, ' ', u.apellidos) as solicitante, 
+                    fe.motivo_viaje, fe.codigo_pasaporte, fe.pais_residencia  as solicitante, 
+                    fe.motivo_viaje, fe.codigo_pasaporte, fe.pais_residencia, fe.provincia_destino
+                FROM tbl_form_eligibilidadCVA 
+                           fe
+                JOIN tbl_solicitante s ON fe.id_solicitante = s.id_solicitante
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+            """)
+            formularios = cursor.fetchall()
+            return render_template('formularios.html', formularios=formularios)
+        except Exception as e:
+            print(f"Error en la consulta: {e}")
+            flash('Error al cargar los formularios', 'error')
+            return redirect(url_for('auth.index'))
+        finally:
+            cursor.close()
+            connection.close()
+    else:
+        flash('Error de conexión a la base de datos', 'error')
+        return redirect(url_for('auth.index'))

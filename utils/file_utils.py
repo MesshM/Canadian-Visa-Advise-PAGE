@@ -1,81 +1,51 @@
-# utils/file_utils.py
-
 import os
 from werkzeug.utils import secure_filename
+from flask import current_app
 
-def save_uploaded_file(file, upload_folder):
+def allowed_file(filename, allowed_extensions):
     """
-    Guarda un archivo cargado en el servidor.
+    Check if a file has an allowed extension
     
     Args:
-        file: Objeto de archivo desde Flask request.
-        upload_folder (str): Ruta de la carpeta donde se guardará el archivo.
-    
+        filename (str): The name of the file to check
+        allowed_extensions (list): List of allowed file extensions
+        
     Returns:
-        str: Ruta completa del archivo guardado o None si falla.
+        bool: True if the file extension is allowed, False otherwise
     """
-    if not file:
-        return None
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
-    # Asegurarse de que el directorio de subida exista
-    if not os.path.exists(upload_folder):
-        os.makedirs(upload_folder)
-
-    # Generar un nombre seguro para el archivo
-    filename = secure_filename(file.filename)
-    file_path = os.path.join(upload_folder, filename)
-
-    # Guardar el archivo
+def save_file(file, filename, subfolder=''):
+    """
+    Save an uploaded file to the server
+    
+    Args:
+        file: The file object from request.files
+        filename (str): The name to save the file as
+        subfolder (str): Optional subfolder within UPLOAD_FOLDER to save the file
+        
+    Returns:
+        str: The path to the saved file, or None if there was an error
+    """
     try:
-        file.save(file_path)
-        return file_path
+        # Create the full path including any subfolder
+        upload_folder = current_app.config['UPLOAD_FOLDER']
+        if subfolder:
+            folder_path = os.path.join(upload_folder, subfolder)
+        else:
+            folder_path = upload_folder
+            
+        # Ensure the directory exists
+        os.makedirs(folder_path, exist_ok=True)
+        
+        # Create the full file path
+        filepath = os.path.join(folder_path, filename)
+        
+        # Save the file
+        file.save(filepath)
+        
+        return filepath
     except Exception as e:
-        print(f"Error al guardar el archivo: {e}")
+        print(f"Error saving file: {str(e)}")
         return None
-
-def delete_file(file_path):
-    """
-    Elimina un archivo del servidor.
-    
-    Args:
-        file_path (str): Ruta completa del archivo a eliminar.
-    
-    Returns:
-        bool: True si el archivo fue eliminado, False si no existe o hubo un error.
-    """
-    if os.path.exists(file_path):
-        try:
-            os.remove(file_path)
-            return True
-        except Exception as e:
-            print(f"Error al eliminar el archivo: {e}")
-            return False
-    return False
-
-def validate_document(file):
-    """
-    Valida un documento cargado.
-    
-    Args:
-        file: Objeto de archivo a validar.
-    
-    Returns:
-        bool: True si el documento es válido, False en caso contrario.
-    """
-    if not file:
-        return False
-
-    # Verificar el tamaño del archivo (máximo 5MB)
-    file.seek(0, os.SEEK_END)
-    file_size = file.tell()
-    file.seek(0)  # Restaurar el puntero del archivo
-    if file_size > 5 * 1024 * 1024:  # 5MB límite
-        return False
-
-    # Verificar la extensión del archivo
-    allowed_extensions = {'.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'}
-    filename = file.filename.lower()
-    if not any(filename.endswith(ext) for ext in allowed_extensions):
-        return False
-
-    return True
