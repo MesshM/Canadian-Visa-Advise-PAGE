@@ -11,8 +11,15 @@ let selectedAsesorEspecialidad = null
 let selectedDate = null
 let selectedTime = null
 let reservationId = null
-let paymentTimer = null
-let paymentTimeLeft = 300 // 5 minutos en segundos
+
+// Definir precios por tipo de visa (para usar en el frontend)
+const PRECIOS_VISA = {
+  "Visa de Trabajo": 150.0,
+  "Visa de Estudio": 100.0,
+  "Residencia Permanente": 200.0,
+  Ciudadanía: 250.0,
+  Otro: 150.0,
+}
 
 // Función para formatear fechas en un formato legible
 function formatDate(dateString) {
@@ -248,6 +255,17 @@ function showTipsTooltip(event) {
   })
 }
 
+// Función para formatear el tiempo restante en formato mm:ss
+function formatTimeRemaining(milliseconds) {
+  const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((milliseconds % (1000 * 60)) / 1000)
+
+  const formattedMinutes = String(minutes).padStart(2, "0")
+  const formattedSeconds = String(seconds).padStart(2, "0")
+
+  return `${formattedMinutes}:${formattedSeconds}`
+}
+
 // Inicializar los botones de consejos útiles cuando se carga la página
 document.addEventListener("DOMContentLoaded", () => {
   // Inicializar el resto de funcionalidades
@@ -434,114 +452,294 @@ function toggleDetails(asesoriaId) {
     // Mostrar detalles con animación
     detailsRow.classList.remove("hidden")
 
-    // Animar la apertura
-    const detailsContent = detailsRow.querySelector("div")
-    if (detailsContent) {
-      detailsContent.classList.add("animate-fade-in")
+    // Obtener datos de la asesoría para mostrar detalles más completos
+    const mainRow = document.querySelector(`tr[data-asesoria-id="${asesoriaId}"]`)
+    if (mainRow) {
+      const tipoAsesoria = mainRow.getAttribute("data-tipo-asesoria") || "No especificado"
+      const estado = mainRow.getAttribute("data-estado") || "No especificado"
+      const estadoPago = mainRow.getAttribute("data-pago-estado") || "No especificado"
+
+      // Obtener fecha y hora de la celda correspondiente
+      const fechaCell = mainRow.querySelector("td:nth-child(2)")
+      const fechaText = fechaCell ? fechaCell.textContent.trim() : ""
+      const fechaParts = fechaText.split("\n")
+      const fecha = fechaParts[0] || "No especificada"
+      const hora = fechaParts[1] ? fechaParts[1].trim() : "No especificada"
+
+      // Obtener asesor de la celda correspondiente
+      const asesorCell = mainRow.querySelector("td:nth-child(3)")
+      const asesor = asesorCell ? asesorCell.textContent.trim() : "No especificado"
+
+      // Obtener solicitante de la celda correspondiente
+      const solicitanteCell = mainRow.querySelector("td:nth-child(4)")
+      const solicitante = solicitanteCell
+        ? solicitanteCell.querySelector("span")?.textContent.trim()
+        : "No especificado"
+
+      // Actualizar el contenido de los detalles con los datos obtenidos
+      const detailsContent = detailsRow.querySelector("div")
+      if (detailsContent) {
+        // Mostrar un indicador de carga mientras se obtienen los detalles completos
+        detailsContent.innerHTML = `
+          <div class="flex justify-center items-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-t-2 border-primary-600"></div>
+            <p class="ml-3 text-primary-600 text-sm">Cargando detalles...</p>
+          </div>
+        `
+
+        // Cargar los detalles completos de la asesoría
+        fetch(`/obtener_detalles_asesoria/${asesoriaId}`)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Error al cargar detalles")
+            }
+            return response.json()
+          })
+          .then((data) => {
+            if (data.success && data.asesoria) {
+              const asesoria = data.asesoria
+
+              // Actualizar el contenido con los datos completos
+              detailsContent.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <!-- Tarjeta de Detalles del Asesor -->
+                  <div class="bg-white p-5 rounded-lg shadow-lg border border-gray-100 transform transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
+                    <div class="flex items-center mb-4">
+                      <div class="w-12 h-12 rounded-full ${getRandomColor()} flex items-center justify-center text-lg font-bold mr-3">
+                        ${generateAvatar(asesor)}
+                      </div>
+                      <div>
+                        <h4 class="font-medium text-gray-900 text-lg">Detalles del Asesor</h4>
+                        <p class="text-sm text-gray-500">Información de contacto</p>
+                      </div>
+                    </div>
+                    
+                    <div class="space-y-3">
+                      <div class="flex items-center">
+                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                        <div>
+                          <p class="text-sm text-gray-700"><span class="font-medium">Nombre:</span> ${asesor}</p>
+                        </div>
+                      </div>
+                      
+                      <div class="flex items-center">
+                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                        <div>
+                          <p class="text-sm text-gray-700"><span class="font-medium">Especialidad:</span> ${asesoria.especialidad || "Inmigración Canadiense"}</p>
+                        </div>
+                      </div>
+                      
+                      <div class="flex items-center">
+                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                        <div>
+                          <p class="text-sm text-gray-700"><span class="font-medium">Contacto:</span> asesor@cva.com</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <button onclick="verHistorialChat(${asesoriaId})"
+                      class="mt-4 relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white text-xs font-medium py-2 px-4 rounded-lg shadow-md hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer w-full">
+                      <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                      <div class="relative flex items-center justify-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                        <span>Ver registro de chat</span>
+                      </div>
+                    </button>
+                  </div>
+
+                  <!-- Tarjeta de Detalles de la Asesoría -->
+                  <div class="bg-white p-5 rounded-lg shadow-lg border border-gray-100 transform transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
+                    <div class="flex items-center mb-4">
+                      <div class="w-12 h-12 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center mr-3">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 class="font-medium text-gray-900 text-lg">Detalles de la Asesoría</h4>
+                        <p class="text-sm text-gray-500">Información de la cita</p>
+                      </div>
+                    </div>
+                    
+                    <div class="space-y-3">
+                      <div class="flex items-center">
+                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                        </svg>
+                        <div>
+                          <p class="text-sm text-gray-700"><span class="font-medium">Código:</span> <span class="font-mono">#${asesoriaId}</span></p>
+                        </div>
+                      </div>
+                      
+                      <div class="flex items-center">
+                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <div>
+                          <p class="text-sm text-gray-700"><span class="font-medium">Tipo de Visa:</span> ${asesoria.tipo_asesoria}</p>
+                        </div>
+                      </div>
+                      
+                      <div class="flex items-center">
+                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div class="flex items-center">
+                          <p class="text-sm text-gray-700"><span class="font-medium">Precio:</span> $${asesoria.precio || PRECIOS_VISA[asesoria.tipo_asesoria] || "150.00"} USD</p>
+                          ${
+                            asesoria.estado === "Pagada"
+                              ? `
+                            <svg class="w-4 h-4 ml-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                          `
+                              : ""
+                          }
+                        </div>
+                      </div>
+                      
+                      <div class="flex items-center">
+                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                        <div>
+                          <p class="text-sm text-gray-700"><span class="font-medium">Fecha:</span> ${fecha}</p>
+                        </div>
+                      </div>
+                      
+                      <div class="flex items-center">
+                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div>
+                          <p class="text-sm text-gray-700"><span class="font-medium">Hora:</span> ${hora}</p>
+                        </div>
+                      </div>
+                      
+                      <div class="flex items-center">
+                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div>
+                          <p class="text-sm text-gray-700">
+                            <span class="font-medium">Estado:</span>
+                            ${
+                              asesoria.estado === "Pagada"
+                                ? '<span class="text-blue-600">En Proceso Activo</span>'
+                                : isAsesoriaVigente(asesoria.fecha_asesoria)
+                                  ? '<span class="text-green-600">Vigente</span>'
+                                  : '<span class="text-red-600">Vencida</span>'
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Tarjeta de Información Adicional -->
+                  <div class="bg-white p-5 rounded-lg shadow-lg border border-gray-100 transform transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
+                    <div class="flex items-center mb-4">
+                      <div class="w-12 h-12 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center mr-3">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 class="font-medium text-gray-900 text-lg">Información Adicional</h4>
+                        <p class="text-sm text-gray-500">Detalles complementarios</p>
+                      </div>
+                    </div>
+                    
+                    <div class="space-y-3">
+                      <div class="flex items-center">
+                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <div>
+                          <p class="text-sm text-gray-700"><span class="font-medium">Lugar:</span> ${asesoria.lugar || "Virtual (Zoom)"}</p>
+                        </div>
+                      </div>
+                      
+                      <div class="flex items-center">
+                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                        </svg>
+                        <div>
+                          <p class="text-sm text-gray-700"><span class="font-medium">Método de Pago:</span> ${asesoria.metodo_pago_stripe || asesoria.metodo_pago || "Tarjeta de Crédito"}</p>
+                        </div>
+                      </div>
+                      
+                      <div class="flex items-center">
+                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div>
+                          <p class="text-sm text-gray-700"><span class="font-medium">Duración:</span> 60 minutos</p>
+                        </div>
+                      </div>
+                      
+                      <div class="flex items-center">
+                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path>
+                        </svg>
+                        <div>
+                          <p class="text-sm text-gray-700"><span class="font-medium">Documento:</span> ${asesoria.tipo_documento || "C.C"} ${asesoria.numero_documento || ""}</p>
+                        </div>
+                      </div>
+                      
+                      ${
+                        asesoria.descripcion
+                          ? `
+                        <div class="mt-3 pt-3 border-t border-gray-100">
+                          <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Descripción:</span></p>
+                          <div class="bg-gray-50 p-3 rounded-lg text-sm text-gray-700">
+                            ${asesoria.descripcion}
+                          </div>
+                        </div>
+                      `
+                          : ""
+                      }
+                    </div>
+                  </div>
+                </div>
+              `
+            } else {
+              // Si no se pueden cargar los detalles completos, mostrar un mensaje de error
+              detailsContent.innerHTML = `
+                <div class="p-4 bg-red-50 rounded-lg text-red-600 text-center">
+                  <p>No se pudieron cargar los detalles completos. Por favor, intente nuevamente.</p>
+                </div>
+              `
+            }
+
+            // Animar la apertura
+            detailsContent.classList.add("animate-fade-in")
+          })
+          .catch((error) => {
+            console.error("Error al cargar detalles:", error)
+            // Mostrar un mensaje de error
+            detailsContent.innerHTML = `
+              <div class="p-4 bg-red-50 rounded-lg text-red-600 text-center">
+                <p>Error al cargar los detalles. Por favor, intente nuevamente.</p>
+              </div>
+            `
+            detailsContent.classList.add("animate-fade-in")
+          })
+      }
     }
   } else {
     // Ocultar detalles
     detailsRow.classList.add("hidden")
   }
-}
-
-// Función para editar una asesoría
-function editAsesoria(asesoriaId) {
-  const modal = document.getElementById("editAdvisoryModal")
-  if (!modal) return
-
-  // Buscar datos de la asesoría
-  const row = document.querySelector(`tr[data-asesoria-id="${asesoriaId}"]`)
-  if (!row) return
-
-  // Obtener datos de la fila
-  const fechaCell = row.querySelector("td:nth-child(2)")
-  const fechaText = fechaCell ? fechaCell.textContent.trim() : ""
-  const fechaParts = fechaText.split("\n")
-  const fecha = fechaParts[0]
-  const hora = fechaParts[1] ? fechaParts[1].trim() : "00:00"
-
-  // Obtener datos adicionales de los detalles
-  const detailsRow = document.getElementById(`details-${asesoriaId}`)
-  let tipoAsesoria = ""
-  let descripcion = ""
-  let lugar = "Virtual (Zoom)"
-  const tipoDocumento = "C.C"
-  const numeroDocumento = ""
-
-  if (detailsRow) {
-    const paragraphs = detailsRow.querySelectorAll("p")
-    paragraphs.forEach((p) => {
-      const text = p.textContent.trim()
-      if (text.includes("Tipo de Visa:")) {
-        tipoAsesoria = text.split(":")[1].trim()
-      } else if (text.includes("Descripción:")) {
-        descripcion = text.split(":")[1].trim()
-      } else if (text.includes("Lugar:")) {
-        lugar = text.split(":")[1].trim()
-      }
-    })
-  }
-
-  // Llenar el formulario
-  const editForm = document.getElementById("editForm")
-  if (editForm) {
-    const codigoInput = document.getElementById("edit_codigo_asesoria")
-    const fechaInput = document.getElementById("edit_fecha_asesoria")
-    const tipoAsesoriaSelect = document.getElementById("edit_tipo_asesoria")
-    const descripcionInput = document.getElementById("edit_descripcion")
-    const lugarSelect = document.getElementById("edit_lugar")
-    const tipoDocumentoSelect = document.getElementById("edit_tipo_documento")
-    const numeroDocumentoInput = document.getElementById("edit_numero_documento")
-
-    if (codigoInput) codigoInput.value = asesoriaId
-
-    // Formatear fecha y hora para input datetime-local
-    if (fechaInput) {
-      const fechaObj = new Date(fecha)
-      const year = fechaObj.getFullYear()
-      const month = String(fechaObj.getMonth() + 1).padStart(2, "0")
-      const day = String(fechaObj.getDate()).padStart(2, "0")
-      const [hours, minutes] = hora.split(":")
-      fechaInput.value = `${year}-${month}-${day}T${hours}:${minutes}`
-    }
-
-    if (tipoAsesoriaSelect) {
-      for (let i = 0; i < tipoAsesoriaSelect.options.length; i++) {
-        if (tipoAsesoriaSelect.options[i].value === tipoAsesoria) {
-          tipoAsesoriaSelect.selectedIndex = i
-          break
-        }
-      }
-    }
-
-    if (descripcionInput) descripcionInput.value = descripcion
-
-    if (lugarSelect) {
-      for (let i = 0; i < lugarSelect.options.length; i++) {
-        if (lugarSelect.options[i].value === lugar) {
-          lugarSelect.selectedIndex = i
-          break
-        }
-      }
-    }
-
-    if (tipoDocumentoSelect) tipoDocumentoSelect.value = tipoDocumento
-    if (numeroDocumentoInput) numeroDocumentoInput.value = numeroDocumento
-  }
-
-  // Mostrar el modal
-  modal.classList.remove("hidden")
-  modal.classList.add("flex")
-}
-
-// Función para cerrar el modal de editar asesoría
-function closeEditAdvisoryModal() {
-  const modal = document.getElementById("editAdvisoryModal")
-  if (!modal) return
-
-  modal.classList.remove("flex")
-  modal.classList.add("hidden")
 }
 
 // Función para ver historial de chat
@@ -645,13 +843,200 @@ function enviarMensaje() {
   }, 1000)
 }
 
+// Función para actualizar el resumen con un diseño mejorado
+function updateSummary() {
+  const summaryContainer = document.getElementById("summary-container")
+  if (!summaryContainer) return
+
+  // Obtener datos del formulario
+  const tipoAsesoria = document.getElementById("tipo_asesoria")
+  const tipoDocumento = document.getElementById("tipo_documento")
+  const numeroDocumento = document.getElementById("numero_documento")
+  const descripcion = document.getElementById("descripcion")
+  const lugar = document.getElementById("lugar")
+
+  // Obtener precio según tipo de asesoría
+  let precio = 150.0 // Valor por defecto
+  if (tipoAsesoria) {
+    const selectedOption = tipoAsesoria.options[tipoAsesoria.selectedIndex]
+    if (selectedOption) {
+      const precioAttr = selectedOption.getAttribute("data-precio")
+      if (precioAttr) {
+        precio = Number.parseFloat(precioAttr)
+      }
+    }
+  }
+
+  // Formatear fecha y hora
+  const fechaHora = new Date(`${selectedDate}T${selectedTime}`)
+  const fechaFormateada = fechaHora.toLocaleDateString("es-ES", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  })
+  const horaFormateada = fechaHora
+    .toLocaleTimeString("es-ES", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+    .slice(0, 5) // Solo tomar HH:MM
+
+  // Actualizar el resumen con un diseño mejorado
+  summaryContainer.innerHTML = `
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+      <!-- Encabezado con animación sutil -->
+      <div class="bg-gradient-to-r from-primary-50 to-white p-4 border-b border-gray-100">
+        <h3 class="text-lg font-medium text-gray-900 flex items-center">
+          <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          Resumen de la Asesoría
+        </h3>
+        <p class="text-sm text-gray-500 mt-1">Revisa los detalles antes de confirmar</p>
+      </div>
+
+      <!-- Contenido principal -->
+      <div class="p-5">
+        <!-- Tarjeta de fecha y hora destacada -->
+        <div class="bg-primary-50 rounded-lg p-4 mb-5 flex items-center justify-between border border-primary-100 shadow-sm">
+          <div class="flex items-center">
+            <div class="bg-primary-100 p-2 rounded-full mr-3">
+              <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-primary-800">${fechaFormateada}</p>
+              <p class="text-xs text-primary-600">${horaFormateada} (60 minutos)</p>
+            </div>
+          </div>
+          <div class="bg-white px-3 py-1 rounded-full text-sm font-medium text-primary-700 border border-primary-200">
+            ${lugar ? lugar.options[lugar.selectedIndex].text : "Virtual (Zoom)"}
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <!-- Detalles de la Asesoría -->
+          <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
+              <h4 class="font-medium text-gray-700">Detalles de la Asesoría</h4>
+            </div>
+            <div class="p-4">
+              <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                <span class="text-gray-600 text-sm">Tipo:</span>
+                <span class="text-sm font-medium">${tipoAsesoria ? tipoAsesoria.options[tipoAsesoria.selectedIndex].text.split(" - ")[0] : ""}</span>
+              </div>
+              
+              <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                <span class="text-gray-600 text-sm">Precio:</span>
+                <span class="text-sm font-medium text-primary-600">$${precio.toFixed(2)} USD</span>
+              </div>
+              
+              ${
+                descripcion && descripcion.value
+                  ? `
+              <div class="mt-3 pt-2">
+                <span class="text-gray-600 text-sm block mb-1">Descripción:</span>
+                <p class="text-sm text-gray-700 bg-gray-50 p-2 rounded">${descripcion.value}</p>
+              </div>
+              `
+                  : ""
+              }
+            </div>
+          </div>
+
+          <!-- Detalles del Asesor -->
+          <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
+              <h4 class="font-medium text-gray-700">Información del Asesor</h4>
+            </div>
+            <div class="p-4">
+              <div class="flex items-center mb-3">
+                <div class="w-10 h-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-medium mr-3">
+                  ${selectedAsesorName ? selectedAsesorName.substring(0, 2).toUpperCase() : "AS"}
+                </div>
+                <div>
+                  <p class="font-medium text-gray-800">${selectedAsesorName || "Asesor Asignado"}</p>
+                  <p class="text-xs text-gray-500">${selectedAsesorEspecialidad || "Especialista en Inmigración"}</p>
+                </div>
+              </div>
+              
+              <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                <span class="text-gray-600 text-sm">Documento:</span>
+                <span class="text-sm">${tipoDocumento ? tipoDocumento.value : ""} ${numeroDocumento ? numeroDocumento.value : ""}</span>
+              </div>
+              
+              <div class="mt-3">
+                <div class="flex items-center text-xs text-gray-500">
+                  <svg class="w-4 h-4 mr-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                  Asesor disponible en el horario seleccionado
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Nota informativa -->
+        <div class="mt-5 bg-yellow-50 border border-yellow-100 rounded-lg p-3 flex items-start">
+          <svg class="w-5 h-5 text-yellow-500 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <p class="text-sm text-yellow-700">
+            Recuerda que tienes 5 minutos para completar el pago una vez agendada la cita, de lo contrario la reserva se cancelará automáticamente.
+          </p>
+        </div>
+      </div>
+    </div>
+  `
+}
+
+// Función para mostrar el indicador de carga durante el agendamiento
+function showLoadingIndicator() {
+  const submitBtn = document.getElementById("stepper-submit-btn")
+  if (!submitBtn) return
+
+  // Cambiar el texto del botón y mostrar el indicador de carga
+  submitBtn.innerHTML = `
+    <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+    <div class="relative flex items-center justify-center">
+      <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+      <span>Agendando...</span>
+    </div>
+  `
+  submitBtn.disabled = true
+}
+
+// Función para restaurar el botón después de la carga
+function hideLoadingIndicator() {
+  const submitBtn = document.getElementById("stepper-submit-btn")
+  if (!submitBtn) return
+
+  // Restaurar el texto original del botón
+  submitBtn.innerHTML = `
+    <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+    <div class="relative flex items-center justify-center">
+      <span>Agendar Cita</span>
+      <svg xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200"
+          viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd"
+              d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+              clip-rule="evenodd" />
+      </svg>
+    </div>
+  `
+  submitBtn.disabled = false
+}
+
 // Función para actualizar el precio en tiempo real
 function updateAppointmentPrice() {
   const tipoAsesoriaSelect = document.getElementById("tipo_asesoria")
   const precioAsesoriaElement = document.getElementById("precio-asesoria")
 
   if (tipoAsesoriaSelect && precioAsesoriaElement) {
-    const precioAsesoria = tipoAsesoriaSelect.options[tipoAsesoriaSelect.selectedIndex].getAttribute("data-precio")
+    const precioAsesoria = tipoAsesoriaSelect.options[tipoAsesoria.selectedIndex].getAttribute("data-precio")
     precioAsesoriaElement.textContent = `$${precioAsesoria} USD`
   } else if (tipoAsesoriaSelect) {
     // Si no existe el elemento de precio pero sí el selector, actualizar los detalles completos
@@ -727,12 +1112,6 @@ function pagarAsesoria(asesoriaId, tipoAsesoria) {
 function closePagoModal() {
   const modal = document.getElementById("pagoModal")
   if (!modal) return
-
-  // Detener el temporizador si está activo
-  if (paymentTimer) {
-    clearInterval(paymentTimer)
-    paymentTimer = null
-  }
 
   modal.classList.remove("flex")
   modal.classList.add("hidden")
@@ -965,12 +1344,6 @@ function closeNewAdvisoryModal() {
     reservationId = null
   }
 
-  // Detener el temporizador si está activo
-  if (paymentTimer) {
-    clearInterval(paymentTimer)
-    paymentTimer = null
-  }
-
   // Ocultar el modal
   modal.classList.remove("flex")
   modal.classList.add("hidden")
@@ -989,17 +1362,42 @@ function initStepper() {
   const nextBtn = document.getElementById("stepper-next-btn")
   const submitBtn = document.getElementById("stepper-submit-btn")
 
+  // Añadir animaciones a los botones
   if (prevBtn) {
-    prevBtn.addEventListener("click", prevStep)
+    prevBtn.addEventListener("click", function () {
+      this.classList.add("scale-95")
+      setTimeout(() => this.classList.remove("scale-95"), 150)
+      prevStep()
+    })
   }
 
   if (nextBtn) {
-    nextBtn.addEventListener("click", nextStep)
+    nextBtn.addEventListener("click", function () {
+      this.classList.add("scale-95")
+      setTimeout(() => this.classList.remove("scale-95"), 150)
+      nextStep()
+    })
   }
 
   if (submitBtn) {
-    submitBtn.addEventListener("click", submitAsesoria)
+    submitBtn.addEventListener("click", function () {
+      this.classList.add("scale-95")
+      setTimeout(() => this.classList.remove("scale-95"), 150)
+      submitAsesoria()
+    })
   }
+
+  // Añadir animación a los pasos del stepper
+  const steps = document.querySelectorAll(".stepper-step")
+  steps.forEach((step, index) => {
+    step.addEventListener("mouseenter", function () {
+      const circle = this.querySelector("div")
+      if (circle) {
+        circle.classList.add("scale-110")
+        setTimeout(() => circle.classList.remove("scale-110"), 300)
+      }
+    })
+  })
 }
 
 function resetStepper() {
@@ -1060,18 +1458,6 @@ function resetStepper() {
   selectedDate = null
   selectedTime = null
   reservationId = null
-
-  // Detener el temporizador si está activo
-  if (paymentTimer) {
-    clearInterval(paymentTimer)
-    paymentTimer = null
-  }
-
-  // Reiniciar el contador de tiempo
-  const timerElement = document.getElementById("payment-timer")
-  if (timerElement) {
-    timerElement.textContent = "5:00"
-  }
 }
 
 function prevStep() {
@@ -1096,12 +1482,6 @@ function prevStep() {
   if (activeIndex === 2 && reservationId) {
     cancelarReservaTemporal(reservationId)
     reservationId = null
-
-    // Detener el temporizador si está activo
-    if (paymentTimer) {
-      clearInterval(paymentTimer)
-      paymentTimer = null
-    }
   }
 
   // Actualizar el paso activo
@@ -1141,7 +1521,7 @@ function prevStep() {
   submitBtn.classList.add("hidden")
 }
 
-const nextStep = () => {
+function nextStep() {
   const steps = document.querySelectorAll(".stepper-step")
   const contents = document.querySelectorAll(".stepper-content")
   const progressBar = document.querySelector(".stepper-progress-bar .progress")
@@ -1394,6 +1774,7 @@ function loadCalendar() {
     const firstDayOfMonth = new Date(displayYear, displayMonth, 1)
 
     // Ajustar para que la semana comience en lunes (0 = lunes, 6 = domingo)
+
     // getDay() devuelve 0 para domingo, 1 para lunes, etc.
     let firstDayIndex = firstDayOfMonth.getDay() - 1
     if (firstDayIndex < 0) firstDayIndex = 6 // Si es domingo (0-1=-1), ajustar a 6
@@ -1575,16 +1956,7 @@ function loadAvailableTimes(date) {
       // Limpiar contenedor
       timeContainer.innerHTML = ""
 
-      // Añadir la fecha seleccionada como encabezado
-      const dateHeader = document.createElement("div")
-      dateHeader.className = "bg-primary-50 p-2 rounded-lg mb-3 text-center text-primary-800 font-medium text-sm"
-      dateHeader.innerHTML = `
-        <svg class="w-4 h-4 inline-block mr-1 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-        </svg>
-        ${formattedDate}
-      `
-      timeContainer.appendChild(dateHeader)
+      // No mostrar el encabezado de fecha, ya que se selecciona en el calendario
 
       if (data.horarios && data.horarios.length > 0) {
         // Crear lista de horarios en columna
@@ -1672,19 +2044,13 @@ function loadAvailableTimes(date) {
 }
 
 // Modificar la función createTemporaryReservation para habilitar el botón siguiente cuando se selecciona una hora
-const createTemporaryReservation = (date, time) => {
+function createTemporaryReservation(date, time) {
   if (!selectedAsesorId || !date || !time) return
 
   // Cancelar cualquier reserva temporal anterior
   if (reservationId) {
     cancelarReservaTemporal(reservationId)
     reservationId = null
-  }
-
-  // Detener el temporizador si está activo
-  if (paymentTimer) {
-    clearInterval(paymentTimer)
-    paymentTimer = null
   }
 
   // Crear una nueva reserva temporal
@@ -1717,6 +2083,12 @@ const createTemporaryReservation = (date, time) => {
           nextBtn.classList.remove("opacity-50", "cursor-not-allowed")
           nextBtn.disabled = false
         }
+
+        // Mostrar el indicador de reserva temporal
+        const reservationIndicator = document.getElementById("reservation-indicator")
+        if (reservationIndicator) {
+          reservationIndicator.classList.remove("hidden")
+        }
       }
     })
     .catch((error) => {
@@ -1725,7 +2097,7 @@ const createTemporaryReservation = (date, time) => {
     })
 }
 
-const cancelarReservaTemporal = (reservaId) => {
+function cancelarReservaTemporal(reservaId) {
   if (!reservaId) return
 
   fetch("/cancelar_reserva_temporal", {
@@ -1741,212 +2113,17 @@ const cancelarReservaTemporal = (reservaId) => {
   })
 }
 
-function startPaymentTimer() {
-  const timerElement = document.getElementById("payment-timer")
-  if (!timerElement) return
-
-  // Reiniciar el tiempo
-  paymentTimeLeft = 300 // 5 minutos en segundos
-
-  // Actualizar el elemento de tiempo
-  updateTimerDisplay()
-
-  // Iniciar el temporizador
-  paymentTimer = setInterval(() => {
-    paymentTimeLeft--
-
-    // Actualizar el elemento de tiempo
-    updateTimerDisplay()
-
-    // Si el tiempo se agota, cancelar la reserva
-    if (paymentTimeLeft <= 0) {
-      clearInterval(paymentTimer)
-      paymentTimer = null
-
-      if (reservationId) {
-        cancelarReservaTemporal(reservationId)
-        reservationId = null
-
-        // Mostrar notificación
-        showNotification("El tiempo de reserva ha expirado", "error")
-
-        // Volver al paso 2
-        const steps = document.querySelectorAll(".stepper-step")
-        const contents = document.querySelectorAll(".stepper-content")
-
-        // Encontrar el paso activo actual
-        let activeIndex = -1
-        steps.forEach((step, index) => {
-          if (step.classList.contains("active")) {
-            activeIndex = index
-          }
-        })
-
-        if (activeIndex === 2) {
-          prevStep()
-        }
-      }
-    }
-  }, 1000)
-}
-
-function updateTimerDisplay() {
-  const timerElement = document.getElementById("payment-timer")
-  if (!timerElement) return
-
-  const minutes = Math.floor(paymentTimeLeft / 60)
-  const seconds = paymentTimeLeft % 60
-
-  timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, "0")}`
-
-  // Cambiar color cuando quede poco tiempo
-  if (paymentTimeLeft <= 60) {
-    timerElement.classList.add("text-red-600")
-    timerElement.classList.remove("text-gray-700")
-  } else {
-    timerElement.classList.remove("text-red-600")
-    timerElement.classList.add("text-gray-700")
-  }
-}
-
-// Modificar la función updateSummary para que coincida con la imagen
-function updateSummary() {
-  const summaryContainer = document.getElementById("summary-container")
-  if (!summaryContainer) return
-
-  // Obtener datos del formulario
-  const tipoAsesoria = document.getElementById("tipo_asesoria")
-  const tipoDocumento = document.getElementById("tipo_documento")
-  const numeroDocumento = document.getElementById("numero_documento")
-  const descripcion = document.getElementById("descripcion")
-  const lugar = document.getElementById("lugar")
-
-  // Obtener precio según tipo de asesoría
-  let precio = 150.0 // Valor por defecto
-  if (tipoAsesoria) {
-    const selectedOption = tipoAsesoria.options[tipoAsesoria.selectedIndex]
-    if (selectedOption) {
-      const precioAttr = selectedOption.getAttribute("data-precio")
-      if (precioAttr) {
-        precio = Number.parseFloat(precioAttr)
-      }
-    }
-  }
-
-  // Formatear fecha y hora
-  const fechaHora = new Date(`${selectedDate}T${selectedTime}`)
-  const fechaFormateada = fechaHora.toLocaleDateString("es-ES", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  })
-  const horaFormateada = fechaHora
-    .toLocaleTimeString("es-ES", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-    .slice(0, 5) // Solo tomar HH:MM
-
-  // Actualizar el resumen con un diseño que coincida con la imagen
-  summaryContainer.innerHTML = `
-    <div class="bg-white rounded-xl p-6">
-      <h3 class="text-lg font-medium text-gray-900 mb-6 flex items-center">
-        <svg class="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-        </svg>
-        Resumen de la Asesoría
-      </h3>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Detalles de la Asesoría -->
-        <div class="bg-gray-50 p-4 rounded-lg">
-          <h4 class="text-sm font-medium text-gray-700 mb-3">Detalles de la Asesoría</h4>
-          
-          <div class="space-y-2">
-            <div class="flex justify-between items-center">
-              <span class="text-gray-600 text-sm">Tipo:</span>
-              <span class="text-sm">${tipoAsesoria ? tipoAsesoria.options[tipoAsesoria.selectedIndex].text : ""}</span>
-            </div>
-            
-            <div class="flex justify-between items-center">
-              <span class="text-gray-600 text-sm">Precio:</span>
-              <span class="text-sm font-medium text-red-500">$${precio.toFixed(2)} USD</span>
-            </div>
-            
-            <div class="flex justify-between items-center">
-              <span class="text-gray-600 text-sm">Modalidad:</span>
-              <span class="text-sm">${lugar ? lugar.options[lugar.selectedIndex].text : "Virtual (Zoom)"}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Detalles del Asesor -->
-        <div class="bg-gray-50 p-4 rounded-lg">
-          <h4 class="text-sm font-medium text-gray-700 mb-3">Detalles del Asesor</h4>
-          
-          <div class="space-y-2">
-            <div class="flex justify-between items-start">
-              <span class="text-gray-600 text-sm">Nombre:</span>
-              <span class="text-sm text-right">${selectedAsesorName || ""}</span>
-            </div>
-            
-            <div class="flex justify-between items-start">
-              <span class="text-gray-600 text-sm">Especialidad:</span>
-              <span class="text-sm text-right">${selectedAsesorEspecialidad || ""}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Fecha y Hora -->
-      <div class="bg-gray-50 p-4 rounded-lg mt-4">
-        <h4 class="text-sm font-medium text-gray-700 mb-3">Fecha y Hora</h4>
-        
-        <div class="flex items-center justify-between">
-          <div class="flex items-center">
-            <svg class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-            </svg>
-            <span class="text-sm">${fechaFormateada}</span>
-          </div>
-          <div class="flex items-center">
-            <svg class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span class="text-sm">${horaFormateada}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Información del Solicitante -->
-      <div class="bg-gray-50 p-4 rounded-lg mt-4">
-        <h4 class="text-sm font-medium text-gray-700 mb-3">Información del Solicitante</h4>
-        
-        <div class="flex justify-between items-center">
-          <span class="text-gray-600 text-sm">Documento:</span>
-          <span class="text-sm">${tipoDocumento ? tipoDocumento.value : ""} ${numeroDocumento ? numeroDocumento.value : ""}</span>
-        </div>
-      </div>
-
-      ${
-        descripcion && descripcion.value
-          ? `
-      <div class="bg-gray-50 p-4 rounded-lg mt-4">
-        <h4 class="text-sm font-medium text-gray-700 mb-3">Descripción de la Consulta</h4>
-        <p class="text-sm text-gray-700">${descripcion.value}</p>
-      </div>
-      `
-          : ""
-      }
-    </div>
-  `
-}
-
-// Modificar la función submitAsesoria para iniciar el temporizador al finalizar
+// Modificar la función submitAsesoria para mostrar el indicador de carga
 function submitAsesoria() {
+  // Mostrar indicador de carga
+  showLoadingIndicator()
+
   // Obtener datos del formulario
   const form = document.getElementById("asesoria-form")
-  if (!form) return
+  if (!form) {
+    hideLoadingIndicator()
+    return
+  }
 
   const tipoAsesoria = document.getElementById("tipo_asesoria").value
   const tipoDocumento = document.getElementById("tipo_documento").value
@@ -1957,6 +2134,7 @@ function submitAsesoria() {
   // Verificar que tenemos todos los datos necesarios
   if (!selectedAsesorId || !selectedDate || !selectedTime) {
     showNotification("Faltan datos para agendar la asesoría", "error")
+    hideLoadingIndicator()
     return
   }
 
@@ -1970,6 +2148,7 @@ function submitAsesoria() {
     .then((data) => {
       if (data.error) {
         showNotification(data.error, "error")
+        hideLoadingIndicator()
         return
       }
 
@@ -2004,14 +2183,14 @@ function submitAsesoria() {
         })
         .then((data) => {
           if (data.success) {
-            // Mostrar notificación de éxito
-            showNotification(data.message || "Asesoría agendada con éxito", "success")
+            // Ocultar indicador de carga
+            hideLoadingIndicator()
 
-            // Iniciar temporizador de 5 minutos
-            startPaymentTimer()
-
-            // Mostrar notificación de tiempo
-            showNotification("Tienes 5 minutos para completar el pago", "warning")
+            // Mostrar notificación de éxito con información del tiempo límite
+            showNotification(
+              data.message || "Asesoría agendada con éxito. Tienes 5 minutos para realizar el pago.",
+              "success",
+            )
 
             // Cerrar el modal
             closeNewAdvisoryModal()
@@ -2023,12 +2202,74 @@ function submitAsesoria() {
         .catch((error) => {
           console.error("Error al agendar asesoría:", error)
           showNotification(error.message, "error")
+          hideLoadingIndicator()
         })
     })
     .catch((error) => {
       console.error("Error al obtener ID de solicitante:", error)
       showNotification("Error al obtener información del usuario", "error")
+      hideLoadingIndicator()
     })
+}
+
+// Función para iniciar un temporizador para una nueva asesoría
+function startNewAppointmentTimer(asesoriaId, tiempoLimite) {
+  // Crear elemento para el temporizador si no existe
+  let timerElement = document.querySelector(`.countdown-timer[data-asesoria-id="${asesoriaId}"]`)
+
+  if (!timerElement) {
+    // Si estamos en la página de pago y no en la lista de asesorías
+    const paymentMessage = document.getElementById("payment-message")
+    if (paymentMessage) {
+      paymentMessage.classList.remove("hidden")
+      paymentMessage.classList.add("bg-yellow-100", "text-yellow-700")
+      paymentMessage.innerHTML = `
+        <div class="flex items-center">
+          <svg class="w-5 h-5 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span>Tiempo restante para completar el pago: <span id="payment-timer">5:00</span></span>
+        </div>
+      `
+
+      timerElement = document.getElementById("payment-timer")
+
+      // Iniciar cuenta regresiva
+      let timeRemaining = tiempoLimite * 1000 // Convertir a milisegundos
+
+      const timerId = setInterval(() => {
+        timeRemaining -= 1000
+
+        if (timeRemaining <= 0) {
+          clearInterval(timerId)
+          paymentMessage.innerHTML = `
+            <div class="flex items-center">
+              <svg class="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <span>El tiempo para realizar el pago ha expirado. La reserva ha sido cancelada.</span>
+            </div>
+          `
+
+          // Deshabilitar el botón de pago
+          const submitButton = document.getElementById("submit-button")
+          if (submitButton) {
+            submitButton.disabled = true
+            submitButton.classList.add("opacity-50", "cursor-not-allowed")
+          }
+
+          // Cerrar el modal después de 3 segundos
+          setTimeout(() => {
+            closePagoModal()
+            // Recargar la página para actualizar la lista de asesorías
+            window.location.reload()
+          }, 3000)
+        } else {
+          timerElement.textContent = formatTimeRemaining(timeRemaining)
+        }
+      }, 1000)
+    }
+  }
 }
 
 // Exportar funciones para uso global
@@ -2037,8 +2278,6 @@ window.isAsesoriaVigente = isAsesoriaVigente
 window.getRandomColor = getRandomColor
 window.generateAvatar = generateAvatar
 window.showNotification = showNotification
-window.editAsesoria = editAsesoria
-window.closeEditAdvisoryModal = closeEditAdvisoryModal
 window.toggleDetails = toggleDetails
 window.resetFilters = resetFilters
 window.verHistorialChat = verHistorialChat
@@ -2051,4 +2290,5 @@ window.closeCancelarAsesoriaModal = closeCancelarAsesoriaModal
 window.openNewAdvisoryModal = openNewAdvisoryModal
 window.closeNewAdvisoryModal = closeNewAdvisoryModal
 window.showTipsTooltip = showTipsTooltip
+window.startNewAppointmentTimer = startNewAppointmentTimer
 

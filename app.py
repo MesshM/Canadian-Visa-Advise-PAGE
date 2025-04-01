@@ -34,6 +34,21 @@ ZOHO_PASSWORD = os.getenv('ZOHO_PASSWORD')  # Contraseña de aplicación de Zoho
 app.config['STRIPE_SECRET_KEY'] = os.getenv('STRIPE_SECRET_KEY')
 app.config['STRIPE_PUBLIC_KEY'] = os.getenv('STRIPE_PUBLIC_KEY')
 
+# Configuración de la base de datos para AWS
+def create_connection():
+  try:
+      connection = mysql.connector.connect(
+          host='cva.ch86isccq37m.us-east-2.rds.amazonaws.com',  # Endpoint de RDS
+          database='CVA',  # Nombre de tu base de datos
+          user='admin',  # Usuario de MySQL en RDS
+          password='root.2025'  # Contraseña de MySQL en RDS
+      )
+      if connection.is_connected():
+          return connection
+  except Error as e:
+      print(f"Error al conectar a MySQL: {e}")
+      return None
+
 # Configuración para subida de archivos
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static/uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
@@ -71,47 +86,34 @@ def send_email_via_zoho(to_email, subject, body):
       print("Error al enviar correo:", e)
       return False
 
-# Configuración de la base de datos para AWS
-def create_connection():
-  try:
-      connection = mysql.connector.connect(
-          host='cva.ch86isccq37m.us-east-2.rds.amazonaws.com',  # Endpoint de RDS
-          database='CVA',  # Nombre de tu base de datos
-          user='admin',  # Usuario de MySQL en RDS
-          password='root.2025'  # Contraseña de MySQL en RDS
-      )
-      if connection.is_connected():
-          return connection
-  except Error as e:
-      print(f"Error al conectar a MySQL: {e}")
-      return None
-
-# Función para limpiar asesorías no pagadas después de 2 días
+# Función para limpiar asesorías no pagadas después de 5 minutos
 def limpiar_asesorias_vencidas():
-  while True:
-      try:
-          print("Ejecutando limpieza de asesorías vencidas...")
-          connection = create_connection()
-          if connection:
-              cursor = connection.cursor()
-              # Obtener asesorías pendientes con más de 2 días de antigüedad
-              dos_dias_atras = datetime.now() - timedelta(days=2)
-              cursor.execute("""
-                  DELETE FROM tbl_asesoria 
-                  WHERE estado = 'Pendiente' 
-                  AND fecha_creacion < %s
-              """, (dos_dias_atras,))
-              
-              eliminadas = cursor.rowcount
-              connection.commit()
-              cursor.close()
-              connection.close()
-              print(f"Se eliminaron {eliminadas} asesorías vencidas")
-      except Exception as e:
-          print(f"Error al limpiar asesorías vencidas: {e}")
-      
-      # Esperar 12 horas antes de la próxima ejecución
-      time.sleep(12 * 60 * 60)
+    while True:
+        try:
+            print("Ejecutando limpieza de asesorías vencidas...")
+            
+            connection = create_connection()
+            if connection:
+                cursor = connection.cursor()
+                # Obtener asesorías pendientes con más de 5 minutos de antigüedad
+                cinco_minutos_atras = datetime.now() - timedelta(minutes=5)
+                cursor.execute("""
+                    DELETE FROM tbl_asesoria 
+                    WHERE estado = 'Pendiente'
+                    AND fecha_creacion < %s
+                """, (cinco_minutos_atras,))
+                
+                eliminadas = cursor.rowcount
+                connection.commit()
+                cursor.close()
+                connection.close()
+                print(f"Se eliminaron {eliminadas} asesorías vencidas por tiempo de pago")
+        except Exception as e:
+            print(f"Error al limpiar asesorías vencidas: {e}")
+        
+        # Esperar 1 minuto antes de la próxima verificación
+        time.sleep(60)
+
 
 # Iniciar el hilo de limpieza de asesorías
 limpieza_thread = threading.Thread(target=limpiar_asesorias_vencidas, daemon=True)
@@ -915,26 +917,29 @@ def nueva_asesoria():
                 
                 especialidad_column_exists = cursor.fetchone() is not None
                 
+                # Establecer la fecha de creación con la hora actual para el control de tiempo de pago
+                fecha_creacion = datetime.now()
+
                 if especialidad_column_exists:
                     # Insertar nueva asesoría con la fecha seleccionada y la especialidad
                     cursor.execute("""
                         INSERT INTO tbl_asesoria (fecha_asesoria, asesor_asignado, id_solicitante, tipo_asesoria, 
                         descripcion, lugar, estado, tipo_documento, numero_documento, numero_asesoria, id_asesor, 
-                        nombre_asesor, especialidad)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        nombre_asesor, especialidad, fecha_creacion)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """, (fecha_asesoria, asesor_asignado, id_solicitante, tipo_asesoria, descripcion, lugar, 
                          "Pendiente", tipo_documento, numero_documento, numero_asesoria, id_asesor, 
-                         asesor_asignado, asesor_especialidad))
+                         asesor_asignado, asesor_especialidad, fecha_creacion))
                 else:
                     # Insertar nueva asesoría sin la columna especialidad
                     cursor.execute("""
                         INSERT INTO tbl_asesoria (fecha_asesoria, asesor_asignado, id_solicitante, tipo_asesoria, 
                         descripcion, lugar, estado, tipo_documento, numero_documento, numero_asesoria, id_asesor, 
-                        nombre_asesor)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        nombre_asesor, fecha_creacion)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """, (fecha_asesoria, asesor_asignado, id_solicitante, tipo_asesoria, descripcion, lugar, 
                          "Pendiente", tipo_documento, numero_documento, numero_asesoria, id_asesor, 
-                         asesor_asignado))
+                         asesor_asignado, fecha_creacion))
                 
                 # Obtener el ID de la asesoría recién creada
                 codigo_asesoria = cursor.lastrowid
@@ -979,11 +984,13 @@ def nueva_asesoria():
                 
                 connection.commit()
                 
+                # Replace with updated response with timer reference:
                 if request.is_json:
                     return jsonify({
                         'success': True, 
                         'codigo_asesoria': codigo_asesoria,
-                        'message': 'Asesoría solicitada con éxito. Tienes 5 minutos para realizar el pago.'
+                        'message': 'Asesoría solicitada con éxito. Tienes 5 minutos para realizar el pago.',
+                        'tiempo_limite': 5 * 60  # 5 minutos en segundos
                     })
                 else:
                     flash('Asesoría solicitada con éxito. Tienes 5 minutos para realizar el pago.', 'success')
@@ -1010,6 +1017,7 @@ def nueva_asesoria():
             return jsonify({'error': f'Error: {str(e)}'}), 500
         flash(f'Error: {str(e)}', 'error')
         return redirect(url_for('asesorias'))
+
 
 # Modificar la ruta de procesar_pago para actualizar tbl_calendario_asesorias
 @app.route('/procesar_pago', methods=['POST'])
@@ -1252,13 +1260,6 @@ def crear_payment_intent():
         print(f"Error al crear PaymentIntent: {str(e)}")
         return jsonify({'error': str(e)}), 500
     
-#ruta 
-@app.route('/pagos')
-def pagos():
-    return render_template('pagos.html')
-
-
-
 
     
 
@@ -1933,6 +1934,13 @@ def obtener_detalles_asesoria(codigo_asesoria):
             if not asesoria:
                 return jsonify({'error': 'Asesoría no encontrada o no autorizada'}), 404
             
+            # Convertir objetos datetime a string para que sean serializables
+            if asesoria and 'fecha_asesoria' in asesoria and asesoria['fecha_asesoria']:
+                asesoria['fecha_asesoria'] = asesoria['fecha_asesoria'].strftime('%Y-%m-%d %H:%M:%S')
+            
+            if asesoria and 'fecha_creacion' in asesoria and asesoria['fecha_creacion']:
+                asesoria['fecha_creacion'] = asesoria['fecha_creacion'].strftime('%Y-%m-%d %H:%M:%S')
+            
             return jsonify({'success': True, 'asesoria': asesoria})
         else:
             return jsonify({'error': 'Error de conexión a la base de datos'}), 500
@@ -2075,3 +2083,4 @@ def dashboard_asesor():
         print(f"Error al renderizar la plantilla: {str(e)}")
         # Redirigir a una página segura si hay un error
         return redirect('/asesorias_admin')
+
