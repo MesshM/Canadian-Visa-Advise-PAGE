@@ -24,7 +24,7 @@
 
     {% include 'includes/_sidebar.html' %}
 
-    <main class="ml-[calc(240px+40px)] p-8 min-h-screen relative z-50">
+    <main class="ml-[calc(240px+40px)] p-8 min-h-screen relative z-50 bg-white rounded-2xl m-5 shadow-2xl">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <div class="mb-6">

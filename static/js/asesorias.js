@@ -98,7 +98,7 @@ function ordenarYNumerarAsesorias() {
 function showNotification(message, type = "success") {
   // Crear el elemento de notificación
   const notification = document.createElement("div")
-  notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transform transition-all duration-500 translate-x-full`
+  notification.className = `fixed top-4 right-4 p-4 rounded-xl shadow-lg z-50 transform transition-all duration-500 translate-x-full`
 
   // Aplicar estilos según el tipo
   if (type === "success") {
@@ -197,25 +197,25 @@ function showTipsTooltip(event) {
     </div>
     <p class="text-sm text-blue-700 mb-3">Seleccione una fecha y hora para su asesoría. Las citas están disponibles de lunes a viernes en horario laboral. Recuerde que debe completar el proceso de pago dentro de los 5 minutos siguientes a la reserva.</p>
     <div class="grid grid-cols-1 gap-2">
-      <div class="bg-green-50 p-2 rounded-lg border border-green-200 flex items-center">
+      <div class="bg-green-50 p-2 rounded-xl border border-green-200 flex items-center">
         <svg class="w-4 h-4 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
         </svg>
         <p class="text-xs text-green-700">Los horarios se muestran en su zona horaria local.</p>
       </div>
-      <div class="bg-purple-50 p-2 rounded-lg border border-purple-200 flex items-center">
+      <div class="bg-purple-50 p-2 rounded-xl border border-purple-200 flex items-center">
         <svg class="w-4 h-4 text-purple-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
         <p class="text-xs text-purple-700">Puede reprogramar su cita hasta 24 horas antes.</p>
       </div>
-      <div class="bg-amber-50 p-2 rounded-lg border border-amber-200 flex items-center">
+      <div class="bg-amber-50 p-2 rounded-xl border border-amber-200 flex items-center">
         <svg class="w-4 h-4 text-amber-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
         <p class="text-xs text-amber-700">Las asesorías tienen una duración de 60 minutos.</p>
       </div>
-      <div class="bg-sky-50 p-2 rounded-lg border border-sky-200 flex items-center">
+      <div class="bg-sky-50 p-2 rounded-xl border border-sky-200 flex items-center">
         <svg class="w-4 h-4 text-sky-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
         </svg>
@@ -503,7 +503,7 @@ function toggleDetails(asesoriaId) {
               detailsContent.innerHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <!-- Tarjeta de Detalles del Asesor -->
-                  <div class="bg-white p-5 rounded-lg shadow-lg border border-gray-100 transform transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
+                  <div class="bg-white p-5 rounded-xl shadow-lg border border-gray-100 transform transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
                     <div class="flex items-center mb-4">
                       <div class="w-12 h-12 rounded-full ${getRandomColor()} flex items-center justify-center text-lg font-bold mr-3">
                         ${generateAvatar(asesor)}
@@ -544,7 +544,7 @@ function toggleDetails(asesoriaId) {
                     </div>
                     
                     <button onclick="verHistorialChat(${asesoriaId})"
-                      class="mt-4 relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white text-xs font-medium py-2 px-4 rounded-lg shadow-md hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer w-full">
+                      class="mt-4 relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white text-xs font-medium py-2 px-4 rounded-xl shadow-md hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer w-full">
                       <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
                       <div class="relative flex items-center justify-center">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -556,7 +556,7 @@ function toggleDetails(asesoriaId) {
                   </div>
 
                   <!-- Tarjeta de Detalles de la Asesoría -->
-                  <div class="bg-white p-5 rounded-lg shadow-lg border border-gray-100 transform transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
+                  <div class="bg-white p-5 rounded-xl shadow-lg border border-gray-100 transform transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
                     <div class="flex items-center mb-4">
                       <div class="w-12 h-12 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center mr-3">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -598,8 +598,7 @@ function toggleDetails(asesoriaId) {
                             asesoria.estado === "Pagada"
                               ? `
                             <svg class="w-4 h-4 ml-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                           `
                               : ""
                           }
@@ -645,7 +644,7 @@ function toggleDetails(asesoriaId) {
                   </div>
 
                   <!-- Tarjeta de Información Adicional -->
-                  <div class="bg-white p-5 rounded-lg shadow-lg border border-gray-100 transform transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
+                  <div class="bg-white p-5 rounded-xl shadow-lg border border-gray-100 transform transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
                     <div class="flex items-center mb-4">
                       <div class="w-12 h-12 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center mr-3">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -701,7 +700,7 @@ function toggleDetails(asesoriaId) {
                           ? `
                         <div class="mt-3 pt-3 border-t border-gray-100">
                           <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Descripción:</span></p>
-                          <div class="bg-gray-50 p-3 rounded-lg text-sm text-gray-700">
+                          <div class="bg-gray-50 p-3 rounded-xl text-sm text-gray-700">
                             ${asesoria.descripcion}
                           </div>
                         </div>
@@ -715,7 +714,7 @@ function toggleDetails(asesoriaId) {
             } else {
               // Si no se pueden cargar los detalles completos, mostrar un mensaje de error
               detailsContent.innerHTML = `
-                <div class="p-4 bg-red-50 rounded-lg text-red-600 text-center">
+                <div class="p-4 bg-red-50 rounded-xl text-red-600 text-center">
                   <p>No se pudieron cargar los detalles completos. Por favor, intente nuevamente.</p>
                 </div>
               `
@@ -728,7 +727,7 @@ function toggleDetails(asesoriaId) {
             console.error("Error al cargar detalles:", error)
             // Mostrar un mensaje de error
             detailsContent.innerHTML = `
-              <div class="p-4 bg-red-50 rounded-lg text-red-600 text-center">
+              <div class="p-4 bg-red-50 rounded-xl text-red-600 text-center">
                 <p>Error al cargar los detalles. Por favor, intente nuevamente.</p>
               </div>
             `
@@ -800,7 +799,7 @@ function enviarMensaje() {
   const messageElement = document.createElement("div")
   messageElement.className = "flex flex-col items-end"
   messageElement.innerHTML = `
-  <div class="bg-primary-100 text-primary-800 p-3 rounded-lg max-w-xs">
+  <div class="bg-primary-100 text-primary-800 p-3 rounded-xl max-w-xs">
     <p class="text-sm">${mensaje}</p>
   </div>
   <span class="text-xs text-gray-500 mt-1">Ahora</span>
@@ -832,7 +831,7 @@ function enviarMensaje() {
     const responseElement = document.createElement("div")
     responseElement.className = "flex flex-col items-start animate-fade-in"
     responseElement.innerHTML = `
-    <div class="bg-gray-100 text-gray-800 p-3 rounded-lg max-w-xs">
+    <div class="bg-gray-100 text-gray-800 p-3 rounded-xl max-w-xs">
       <p class="text-sm">Gracias por tu mensaje. Un asesor te responderá pronto.</p>
     </div>
     <span class="text-xs text-gray-500 mt-1">Ahora</span>
@@ -885,20 +884,15 @@ function updateSummary() {
   summaryContainer.innerHTML = `
     <div class="bg-white rounded-xl shadow-md overflow-hidden">
       <!-- Encabezado con animación sutil -->
-      <div class="bg-gradient-to-r from-primary-50 to-white p-4 border-b border-gray-100">
-        <h3 class="text-lg font-medium text-gray-900 flex items-center">
-          <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-          </svg>
-          Resumen de la Asesoría
-        </h3>
-        <p class="text-sm text-gray-500 mt-1">Revisa los detalles antes de confirmar</p>
+      <div class="mb-4 bg-gradient-to-r from-primary-50 to-white p-3 rounded-xl border-l-4 border-primary-500 animate-fade-in">
+        <h3 class="text-base font-medium text-primary-800">Resumen de la Asesoría</h3>
+          <p class="text-sm text-gray-600">Revisa los detalles antes de confirmar</p>
       </div>
 
       <!-- Contenido principal -->
       <div class="p-5">
         <!-- Tarjeta de fecha y hora destacada -->
-        <div class="bg-primary-50 rounded-lg p-4 mb-5 flex items-center justify-between border border-primary-100 shadow-sm">
+        <div class="bg-primary-50 rounded-xl p-4 mb-5 flex items-center justify-between border border-primary-100 shadow-sm">
           <div class="flex items-center">
             <div class="bg-primary-100 p-2 rounded-full mr-3">
               <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -917,7 +911,7 @@ function updateSummary() {
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
           <!-- Detalles de la Asesoría -->
-          <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
               <h4 class="font-medium text-gray-700">Detalles de la Asesoría</h4>
             </div>
@@ -931,22 +925,18 @@ function updateSummary() {
                 <span class="text-gray-600 text-sm">Precio:</span>
                 <span class="text-sm font-medium text-primary-600">$${precio.toFixed(2)} USD</span>
               </div>
-              
-              ${
-                descripcion && descripcion.value
-                  ? `
-              <div class="mt-3 pt-2">
-                <span class="text-gray-600 text-sm block mb-1">Descripción:</span>
-                <p class="text-sm text-gray-700 bg-gray-50 p-2 rounded">${descripcion.value}</p>
+
+              <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                <span class="text-gray-600 text-sm">Documento:</span>
+                <span class="text-sm">${tipoDocumento ? tipoDocumento.value : ""} ${numeroDocumento ? numeroDocumento.value : ""}</span>
               </div>
-              `
-                  : ""
-              }
+              
+              
             </div>
           </div>
 
           <!-- Detalles del Asesor -->
-          <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
               <h4 class="font-medium text-gray-700">Información del Asesor</h4>
             </div>
@@ -961,10 +951,6 @@ function updateSummary() {
                 </div>
               </div>
               
-              <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                <span class="text-gray-600 text-sm">Documento:</span>
-                <span class="text-sm">${tipoDocumento ? tipoDocumento.value : ""} ${numeroDocumento ? numeroDocumento.value : ""}</span>
-              </div>
               
               <div class="mt-3">
                 <div class="flex items-center text-xs text-gray-500">
@@ -974,12 +960,22 @@ function updateSummary() {
                   Asesor disponible en el horario seleccionado
                 </div>
               </div>
+              ${
+                descripcion && descripcion.value
+                  ? `
+              <div class="mt-3 pt-2">
+                <span class="text-gray-600 text-sm block mb-1">Descripción:</span>
+                <p class="text-sm text-gray-700 bg-gray-50 p-2 rounded">${descripcion.value}</p>
+              </div>
+              `
+                  : ""
+              }
             </div>
           </div>
         </div>
         
         <!-- Nota informativa -->
-        <div class="mt-5 bg-yellow-50 border border-yellow-100 rounded-lg p-3 flex items-start">
+        <div class="mt-5 bg-yellow-50 border border-yellow-100 rounded-xl p-3 flex items-start">
           <svg class="w-5 h-5 text-yellow-500 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
@@ -1036,7 +1032,7 @@ function updateAppointmentPrice() {
   const precioAsesoriaElement = document.getElementById("precio-asesoria")
 
   if (tipoAsesoriaSelect && precioAsesoriaElement) {
-    const precioAsesoria = tipoAsesoriaSelect.options[tipoAsesoria.selectedIndex].getAttribute("data-precio")
+    const precioAsesoria = tipoAsesoriaSelect.options[tipoAsesoriaSelect.selectedIndex].getAttribute("data-precio")
     precioAsesoriaElement.textContent = `$${precioAsesoria} USD`
   } else if (tipoAsesoriaSelect) {
     // Si no existe el elemento de precio pero sí el selector, actualizar los detalles completos
@@ -1310,7 +1306,7 @@ function reiniciarPasarelaPago() {
       const paymentElement = document.getElementById("payment-element")
       if (paymentElement) {
         paymentElement.innerHTML = `
-      <div class="p-4 bg-red-100 text-red-700 rounded-lg">
+      <div class="p-4 bg-red-100 text-red-700 rounded-xl">
         <p>Error al inicializar el pago: ${error.message}</p>
       </div>
     `
@@ -1365,24 +1361,24 @@ function initStepper() {
   // Añadir animaciones a los botones
   if (prevBtn) {
     prevBtn.addEventListener("click", function () {
-      this.classList.add("scale-95")
-      setTimeout(() => this.classList.remove("scale-95"), 150)
+      this.classList.add()
+      setTimeout(() => this.classList.remove(), 150)
       prevStep()
     })
   }
 
   if (nextBtn) {
     nextBtn.addEventListener("click", function () {
-      this.classList.add("scale-95")
-      setTimeout(() => this.classList.remove("scale-95"), 150)
+      this.classList.add()
+      setTimeout(() => this.classList.remove(), 150)
       nextStep()
     })
   }
 
   if (submitBtn) {
     submitBtn.addEventListener("click", function () {
-      this.classList.add("scale-95")
-      setTimeout(() => this.classList.remove("scale-95"), 150)
+      this.classList.add()
+      setTimeout(() => this.classList.remove(), 150)
       submitAsesoria()
     })
   }
@@ -1391,20 +1387,21 @@ function initStepper() {
   const steps = document.querySelectorAll(".stepper-step")
   steps.forEach((step, index) => {
     step.addEventListener("mouseenter", function () {
-      const circle = this.querySelector("div")
+      const circle = this.querySelector("div:first-child")
       if (circle) {
-        circle.classList.add("scale-110")
-        setTimeout(() => circle.classList.remove("scale-110"), 300)
+        circle.classList.add()
+        setTimeout(() => circle.classList.remove(), 300)
       }
     })
   })
 }
 
+// Modificar la función resetStepper para mostrar números en lugar de checks en los pasos activos
 function resetStepper() {
   // Reiniciar el paso activo
   const steps = document.querySelectorAll(".stepper-step")
   const contents = document.querySelectorAll(".stepper-content")
-  const progressBar = document.querySelector(".stepper-progress-bar .progress")
+  const connectors = document.querySelectorAll(".stepper-connector")
   const prevBtn = document.getElementById("stepper-prev-btn")
   const nextBtn = document.getElementById("stepper-next-btn")
   const submitBtn = document.getElementById("stepper-submit-btn")
@@ -1420,27 +1417,32 @@ function resetStepper() {
 
   // Reiniciar los pasos
   steps.forEach((step, index) => {
-    const circle = step.querySelector("div")
+    const circle = step.querySelector("div:first-child")
     if (index === 0) {
       step.classList.add("active")
       step.classList.remove("completed")
       if (circle) {
-        circle.classList.remove("bg-gray-200", "text-gray-500", "bg-green-500")
+        circle.classList.remove("bg-gray-200", "text-gray-500")
         circle.classList.add("bg-primary-600", "text-white")
+        // Mostrar el número del paso en lugar del check
+        circle.innerHTML = `<span>1</span>`
       }
     } else {
       step.classList.remove("active", "completed")
       if (circle) {
-        circle.classList.remove("bg-primary-600", "text-white", "bg-green-500")
+        circle.classList.remove("bg-primary-600", "text-white")
         circle.classList.add("bg-gray-200", "text-gray-500")
+        // Mostrar el número del paso
+        circle.innerHTML = `<span>${index + 1}</span>`
       }
     }
   })
 
-  // Reiniciar la barra de progreso
-  if (progressBar) {
-    progressBar.style.width = "0%"
-  }
+  // Reiniciar los conectores
+  connectors.forEach((connector) => {
+    connector.classList.remove("bg-primary-600")
+    connector.classList.add("bg-gray-200")
+  })
 
   // Reiniciar botones
   if (prevBtn) prevBtn.classList.add("hidden")
@@ -1460,15 +1462,16 @@ function resetStepper() {
   reservationId = null
 }
 
+// Modificar la función prevStep para mostrar números en lugar de checks en los pasos activos
 function prevStep() {
   const steps = document.querySelectorAll(".stepper-step")
   const contents = document.querySelectorAll(".stepper-content")
-  const progressBar = document.querySelector(".stepper-progress-bar .progress")
+  const connectors = document.querySelectorAll(".stepper-connector")
   const prevBtn = document.getElementById("stepper-prev-btn")
   const nextBtn = document.getElementById("stepper-next-btn")
   const submitBtn = document.getElementById("stepper-submit-btn")
 
-  // Encontrar el paso activo actual
+  // Encontrar el índice del paso activo actual
   let activeIndex = -1
   steps.forEach((step, index) => {
     if (step.classList.contains("active")) {
@@ -1484,33 +1487,77 @@ function prevStep() {
     reservationId = null
   }
 
-  // Actualizar el paso activo
-  steps[activeIndex].classList.remove("active")
+  // Animar la salida del contenido actual
+  contents[activeIndex].classList.add("transform", "transition-all", "duration-500", "translate-x-full", "opacity-0")
+
+  // Después de un breve retraso, ocultar el contenido actual y mostrar el anterior
+  setTimeout(() => {
+    contents[activeIndex].classList.add("hidden")
+    contents[activeIndex].classList.remove(
+      "transform",
+      "transition-all",
+      "duration-500",
+      "translate-x-full",
+      "opacity-0",
+    )
+
+    // Preparar el contenido anterior para la animación de entrada
+    contents[activeIndex - 1].classList.remove("hidden")
+    contents[activeIndex - 1].classList.add(
+      "transform",
+      "transition-all",
+      "duration-500",
+      "translate-x-full",
+      "opacity-0",
+    )
+
+    // Forzar un reflow para que la animación funcione
+    contents[activeIndex - 1].offsetHeight
+
+    // Animar la entrada del contenido anterior
+    contents[activeIndex - 1].classList.remove("translate-x-full", "opacity-0")
+    contents[activeIndex - 1].classList.add("translate-x-0", "opacity-100")
+  }, 300)
+
+  // SECUENCIA DE ANIMACIÓN MEJORADA:
+
+  // 1. Primero: Cambiar el color del círculo actual
+  const currentCircle = steps[activeIndex].querySelector("div:first-child")
+  if (currentCircle) {
+    currentCircle.classList.add("transition-all", "duration-500")
+    currentCircle.classList.remove("bg-primary-600", "text-white")
+    currentCircle.classList.add("bg-gray-200", "text-gray-500")
+    currentCircle.innerHTML = `<span>${activeIndex + 1}</span>`
+  }
+
+  // Actualizar el paso activo DESPUÉS de cambiar los círculos
+  steps[activeIndex].classList.remove("active", "completed")
   steps[activeIndex - 1].classList.add("active")
   steps[activeIndex - 1].classList.remove("completed")
 
-  // Actualizar los círculos de los pasos
-  const currentCircle = steps[activeIndex].querySelector("div")
-  const prevCircle = steps[activeIndex - 1].querySelector("div")
-  if (currentCircle) {
-    currentCircle.classList.remove("bg-primary-600", "text-white")
-    currentCircle.classList.add("bg-gray-200", "text-gray-500")
-  }
-  if (prevCircle) {
-    if (activeIndex - 1 > 0) {
-      prevCircle.classList.remove("bg-green-500")
+  // 2. Segundo: Después de un delay, cambiar el color de la barra conectora
+  setTimeout(() => {
+    if (activeIndex > 0 && activeIndex - 1 < connectors.length) {
+      // Añadir transición a la barra conectora
+      connectors[activeIndex - 1].classList.add("transition-all", "duration-700")
+      // Cambiar el color de la barra conectora
+      connectors[activeIndex - 1].classList.remove("bg-primary-600")
+      connectors[activeIndex - 1].classList.add("bg-gray-200")
     }
-    prevCircle.classList.add("bg-primary-600", "text-white")
-  }
+  }, 300) // Delay para la barra conectora
 
-  // Actualizar el contenido visible
-  contents[activeIndex].classList.add("hidden")
-  contents[activeIndex - 1].classList.remove("hidden")
+  // 3. Tercero: Después de otro delay, quitar el check y mostrar el número
+  setTimeout(() => {
+    const prevCircle = steps[activeIndex - 1].querySelector("div:first-child")
+    if (prevCircle) {
+      prevCircle.classList.add("transition-all", "duration-500")
+      prevCircle.classList.remove("bg-gray-200", "text-gray-500")
+      prevCircle.classList.add("bg-primary-600", "text-white")
 
-  // Actualizar la barra de progreso
-  if (progressBar) {
-    progressBar.style.width = `${((activeIndex - 1) / (steps.length - 1)) * 100}%`
-  }
+      // Crear un efecto de animación para el número que reaparece
+      prevCircle.innerHTML = `<span class="inline-block animate-fade-in">${activeIndex}</span>`
+    }
+  }, 600) // Delay adicional para quitar el check y mostrar el número
 
   // Actualizar botones
   if (activeIndex - 1 === 0) {
@@ -1521,15 +1568,16 @@ function prevStep() {
   submitBtn.classList.add("hidden")
 }
 
+// Modificar la función nextStep para mostrar checks solo en pasos completados
 function nextStep() {
   const steps = document.querySelectorAll(".stepper-step")
   const contents = document.querySelectorAll(".stepper-content")
-  const progressBar = document.querySelector(".stepper-progress-bar .progress")
+  const connectors = document.querySelectorAll(".stepper-connector")
   const prevBtn = document.getElementById("stepper-prev-btn")
   const nextBtn = document.getElementById("stepper-next-btn")
   const submitBtn = document.getElementById("stepper-submit-btn")
 
-  // Encontrar el paso activo actual
+  // Find the active step index
   let activeIndex = -1
   steps.forEach((step, index) => {
     if (step.classList.contains("active")) {
@@ -1537,55 +1585,94 @@ function nextStep() {
     }
   })
 
-  if (activeIndex >= steps.length - 1) return // Ya estamos en el último paso
+  if (activeIndex >= steps.length - 1) return // Already at the last step
 
-  // Validar el paso actual antes de avanzar
+  // Validate the current step before proceeding
   if (!validateStep(activeIndex)) {
     return
   }
 
-  // Si estamos en el paso 1 y vamos al paso 2, cargar el calendario
+  // If we're in the first step and going to the second step, load the calendar
   if (activeIndex === 0) {
     loadCalendar()
 
-    // Deshabilitar el botón siguiente hasta que se seleccione fecha y hora
+    // Disable the next button until a date and time are selected
     nextBtn.classList.add("opacity-50", "cursor-not-allowed")
     nextBtn.disabled = true
   }
 
-  // Si estamos en el paso 2 y vamos al paso 3, actualizar el resumen
+  // If we're in the second step and going to the third step, update the summary
   if (activeIndex === 1) {
     updateSummary()
   }
 
-  // Actualizar el paso activo
-  steps[activeIndex].classList.remove("active")
-  steps[activeIndex].classList.add("completed")
-  steps[activeIndex + 1].classList.add("active")
+  // Animate the exit of the current content with a more evident transition
+  contents[activeIndex].classList.add("transform", "transition-all", "duration-500", "translate-x-[-100%]", "opacity-0")
 
-  // Actualizar los círculos de los pasos
-  const currentCircle = steps[activeIndex].querySelector("div")
-  const nextCircle = steps[activeIndex + 1].querySelector("div")
-  if (currentCircle) {
-    currentCircle.classList.remove("bg-primary-600", "text-white")
-    currentCircle.classList.add("bg-green-500", "text-white")
+  // After a brief delay, hide the current content and show the next one
+  setTimeout(() => {
+    contents[activeIndex].classList.add("hidden")
+    contents[activeIndex].classList.remove(
+      "transform",
+      "transition-all",
+      "duration-500",
+      "translate-x-[-100%]",
+      "opacity-0",
+    )
+
+    // Prepare the next content for the entrance animation
+    contents[activeIndex + 1].classList.remove("hidden")
+    contents[activeIndex + 1].classList.add(
+      "transform",
+      "transition-all",
+      "duration-500",
+      "translate-x-[-100%]",
+      "opacity-0",
+    )
+
+    // Force a reflow to make the animation work
+    contents[activeIndex + 1].offsetHeight
+
+    // Animate the entrance of the next content
+    contents[activeIndex + 1].classList.remove("translate-x-[-100%]", "opacity-0")
+    contents[activeIndex + 1].classList.add("translate-x-0", "opacity-100")
+  }, 300)
+
+  // First, animate the connector with a delay before updating the circles
+  if (activeIndex < connectors.length) {
+    // First animate the connector
+    connectors[activeIndex].classList.remove("bg-gray-200")
+    connectors[activeIndex].classList.add("bg-primary-600", "transition-all", "duration-700")
+
+    // After the connector animation, update the step circles
+    setTimeout(() => {
+      // Update the active step
+      steps[activeIndex].classList.remove("active")
+      steps[activeIndex].classList.add("completed")
+      steps[activeIndex + 1].classList.add("active")
+
+      // Update the circles of the steps
+      const currentCircle = steps[activeIndex].querySelector("div:first-child")
+      const nextCircle = steps[activeIndex + 1].querySelector("div:first-child")
+
+      if (currentCircle) {
+        currentCircle.classList.remove("bg-gray-200", "text-gray-500")
+        currentCircle.classList.add("bg-primary-600", "text-white", "transition-all", "duration-500")
+        // Show the check icon in the completed step with animation
+        currentCircle.innerHTML =
+          '<svg class="w-6 h-6 animate-check-mark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
+      }
+
+      if (nextCircle) {
+        nextCircle.classList.remove("bg-gray-200", "text-gray-500")
+        nextCircle.classList.add("bg-primary-600", "text-white", "transition-all", "duration-500")
+        // Show the number in the active step, not the check
+        nextCircle.innerHTML = `<span>${activeIndex + 2}</span>`
+      }
+    }, 300) // Delay the circle animation to happen after the connector
   }
-  if (nextCircle) {
-    nextCircle.classList.remove("bg-gray-200", "text-gray-500")
-    nextCircle.classList.add("bg-primary-600", "text-white")
-  }
 
-  // Actualizar el contenido visible
-  contents[activeIndex].classList.add("hidden")
-  contents[activeIndex + 1].classList.remove("hidden")
-
-  // Actualizar la barra de progreso
-  if (progressBar) {
-    progressBar.style.width = `${((activeIndex + 1) / (steps.length - 1)) * 100}%`
-    progressBar.style.backgroundColor = "#4f46e5" // Asegurar que el color sea el correcto
-  }
-
-  // Actualizar botones
+  // Update buttons
   prevBtn.classList.remove("hidden")
 
   if (activeIndex + 1 === steps.length - 1) {
@@ -1690,23 +1777,27 @@ function loadCalendar() {
   timeContainer.innerHTML =
     '<p class="text-gray-500 text-center">Seleccione una fecha para ver los horarios disponibles</p>'
 
+  // Crear el calendario con un contenedor redondeado
+  calendarContainer.className =
+    "bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300"
+
   // Crear el calendario
   const currentDate = new Date()
   const currentMonth = currentDate.getMonth()
   const currentYear = currentDate.getFullYear()
   const currentDay = currentDate.getDate()
 
-  // Crear el encabezado del calendario con un diseño más atractivo
+  // Crear el encabezado del calendario con un diseño más atractivo y redondeado
   const calendarHeader = document.createElement("div")
-  calendarHeader.className = "flex justify-between items-center mb-4 bg-primary-50 p-3 rounded-lg shadow-sm"
+  calendarHeader.className = "flex justify-between items-center mb-4 bg-primary-50 p-3 rounded-xl shadow-sm"
   calendarHeader.innerHTML = `
-    <button id="prev-month" class="p-2 rounded-full hover:bg-primary-100 transition-colors text-primary-600">
+    <button id="prev-month" class="p-2 rounded-full hover:bg-primary-100 transition-colors text-primary-600 hover:shadow-sm">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
       </svg>
     </button>
     <h3 id="calendar-month" class="text-base font-medium text-primary-800"></h3>
-    <button id="next-month" class="p-2 rounded-full hover:bg-primary-100 transition-colors text-primary-600">
+    <button id="next-month" class="p-2 rounded-full hover:bg-primary-100 transition-colors text-primary-600 hover:shadow-sm">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
       </svg>
@@ -1724,10 +1815,10 @@ function loadCalendar() {
     const dayElement = document.createElement("div")
     // Destacar los días laborables (lunes a viernes)
     if (index < 5) {
-      dayElement.className = "text-center font-medium text-primary-700 py-2 border-b-2 border-primary-200"
+      dayElement.className = "text-center font-medium text-primary-700 py-2 border-b border-primary-200 mx-1"
     } else {
       // Fin de semana con un estilo diferente
-      dayElement.className = "text-center font-medium text-gray-400 py-2 border-b-2 border-gray-200"
+      dayElement.className = "text-center font-medium text-gray-400 py-2 border-b border-gray-200 mx-1"
     }
     dayElement.textContent = day
     calendarGrid.appendChild(dayElement)
@@ -1736,7 +1827,7 @@ function loadCalendar() {
   // Agregar los días del mes (se llenarán dinámicamente)
   for (let i = 0; i < 42; i++) {
     const dayElement = document.createElement("div")
-    dayElement.className = "calendar-day text-center py-2 rounded-md"
+    dayElement.className = "calendar-day text-center py-2 rounded-full"
     dayElement.setAttribute("data-day", "")
     calendarGrid.appendChild(dayElement)
   }
@@ -1788,7 +1879,7 @@ function loadCalendar() {
     // Limpiar todos los días
     dayElements.forEach((day) => {
       day.textContent = ""
-      day.className = "calendar-day text-center py-2 rounded-md"
+      day.className = "calendar-day text-center py-2 rounded-full"
       day.removeAttribute("data-date")
       day.onclick = null // Eliminar eventos de clic anteriores
     })
@@ -1820,11 +1911,11 @@ function loadCalendar() {
       if (isToday) {
         // Destacar el día actual con un estilo distintivo
         dayElement.className =
-          "calendar-day text-center py-2 rounded-md bg-primary-600 text-white font-bold transform scale-105 shadow-md text-base relative z-10"
+          "calendar-day text-center py-2 rounded-full bg-primary-600 text-white font-bold transform scale-105 shadow-md text-base relative z-10 hover:bg-primary-700 transition-all duration-300"
 
         // Si el día actual es seleccionable (no es fin de semana y no es pasado)
         if (!isWeekend) {
-          dayElement.className += " cursor-pointer hover:bg-primary-700 transition-all duration-300"
+          dayElement.className += " cursor-pointer"
 
           // Agregar evento de clic
           dayElement.onclick = function () {
@@ -1847,15 +1938,15 @@ function loadCalendar() {
         }
       } else if (isPastDay) {
         dayElement.className =
-          "calendar-day text-center py-2 rounded-md text-gray-400 cursor-default text-base bg-gray-50"
+          "calendar-day text-center py-2 rounded-full text-gray-400 cursor-default text-base bg-gray-50"
       } else if (isWeekend) {
         dayElement.className =
-          "calendar-day text-center py-2 rounded-md text-gray-400 cursor-default text-base bg-gray-50"
+          "calendar-day text-center py-2 rounded-full text-gray-400 cursor-default text-base bg-gray-50"
         dayElement.title = "No disponible en fin de semana"
       } else {
         // Día seleccionable (lunes a viernes)
         dayElement.className =
-          "calendar-day text-center py-2 rounded-md cursor-pointer hover:bg-primary-50 transition-all duration-300 text-base hover:shadow-sm"
+          "calendar-day text-center py-2 rounded-full cursor-pointer hover:bg-primary-50 transition-all duration-300 text-base hover:shadow-sm"
 
         // Agregar evento de clic
         dayElement.onclick = function () {
@@ -1956,7 +2047,12 @@ function loadAvailableTimes(date) {
       // Limpiar contenedor
       timeContainer.innerHTML = ""
 
-      // No mostrar el encabezado de fecha, ya que se selecciona en el calendario
+      // Añadir un título con la fecha
+      timeContainer.innerHTML = `
+        <div class="bg-primary-50 p-3 rounded-xl mb-4 text-center">
+          <p class="text-primary-700 font-medium">${formattedDate}</p>
+        </div>
+      `
 
       if (data.horarios && data.horarios.length > 0) {
         // Crear lista de horarios en columna
@@ -1969,8 +2065,8 @@ function loadAvailableTimes(date) {
           // Alternar colores de fondo para mejor visualización
           const isEven = index % 2 === 0
           timeButton.className = isEven
-            ? "time-slot py-3 px-4 rounded-md border border-gray-200 hover:bg-primary-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-base w-full text-left flex items-center"
-            : "time-slot py-3 px-4 rounded-md border border-gray-200 bg-gray-50 hover:bg-primary-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-base w-full text-left flex items-center"
+            ? "time-slot py-3 px-4 rounded-xl border border-gray-200 hover:bg-primary-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-base w-full text-left flex items-center"
+            : "time-slot py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 hover:bg-primary-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-base w-full text-left flex items-center"
 
           timeButton.setAttribute("data-time", hora)
 
@@ -2019,7 +2115,7 @@ function loadAvailableTimes(date) {
         timeContainer.appendChild(timeList)
       } else {
         timeContainer.innerHTML += `
-          <div class="flex flex-col items-center justify-center h-24 text-center bg-gray-50 rounded-lg p-4">
+          <div class="flex flex-col items-center justify-center h-24 text-center bg-gray-50 rounded-xl p-4">
             <svg class="w-10 h-10 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
@@ -2032,7 +2128,7 @@ function loadAvailableTimes(date) {
     .catch((error) => {
       console.error("Error al cargar horarios:", error)
       timeContainer.innerHTML = `
-        <div class="flex flex-col items-center justify-center h-24 text-center bg-red-50 rounded-lg p-4">
+        <div class="flex flex-col items-center justify-center h-24 text-center bg-red-50 rounded-xl p-4">
           <svg class="w-10 h-10 text-red-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
@@ -2125,7 +2221,7 @@ function submitAsesoria() {
     return
   }
 
-  const tipoAsesoria = document.getElementById("tipo_asesoria").value
+  const tipoAsesoriaValue = document.getElementById("tipo_asesoria").value
   const tipoDocumento = document.getElementById("tipo_documento").value
   const numeroDocumento = document.getElementById("numero_documento").value
   const descripcion = document.getElementById("descripcion").value
@@ -2154,7 +2250,7 @@ function submitAsesoria() {
 
       const asesoriaData = {
         id_solicitante: data.id_solicitante, // Usar el ID obtenido del servidor
-        tipo_asesoria: tipoAsesoria,
+        tipo_asesoria: tipoAsesoriaValue,
         descripcion: descripcion,
         lugar: lugar,
         tipo_documento: tipoDocumento,
@@ -2196,7 +2292,7 @@ function submitAsesoria() {
             closeNewAdvisoryModal()
 
             // Redirigir a la página de pago
-            pagarAsesoria(data.codigo_asesoria, tipoAsesoria)
+            pagarAsesoria(data.codigo_asesoria, tipoAsesoriaValue)
           }
         })
         .catch((error) => {
@@ -2286,9 +2382,9 @@ window.enviarMensaje = enviarMensaje
 window.pagarAsesoria = pagarAsesoria
 window.closePagoModal = closePagoModal
 window.cancelarAsesoria = cancelarAsesoria
-window.closeCancelarAsesoriaModal = closeCancelarAsesoriaModal
+window.closeCancelarAsesoriaModal = closeNewAdvisoryModal
 window.openNewAdvisoryModal = openNewAdvisoryModal
-window.closeNewAdvisoryModal = closeNewAdvisoryModal
+window.closeNewAdvisoryModal = closeCancelarAsesoriaModal
 window.showTipsTooltip = showTipsTooltip
 window.startNewAppointmentTimer = startNewAppointmentTimer
 

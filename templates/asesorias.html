@@ -5,9 +5,9 @@
 {% block main %}
 
 <!-- Main Content -->
-<div class="mb-8 animate-fade-in">
-    <h1 class="text-3xl font-bold text-gray-900 m-0 mb-2 font-roboto">Mis Asesorías</h1>
-    <p class="text-gray-500 text-sm">Gestiona tus asesorías de inmigración canadiense</p>
+<div class="flex justify-between items-center mb-8 animate-fade-in">
+    <h1 class="text-3xl font-bold text-gray-900 font-roboto">Mis Asesorías</h1>
+    {% include 'includes/_notification.html' %}
 </div>
 
 <!-- Barra de búsqueda y filtros -->
@@ -134,7 +134,7 @@
                             <span>{{ asesoria.solicitante }}</span>
                             {% if asesoria.estado == 'Pagada' %}
                             <button
-                                class="ml-2 relative overflow-hidden group bg-gradient-to-r from-blue-600 to-blue-500 text-white text-xs font-medium py-1.5 px-4 rounded-lg shadow-md hover:shadow-blue-500/30 transition-all duration-300 pagado-btn">
+                                class="ml-2 relative overflow-hidden group bg-gradient-to-r from-blue-600 to-blue-500 text-white text-xs font-medium py-1.5 px-4 rounded-xl shadow-md hover:shadow-blue-500/30 transition-all duration-300 pagado-btn">
                                 <span
                                     class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 "></span>
                                 <div class="relative flex items-center justify-center">
@@ -149,7 +149,7 @@
                             {% elif not is_expired %}
                             <button
                                 onclick="pagarAsesoria({{ asesoria.codigo_asesoria }}, '{{ asesoria.tipo_asesoria }}')"
-                                class="ml-2 relative overflow-hidden group bg-gradient-to-r from-green-600 to-green-500 text-white text-xs font-medium py-1.5 px-4 rounded-lg shadow-md hover:shadow-green-500/30 transition-all duration-300 cursor-pointer pago-btn scale-105 hover:scale-110">
+                                class="ml-2 relative overflow-hidden group bg-gradient-to-r from-green-600 to-green-500 text-white text-xs font-medium py-1.5 px-4 rounded-xl shadow-md hover:shadow-green-500/30 transition-all duration-300 cursor-pointer pago-btn scale-105 hover:scale-110">
                                 <span
                                     class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 "></span>
                                 <div class="relative flex items-center justify-center">
@@ -184,10 +184,10 @@
                     <td class="p-4 text-sm border-b border-gray-200">
                         <div class="flex space-x-2">
                             <button onclick="toggleDetails({{ asesoria.codigo_asesoria }})"
-                                class="flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 transition-all duration-300 hover:text-primary-600 hover:translate-y-[-3px] relative overflow-hidden cursor-pointer"
+                                class="flex items-center justify-center w-9 h-9 rounded-xl text-gray-500 transition-all duration-300 hover:text-primary-600 hover:translate-y-[-3px] relative overflow-hidden cursor-pointer"
                                 title="Ver detalles">
                                 <span
-                                    class="absolute inset-0 bg-current opacity-0 rounded-lg transition-opacity duration-300 hover:opacity-10"></span>
+                                    class="absolute inset-0 bg-current opacity-0 rounded-xl transition-opacity duration-300 hover:opacity-10"></span>
                                 <svg class="relative z-10 transition-transform duration-300 hover:scale-110" width="18"
                                     height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                                     xmlns="http://www.w3.org/2000/svg">
@@ -201,10 +201,10 @@
 
                             {% if not is_expired and asesoria.estado != 'Pagada' %}
                             <button onclick="cancelarAsesoria({{ asesoria.codigo_asesoria }})"
-                                class="flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 transition-all duration-300 hover:text-red-600 hover:translate-y-[-3px] relative overflow-hidden cursor-pointer"
+                                class="flex items-center justify-center w-9 h-9 rounded-xl text-gray-500 transition-all duration-300 hover:text-red-600 hover:translate-y-[-3px] relative overflow-hidden cursor-pointer"
                                 title="Cancelar">
                                 <span
-                                    class="absolute inset-0 bg-current opacity-0 rounded-lg transition-opacity duration-300 hover:opacity-10"></span>
+                                    class="absolute inset-0 bg-current opacity-0 rounded-xl transition-opacity duration-300 hover:opacity-10"></span>
                                 <svg class="relative z-10 transition-transform duration-300 hover:scale-110" width="18"
                                     height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                                     xmlns="http://www.w3.org/2000/svg">
@@ -317,7 +317,7 @@
                 </div>
             </div>
 
-            <div id="payment-message" class="hidden mb-4 p-3 rounded-lg text-sm"></div>
+            <div id="payment-message" class="hidden mb-4 p-3 rounded-xl text-sm"></div>
 
             <div class="flex justify-end space-x-4">
                 <button type="button" onclick="closePagoModal()"
@@ -395,282 +395,285 @@
     </div>
 </div>
 
-<!-- Reemplazar el modal de solicitud de asesoría con el nuevo diseño mejorado -->
+<!-- Modificar el stepper en el modal de nueva asesoría para cambiar los colores azules por los de la interfaz -->
 <div id="newAdvisoryModal" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
-  <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-4xl animate-scale-in">
-      <div class="flex justify-between items-center mb-6">
-          <h2 class="text-xl font-semibold text-gray-900 font-roboto">Solicitar Nueva Asesoría</h2>
-          <button onclick="closeNewAdvisoryModal()" class="text-gray-500 hover:text-gray-700 cursor-pointer transition-colors duration-300">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                  </path>
-              </svg>
-          </button>
-      </div>
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-5xl animate-scale-in">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold text-gray-900 font-roboto">Solicitar Nueva Asesoría</h2>
+            <button onclick="closeNewAdvisoryModal()" class="text-gray-500 hover:text-gray-700 cursor-pointer transition-colors duration-300">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
 
-      <!-- Contenedor principal con grid para stepper y contenido -->
-      <div class="grid grid-cols-12 gap-6">
-          <!-- Stepper vertical en el lado izquierdo con diseño mejorado -->
-          <div class="col-span-3 bg-gradient-to-b from-gray-50 to-white rounded-xl p-5 shadow-sm border border-gray-100">
-              <div class="stepper-container">
-                  <div class="flex flex-col items-start">
-                      <!-- Paso 1 -->
-                      <div class="stepper-step active flex items-center relative mb-16 group">
-                          <div class="w-12 h-12 rounded-full bg-gradient-to-r from-green-500 to-green-400 flex items-center justify-center text-white shadow-lg z-10 transition-all duration-500 transform group-hover:scale-110 group-hover:shadow-green-200">
-                              <svg class="w-6 h-6 animate-check-mark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                              </svg>
-                          </div>
-                          <div class="ml-4 transition-all duration-300 transform group-hover:translate-x-1">
-                              <div class="text-xs font-medium text-green-600 uppercase tracking-wider">PASO 1</div>
-                              <div class="text-sm font-semibold text-gray-800">Datos</div>
-                          </div>
-                          <!-- Línea vertical animada -->
-                          <div class="absolute top-12 left-6 w-0.5 h-16 bg-gradient-to-b from-green-500 to-gray-200 -z-10 transition-all duration-700"></div>
-                      </div>
-                      
-                      <!-- Paso 2 -->
-                      <div class="stepper-step flex items-center relative mb-16 group">
-                          <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 z-10 transition-all duration-500 transform group-hover:scale-110 group-hover:shadow-md">
-                              <span class="text-lg font-medium">2</span>
-                          </div>
-                          <div class="ml-4 transition-all duration-300 transform group-hover:translate-x-1">
-                              <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">PASO 2</div>
-                              <div class="text-sm font-semibold text-gray-700">Fecha y Hora</div>
-                          </div>
-                          <!-- Línea vertical -->
-                          <div class="absolute top-12 left-6 w-0.5 h-16 bg-gray-200 -z-10 transition-all duration-700"></div>
-                      </div>
-                      
-                      <!-- Paso 3 -->
-                      <div class="stepper-step flex items-center group">
-                          <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 z-10 transition-all duration-500 transform group-hover:scale-110 group-hover:shadow-md">
-                              <span class="text-lg font-medium">3</span>
-                          </div>
-                          <div class="ml-4 transition-all duration-300 transform group-hover:translate-x-1">
-                              <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">PASO 3</div>
-                              <div class="text-sm font-semibold text-gray-700">Confirmación</div>
-                          </div>
-                      </div>
-                  </div>
-              </div>
-          </div>
+        <!-- Contenedor principal con grid para stepper y contenido -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <!-- Stepper vertical en el lado izquierdo -->
+            <div class="md:col-span-1 bg-gray-50 p-4 rounded-xl">
+                <!-- Modificar el stepper en el modal de nueva asesoría para hacer los conectores más largos y gruesos -->
+                <div class="stepper-container">
+                    <div class="stepper-steps flex flex-col space-y-8">
+                        <div class="stepper-step active flex items-center transition-all duration-300">
+                            <div class="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white transition-all duration-300 shadow-sm">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <span class="text-xs text-gray-500 uppercase tracking-wider">PASO 1</span>
+                                <p class="text-sm font-medium text-gray-900">Datos Básicos</p>
+                            </div>
+                        </div>
+        
+                        <div class="stepper-connector ml-5 w-1.5 h-12 bg-gray-200 rounded-full"></div>
+        
+                        <div class="stepper-step flex items-center transition-all duration-300">
+                            <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 transition-all duration-300">
+                                <span>2</span>
+                            </div>
+                            <div class="ml-3">
+                                <span class="text-xs text-gray-500 uppercase tracking-wider">PASO 2</span>
+                                <p class="text-sm font-medium text-gray-900">Fecha y Hora</p>
+                            </div>
+                        </div>
+        
+                        <div class="stepper-connector ml-5 w-1.5 h-12 bg-gray-200 rounded-full"></div>
+        
+                        <div class="stepper-step flex items-center transition-all duration-300">
+                            <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 transition-all duration-300">
+                                <span>3</span>
+                            </div>
+                            <div class="ml-3">
+                                <span class="text-xs text-gray-500 uppercase tracking-wider">PASO 3</span>
+                                <p class="text-sm font-medium text-gray-900">Confirmación</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Información adicional o ayuda -->
+                    <div class="mt-8 p-4 bg-primary-50 rounded-xl border border-primary-100">
+                        <h4 class="text-sm font-medium text-primary-800 mb-2">¿Necesitas ayuda?</h4>
+                        <button id="show-tips-btn" onclick="showTipsTooltip(event)" class="text-xs text-primary-600 hover:text-primary-800 font-medium flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Ver consejos útiles
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-          <!-- Contenido del stepper en el lado derecho -->
-          <div class="col-span-9">
-              <div class="stepper-content-container bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 min-h-[450px] shadow-sm border border-gray-100 transition-all duration-500">
-                  <!-- Paso 1: Formulario de datos mejorado -->
-                  <div class="stepper-content animate-fade-in">
-                      <div class="bg-gradient-to-r from-primary-50 to-white p-4 rounded-lg border-l-4 border-primary-500 mb-5 shadow-sm">
-                          <h3 class="text-base font-medium text-primary-800 flex items-center">
-                              <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                              </svg>
-                              Información de la Asesoría
-                          </h3>
-                          <p class="text-sm text-gray-600">Complete los datos para agendar su asesoría</p>
-                      </div>
-                      
-                      <form id="asesoria-form" data-solicitante-id="{{ session.user_id if session.user_id else '' }}">
-                          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                              <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
-                                  <h4 class="text-sm font-medium text-gray-800 mb-4 flex items-center">
-                                      <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                      </svg>
-                                      Tipo de Asesoría
-                                  </h4>
-                                  
-                                  <div class="mb-4 group">
-                                      <label for="tipo_asesoria" class="block text-sm font-medium text-gray-700 mb-2 group-hover:text-primary-600 transition-colors duration-300">
-                                          Seleccione el tipo <span class="text-red-500">*</span>
-                                      </label>
-                                      <select id="tipo_asesoria" name="tipo_asesoria"
-                                          class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer bg-white hover:border-primary-300"
-                                          required>
-                                          <option value="">Seleccione un tipo de asesoría</option>
-                                          {% for tipo, precio in precios_visa.items() %}
-                                          <option value="{{ tipo }}" data-precio="{{ precio }}">{{ tipo }} - ${{ precio }}.00</option>
-                                          {% endfor %}
-                                      </select>
-                                  </div>
-                                  
-                                  <div class="mb-4 group">
-                                      <label for="asesor_id" class="block text-sm font-medium text-gray-700 mb-2 group-hover:text-primary-600 transition-colors duration-300">
-                                          Asesor especializado <span class="text-red-500">*</span>
-                                      </label>
-                                      <select id="asesor_id" name="asesor_id"
-                                          class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer bg-white hover:border-primary-300"
-                                          required>
-                                          <option value="">Seleccione un asesor</option>
-                                          <!-- Los asesores se cargarán dinámicamente -->
-                                      </select>
-                                  </div>
-                                  
-                                  <div class="mb-0 group">
-                                      <label for="lugar" class="block text-sm font-medium text-gray-700 mb-2 group-hover:text-primary-600 transition-colors duration-300">
-                                          Modalidad de Asesoría <span class="text-red-500">*</span>
-                                      </label>
-                                      <select id="lugar" name="lugar"
-                                          class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer bg-white hover:border-primary-300"
-                                          required>
-                                          <option value="Virtual (Zoom)">Virtual (Zoom)</option>
-                                          <option value="Virtual (Teams)">Virtual (Teams)</option>
-                                          <option value="Presencial">Presencial</option>
-                                      </select>
-                                  </div>
-                              </div>
-                              
-                              <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
-                                  <h4 class="text-sm font-medium text-gray-800 mb-4 flex items-center">
-                                      <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                      </svg>
-                                      Información Personal
-                                  </h4>
-                                  
-                                  <div class="mb-4 group">
-                                      <label for="tipo_documento" class="block text-sm font-medium text-gray-700 mb-2 group-hover:text-primary-600 transition-colors duration-300">
-                                          Tipo de Documento <span class="text-red-500">*</span>
-                                      </label>
-                                      <select id="tipo_documento" name="tipo_documento"
-                                          class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer bg-white hover:border-primary-300"
-                                          required>
-                                          <option value="C.C">C.C</option>
-                                          <option value="T.I">T.I</option>
-                                          <option value="C.E">C.E</option>
-                                          <option value="Pasaporte">Pasaporte</option>
-                                      </select>
-                                  </div>
-                                  
-                                  <div class="mb-4 group">
-                                      <label for="numero_documento" class="block text-sm font-medium text-gray-700 mb-2 group-hover:text-primary-600 transition-colors duration-300">
-                                          Número de Documento <span class="text-red-500">*</span>
-                                      </label>
-                                      <input type="text" id="numero_documento" name="numero_documento"
-                                          class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text bg-white hover:border-primary-300"
-                                          placeholder="Ingrese su número de documento" required>
-                                  </div>
-                                  
-                                  <div class="mb-0 group">
-                                      <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-2 group-hover:text-primary-600 transition-colors duration-300">
-                                          Descripción de su consulta
-                                      </label>
-                                      <textarea id="descripcion" name="descripcion" rows="2"
-                                          class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text bg-white hover:border-primary-300"
-                                          placeholder="Describe brevemente tu consulta (opcional)"></textarea>
-                                  </div>
-                              </div>
-                          </div>
-                      </form>
-                  </div>
+            <!-- Contenido del stepper en el lado derecho -->
+            <div class="md:col-span-3 overflow-hidden">
+                <div class="stepper-content-container">
+                    <!-- Paso 1: Formulario de datos mejorado -->
+                    <div class="stepper-content">
+                        <div class="bg-gradient-to-r from-primary-50 to-white p-4 rounded-xl border-l-4 border-primary-500 mb-5 animate-fade-in">
+                            <h3 class="text-base font-medium  text-primary-800 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Información de la Asesoría
+                            </h3>
+                            <p class="text-sm text-gray-600">Complete los datos para agendar su asesoría</p>
+                        </div>
+                        
+                        <form id="asesoria-form" data-solicitante-id="{{ session.user_id if session.user_id else '' }}">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+                                    <h4 class="text-sm font-medium text-gray-800 mb-4 flex items-center">
+                                        <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                        </svg>
+                                        Tipo de Asesoría
+                                    </h4>
+                                    
+                                    <div class="mb-4">
+                                        <label for="tipo_asesoria" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Seleccione el tipo <span class="text-red-500">*</span>
+                                        </label>
+                                        <select id="tipo_asesoria" name="tipo_asesoria"
+                                            class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer bg-white"
+                                            required>
+                                            <option value="">Seleccione un tipo de asesoría</option>
+                                            {% for tipo, precio in precios_visa.items() %}
+                                            <option value="{{ tipo }}" data-precio="{{ precio }}">{{ tipo }} - ${{ precio }}.00</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label for="asesor_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Asesor especializado <span class="text-red-500">*</span>
+                                        </label>
+                                        <select id="asesor_id" name="asesor_id"
+                                            class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer bg-white"
+                                            required>
+                                            <option value="">Seleccione un asesor</option>
+                                            <!-- Los asesores se cargarán dinámicamente -->
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-0">
+                                        <label for="lugar" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Modalidad de Asesoría <span class="text-red-500">*</span>
+                                        </label>
+                                        <select id="lugar" name="lugar"
+                                            class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer bg-white"
+                                            required>
+                                            <option value="Virtual (Zoom)">Virtual (Zoom)</option>
+                                            <option value="Virtual (Teams)">Virtual (Teams)</option>
+                                            <option value="Presencial">Presencial</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+                                    <h4 class="text-sm font-medium text-gray-800 mb-4 flex items-center">
+                                        <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                        </svg>
+                                        Información Personal
+                                    </h4>
+                                    
+                                    <div class="mb-4">
+                                        <label for="tipo_documento" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Tipo de Documento <span class="text-red-500">*</span>
+                                        </label>
+                                        <select id="tipo_documento" name="tipo_documento"
+                                            class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer bg-white"
+                                            required>
+                                            <option value="C.C">C.C</option>
+                                            <option value="T.I">T.I</option>
+                                            <option value="C.E">C.E</option>
+                                            <option value="Pasaporte">Pasaporte</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label for="numero_documento" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Número de Documento <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="text" id="numero_documento" name="numero_documento"
+                                            class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text bg-white"
+                                            placeholder="Ingrese su número de documento" required>
+                                    </div>
+                                    
+                                    <div class="mb-0">
+                                        <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Descripción de su consulta
+                                        </label>
+                                        <textarea id="descripcion" name="descripcion" rows="2"
+                                            class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text bg-white"
+                                            placeholder="Describe brevemente tu consulta (opcional)"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
 
-                  <!-- Paso 2: Selección de fecha y hora (sin el contador) -->
-                  <div class="stepper-content hidden animate-fade-in">
-                      <!-- Título con animación sutil -->
-                      <div class="mb-4 bg-gradient-to-r from-primary-50 to-white p-3 rounded-lg border-l-4 border-primary-500 shadow-sm">
-                          <h3 class="text-base font-medium text-primary-800">Selecciona la fecha y hora para tu asesoría</h3>
-                          <p class="text-sm text-gray-600">Elige un día y horario que se ajuste a tu disponibilidad</p>
-                      </div>
-                      
-                      <div class="flex flex-col md:flex-row gap-6">
-                          <div class="md:w-3/5">
-                              <h3 class="text-base font-medium text-gray-800 mb-3 flex items-center">
-                                  <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                  </svg>
-                                  Selecciona una fecha
-                              </h3>
-                              <div id="calendar-container" class="bg-white p-4 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300 transform hover:-translate-y-1"></div>
-                              
-                          </div>
-                          
-                          <div class="md:w-2/5">
-                              <h3 class="text-base font-medium text-gray-800 mb-3 flex items-center">
-                                  <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                  </svg>
-                                  Horarios disponibles
-                              </h3>
-                              
-                              <div id="time-container" class="bg-white p-4 rounded-lg shadow-md border border-gray-200 h-[280px] overflow-y-auto hover:shadow-lg transition-shadow duration-300 transform hover:-translate-y-1">
-                                  <p class="text-gray-500 text-center">Seleccione una fecha para ver los horarios disponibles</p>
-                              </div>
+                    <!-- Paso 2: Selección de fecha y hora (sin el contador) -->
+                    <div class="stepper-content hidden">
+                        <!-- Título con animación sutil -->
+                        <div class="mb-4 bg-gradient-to-r from-primary-50 to-white p-3 rounded-xl border-l-4 border-primary-500 animate-fade-in">
+                            <h3 class="text-base font-medium text-primary-800">Selecciona la fecha y hora para tu asesoría</h3>
+                            <p class="text-sm text-gray-600">Elige un día y horario que se ajuste a tu disponibilidad</p>
+                        </div>
+                        
+                        <div class="flex flex-col md:flex-row gap-6">
+                            <div class="md:w-3/5">
+                                <div id="calendar-container" class="bg-white p-4 rounded-xl shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-300"></div>
+                                
+                            </div>
+                            
+                            <div class="md:w-2/5">
+                                <h3 class="text-base font-medium text-gray-800 mb-3 flex items-center ">
+                                    <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Horarios disponibles
+                                </h3>
+                                
+                                <div id="time-container" class="bg-white p-4 rounded-xl shadow-md border border-gray-200 h-[350px] overflow-y-auto hover:shadow-lg transition-shadow duration-300">
+                                    <p class="text-gray-500 text-center">Seleccione una fecha para ver los horarios disponibles</p>
+                                </div>
 
-                              <!-- Leyenda del calendario (solo para el calendario) -->
-                              <div class="mt-3 flex flex-wrap gap-3 text-xs text-gray-600">
-                                  <div class="flex items-center">
-                                      <div class="w-4 h-4 rounded-full bg-primary-600 mr-1"></div>
-                                      <span>Hoy</span>
-                                  </div>
-                                  <div class="flex items-center">
-                                      <div class="w-4 h-4 rounded-full bg-primary-100 border border-primary-500 mr-1"></div>
-                                      <span>Seleccionado</span>
-                                  </div>
-                                  <div class="flex items-center">
-                                      <div class="w-4 h-4 rounded-full bg-gray-50 mr-1"></div>
-                                      <span>No disponible</span>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
-                      
-                      <!-- Consejos para la selección de horario (inicialmente ocultos) -->
-                      <div id="booking-tips" class="hidden">
-                          <!-- Los consejos se mostrarán flotantes desde JavaScript -->
-                      </div>
-                  </div>
+                                <!-- Leyenda del calendario (solo para el calendario) -->
+                                <div class="mt-3 flex flex-wrap gap-3 text-xs text-gray-600">
+                                    <div class="flex items-center">
+                                        <div class="w-4 h-4 rounded-full bg-primary-600 mr-1"></div>
+                                        <span>Hoy</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-4 h-4 rounded-full bg-primary-100 border border-primary-500 mr-1"></div>
+                                        <span>Seleccionado</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <div class="w-4 h-4 rounded-full bg-gray-50 mr-1"></div>
+                                        <span>No disponible</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Consejos para la selección de horario (inicialmente ocultos) -->
+                        <div id="booking-tips" class="hidden">
+                            <!-- Los consejos se mostrarán flotantes desde JavaScript -->
+                        </div>
+                    </div>
 
-                  <!-- Paso 3: Resumen y confirmación (mejorado) -->
-                  <div class="stepper-content hidden animate-fade-in">
-                      <div id="summary-container" class="space-y-4">
-                          <!-- El resumen se cargará dinámicamente con el nuevo diseño -->
-                      </div>
-                  </div>
-              </div>
-          </div>
-      </div>
+                    <!-- Paso 3: Resumen y confirmación (mejorado) -->
+                    <div class="stepper-content hidden">
+                        <div id="summary-container" class="space-y-4">
+                            <!-- El resumen se cargará dinámicamente con el nuevo diseño -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-      <!-- Botones del Stepper mejorados -->
-      <div class="flex justify-between mt-8">
-          <button id="stepper-prev-btn" class="hidden py-3 px-6 text-sm font-medium rounded-xl transition-all duration-300 bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-md cursor-pointer transform hover:-translate-y-1 hover:scale-105 active:scale-95">
-              <div class="flex items-center">
-                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                  </svg>
-                  <span>Atrás</span>
-              </div>
-          </button>
-          <div class="flex-grow"></div>
-          <button id="stepper-next-btn" class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer opacity-50 cursor-not-allowed transform hover:-translate-y-1 hover:scale-105 active:scale-95" disabled>
-              <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
-              <div class="relative flex items-center justify-center">
-                  <span>Siguiente</span>
-                  <svg xmlns="http://www.w3.org/2000/svg"
-                      class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200"
-                      viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd"
-                          d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                          clip-rule="evenodd" />
-                  </svg>
-              </div>
-          </button>
-          <button id="stepper-submit-btn" class="hidden relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer transform hover:-translate-y-1 hover:scale-105 active:scale-95">
-              <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
-              <div class="relative flex items-center justify-center">
-                  <span>Agendar Cita</span>
-                  <svg xmlns="http://www.w3.org/2000/svg"
-                      class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200"
-                      viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd"
-                          d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                          clip-rule="evenodd" />
-                  </svg>
-              </div>
-          </button>
-      </div>
-  </div>
+        <!-- Botones del Stepper mejorados -->
+        <div class="flex justify-between mt-8 pt-4 border-t border-gray-200">
+            <button id="stepper-prev-btn" class="hidden py-3 px-6 text-sm font-medium rounded-xl transition-all duration-300 bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-md cursor-pointer">
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    <span>Atrás</span>
+                </div>
+            </button>
+            <div class="flex-grow"></div>
+            <button id="stepper-next-btn" class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer opacity-50 cursor-not-allowed" disabled>
+                <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                <div class="relative flex items-center justify-center">
+                    <span>Siguiente</span>
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200"
+                        viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </button>
+            <button id="stepper-submit-btn" class="hidden relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer">
+                <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                <div class="relative flex items-center justify-center">
+                    <span>Agendar Cita</span>
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200"
+                        viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </button>
+        </div>
+    </div>
 </div>
 
 <!-- JavaScript para la funcionalidad -->
