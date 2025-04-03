@@ -488,7 +488,7 @@ function toggleDetails(asesoriaId) {
         `
 
         // Cargar los detalles completos de la asesoría
-        fetch(`/obtener_detalles_asesoria/${asesoriaId}`)
+        fetch(`/asesorias/obtener_detalles_asesoria/${asesoriaId}`)
           .then((response) => {
             if (!response.ok) {
               throw new Error("Error al cargar detalles")
@@ -1128,7 +1128,7 @@ function cancelarAsesoria(asesoriaId) {
     confirmBtn.onclick = async () => {
       try {
         // Enviar solicitud para eliminar la asesoría
-        const response = await fetch("/cancelar_asesoria", {
+        const response = await fetch("/asesorias/cancelar_asesoria", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -1211,7 +1211,7 @@ function reiniciarPasarelaPago() {
   }
 
   // Crear un PaymentIntent en el servidor
-  fetch("/crear_payment_intent", {
+  fetch("/pagos/crear_payment_intent", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -1280,7 +1280,7 @@ function reiniciarPasarelaPago() {
           const { error } = await stripe.confirmPayment({
             elements,
             confirmParams: {
-              return_url: `${window.location.origin}/confirmar_pago`,
+              return_url: `${window.location.origin}/pagos/confirmar_pago`,
             },
           })
 
@@ -1741,7 +1741,7 @@ function loadAsesores() {
   asesorSelect.innerHTML = '<option value="">Seleccione un asesor</option>'
 
   // Cargar asesores desde el servidor
-  fetch("/obtener_asesores")
+  fetch("/asesorias/obtener_asesores")
     .then((response) => {
       if (!response.ok) {
         throw new Error("Error al cargar asesores")
@@ -2036,7 +2036,7 @@ function loadAvailableTimes(date) {
   })
 
   // Cargar horarios disponibles desde el servidor
-  fetch(`/obtener_horarios_disponibles?id_asesor=${selectedAsesorId}&fecha=${date}`)
+  fetch(`/asesorias/obtener_horarios_disponibles?id_asesor=${selectedAsesorId}&fecha=${date}`)
     .then((response) => {
       if (!response.ok) {
         throw new Error("Error al cargar horarios")
@@ -2150,7 +2150,7 @@ function createTemporaryReservation(date, time) {
   }
 
   // Crear una nueva reserva temporal
-  fetch("/reservar_horario_temporal", {
+  fetch("/asesorias/reservar_horario_temporal", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -2196,7 +2196,7 @@ function createTemporaryReservation(date, time) {
 function cancelarReservaTemporal(reservaId) {
   if (!reservaId) return
 
-  fetch("/cancelar_reserva_temporal", {
+  fetch("/asesorias/cancelar_reserva_temporal", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -2239,7 +2239,7 @@ function submitAsesoria() {
 
   // Crear objeto con los datos de la asesoría
   // Obtener el id_solicitante del usuario actual mediante una petición al servidor
-  fetch("/obtener_id_solicitante")
+  fetch("/user/obtener_id_solicitante")
     .then((response) => response.json())
     .then((data) => {
       if (data.error) {
@@ -2262,7 +2262,7 @@ function submitAsesoria() {
       }
 
       // Enviar solicitud al servidor
-      fetch("/nueva_asesoria", {
+      fetch("/asesorias/nueva_asesoria", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -2382,9 +2382,9 @@ window.enviarMensaje = enviarMensaje
 window.pagarAsesoria = pagarAsesoria
 window.closePagoModal = closePagoModal
 window.cancelarAsesoria = cancelarAsesoria
-window.closeCancelarAsesoriaModal = closeNewAdvisoryModal
+window.closeCancelarAsesoriaModal = closeCancelarAsesoriaModal
 window.openNewAdvisoryModal = openNewAdvisoryModal
-window.closeNewAdvisoryModal = closeCancelarAsesoriaModal
+window.closeNewAdvisoryModal = closeNewAdvisoryModal
 window.showTipsTooltip = showTipsTooltip
 window.startNewAppointmentTimer = startNewAppointmentTimer
 

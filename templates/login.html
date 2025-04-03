@@ -149,9 +149,9 @@
             <div class="mt-8 flex flex-col sm:flex-row items-center justify-between text-sm">
                 <p class="mb-4 sm:mb-0 text-zinc-500 font-inter">
                     ¿No tienes una cuenta?
-                    <a href="{{ url_for('registro') }}" class="text-primary-400 hover:text-primary-300 font-roboto transition-colors duration-200 underline-offset-2 hover:underline">Regístrate</a>
+                    <a href="{{ url_for_registro() }}" class="text-primary-400 hover:text-primary-300 font-roboto transition-colors duration-200 underline-offset-2 hover:underline">Regístrate</a>
                 </p>
-                <a href="{{ url_for('forgot_password') }}" class="text-primary-400 hover:text-primary-300 font-roboto transition-colors duration-200 underline-offset-2 hover:underline">¿Olvidaste tu contraseña?</a>
+                <a href="{{ url_for_forgot_password() }}" class="text-primary-400 hover:text-primary-300 font-roboto transition-colors duration-200 underline-offset-2 hover:underline">¿Olvidaste tu contraseña?</a>
             </div>
         </div>
     </div>
