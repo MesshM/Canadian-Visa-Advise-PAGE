@@ -1,0 +1,700 @@
+{% extends 'base.html' %}
+
+{% block title %} CVA | Formulario de Solicitud {% endblock %}
+
+{% block main %}
+<!-- Encabezado -->
+<div class="mb-8 animate-fade-in">
+    <h1 class="text-3xl font-bold text-gray-900 m-0 mb-2 font-roboto">Formulario de Solicitud</h1>
+    <p class="text-gray-500 text-sm">Complete este formulario para evaluar qué tipo de visa necesita y recibir asesoría personalizada</p>
+</div>
+
+<!-- Contenedor principal del formulario -->
+<div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+    <!-- Sección de introducción -->
+    <div class="mb-8 border-l-4 border-primary-500 pl-4 bg-primary-50 p-4 rounded-r-lg">
+        <h2 class="text-xl font-semibold text-gray-800 mb-2">Sobre este formulario</h2>
+        <p class="text-gray-600 mb-2">Este formulario nos ayudará a evaluar su situación y determinar qué tipo de visa canadiense es la más adecuada para usted.</p>
+        <p class="text-gray-600">La información proporcionada será utilizada exclusivamente para brindarle asesoría personalizada y no será compartida con terceros sin su consentimiento.</p>
+    </div>
+
+    <!-- Formulario principal -->
+    <form id="visa-form" method="POST" action="/procesar_formulario" enctype="multipart/form-data" class="space-y-8">
+        <!-- Barra de progreso -->
+        <div class="relative pt-1 mb-6">
+            <div class="flex mb-2 items-center justify-between">
+                <div>
+                    <span id="progress-text" class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-primary-600 bg-primary-200">
+                        Paso 1 de 4
+                    </span>
+                </div>
+                <div class="text-right">
+                    <span id="progress-percentage" class="text-xs font-semibold inline-block text-primary-600">
+                        25%
+                    </span>
+                </div>
+            </div>
+            <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-primary-200">
+                <div id="progress-bar" style="width: 25%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary-500 transition-all duration-500"></div>
+            </div>
+        </div>
+
+        <!-- Sección 1: Datos de Elegibilidad -->
+        <div id="section-1" class="form-section">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Datos de Elegibilidad</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Propósito de visita -->
+                <div class="col-span-1">
+                    <label for="proposito" class="block text-sm font-medium text-gray-700 mb-1">¿Qué te gustaría hacer en Canadá?</label>
+                    <select id="proposito" name="proposito" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500">
+                        <option value="" selected disabled>Seleccione una opción</option>
+                        <option value="turismo">Turismo / Visita</option>
+                        <option value="estudio">Estudiar</option>
+                        <option value="trabajo">Trabajar</option>
+                        <option value="residencia">Establecerme como residente</option>
+                        <option value="negocios">Hacer negocios</option>
+                        <option value="familiar">Visitar a un familiar</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+
+                <!-- Tiempo de estadía -->
+                <div class="col-span-1">
+                    <label for="tiempo_estadia" class="block text-sm font-medium text-gray-700 mb-1">¿Cuánto tiempo planeas quedarte?</label>
+                    <select id="tiempo_estadia" name="tiempo_estadia" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500">
+                        <option value="" selected disabled>Seleccione una opción</option>
+                        <option value="menos_6_meses">Menos de 6 meses</option>
+                        <option value="6_meses_1_año">Entre 6 meses y 1 año</option>
+                        <option value="1_2_años">Entre 1 y 2 años</option>
+                        <option value="2_5_años">Entre 2 y 5 años</option>
+                        <option value="permanente">Permanentemente</option>
+                        <option value="no_decidido">Aún no lo he decidido</option>
+                    </select>
+                </div>
+
+                <!-- País de residencia -->
+                <div class="col-span-1">
+                    <label for="pais_residencia" class="block text-sm font-medium text-gray-700 mb-1">País de residencia actual</label>
+                    <input type="text" id="pais_residencia" name="pais_residencia" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500" list="paises">
+                    <datalist id="paises">
+                        <option value="Argentina">
+                        <option value="Bolivia">
+                        <option value="Brasil">
+                        <option value="Chile">
+                        <option value="Colombia">
+                        <option value="Costa Rica">
+                        <option value="Cuba">
+                        <option value="Ecuador">
+                        <option value="El Salvador">
+                        <option value="España">
+                        <option value="Estados Unidos">
+                        <option value="Guatemala">
+                        <option value="Honduras">
+                        <option value="México">
+                        <option value="Nicaragua">
+                        <option value="Panamá">
+                        <option value="Paraguay">
+                        <option value="Perú">
+                        <option value="Puerto Rico">
+                        <option value="República Dominicana">
+                        <option value="Uruguay">
+                        <option value="Venezuela">
+                    </datalist>
+                </div>
+
+                <!-- Fecha de nacimiento -->
+                <div class="col-span-1">
+                    <label for="fecha_nacimiento" class="block text-sm font-medium text-gray-700 mb-1">Fecha de nacimiento</label>
+                    <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500">
+                </div>
+
+                <!-- Familiar en Canadá -->
+                <div class="col-span-1">
+                    <label for="familiar_canada" class="block text-sm font-medium text-gray-700 mb-1">¿Tienes un familiar ciudadano/residente canadiense mayor de 18 años?</label>
+                    <div class="flex space-x-4 mt-2">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="familiar_canada" value="si" class="form-radio h-4 w-4 text-primary-600">
+                            <span class="ml-2 text-gray-700">Sí</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="familiar_canada" value="no" class="form-radio h-4 w-4 text-primary-600" checked>
+                            <span class="ml-2 text-gray-700">No</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Relación con el familiar (condicional) -->
+                <div id="relacion_familiar_container" class="col-span-1 hidden">
+                    <label for="relacion_familiar" class="block text-sm font-medium text-gray-700 mb-1">Relación con el familiar</label>
+                    <select id="relacion_familiar" name="relacion_familiar" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500">
+                        <option value="" selected disabled>Seleccione una opción</option>
+                        <option value="conyuge">Cónyuge/Pareja</option>
+                        <option value="hijo">Hijo/a</option>
+                        <option value="padre">Padre/Madre</option>
+                        <option value="hermano">Hermano/a</option>
+                        <option value="abuelo">Abuelo/a</option>
+                        <option value="tio">Tío/a</option>
+                        <option value="primo">Primo/a</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+
+                <!-- Residente permanente -->
+                <div class="col-span-1">
+                    <label for="residente_permanente" class="block text-sm font-medium text-gray-700 mb-1">¿Has vivido en Canadá como residente permanente?</label>
+                    <div class="flex space-x-4 mt-2">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="residente_permanente" value="si" class="form-radio h-4 w-4 text-primary-600">
+                            <span class="ml-2 text-gray-700">Sí</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="residente_permanente" value="no" class="form-radio h-4 w-4 text-primary-600" checked>
+                            <span class="ml-2 text-gray-700">No</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Estado civil -->
+                <div class="col-span-1">
+                    <label for="estado_civil" class="block text-sm font-medium text-gray-700 mb-1">Estado civil</label>
+                    <select id="estado_civil" name="estado_civil" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500">
+                        <option value="" selected disabled>Seleccione una opción</option>
+                        <option value="soltero">Soltero/a</option>
+                        <option value="casado">Casado/a</option>
+                        <option value="union_libre">Unión libre</option>
+                        <option value="divorciado">Divorciado/a</option>
+                        <option value="viudo">Viudo/a</option>
+                        <option value="separado">Separado/a</option>
+                    </select>
+                </div>
+
+                <!-- Provincia de destino -->
+                <div class="col-span-1">
+                    <label for="provincia_destino" class="block text-sm font-medium text-gray-700 mb-1">Provincia de destino</label>
+                    <select id="provincia_destino" name="provincia_destino" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500">
+                        <option value="" selected disabled>Seleccione una opción</option>
+                        <option value="alberta">Alberta</option>
+                        <option value="british_columbia">British Columbia</option>
+                        <option value="manitoba">Manitoba</option>
+                        <option value="new_brunswick">New Brunswick</option>
+                        <option value="newfoundland_labrador">Newfoundland and Labrador</option>
+                        <option value="northwest_territories">Northwest Territories</option>
+                        <option value="nova_scotia">Nova Scotia</option>
+                        <option value="nunavut">Nunavut</option>
+                        <option value="ontario">Ontario</option>
+                        <option value="prince_edward_island">Prince Edward Island</option>
+                        <option value="quebec">Quebec</option>
+                        <option value="saskatchewan">Saskatchewan</option>
+                        <option value="yukon">Yukon</option>
+                        <option value="no_decidido">Aún no lo he decidido</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end">
+                <button type="button" id="next-1" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    Siguiente
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Sección 2: Motivos y Condiciones -->
+        <div id="section-2" class="form-section hidden">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Motivos y Condiciones</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Propósito principal -->
+                <div class="col-span-1">
+                    <label for="proposito_principal" class="block text-sm font-medium text-gray-700 mb-1">Propósito principal de la visita</label>
+                    <select id="proposito_principal" name="proposito_principal" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500">
+                        <option value="" selected disabled>Seleccione una opción</option>
+                        <option value="turismo">Turismo</option>
+                        <option value="estudio">Estudio</option>
+                        <option value="trabajo">Trabajo</option>
+                        <option value="negocios">Negocios</option>
+                        <option value="familiar">Visita familiar</option>
+                        <option value="medico">Tratamiento médico</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+
+                <!-- Empleo en país de origen -->
+                <div class="col-span-1">
+                    <label for="empleo_origen" class="block text-sm font-medium text-gray-700 mb-1">¿Tienes empleo o negocio en tu país?</label>
+                    <div class="flex space-x-4 mt-2">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="empleo_origen" value="si" class="form-radio h-4 w-4 text-primary-600" checked>
+                            <span class="ml-2 text-gray-700">Sí</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="empleo_origen" value="no" class="form-radio h-4 w-4 text-primary-600">
+                            <span class="ml-2 text-gray-700">No</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Dependencia económica -->
+                <div class="col-span-1">
+                    <label for="dependencia_economica" class="block text-sm font-medium text-gray-700 mb-1">¿Dependes económicamente de alguien?</label>
+                    <div class="flex space-x-4 mt-2">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="dependencia_economica" value="si" class="form-radio h-4 w-4 text-primary-600">
+                            <span class="ml-2 text-gray-700">Sí</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="dependencia_economica" value="no" class="form-radio h-4 w-4 text-primary-600" checked>
+                            <span class="ml-2 text-gray-700">No</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Viajes a otros países -->
+                <div class="col-span-1">
+                    <label for="viajes_previos" class="block text-sm font-medium text-gray-700 mb-1">¿Has viajado a otros países en los últimos 10 años?</label>
+                    <div class="flex space-x-4 mt-2">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="viajes_previos" value="si" class="form-radio h-4 w-4 text-primary-600">
+                            <span class="ml-2 text-gray-700">Sí</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="viajes_previos" value="no" class="form-radio h-4 w-4 text-primary-600" checked>
+                            <span class="ml-2 text-gray-700">No</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Acompañamiento a familiar -->
+                <div class="col-span-1">
+                    <label for="acompana_familiar" class="block text-sm font-medium text-gray-700 mb-1">¿Acompañas a un familiar con estatus en Canadá?</label>
+                    <div class="flex space-x-4 mt-2">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="acompana_familiar" value="si" class="form-radio h-4 w-4 text-primary-600">
+                            <span class="ml-2 text-gray-700">Sí</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="acompana_familiar" value="no" class="form-radio h-4 w-4 text-primary-600" checked>
+                            <span class="ml-2 text-gray-700">No</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Antecedentes penales -->
+                <div class="col-span-1">
+                    <label for="antecedentes_penales" class="block text-sm font-medium text-gray-700 mb-1">¿Antecedentes penales?</label>
+                    <div class="flex space-x-4 mt-2">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="antecedentes_penales" value="si" class="form-radio h-4 w-4 text-primary-600">
+                            <span class="ml-2 text-gray-700">Sí</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="antecedentes_penales" value="no" class="form-radio h-4 w-4 text-primary-600" checked>
+                            <span class="ml-2 text-gray-700">No</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Exámenes médicos -->
+                <div class="col-span-1">
+                    <label for="examenes_medicos" class="block text-sm font-medium text-gray-700 mb-1">¿Ha presentado exámenes médicos recientemente?</label>
+                    <div class="flex space-x-4 mt-2">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="examenes_medicos" value="si" class="form-radio h-4 w-4 text-primary-600">
+                            <span class="ml-2 text-gray-700">Sí</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="examenes_medicos" value="no" class="form-radio h-4 w-4 text-primary-600" checked>
+                            <span class="ml-2 text-gray-700">No</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Método de pago -->
+                <div class="col-span-1">
+                    <label for="pago_online" class="block text-sm font-medium text-gray-700 mb-1">¿Pagarás las tarifas en línea?</label>
+                    <div class="flex space-x-4 mt-2">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="pago_online" value="si" class="form-radio h-4 w-4 text-primary-600" checked>
+                            <span class="ml-2 text-gray-700">Sí</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="pago_online" value="no" class="form-radio h-4 w-4 text-primary-600">
+                            <span class="ml-2 text-gray-700">No</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Método de pago (condicional) -->
+                <div id="metodo_pago_container" class="col-span-1">
+                    <label for="metodo_pago" class="block text-sm font-medium text-gray-700 mb-1">Método de pago preferido</label>
+                    <select id="metodo_pago" name="metodo_pago" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500">
+                        <option value="" selected disabled>Seleccione una opción</option>
+                        <option value="tarjeta_credito">Tarjeta de crédito</option>
+                        <option value="tarjeta_debito">Tarjeta de débito</option>
+                        <option value="paypal">PayPal</option>
+                        <option value="transferencia">Transferencia bancaria</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-between">
+                <button type="button" id="prev-2" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    Anterior
+                </button>
+                <button type="button" id="next-2" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    Siguiente
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Sección 3: Carga de Documentos -->
+        <div id="section-3" class="form-section hidden">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Carga de Documentos</h3>
+            
+            <div class="mb-6">
+                <p class="text-sm text-gray-600 mb-4">Por favor, suba los documentos requeridos. Formatos aceptados: PDF, JPG, PNG (máximo 4MB por archivo).</p>
+                
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-yellow-700">
+                                Asegúrese de que los documentos sean legibles y estén completos. Los documentos incompletos o ilegibles pueden retrasar el proceso.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Historial de viajes -->
+                <div class="mb-6">
+                    <label for="doc_historial_viajes" class="block text-sm font-medium text-gray-700 mb-2">Historial de viajes</label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                        <div class="space-y-1 text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <div class="flex text-sm text-gray-600">
+                                <label for="doc_historial_viajes" class="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500">
+                                    <span>Subir archivo</span>
+                                    <input id="doc_historial_viajes" name="doc_historial_viajes" type="file" class="sr-only" accept=".pdf,.jpg,.jpeg,.png">
+                                </label>
+                                <p class="pl-1">o arrastre y suelte</p>
+                            </div>
+                            <p class="text-xs text-gray-500">
+                                PDF, JPG, PNG hasta 4MB
+                            </p>
+                        </div>
+                    </div>
+                    <div id="file-preview-historial" class="mt-2 hidden">
+                        <div class="flex items-center p-2 bg-gray-50 rounded">
+                            <svg class="h-5 w-5 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
+                            </svg>
+                            <span id="file-name-historial" class="text-sm text-gray-500"></span>
+                            <button type="button" id="remove-file-historial" class="ml-auto text-gray-400 hover:text-gray-500">
+                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recursos financieros -->
+                <div class="mb-6">
+                    <label for="doc_recursos_financieros" class="block text-sm font-medium text-gray-700 mb-2">Prueba de recursos financieros</label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                        <div class="space-y-1 text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <div class="flex text-sm text-gray-600">
+                                <label for="doc_recursos_financieros" class="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500">
+                                    <span>Subir archivo</span>
+                                    <input id="doc_recursos_financieros" name="doc_recursos_financieros" type="file" class="sr-only" accept=".pdf,.jpg,.jpeg,.png">
+                                </label>
+                                <p class="pl-1">o arrastre y suelte</p>
+                            </div>
+                            <p class="text-xs text-gray-500">
+                                PDF, JPG, PNG hasta 4MB
+                            </p>
+                        </div>
+                    </div>
+                    <div id="file-preview-recursos" class="mt-2 hidden">
+                        <div class="flex items-center p-2 bg-gray-50 rounded">
+                            <svg class="h-5 w-5 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
+                            </svg>
+                            <span id="file-name-recursos" class="text-sm text-gray-500"></span>
+                            <button type="button" id="remove-file-recursos" class="ml-auto text-gray-400 hover:text-gray-500">
+                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Relaciones familiares -->
+                <div class="mb-6">
+                    <label for="doc_relaciones_familiares" class="block text-sm font-medium text-gray-700 mb-2">Prueba de relaciones familiares</label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                        <div class="space-y-1 text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <div class="flex text-sm text-gray-600">
+                                <label for="doc_relaciones_familiares" class="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500">
+                                    <span>Subir archivo</span>
+                                    <input id="doc_relaciones_familiares" name="doc_relaciones_familiares" type="file" class="sr-only" accept=".pdf,.jpg,.jpeg,.png">
+                                </label>
+                                <p class="pl-1">o arrastre y suelte</p>
+                            </div>
+                            <p class="text-xs text-gray-500">
+                                PDF, JPG, PNG hasta 4MB
+                            </p>
+                        </div>
+                    </div>
+                    <div id="file-preview-relaciones" class="mt-2 hidden">
+                        <div class="flex items-center p-2 bg-gray-50 rounded">
+                            <svg class="h-5 w-5 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
+                            </svg>
+                            <span id="file-name-relaciones" class="text-sm text-gray-500"></span>
+                            <button type="button" id="remove-file-relaciones" class="ml-auto text-gray-400 hover:text-gray-500">
+                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hoja de vida -->
+                <div class="mb-6">
+                    <label for="doc_hoja_vida" class="block text-sm font-medium text-gray-700 mb-2">Hoja de vida</label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                        <div class="space-y-1 text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <div class="flex text-sm text-gray-600">
+                                <label for="doc_hoja_vida" class="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500">
+                                    <span>Subir archivo</span>
+                                    <input id="doc_hoja_vida" name="doc_hoja_vida" type="file" class="sr-only" accept=".pdf,.jpg,.jpeg,.png">
+                                </label>
+                                <p class="pl-1">o arrastre y suelte</p>
+                            </div>
+                            <p class="text-xs text-gray-500">
+                                PDF, JPG, PNG hasta 4MB
+                            </p>
+                        </div>
+                    </div>
+                    <div id="file-preview-hoja" class="mt-2 hidden">
+                        <div class="flex items-center p-2 bg-gray-50 rounded">
+                            <svg class="h-5 w-5 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
+                            </svg>
+                            <span id="file-name-hoja" class="text-sm text-gray-500"></span>
+                            <button type="button" id="remove-file-hoja" class="ml-auto text-gray-400 hover:text-gray-500">
+                                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-between">
+                <button type="button" id="prev-3" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    Anterior
+                </button>
+                <button type="button" id="next-3" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    Siguiente
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Sección 4: Resumen y Envío -->
+        <div id="section-4" class="form-section hidden">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Resumen y Envío</h3>
+            
+            <div class="bg-gray-50 p-6 rounded-lg mb-6">
+                <h4 class="text-md font-medium text-gray-800 mb-4">Revise su información antes de enviar</h4>
+                
+                <div class="space-y-4">
+                    <!-- Datos de Elegibilidad -->
+                    <div>
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Datos de Elegibilidad</h5>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="text-sm">
+                                <span class="font-medium text-gray-500">Propósito en Canadá:</span>
+                                <span id="summary-proposito" class="ml-2 text-gray-800"></span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="font-medium text-gray-500">Tiempo de estadía:</span>
+                                <span id="summary-tiempo" class="ml-2 text-gray-800"></span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="font-medium text-gray-500">País de residencia:</span>
+                                <span id="summary-pais" class="ml-2 text-gray-800"></span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="font-medium text-gray-500">Fecha de nacimiento:</span>
+                                <span id="summary-fecha" class="ml-2 text-gray-800"></span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="font-medium text-gray-500">Familiar en Canadá:</span>
+                                <span id="summary-familiar" class="ml-2 text-gray-800"></span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="font-medium text-gray-500">Estado civil:</span>
+                                <span id="summary-estado-civil" class="ml-2 text-gray-800"></span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="font-medium text-gray-500">Provincia de destino:</span>
+                                <span id="summary-provincia" class="ml-2 text-gray-800"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Motivos y Condiciones -->
+                    <div class="pt-4 border-t border-gray-200">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Motivos y Condiciones</h5>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="text-sm">
+                                <span class="font-medium text-gray-500">Propósito principal:</span>
+                                <span id="summary-proposito-principal" class="ml-2 text-gray-800"></span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="font-medium text-gray-500">Empleo en país de origen:</span>
+                                <span id="summary-empleo" class="ml-2 text-gray-800"></span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="font-medium text-gray-500">Dependencia económica:</span>
+                                <span id="summary-dependencia" class="ml-2 text-gray-800"></span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="font-medium text-gray-500">Viajes previos:</span>
+                                <span id="summary-viajes" class="ml-2 text-gray-800"></span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="font-medium text-gray-500">Acompaña a familiar:</span>
+                                <span id="summary-acompana" class="ml-2 text-gray-800"></span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="font-medium text-gray-500">Antecedentes penales:</span>
+                                <span id="summary-antecedentes" class="ml-2 text-gray-800"></span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="font-medium text-gray-500">Exámenes médicos:</span>
+                                <span id="summary-examenes" class="ml-2 text-gray-800"></span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="font-medium text-gray-500">Pago online:</span>
+                                <span id="summary-pago" class="ml-2 text-gray-800"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Documentos -->
+                    <div class="pt-4 border-t border-gray-200">
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Documentos Cargados</h5>
+                        <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
+                            <li id="doc-historial-item" class="hidden">Historial de viajes</li>
+                            <li id="doc-recursos-item" class="hidden">Prueba de recursos financieros</li>
+                            <li id="doc-relaciones-item" class="hidden">Prueba de relaciones familiares</li>
+                            <li id="doc-hoja-item" class="hidden">Hoja de vida</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <div class="flex items-start">
+                    <div class="flex items-center h-5">
+                        <input id="terminos" name="terminos" type="checkbox" required class="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300 rounded">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="terminos" class="font-medium text-gray-700">Acepto los términos y condiciones</label>
+                        <p class="text-gray-500">Al enviar este formulario, acepto que la información proporcionada sea utilizada para evaluar mi elegibilidad para una visa canadiense.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <div class="flex items-start">
+                    <div class="flex items-center h-5">
+                        <input id="privacidad" name="privacidad" type="checkbox" required class="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300 rounded">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="privacidad" class="font-medium text-gray-700">Política de privacidad</label>
+                        <p class="text-gray-500">He leído y acepto la política de privacidad de Canadian Visa Advise.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-between">
+                <button type="button" id="prev-4" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    Anterior
+                </button>
+                <button type="submit" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    Enviar Solicitud
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </form>
+<!-- Añadir este botón justo antes del cierre del div que contiene el formulario (antes de </div>) -->
+
+<!-- Botón de descarga de reporte -->
+<div class="mt-8 border-t border-gray-200 pt-6">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">Reportes</h3>
+    <p class="text-gray-600 mb-4">Descarga un reporte con los datos de tu solicitud en formato PDF.</p>
+    
+    <div class="flex space-x-4">
+        <button type="button" id="download-report" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+            Descargar Reporte PDF
+        </button>
+        
+        <button type="button" id="preview-report" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+            </svg>
+            Vista Previa
+        </button>
+    </div>
+</div>
+</div>
+{% endblock %}
+
