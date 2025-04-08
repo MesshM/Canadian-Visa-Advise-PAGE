@@ -1,6 +1,10 @@
-from flask import Blueprint, request, redirect, url_for, flash, render_template, session, jsonify, send_file
+import os
+import uuid
+from PIL import Image
+from io import BytesIO
+import re
+from flask import Blueprint, request, redirect, url_for, flash, render_template, session, jsonify, send_file, send_from_directory
 from config.database import create_connection
-from utils.file_helpers import save_profile_photo, allowed_file
 from utils.auth_helpers import hash_password, verify_password
 from config.email import send_email_via_zoho
 import random
@@ -8,8 +12,14 @@ import string
 from datetime import datetime, timedelta
 import json
 import io
+from werkzeug.utils import secure_filename
 
 perfil_bp = Blueprint('perfil', __name__)
+
+# Definir la carpeta para almacenar las imágenes de perfil
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads', 'profile_images')
+# Asegurar que la carpeta existe
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @perfil_bp.route('/perfil')
 def perfil():
@@ -22,7 +32,7 @@ def perfil():
         try:
             # Obtener información del usuario
             cursor.execute("""
-                SELECT u.*, s.id_solicitante 
+                SELECT u.*, s.id_solicitante
                 FROM tbl_usuario u
                 LEFT JOIN tbl_solicitante s ON u.id_usuario = s.id_usuario
                 WHERE u.id_usuario = %s
@@ -38,17 +48,16 @@ def perfil():
             asesorias = []
             if user['id_solicitante']:
                 cursor.execute("""
-                    SELECT a.codigo_asesoria, a.fecha_asesoria, a.tipo_asesoria, 
+                    SELECT a.codigo_asesoria, a.fecha_creacion, a.fecha_asesoria, a.tipo_asesoria, 
                            a.asesor_asignado, a.estado, a.descripcion
                     FROM tbl_asesoria a
                     WHERE a.id_solicitante = %s
-                    ORDER BY a.fecha_asesoria DESC
+                    ORDER BY a.fecha_creacion DESC
                 """, (user['id_solicitante'],))
                 asesorias = cursor.fetchall()
             
             # Incluir CSS adicional para correcciones
-            return render_template('perfil.html', user=user, asesorias=asesorias, 
-                                  additional_css='/static/css/perfil-fixes.css')
+            return render_template('perfil.html', user=user, asesorias=asesorias)
         except Exception as e:
             flash(f'Error al cargar el perfil: {str(e)}', 'error')
         finally:
@@ -59,33 +68,7 @@ def perfil():
     
     return redirect(url_for('index'))
 
-@perfil_bp.route('/actualizar_foto_perfil', methods=['POST'])
-def actualizar_foto_perfil():
-    if 'user_id' not in session:
-        return jsonify({'error': 'No autorizado'}), 401
-    
-    try:
-        if 'photo' not in request.files:
-            return jsonify({'error': 'No se envió ninguna foto'}), 400
-        
-        file = request.files['photo']
-        
-        if file.filename == '':
-            return jsonify({'error': 'No se seleccionó ningún archivo'}), 400
-        
-        photo_url = save_profile_photo(file, session['user_id'])
-        
-        if photo_url:
-            # Actualizar la ruta de la foto en la base de datos (si tienes una tabla para eso)
-            # Por ahora, solo guardamos la ruta en la sesión
-            session['profile_photo'] = photo_url
-            
-            return jsonify({'success': True, 'photo_url': session['profile_photo']})
-        else:
-            return jsonify({'error': 'Tipo de archivo no permitido. Solo se permiten imágenes (png, jpg, jpeg, gif)'}), 400
-    except Exception as e:
-        print(f"Error al actualizar foto de perfil: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+
 
 @perfil_bp.route('/actualizar_informacion_basica', methods=['POST'])
 def actualizar_informacion_basica():
@@ -425,3 +408,109 @@ def eliminar_cuenta():
         
         return jsonify({'error': str(e)}), 500
 
+@perfil_bp.route('/subir_imagen_perfil', methods=['POST'])
+def subir_imagen_perfil():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        if 'profile_image' not in request.files:
+            return jsonify({'error': 'No se ha proporcionado ninguna imagen'}), 400
+        
+        file = request.files['profile_image']
+        
+        if file.filename == '':
+            return jsonify({'error': 'No se ha seleccionado ningún archivo'}), 400
+        
+        # Verificar que es una imagen
+        if not file.content_type.startswith('image/'):
+            return jsonify({'error': 'El archivo debe ser una imagen'}), 400
+        
+        # Generar un nombre aleatorio para la imagen
+        random_filename = str(uuid.uuid4())
+        webp_filename = f"{random_filename}.webp"
+        
+        # Abrir la imagen con PIL
+        img = Image.open(file)
+        
+        # Redimensionar si es demasiado grande (opcional)
+        max_size = (800, 800)
+        if img.width > max_size[0] or img.height > max_size[1]:
+            img.thumbnail(max_size, Image.LANCZOS)
+        
+        # Guardar como WebP
+        webp_path = os.path.join(UPLOAD_FOLDER, webp_filename)
+        img.save(webp_path, 'WEBP', quality=85)
+        
+        # Guardar la ruta en la base de datos
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor()
+            
+            # Verificar si ya existe una imagen de perfil para este usuario
+            cursor.execute("SELECT id FROM tbl_perfil_fotos WHERE id_usuario = %s", (session['user_id'],))
+            existing_image = cursor.fetchone()
+            
+            if existing_image:
+                # Actualizar la imagen existente
+                cursor.execute(
+                    "UPDATE tbl_perfil_fotos SET ruta_foto = %s, fecha_creacion = NOW() WHERE id_usuario = %s",
+                    (webp_filename, session['user_id'])
+                )
+            else:
+                # Insertar nueva imagen
+                cursor.execute(
+                    "INSERT INTO tbl_perfil_fotos (id_usuario, ruta_foto) VALUES (%s, %s)",
+                    (session['user_id'], webp_filename)
+                )
+            
+            connection.commit()
+            cursor.close()
+            connection.close()
+            
+            # Devolver la URL de la imagen
+            image_url = url_for('perfil.obtener_imagen_perfil_archivo', filename=webp_filename)
+            return jsonify({'success': True, 'image_url': image_url})
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al subir imagen de perfil: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@perfil_bp.route('/obtener_imagen_perfil')
+def obtener_imagen_perfil():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Obtener la ruta de la imagen de perfil
+            cursor.execute("SELECT ruta_foto FROM tbl_perfil_fotos WHERE id_usuario = %s", (session['user_id'],))
+            result = cursor.fetchone()
+            
+            cursor.close()
+            connection.close()
+            
+            if result and result['ruta_foto']:
+                # Devolver la URL de la imagen
+                image_url = url_for('perfil.obtener_imagen_perfil_archivo', filename=result['ruta_foto'])
+                return jsonify({'success': True, 'image_url': image_url})
+            else:
+                # Si no hay imagen, devolver la imagen por defecto
+                return jsonify({'success': True, 'image_url': url_for('static', filename='img/default-avatar.webp')})
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al obtener imagen de perfil: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@perfil_bp.route('/uploads/profile_images/<filename>')
+def obtener_imagen_perfil_archivo(filename):
+    # Validar el nombre del archivo para evitar ataques de path traversal
+    if not re.match(r'^[a-zA-Z0-9_.-]+\.webp$', filename):
+        return "Archivo no encontrado", 404
+    
+    return send_from_directory(UPLOAD_FOLDER, filename)
