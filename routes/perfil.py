@@ -3,23 +3,32 @@ import uuid
 from PIL import Image
 from io import BytesIO
 import re
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+import json
+import time
+import hashlib
 from flask import Blueprint, request, redirect, url_for, flash, render_template, session, jsonify, send_file, send_from_directory
+from config.cloudinary_config import configure_cloudinary
 from config.database import create_connection
 from utils.auth_helpers import hash_password, verify_password
 from config.email import send_email_via_zoho
 import random
 import string
 from datetime import datetime, timedelta
-import json
 import io
 from werkzeug.utils import secure_filename
 
 perfil_bp = Blueprint('perfil', __name__)
 
-# Definir la carpeta para almacenar las imágenes de perfil
-UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads', 'profile_images')
+# Definir la carpeta para almacenar las imágenes de perfil en caché local
+CACHE_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'cache', 'profile_images')
 # Asegurar que la carpeta existe
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(CACHE_FOLDER, exist_ok=True)
+
+# Tiempo de expiración de caché en segundos (1 día)
+CACHE_EXPIRATION = 86400
 
 @perfil_bp.route('/perfil')
 def perfil():
@@ -46,16 +55,21 @@ def perfil():
           
           # Obtener la imagen de perfil del usuario
           cursor.execute("""
-              SELECT ruta_foto FROM tbl_perfil_fotos
+              SELECT cloudinary_public_id FROM tbl_perfil_fotos
               WHERE id_usuario = %s
           """, (session['user_id'],))
           
           profile_photo = cursor.fetchone()
-          if profile_photo and profile_photo['ruta_foto']:
-              # Guardar la URL de la imagen en la sesión con URL absoluta
-              session['profile_photo'] = url_for('perfil.obtener_imagen_perfil_archivo', 
-                                                filename=profile_photo['ruta_foto'], 
-                                                _external=True)
+          if profile_photo and profile_photo['cloudinary_public_id']:
+              # Guardar la URL de la imagen en la sesión
+              session['profile_photo'] = cloudinary.CloudinaryImage(profile_photo['cloudinary_public_id']).build_url(
+                  width=200, 
+                  height=200, 
+                  crop="fill", 
+                  gravity="face", 
+                  fetch_format="auto", 
+                  quality="auto"
+              )
           
           # Obtener asesorías del usuario si es solicitante
           asesorias = []
@@ -97,17 +111,23 @@ def cargar_imagen_perfil_sesion():
           
           # Obtener la imagen de perfil del usuario
           cursor.execute("""
-              SELECT ruta_foto FROM tbl_perfil_fotos
+              SELECT cloudinary_public_id FROM tbl_perfil_fotos
               WHERE id_usuario = %s
           """, (session['user_id'],))
           
           profile_photo = cursor.fetchone()
-          if profile_photo and profile_photo['ruta_foto']:
-              # Guardar la URL de la imagen en la sesión con URL absoluta
-              session['profile_photo'] = url_for('perfil.obtener_imagen_perfil_archivo', 
-                                                filename=profile_photo['ruta_foto'], 
-                                                _external=True)
-              return jsonify({'success': True, 'image_url': session['profile_photo']})
+          if profile_photo and profile_photo['cloudinary_public_id']:
+              # Guardar la URL de la imagen en la sesión
+              image_url = cloudinary.CloudinaryImage(profile_photo['cloudinary_public_id']).build_url(
+                  width=200, 
+                  height=200, 
+                  crop="fill", 
+                  gravity="face", 
+                  fetch_format="auto", 
+                  quality="auto"
+              )
+              session['profile_photo'] = image_url
+              return jsonify({'success': True, 'image_url': image_url})
           else:
               # Si no hay imagen, limpiar la sesión
               if 'profile_photo' in session:
@@ -134,16 +154,21 @@ def cargar_imagen_perfil_en_sesion(user_id):
           
           # Obtener la imagen de perfil del usuario
           cursor.execute("""
-              SELECT ruta_foto FROM tbl_perfil_fotos
+              SELECT cloudinary_public_id FROM tbl_perfil_fotos
               WHERE id_usuario = %s
           """, (user_id,))
           
           profile_photo = cursor.fetchone()
-          if profile_photo and profile_photo['ruta_foto']:
-              # Guardar la URL de la imagen en la sesión con URL absoluta
-              session['profile_photo'] = url_for('perfil.obtener_imagen_perfil_archivo', 
-                                                filename=profile_photo['ruta_foto'], 
-                                                _external=True)
+          if profile_photo and profile_photo['cloudinary_public_id']:
+              # Guardar la URL de la imagen en la sesión
+              session['profile_photo'] = cloudinary.CloudinaryImage(profile_photo['cloudinary_public_id']).build_url(
+                  width=200, 
+                  height=200, 
+                  crop="fill", 
+                  gravity="face", 
+                  fetch_format="auto", 
+                  quality="auto"
+              )
           
           cursor.close()
           connection.close()
@@ -152,6 +177,67 @@ def cargar_imagen_perfil_en_sesion(user_id):
   except Exception as e:
       print(f"Error al cargar imagen de perfil en sesión: {str(e)}")
       return False
+
+# Función para obtener imagen de Cloudinary con caché
+def get_cloudinary_image_with_cache(public_id, width=200, height=200):
+    """
+    Obtiene una imagen de Cloudinary con sistema de caché local.
+    Si la imagen está en caché y no ha expirado, la devuelve desde el caché.
+    De lo contrario, la descarga de Cloudinary y la guarda en caché.
+    """
+    if not public_id:
+        return None
+    
+    # Crear un hash del public_id y parámetros para el nombre del archivo en caché
+    cache_key = hashlib.md5(f"{public_id}_{width}_{height}".encode()).hexdigest()
+    cache_path = os.path.join(CACHE_FOLDER, f"{cache_key}.webp")
+    cache_meta_path = os.path.join(CACHE_FOLDER, f"{cache_key}.meta")
+    
+    # Verificar si la imagen está en caché y no ha expirado
+    if os.path.exists(cache_path) and os.path.exists(cache_meta_path):
+        try:
+            with open(cache_meta_path, 'r') as f:
+                meta = json.load(f)
+            
+            # Verificar si el caché ha expirado
+            if time.time() - meta['timestamp'] < CACHE_EXPIRATION:
+                return cache_path
+        except Exception as e:
+            print(f"Error al leer metadatos de caché: {str(e)}")
+    
+    try:
+        # Construir la URL de Cloudinary
+        image_url = cloudinary.CloudinaryImage(public_id).build_url(
+            width=width, 
+            height=height, 
+            crop="fill", 
+            gravity="face", 
+            fetch_format="auto", 
+            quality="auto"
+        )
+        
+        # Descargar la imagen de Cloudinary
+        import requests
+        response = requests.get(image_url)
+        if response.status_code == 200:
+            # Guardar la imagen en caché
+            with open(cache_path, 'wb') as f:
+                f.write(response.content)
+            
+            # Guardar metadatos de caché
+            with open(cache_meta_path, 'w') as f:
+                json.dump({
+                    'timestamp': time.time(),
+                    'public_id': public_id,
+                    'width': width,
+                    'height': height
+                }, f)
+            
+            return cache_path
+    except Exception as e:
+        print(f"Error al obtener imagen de Cloudinary: {str(e)}")
+    
+    return None
 
 @perfil_bp.route('/actualizar_informacion_basica', methods=['POST'])
 def actualizar_informacion_basica():
@@ -465,6 +551,20 @@ def eliminar_cuenta():
           # Eliminar tokens de restablecimiento de contraseña
           cursor.execute("DELETE FROM tbl_password_reset WHERE user_id = %s", (session['user_id'],))
           
+          # Obtener la imagen de perfil para eliminarla de Cloudinary
+          cursor.execute("SELECT cloudinary_public_id FROM tbl_perfil_fotos WHERE id_usuario = %s", (session['user_id'],))
+          profile_photo = cursor.fetchone()
+          
+          if profile_photo and profile_photo[0]:
+              # Eliminar la imagen de Cloudinary
+              try:
+                  cloudinary.uploader.destroy(profile_photo[0])
+              except Exception as e:
+                  print(f"Error al eliminar imagen de Cloudinary: {str(e)}")
+          
+          # Eliminar el registro de la foto de perfil
+          cursor.execute("DELETE FROM tbl_perfil_fotos WHERE id_usuario = %s", (session['user_id'],))
+          
           # Finalmente, eliminar el usuario
           cursor.execute("DELETE FROM tbl_usuario WHERE id_usuario = %s", (session['user_id'],))
           
@@ -506,16 +606,21 @@ def actualizar_imagen_perfil_en_sidebar(user_id, image_url=None):
           
           # Obtener la imagen de perfil del usuario
           cursor.execute("""
-              SELECT ruta_foto FROM tbl_perfil_fotos
+              SELECT cloudinary_public_id FROM tbl_perfil_fotos
               WHERE id_usuario = %s
           """, (user_id,))
           
           profile_photo = cursor.fetchone()
-          if profile_photo and profile_photo['ruta_foto']:
-              # Guardar la URL de la imagen en la sesión con URL absoluta
-              session['profile_photo'] = url_for('perfil.obtener_imagen_perfil_archivo', 
-                                                filename=profile_photo['ruta_foto'], 
-                                                _external=True)
+          if profile_photo and profile_photo['cloudinary_public_id']:
+              # Guardar la URL de la imagen en la sesión
+              session['profile_photo'] = cloudinary.CloudinaryImage(profile_photo['cloudinary_public_id']).build_url(
+                  width=200, 
+                  height=200, 
+                  crop="fill", 
+                  gravity="face", 
+                  fetch_format="auto", 
+                  quality="auto"
+              )
           elif 'profile_photo' in session:
               # Si no hay imagen pero existe en la sesión, eliminarla
               session.pop('profile_photo')
@@ -545,7 +650,6 @@ def subir_imagen_perfil():
       
       # Generar un nombre aleatorio para la imagen
       random_filename = str(uuid.uuid4())
-      webp_filename = f"{random_filename}.webp"
       
       # Abrir la imagen con PIL
       img = Image.open(file)
@@ -555,47 +659,69 @@ def subir_imagen_perfil():
       if img.width > max_size[0] or img.height > max_size[1]:
           img.thumbnail(max_size, Image.LANCZOS)
       
-      # Guardar como WebP
-      webp_path = os.path.join(UPLOAD_FOLDER, webp_filename)
-      img.save(webp_path, 'WEBP', quality=85)
+      # Convertir a BytesIO para subir a Cloudinary
+      buffer = BytesIO()
+      img.save(buffer, format='WEBP', quality=85)
+      buffer.seek(0)
       
-      # Guardar la ruta en la base de datos
+      # Subir la imagen a Cloudinary
+      upload_result = cloudinary.uploader.upload(
+          buffer,
+          folder="profile_images",
+          public_id=random_filename,
+          overwrite=True,
+          resource_type="image",
+          format="webp",
+          transformation=[
+              {"width": 800, "height": 800, "crop": "limit"},
+              {"quality": "auto", "fetch_format": "auto"}
+          ]
+      )
+      
+      # Guardar la referencia en la base de datos
       connection = create_connection()
       if connection:
           cursor = connection.cursor(dictionary=True)
           
           # Verificar si ya existe una imagen de perfil para este usuario
-          cursor.execute("SELECT id, ruta_foto FROM tbl_perfil_fotos WHERE id_usuario = %s", (session['user_id'],))
+          cursor.execute("SELECT id, cloudinary_public_id FROM tbl_perfil_fotos WHERE id_usuario = %s", (session['user_id'],))
           existing_image = cursor.fetchone()
           
           if existing_image:
-              # Eliminar la imagen anterior del sistema de archivos
-              if existing_image['ruta_foto']:
-                  old_image_path = os.path.join(UPLOAD_FOLDER, existing_image['ruta_foto'])
-                  if os.path.exists(old_image_path):
-                      os.remove(old_image_path)
+              # Eliminar la imagen anterior de Cloudinary
+              if existing_image['cloudinary_public_id']:
+                  try:
+                      cloudinary.uploader.destroy(existing_image['cloudinary_public_id'])
+                  except Exception as e:
+                      print(f"Error al eliminar imagen anterior de Cloudinary: {str(e)}")
               
               # Actualizar la imagen existente
               cursor.execute(
-                  "UPDATE tbl_perfil_fotos SET ruta_foto = %s, fecha_creacion = NOW() WHERE id_usuario = %s",
-                  (webp_filename, session['user_id'])
+                  "UPDATE tbl_perfil_fotos SET cloudinary_public_id = %s, fecha_creacion = NOW() WHERE id_usuario = %s",
+                  (upload_result['public_id'], session['user_id'])
               )
           else:
               # Insertar nueva imagen
               cursor.execute(
-                  "INSERT INTO tbl_perfil_fotos (id_usuario, ruta_foto) VALUES (%s, %s)",
-                  (session['user_id'], webp_filename)
+                  "INSERT INTO tbl_perfil_fotos (id_usuario, cloudinary_public_id) VALUES (%s, %s)",
+                  (session['user_id'], upload_result['public_id'])
               )
           
           connection.commit()
           cursor.close()
           connection.close()
           
+          # Construir la URL de la imagen con transformaciones
+          image_url = cloudinary.CloudinaryImage(upload_result['public_id']).build_url(
+              width=200, 
+              height=200, 
+              crop="fill", 
+              gravity="face", 
+              fetch_format="auto", 
+              quality="auto"
+          )
+          
           # Guardar la URL de la imagen en la sesión para actualizar el sidebar
-          # Usar URL absoluta para que funcione en cualquier dispositivo
-          image_url = url_for('perfil.obtener_imagen_perfil_archivo', 
-                             filename=webp_filename, 
-                             _external=True)
           session['profile_photo'] = image_url
           
           # Devolver la URL de la imagen
@@ -620,15 +746,16 @@ def eliminar_imagen_perfil():
       if connection:
           cursor = connection.cursor(dictionary=True)
           
-          # Obtener la ruta de la imagen actual
-          cursor.execute("SELECT ruta_foto FROM tbl_perfil_fotos WHERE id_usuario = %s", (session['user_id'],))
+          # Obtener la referencia de la imagen actual
+          cursor.execute("SELECT cloudinary_public_id FROM tbl_perfil_fotos WHERE id_usuario = %s", (session['user_id'],))
           result = cursor.fetchone()
           
-          if result and result['ruta_foto']:
-              # Eliminar el archivo físico
-              file_path = os.path.join(UPLOAD_FOLDER, result['ruta_foto'])
-              if os.path.exists(file_path):
-                  os.remove(file_path)
+          if result and result['cloudinary_public_id']:
+              # Eliminar la imagen de Cloudinary
+              try:
+                  cloudinary.uploader.destroy(result['cloudinary_public_id'])
+              except Exception as e:
+                  print(f"Error al eliminar imagen de Cloudinary: {str(e)}")
               
               # Eliminar el registro de la base de datos
               cursor.execute("DELETE FROM tbl_perfil_fotos WHERE id_usuario = %s", (session['user_id'],))
@@ -637,6 +764,14 @@ def eliminar_imagen_perfil():
               # Eliminar la URL de la imagen de la sesión
               if 'profile_photo' in session:
                   session.pop('profile_photo')
+              
+              # Limpiar caché local
+              try:
+                  for file in os.listdir(CACHE_FOLDER):
+                      if file.endswith('.webp') or file.endswith('.meta'):
+                          os.remove(os.path.join(CACHE_FOLDER, file))
+              except Exception as e:
+                  print(f"Error al limpiar caché: {str(e)}")
               
               cursor.close()
               connection.close()
@@ -666,9 +801,9 @@ def obtener_imagen_perfil():
       if connection:
           cursor = connection.cursor(dictionary=True)
           
-          # Obtener la ruta de la imagen de perfil y datos del usuario
+          # Obtener la referencia de la imagen de perfil y datos del usuario
           cursor.execute("""
-              SELECT p.ruta_foto, u.nombres, u.apellidos 
+              SELECT p.cloudinary_public_id, u.nombres, u.apellidos 
               FROM tbl_perfil_fotos p
               RIGHT JOIN tbl_usuario u ON p.id_usuario = u.id_usuario
               WHERE u.id_usuario = %s
@@ -685,11 +820,17 @@ def obtener_imagen_perfil():
                   'apellidos': result['apellidos']
               }
               
-              if result['ruta_foto']:
-                  # Si hay imagen, devolver la URL absoluta
-                  response_data['image_url'] = url_for('perfil.obtener_imagen_perfil_archivo', 
-                                                      filename=result['ruta_foto'], 
-                                                      _external=True)
+              if result['cloudinary_public_id']:
+                  # Si hay imagen, devolver la URL
+                  image_url = cloudinary.CloudinaryImage(result['cloudinary_public_id']).build_url(
+                      width=200, 
+                      height=200, 
+                      crop="fill", 
+                      gravity="face", 
+                      fetch_format="auto", 
+                      quality="auto"
+                  )
+                  response_data['image_url'] = image_url
                   response_data['has_image'] = True
               else:
                   # Si no hay imagen, indicarlo para mostrar iniciales
@@ -705,10 +846,17 @@ def obtener_imagen_perfil():
       print(f"Error al obtener imagen de perfil: {str(e)}")
       return jsonify({'error': str(e)}), 500
 
-@perfil_bp.route('/uploads/profile_images/<filename>')
-def obtener_imagen_perfil_archivo(filename):
+@perfil_bp.route('/imagen_perfil_cache/<filename>')
+def obtener_imagen_perfil_cache(filename):
+  """
+  Sirve imágenes de perfil desde el caché local
+  """
   # Validar el nombre del archivo para evitar ataques de path traversal
   if not re.match(r'^[a-zA-Z0-9_.-]+\.webp$', filename):
       return "Archivo no encontrado", 404
   
-  return send_from_directory(UPLOAD_FOLDER, filename)
+  cache_path = os.path.join(CACHE_FOLDER, filename)
+  if os.path.exists(cache_path):
+      return send_from_directory(CACHE_FOLDER, filename)
+  else:
+      return "Archivo no encontrado", 404
