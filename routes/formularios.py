@@ -6,8 +6,7 @@ from datetime import datetime
 import random
 import string
 import os
-from utils.file_utils import allowed_file, save_file
-from utils.pdf_utils import generate_visa_report
+
 
 formularios_bp = Blueprint('formularios', __name__)
 
