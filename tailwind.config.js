@@ -134,6 +134,27 @@ module.exports = {
           "0%": { height: "0%", opacity: "0" },
           "100%": { height: "100%", opacity: "1" },
         },
+        shake: {
+          "0%, 100%": { transform: "translateX(0)" },
+          "10%, 30%, 50%, 70%, 90%": { transform: "translateX(-5px)" },
+          "20%, 40%, 60%, 80%": { transform: "translateX(5px)" },
+        },
+        bounce: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-5px)" },
+        },
+        glow: {
+          "0%, 100%": { boxShadow: "0 0 5px rgba(255, 62, 62, 0.5)" },
+          "50%": { boxShadow: "0 0 20px rgba(255, 62, 62, 0.8)" },
+        },
+        tabHover: {
+          "0%": { transform: "translateY(0)" },
+          "100%": { transform: "translateY(-2px)" },
+        },
+        initialsAppear: {
+          "0%": { transform: "scale(0.5)", opacity: "0" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
       },
       animation: {
         "fade-in": "fadeIn 0.5s ease-out forwards",
@@ -146,6 +167,11 @@ module.exports = {
         "slide-left": "slideLeft 1s forwards",
         "check-mark": "checkMark 0.5s ease-out forwards",
         "flow-down": "flowDown 0.8s ease-out forwards",
+        shake: "shake 0.5s ease-in-out",
+        bounce: "bounce 1s ease-in-out infinite",
+        glow: "glow 1.5s ease-in-out infinite",
+        "tab-hover": "tabHover 0.3s ease-out forwards",
+        "initials-appear": "initialsAppear 0.4s ease-out forwards",
       },
       transitionProperty: {
         width: "width",
@@ -157,10 +183,9 @@ module.exports = {
         "btn-hover": "0 10px 15px -3px rgba(234, 88, 88, 0.2), 0 4px 6px -2px rgba(234, 88, 88, 0.1)",
         card: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
         "card-hover": "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+        modal: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
       },
-      
     },
   },
   plugins: [],
 }
-

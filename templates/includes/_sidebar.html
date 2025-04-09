@@ -26,7 +26,11 @@
             <span class="absolute inset-0 w-0 bg-primary-50 -z-10 transition-all duration-300 ease-in-out group-hover:w-full"></span>
         </a>
 
+<<<<<<< HEAD
         <a href="{{ url_for_formulario_solicitud() }}" class="flex items-center px-6 py-3 {{ 'text-primary-600 border-l-3 border-primary-600 font-medium bg-primary-50' if '/formularios/solicitud' in request.path else 'text-gray-500 border-l-3 border-transparent hover:text-primary-600 hover:translate-x-1' }} no-underline transition-all duration-300 ease-in-out relative overflow-hidden group font-inter">
+=======
+        <a href="{{ url_for_formularios() }}" class="flex items-center px-6 py-3 {{ 'text-primary-600 border-l-3 border-primary-600 font-medium bg-primary-50' if request.path == '/formulario_solicitud' else 'text-gray-500 border-l-3 border-transparent hover:text-primary-600 hover:translate-x-1' }} no-underline transition-all duration-300 ease-in-out relative overflow-hidden group font-inter">
+>>>>>>> 4f3070ce678f2f1366e2987654b26868787c7937
             <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
             </svg>
@@ -90,5 +94,6 @@
         <span>Cerrar sesión</span>
     </a>
 </div>
+<script src="../../static/js/_sidebar.js"></script>
 </aside>
 
