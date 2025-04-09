@@ -18,6 +18,26 @@
             <p class="text-gray-500 text-sm">A continuación puede visualizar los documentos que el cliente ha subido para su aplicación de VISA</p>
         </div>
         
+        <!-- Selección de cliente (NUEVO) -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 animate-[fadeIn_0.5s_ease] transition-all duration-300 hover:shadow-xl">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Seleccionar Cliente</h2>
+            <div class="relative">
+                <select id="cliente-select" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                    <option value="">Seleccionar cliente</option>
+                    {% for c in clientes_lista %}
+                        <option value="{{ c.id_solicitante }}" {% if cliente and cliente.id_solicitante == c.id_solicitante %}selected{% endif %}>
+                            {{ c.nombre_completo }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        
         <!-- Información del cliente -->
         <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 animate-[fadeIn_0.5s_ease] transition-all duration-300 hover:shadow-xl">
             <div class="mb-6 flex items-center justify-between bg-gray-50 rounded-lg p-4 border border-gray-200">
@@ -60,13 +80,13 @@
                     </button>
                 </div>
                 <div class="flex space-x-2">
-                    <a href="/descargar_todos/{{ cliente.id_solicitante }}" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                    <a href="/admin/descargar_todos/{{ cliente.id_solicitante }}" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                         </svg>
                         Descargar todos
                     </a>
-                    <a href="/generar_reporte/{{ cliente.id_solicitante }}" class="inline-flex items-center px-3 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors shadow-sm shadow-red-500/30">
+                    <a href="/admin/generar_reporte/{{ cliente.id_solicitante }}" class="inline-flex items-center px-3 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors shadow-sm shadow-red-500/30">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
@@ -131,7 +151,7 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                                 </svg>
                                             </button>
-                                            <a href="/descargar_documento/{{ doc.id_documento }}" class="text-gray-600 hover:text-gray-900">
+                                            <a href="/admin/descargar_documento/{{ doc.id_documento }}" class="text-gray-600 hover:text-gray-900">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                                                 </svg>
@@ -174,7 +194,7 @@
         
         <!-- Acciones finales -->
         <div class="mt-8 flex justify-end space-x-4">
-            <a href="/clientes" class="px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+            <a href="/admin/clientes" class="px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                 Volver a lista de clientes
             </a>
             <button id="approve-all-btn" class="px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
@@ -197,7 +217,7 @@
                 </div>
             </div>
             <div class="p-6">
-                <form id="status-form" action="/actualizar_estado_documento" method="post">
+                <form id="status-form" action="/admin/actualizar_estado_documento" method="post">
                     <input type="hidden" id="document-id" name="id_documento" value="">
                     <input type="hidden" name="id_solicitante" value="{{ cliente.id_solicitante }}">
                     
@@ -262,27 +282,119 @@
 
     <!-- Scripts -->
     <script>
-       <!-- Scripts -->
-   
-        // Aquí puedes agregar funcionalidad JavaScript para interacción con la tabla
         document.addEventListener('DOMContentLoaded', function() {
+            // Client selection handler
+            const clienteSelect = document.getElementById('cliente-select');
+            if (clienteSelect) {
+                clienteSelect.addEventListener('change', function() {
+                    const clienteId = this.value;
+                    if (clienteId) {
+                        window.location.href = "/admin/documentos/" + clienteId;
+                    } else {
+                        window.location.href = "/admin/documentos";
+                    }
+                });
+            }
+            
             // Contador de documentos aprobados
             const totalDocs = document.querySelectorAll('tbody tr').length;
             const approvedDocs = document.querySelectorAll('td span.bg-green-100.text-green-800').length;
             
             document.getElementById('doc-counter').textContent = `${approvedDocs}/${totalDocs} documentos`;
             
-            // Actualizar estado global basado en documentos aprobados
-            const statusBadge = document.querySelector('.bg-green-100.text-green-800.text-xs.font-medium.py-1.px-2.rounded-full');
-            if (approvedDocs < totalDocs) {
-                statusBadge.classList.remove('bg-green-100', 'text-green-800');
-                statusBadge.classList.add('bg-yellow-100', 'text-yellow-800');
-                statusBadge.textContent = 'Documentación incompleta';
+            // Status modal functionality
+            const statusButtons = document.querySelectorAll('.status-btn');
+            const statusModal = document.getElementById('status-modal');
+            const closeStatusModalBtn = document.getElementById('close-status-modal');
+            const cancelStatusBtn = document.getElementById('cancel-status-btn');
+            
+            statusButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    document.getElementById('document-id').value = id;
+                    statusModal.classList.remove('hidden');
+                });
+            });
+            
+            if (closeStatusModalBtn) {
+                closeStatusModalBtn.addEventListener('click', function() {
+                    statusModal.classList.add('hidden');
+                });
+            }
+            
+            if (cancelStatusBtn) {
+                cancelStatusBtn.addEventListener('click', function() {
+                    statusModal.classList.add('hidden');
+                });
+            }
+            
+            // View modal functionality
+            const viewButtons = document.querySelectorAll('.view-btn');
+            const viewModal = document.getElementById('view-modal');
+            const closeViewModalBtn = document.getElementById('close-view-modal');
+            const closeViewBtn = document.getElementById('close-view-btn');
+            
+            viewButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    // Here you would load the document preview
+                    viewModal.classList.remove('hidden');
+                });
+            });
+            
+            if (closeViewModalBtn) {
+                closeViewModalBtn.addEventListener('click', function() {
+                    viewModal.classList.add('hidden');
+                });
+            }
+            
+            if (closeViewBtn) {
+                closeViewBtn.addEventListener('click', function() {
+                    viewModal.classList.add('hidden');
+                });
+            }
+            
+            // Filter functionality
+            const filterButton = document.getElementById('apply-filter');
+            const filterSelect = document.getElementById('filter-status');
+            const documentRows = document.querySelectorAll('.document-row');
+            
+            if (filterButton && filterSelect) {
+                filterButton.addEventListener('click', function() {
+                    const filterValue = filterSelect.value;
+                    
+                    documentRows.forEach(row => {
+                        if (filterValue === 'all' || row.getAttribute('data-status') === filterValue) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                });
+            }
+            
+            // Close modals when clicking outside
+            window.addEventListener('click', function(e) {
+                if (statusModal && e.target === statusModal) {
+                    statusModal.classList.add('hidden');
+                }
+                if (viewModal && e.target === viewModal) {
+                    viewModal.classList.add('hidden');
+                }
+            });
+            
+            // Approve all button functionality
+            const approveAllBtn = document.getElementById('approve-all-btn');
+            if (approveAllBtn) {
+                approveAllBtn.addEventListener('click', function() {
+                    if (confirm('¿Está seguro de aprobar todo el expediente?')) {
+                        // Here you would implement the logic to approve all documents
+                        alert('Expediente aprobado exitosamente');
+                    }
+                });
             }
         });
-    
     </script>
 </body>
 </html>
 
- 

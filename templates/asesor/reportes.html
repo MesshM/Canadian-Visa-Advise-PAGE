@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes - Sistema de Inmigración Canadiense</title>
+    <link href="/static/css/output.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="font-['Inter'] bg-gray-50 text-gray-700 overflow-x-hidden m-0 p-0">
+    <!-- Sidebar -->
+    {% include 'includes/_sidebar_asesor.html' %}
+    
+    <!-- Main Content -->
+    <main class="ml-[calc(240px+40px)] p-8 min-h-screen">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 m-0 mb-2">Reportes y Estadísticas</h1>
+            <p class="text-gray-500 text-sm">Visualiza métricas sobre asesorías, clientes y documentación</p>
+        </div>
+        
+        <!-- Filtros de fecha -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 animate-[fadeIn_0.5s_ease] transition-all duration-300 hover:shadow-xl">
+            <div class="flex flex-wrap justify-between items-center">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">Filtros</h2>
+                <div class="flex flex-wrap gap-4">
+                    <div class="flex items-center space-x-2">
+                        <label for="date-from" class="text-sm font-medium text-gray-700">Desde:</label>
+                        <input type="date" id="date-from" class="border border-gray-300 rounded-lg text-sm p-2 focus:ring-red-500 focus:border-red-500">
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <label for="date-to" class="text-sm font-medium text-gray-700">Hasta:</label>
+                        <input type="date" id="date-to" class="border border-gray-300 rounded-lg text-sm p-2 focus:ring-red-500 focus:border-red-500">
+                    </div>
+                    <button id="apply-filter" class="inline-flex items-center px-3 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        Aplicar filtros
+                    </button>
+                    <button id="reset-filter" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                        Restablecer
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tarjetas de resumen -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <!-- Clientes totales -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 animate-[fadeIn_0.5s_ease] transition-all duration-300 hover:shadow-xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Clientes Totales</p>
+                        <h3 class="text-3xl font-bold text-gray-900 mt-1">{{ estadisticas.total_clientes }}</h3>
+                    </div>
+                    <div class="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-users text-red-500"></i>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="flex items-center">
+                        <span class="text-green-500 text-sm font-medium flex items-center">
+                            <i class="fas fa-arrow-up mr-1"></i>
+                            {{ estadisticas.incremento_clientes }}%
+                        </span>
+                        <span class="text-gray-500 text-sm ml-2">vs mes anterior</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Asesorías realizadas -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 animate-[fadeIn_0.5s_ease] transition-all duration-300 hover:shadow-xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Asesorías Realizadas</p>
+                        <h3 class="text-3xl font-bold text-gray-900 mt-1">{{ estadisticas.total_asesorias }}</h3>
+                    </div>
+                    <div class="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-calendar-check text-blue-500"></i>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="flex items-center">
+                        <span class="text-green-500 text-sm font-medium flex items-center">
+                            <i class="fas fa-arrow-up mr-1"></i>
+                            {{ estadisticas.incremento_asesorias }}%
+                        </span>
+                        <span class="text-gray-500 text-sm ml-2">vs mes anterior</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Asesorías pagadas -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 animate-[fadeIn_0.5s_ease] transition-all duration-300 hover:shadow-xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Asesorías Pagadas</p>
+                        <h3 class="text-3xl font-bold text-gray-900 mt-1">{{ estadisticas.asesorias_pagadas }}</h3>
+                    </div>
+                    <div class="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-dollar-sign text-green-500"></i>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="flex items-center">
+                        <span class="text-green-500 text-sm font-medium flex items-center">
+                            <i class="fas fa-arrow-up mr-1"></i>
+                            {{ estadisticas.incremento_pagadas }}%
+                        </span>
+                        <span class="text-gray-500 text-sm ml-2">vs mes anterior</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Ingresos totales -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 animate-[fadeIn_0.5s_ease] transition-all duration-300 hover:shadow-xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Ingresos Totales</p>
+                        <h3 class="text-3xl font-bold text-gray-900 mt-1">${{ estadisticas.ingresos_totales|number_format(0, ',', '.') }}</h3>
+                    </div>
+                    <div class="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-chart-line text-purple-500"></i>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="flex items-center">
+                        <span class="text-green-500 text-sm font-medium flex items-center">
+                            <i class="fas fa-arrow-up mr-1"></i>
+                            {{ estadisticas.incremento_ingresos }}%
+                        </span>
+                        <span class="text-gray-500 text-sm ml-2">vs mes anterior</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gráficos -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Gráfico de asesorías por tipo -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 animate-[fadeIn_0.5s_ease] transition-all duration-300 hover:shadow-xl">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">Asesorías por Tipo</h2>
+                <div class="h-80">
+                    <canvas id="asesorias-por-tipo"></canvas>
+                </div>
+            </div>
+            
+            <!-- Gráfico de asesorías por mes -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 animate-[fadeIn_0.5s_ease] transition-all duration-300 hover:shadow-xl">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">Asesorías por Mes</h2>
+                <div class="h-80">
+                    <canvas id="asesorias-por-mes"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tabla de asesorías recientes -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 animate-[fadeIn_0.5s_ease] transition-all duration-300 hover:shadow-xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-lg font-semibold text-gray-800">Asesorías Recientes</h2>
+                <a href="/admin/asesorias" class="text-red-500 hover:text-red-700 text-sm font-medium">Ver todas</a>
+            </div>
+            
+            <div class="overflow-x-auto rounded-xl border border-gray-200">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asesor</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for asesoria in asesorias_recientes %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ asesoria.codigo_asesoria }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="h-10 w-10 flex-shrink-0 bg-gray-100 rounded-full flex items-center justify-center font-medium">
+                                        {{ asesoria.solicitante|first|upper }}
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm font-medium text-gray-900">{{ asesoria.solicitante }}</p>
+                                        <p class="text-xs text-gray-500">{{ asesoria.correo }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">{{ asesoria.tipo_asesoria }}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ asesoria.fecha_asesoria|format_datetime }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ asesoria.asesor_asignado or 'Por asignar' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if asesoria.estado == 'Pagada' %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-
