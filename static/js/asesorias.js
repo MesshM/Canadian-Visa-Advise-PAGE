@@ -623,23 +623,6 @@ function toggleDetails(asesoriaId) {
                         </div>
                       </div>
                       
-                      <div class="flex items-center">
-                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <div>
-                          <p class="text-sm text-gray-700">
-                            <span class="font-medium">Estado:</span>
-                            ${
-                              asesoria.estado === "Pagada"
-                                ? '<span class="text-blue-600">En Proceso Activo</span>'
-                                : isAsesoriaVigente(asesoria.fecha_asesoria)
-                                  ? '<span class="text-green-600">Vigente</span>'
-                                  : '<span class="text-red-600">Vencida</span>'
-                            }
-                          </p>
-                        </div>
-                      </div>
                     </div>
                   </div>
 
