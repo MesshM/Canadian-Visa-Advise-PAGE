@@ -3,26 +3,80 @@ document.addEventListener("DOMContentLoaded", () => {
   const tabButtons = document.querySelectorAll(".tab-button")
   const tabContents = document.querySelectorAll(".tab-content")
 
+  // Mejora 1: Añadir animaciones más suaves para las transiciones de pestañas
   tabButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const tabId = button.getAttribute("data-tab")
 
-      // Actualizar botones
+      // Actualizar botones con transiciones más suaves y efectos mejorados
       tabButtons.forEach((btn) => {
-        btn.classList.remove("bg-primary-50", "text-primary-700", "border", "border-primary-100", "shadow-sm")
-        btn.classList.add("text-gray-600", "hover:bg-gray-50", "hover:text-gray-900")
-      })
-      button.classList.remove("text-gray-600", "hover:bg-gray-50", "hover:text-gray-900")
-      button.classList.add("bg-primary-50", "text-primary-700", "border", "border-primary-100", "shadow-sm")
+        btn.classList.remove("bg-primary-50", "text-primary-700", "border", "shadow-sm", "scale-105")
+        btn.classList.add("text-gray-600", "hover:bg-gray-50", "hover:text-gray-900", "transition-all", "duration-300")
 
-      // Actualizar contenidos
+        // Reducir el tamaño de los iconos en las pestañas inactivas
+        const icon = btn.querySelector("svg")
+        if (icon) {
+          icon.classList.remove("text-primary-600")
+          icon.classList.add("text-gray-500")
+        }
+      })
+
+      button.classList.remove("text-gray-600", "hover:bg-gray-50", "hover:text-gray-900")
+      button.classList.add(
+        "bg-primary-50",
+        "text-primary-700",
+        "border",
+        "shadow-sm",
+        "transition-all",
+        "duration-300",
+        "scale-105",
+      )
+
+      // Destacar el icono en la pestaña activa
+      const activeIcon = button.querySelector("svg")
+      if (activeIcon) {
+        activeIcon.classList.remove("text-gray-500")
+        activeIcon.classList.add("text-primary-600")
+      }
+
+      // Actualizar contenidos con animación de fade
       tabContents.forEach((content) => {
         content.classList.add("hidden")
+        content.classList.remove("animate-fade-in")
       })
-      document.getElementById(`${tabId}-content`).classList.remove("hidden")
+      const activeContent = document.getElementById(`${tabId}-content`)
+      activeContent.classList.remove("hidden")
+      // Forzar un reflow para que la animación se ejecute
+      void activeContent.offsetWidth
+      activeContent.classList.add("animate-fade-in")
 
       // Guardar la pestaña activa en localStorage
       localStorage.setItem("activeTab", tabId)
+    })
+  })
+
+  // Añadir efectos de hover mejorados a las pestañas
+  tabButtons.forEach((button) => {
+    button.addEventListener("mouseenter", () => {
+      if (!button.classList.contains("bg-primary-50")) {
+        button.classList.add("bg-gray-50", "scale-105", "shadow-sm")
+
+        const icon = button.querySelector("svg")
+        if (icon) {
+          icon.classList.add("text-gray-700")
+        }
+      }
+    })
+
+    button.addEventListener("mouseleave", () => {
+      if (!button.classList.contains("bg-primary-50")) {
+        button.classList.remove("bg-gray-50", "scale-105", "shadow-sm")
+
+        const icon = button.querySelector("svg")
+        if (icon) {
+          icon.classList.remove("text-gray-700")
+        }
+      }
     })
   })
 
@@ -143,6 +197,17 @@ document.addEventListener("DOMContentLoaded", () => {
         setup2fa.classList.add("hidden")
       }
     })
+
+    // Asegurar que el toggle funcione correctamente
+    toggle2fa.addEventListener("click", function () {
+      this.checked = !this.checked
+      if (this.checked) {
+        setup2fa.classList.remove("hidden")
+        setup2fa.classList.add("animate-fade-in")
+      } else {
+        setup2fa.classList.add("hidden")
+      }
+    })
   }
 
   if (setup2faBtn) {
@@ -212,6 +277,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .then((data) => {
           if (data.success) {
             otpModal.classList.remove("hidden")
+            otpModal.classList.add("flex")
             resetOtpInputs()
             startCountdown()
           } else {
@@ -263,6 +329,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .then((data) => {
           if (data.success) {
             otpModal.classList.remove("hidden")
+            otpModal.classList.add("flex")
             resetOtpInputs()
             startCountdown()
           } else {
@@ -284,10 +351,20 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   }
 
+  // Reemplazar la función closeModalWithAnimation con implementaciones específicas para cada modal
+
+  // 1. Para el modal OTP (verificación de código)
   if (cancelOtpBtn) {
     cancelOtpBtn.addEventListener("click", () => {
-      otpModal.classList.add("hidden")
-      clearInterval(countdownInterval)
+      // Añadir animación de cierre
+      const modalContent = otpModal.querySelector(".bg-white")
+      modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+      setTimeout(() => {
+        otpModal.classList.add("hidden")
+        otpModal.classList.remove("flex")
+        modalContent.classList.remove("opacity-0", "scale-95")
+        clearInterval(countdownInterval)
+      }, 300)
     })
   }
 
@@ -326,7 +403,7 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   }
 
-  // Modificar la función para mostrar el modal de OTP con un diseño mejorado
+  // Función para iniciar el contador de tiempo para reenviar código
   function startCountdown() {
     secondsLeft = 60
     countdownEl.textContent = `Puedes solicitar un nuevo código en ${secondsLeft} segundos`
@@ -346,7 +423,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 1000)
   }
 
-  // Modificar la función para verificar el código OTP con animaciones mejoradas
+  // Verificar el código OTP con animaciones mejoradas
   if (verifyOtpBtn) {
     verifyOtpBtn.addEventListener("click", () => {
       const otp = Array.from(otpInputs)
@@ -394,16 +471,17 @@ document.addEventListener("DOMContentLoaded", () => {
             successMessage.className =
               "bg-green-100 text-green-700 p-3 rounded-lg mt-4 flex items-center animate-fade-in"
             successMessage.innerHTML = `
-            <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-            <span>${currentVerificationMethod === "correo electrónico" ? "Correo" : "Teléfono"} verificado con éxito</span>
-          `
+          <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <span>${currentVerificationMethod === "correo electrónico" ? "Correo" : "Teléfono"} verificado con éxito</span>
+        `
             otpModal.querySelector(".bg-white").appendChild(successMessage)
 
             // Cerrar el modal después de mostrar el mensaje
             setTimeout(() => {
               otpModal.classList.add("hidden")
+              otpModal.classList.remove("flex")
               clearInterval(countdownInterval)
               showAlert(
                 `${currentVerificationMethod === "correo electrónico" ? "Correo" : "Teléfono"} verificado con éxito`,
@@ -459,52 +537,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const method = currentVerificationMethod === "correo electrónico" ? "email" : "sms"
       const value = method === "email" ? document.getElementById("email").value : document.getElementById("phone").value
 
-      // Añadir animación de carga
-      resendCodeBtn.innerHTML = '<span class="animate-pulse">Enviando...</span>'
-      resendCodeBtn.disabled = true
-
-      fetch("/enviar_codigo_verificacion", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          [method]: value,
-          method: method,
-        }),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.success) {
-            resetOtpInputs()
-            startCountdown()
-            showAlert("Código reenviado", "success")
-          } else {
-            showAlert(data.error || "Error al reenviar el código", "error")
-          }
-
-          // Restaurar el botón
-          resendCodeBtn.innerHTML = "Reenviar"
-          resendCodeBtn.disabled = false
-        })
-        .catch((error) => {
-          console.error("Error:", error)
-          showAlert("Error al reenviar el código", "error")
-
-          // Restaurar el botón
-          resendCodeBtn.innerHTML = "Reenviar"
-          resendCodeBtn.disabled = false
-        })
-    })
-  }
-
-  if (resendCodeBtn) {
-    resendCodeBtn.addEventListener("click", () => {
-      if (secondsLeft > 0) return
-
-      const method = currentVerificationMethod === "correo electrónico" ? "email" : "sms"
-      const value = method === "email" ? document.getElementById("email").value : document.getElementById("phone").value
-
       // Añadir animación de carga y deshabilitar el botón
       resendCodeBtn.innerHTML =
         '<span class="inline-flex items-center"><div class="animate-spin rounded-full h-3 w-3 border-b-2 border-t-2 border-primary-600 mr-1"></div>Enviando...</span>'
@@ -532,11 +564,11 @@ document.addEventListener("DOMContentLoaded", () => {
             successMessage.className =
               "bg-green-100 text-green-700 p-2 rounded-lg mt-2 text-xs flex items-center animate-fade-in"
             successMessage.innerHTML = `
-            <svg class="w-4 h-4 mr-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-            <span>Código reenviado correctamente</span>
-          `
+          <svg class="w-4 h-4 mr-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <span>Código reenviado correctamente</span>
+        `
 
             // Añadir el mensaje al contenedor adecuado
             const messageContainer = document.querySelector("#otp-modal .text-center.mb-6")
@@ -593,14 +625,23 @@ document.addEventListener("DOMContentLoaded", () => {
   if (deleteAccountBtn) {
     deleteAccountBtn.addEventListener("click", () => {
       deleteAccountModal.classList.remove("hidden")
+      deleteAccountModal.classList.add("flex")
     })
   }
 
+  // 2. Para el modal de eliminar cuenta
   if (cancelDeleteBtn) {
     cancelDeleteBtn.addEventListener("click", () => {
-      deleteAccountModal.classList.add("hidden")
-      deleteConfirmationInput.value = ""
-      confirmDeleteBtn.disabled = true
+      // Añadir animación de cierre
+      const modalContent = deleteAccountModal.querySelector(".bg-white")
+      modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+      setTimeout(() => {
+        deleteAccountModal.classList.add("hidden")
+        deleteAccountModal.classList.remove("flex")
+        modalContent.classList.remove("opacity-0", "scale-95")
+        deleteConfirmationInput.value = ""
+        confirmDeleteBtn.disabled = true
+      }, 300)
     })
   }
 
@@ -635,11 +676,11 @@ document.addEventListener("DOMContentLoaded", () => {
               const successMessage = document.createElement("div")
               successMessage.className = "bg-red-100 text-red-700 p-3 rounded-lg mt-4 flex items-center animate-fade-in"
               successMessage.innerHTML = `
-              <svg class="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              <span>Cuenta eliminada correctamente. Redirigiendo...</span>
-            `
+            <svg class="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span>Cuenta eliminada correctamente. Redirigiendo...</span>
+          `
               deleteAccountModal.querySelector(".bg-white").appendChild(successMessage)
 
               // Redirigir después de mostrar el mensaje
@@ -648,6 +689,7 @@ document.addEventListener("DOMContentLoaded", () => {
               }, 2000)
             } else {
               deleteAccountModal.classList.add("hidden")
+              deleteAccountModal.classList.remove("flex")
               showAlert(data.error || "Error al eliminar la cuenta", "error")
 
               // Restaurar el botón
@@ -659,6 +701,7 @@ document.addEventListener("DOMContentLoaded", () => {
           .catch((error) => {
             console.error("Error:", error)
             deleteAccountModal.classList.add("hidden")
+            deleteAccountModal.classList.remove("flex")
             showAlert("Error al eliminar la cuenta", "error")
 
             // Restaurar el botón
@@ -733,58 +776,6 @@ document.addEventListener("DOMContentLoaded", () => {
     basicInfoForm.addEventListener("submit", (e) => {
       e.preventDefault()
 
-      // Añadir animación de carga
-      saveInfoBtn.innerHTML =
-        '<div class="relative flex items-center justify-center"><div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div><span>Guardando...</span></div>'
-      saveInfoBtn.disabled = true
-
-      const formData = new FormData(basicInfoForm)
-      const data = Object.fromEntries(formData.entries())
-
-      fetch("/actualizar_informacion_basica", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.success) {
-            showAlert("Información actualizada con éxito", "success")
-
-            // Actualizar el nombre en el sidebar si cambió
-            const sidebarName = document.querySelector(".font-medium.text-gray-900.group-hover\\:text-primary-600")
-            if (sidebarName) {
-              const firstName = document.getElementById("first-name").value
-              const lastName = document.getElementById("last-name").value
-              sidebarName.textContent = `${firstName} ${lastName}`
-            }
-          } else {
-            showAlert(data.error || "Error al actualizar la información", "error")
-          }
-
-          // Restaurar el botón
-          saveInfoBtn.innerHTML =
-            '<div class="relative flex items-center justify-center"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>Guardar Cambios</span></div>'
-          saveInfoBtn.disabled = false
-        })
-        .catch((error) => {
-          console.error("Error:", error)
-          showAlert("Error al actualizar la información", "error")
-
-          // Restaurar el botón
-          saveInfoBtn.innerHTML =
-            '<div class="relative flex items-center justify-center"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>Guardar Cambios</span></div>'
-          saveInfoBtn.disabled = false
-        })
-    })
-  }
-
-  if (basicInfoForm) {
-    basicInfoForm.addEventListener("submit", (e) => {
-      e.preventDefault()
-
       // Añadir animación de carga con diseño mejorado
       saveInfoBtn.innerHTML =
         '<div class="relative flex items-center justify-center"><div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div><span>Guardando...</span></div>'
@@ -820,7 +811,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!isValid) {
         saveInfoBtn.innerHTML =
-          '<div class="relative flex items-center justify-center"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>Guardar Cambios</span></div>'
+          '<div class="relative flex items-center justify-center"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>Guardar Cambios</span></div>'
         saveInfoBtn.disabled = false
         showAlert("Por favor, complete todos los campos obligatorios", "error")
         return
@@ -843,7 +834,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Después de un momento, restaurar el botón
             setTimeout(() => {
               saveInfoBtn.innerHTML =
-                '<div class="relative flex items-center justify-center"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>Guardar Cambios</span></div>'
+                '<div class="relative flex items-center justify-center"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>Guardar Cambios</span></div>'
               saveInfoBtn.disabled = false
             }, 2000)
 
@@ -861,7 +852,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Restaurar el botón
             saveInfoBtn.innerHTML =
-              '<div class="relative flex items-center justify-center"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>Guardar Cambios</span></div>'
+              '<div class="relative flex items-center justify-center"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>Guardar Cambios</span></div>'
             saveInfoBtn.disabled = false
           }
         })
@@ -871,7 +862,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           // Restaurar el botón
           saveInfoBtn.innerHTML =
-            '<div class="relative flex items-center justify-center"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>Guardar Cambios</span></div>'
+            '<div class="relative flex items-center justify-center"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>Guardar Cambios</span></div>'
           saveInfoBtn.disabled = false
         })
     })
@@ -1086,22 +1077,72 @@ document.addEventListener("DOMContentLoaded", () => {
   const profileImage = document.getElementById("profile-image")
   const profileImageUpload = document.getElementById("profile-image-upload")
   const changeProfileImageBtn = document.getElementById("change-profile-image")
+  const deleteProfileModal = document.getElementById("delete-profile-modal")
+  const closeDeleteProfileModalBtn = document.getElementById("close-delete-profile-modal")
+  const cancelDeleteProfileBtn = document.getElementById("cancel-delete-profile")
+  const confirmDeleteProfileBtn = document.getElementById("confirm-delete-profile")
 
   // Cargar la imagen de perfil al iniciar
   function loadProfileImage() {
-    fetch("/perfil/obtener_imagen_perfil")  // Añade el prefijo /perfil/
+    fetch("/perfil/obtener_imagen_perfil")
       .then((response) => response.json())
       .then((data) => {
-        if (data.success && data.image_url) {
-          // Añadir timestamp para evitar caché
-          profileImage.src = data.image_url + "?t=" + new Date().getTime()
+        if (data.success) {
+          if (data.has_image) {
+            // Si hay imagen de perfil, mostrarla
+            profileImage.src = data.image_url + "?t=" + new Date().getTime()
+            profileImage.classList.remove("hidden")
+            document.getElementById("profile-initials").classList.add("hidden")
+
+            // Mostrar el botón de eliminar
+            const deleteBtn = document.getElementById("delete-profile-image")
+            deleteBtn.classList.remove("opacity-0", "hidden")
+            deleteBtn.classList.add("opacity-100")
+            // Permitir que el botón responda al hover
+            deleteBtn.classList.add("hover:opacity-100")
+          } else {
+            // Si no hay imagen de perfil, mostrar iniciales
+            profileImage.classList.add("hidden")
+            const initialsElement = document.getElementById("profile-initials")
+
+            // Obtener las iniciales del usuario
+            const firstInitial = data.nombres ? data.nombres.charAt(0) : "U"
+            const lastInitial = data.apellidos ? data.apellidos.charAt(0) : "S"
+            initialsElement.textContent = firstInitial + lastInitial
+
+            initialsElement.classList.remove("hidden")
+            initialsElement.classList.add("animate-initials-appear")
+
+            // Ocultar completamente el botón de eliminar
+            const deleteBtn = document.getElementById("delete-profile-image")
+            deleteBtn.classList.add("hidden", "opacity-0")
+            deleteBtn.classList.remove("opacity-100", "hover:opacity-100", "group-hover:opacity-100")
+          }
+        } else {
+          // En caso de error, mostrar iniciales
+          profileImage.classList.add("hidden")
+          document.getElementById("profile-initials").classList.remove("hidden")
+
+          // Ocultar completamente el botón de eliminar
+          const deleteBtn = document.getElementById("delete-profile-image")
+          deleteBtn.classList.add("hidden", "opacity-0")
+          deleteBtn.classList.remove("opacity-100", "hover:opacity-100", "group-hover:opacity-100")
         }
       })
       .catch((error) => {
         console.error("Error al cargar la imagen de perfil:", error)
+        // En caso de error, mostrar iniciales
+        profileImage.classList.add("hidden")
+        document.getElementById("profile-initials").classList.remove("hidden")
+
+        // Ocultar completamente el botón de eliminar
+        const deleteBtn = document.getElementById("delete-profile-image")
+        deleteBtn.classList.add("hidden", "opacity-0")
+        deleteBtn.classList.remove("opacity-100", "hover:opacity-100", "group-hover:opacity-100")
       })
   }
 
+  // Mejora 3: Mejorar la interacción con la imagen de perfil
   if (profileImageContainer && profileImageUpload && changeProfileImageBtn) {
     // Cargar imagen al iniciar
     loadProfileImage()
@@ -1115,7 +1156,16 @@ document.addEventListener("DOMContentLoaded", () => {
       profileImageUpload.click()
     })
 
-    // Manejar la selección de archivo
+    // Añadir efecto de hover
+    profileImageContainer.addEventListener("mouseenter", () => {
+      profileImage.classList.add("scale-105")
+    })
+
+    profileImageContainer.addEventListener("mouseleave", () => {
+      profileImage.classList.remove("scale-105")
+    })
+
+    // Manejar la selección de archivo con mejor feedback visual
     profileImageUpload.addEventListener("change", (e) => {
       if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0]
@@ -1132,44 +1182,379 @@ document.addEventListener("DOMContentLoaded", () => {
           return
         }
 
-        // Previsualizar la imagen
+        // Previsualizar la imagen con animación
         const reader = new FileReader()
         reader.onload = (e) => {
-          profileImage.src = e.target.result
+          profileImage.classList.add("opacity-0", "transition-opacity", "duration-300")
+          setTimeout(() => {
+            profileImage.src = e.target.result
+            profileImage.classList.remove("opacity-0")
+          }, 300)
         }
         reader.readAsDataURL(file)
 
-        // Subir la imagen al servidor
+        // Mostrar indicador de carga mejorado
+        profileImageContainer.classList.add("animate-pulse", "border-primary-300")
+        changeProfileImageBtn.innerHTML = `
+      <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+    `
+
         const formData = new FormData()
         formData.append("profile_image", file)
 
-        // Mostrar indicador de carga
-        profileImageContainer.classList.add("animate-pulse")
-
-        fetch("/perfil/subir_imagen_perfil", {  // Añade el prefijo /perfil/
+        fetch("/perfil/subir_imagen_perfil", {
           method: "POST",
           body: formData,
         })
           .then((response) => response.json())
           .then((data) => {
-            profileImageContainer.classList.remove("animate-pulse")
+            profileImageContainer.classList.remove("animate-pulse", "border-primary-300")
+            changeProfileImageBtn.innerHTML = `
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+          `
 
             if (data.success) {
               showAlert("Imagen de perfil actualizada con éxito", "success")
               // Actualizar la imagen con la URL del servidor para asegurar que se carga la versión WebP
-              profileImage.src = data.image_url + "?t=" + new Date().getTime()
+              profileImage.classList.add("opacity-0", "transition-opacity", "duration-300")
+              setTimeout(() => {
+                profileImage.src = data.image_url + "?t=" + new Date().getTime()
+                profileImage.classList.remove("opacity-0", "hidden")
+                document.getElementById("profile-initials").classList.add("hidden")
+
+                // Mostrar el botón de eliminar
+                document.getElementById("delete-profile-image").classList.remove("opacity-0", "hidden")
+                document.getElementById("delete-profile-image").classList.add("opacity-100", "hover:opacity-100")
+              }, 300)
             } else {
               showAlert(data.error || "Error al subir la imagen", "error")
             }
           })
           .catch((error) => {
-            profileImageContainer.classList.remove("animate-pulse")
+            profileImageContainer.classList.remove("animate-pulse", "border-primary-300")
+            changeProfileImageBtn.innerHTML = `
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+          `
             console.error("Error:", error)
             showAlert("Error al subir la imagen", "error")
           })
       }
     })
   }
+
+  // Funcionalidad para eliminar la imagen de perfil
+  const deleteProfileImageBtn = document.getElementById("delete-profile-image")
+
+  if (deleteProfileImageBtn) {
+    deleteProfileImageBtn.addEventListener("click", (e) => {
+      e.stopPropagation() // Evitar que el clic se propague al contenedor
+
+      // Mostrar el modal personalizado en lugar del confirm nativo
+      deleteProfileModal.classList.remove("hidden")
+      deleteProfileModal.classList.add("flex")
+
+      // Añadir animación de entrada
+      const modalContent = deleteProfileModal.querySelector(".bg-white")
+      modalContent.classList.add("animate-scale-in")
+    })
+  }
+
+  // Cerrar el modal de eliminación de foto de perfil
+  if (closeDeleteProfileModalBtn) {
+    closeDeleteProfileModalBtn.addEventListener("click", () => {
+      closeDeleteProfileModal()
+    })
+  }
+
+  if (cancelDeleteProfileBtn) {
+    cancelDeleteProfileBtn.addEventListener("click", () => {
+      closeDeleteProfileModal()
+    })
+  }
+
+  // Función para cerrar el modal con animación
+  function closeDeleteProfileModal() {
+    const modalContent = deleteProfileModal.querySelector(".bg-white")
+    modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+    setTimeout(() => {
+      deleteProfileModal.classList.add("hidden")
+      deleteProfileModal.classList.remove("flex")
+      modalContent.classList.remove("opacity-0", "scale-95")
+    }, 300)
+  }
+
+  // Cerrar el modal al hacer clic fuera del contenido
+  deleteProfileModal.addEventListener("click", (e) => {
+    if (e.target === deleteProfileModal) {
+      closeDeleteProfileModal()
+    }
+  })
+
+  // Confirmar eliminación de foto de perfil
+  if (confirmDeleteProfileBtn) {
+    confirmDeleteProfileBtn.addEventListener("click", () => {
+      // Añadir animación de carga
+      confirmDeleteProfileBtn.innerHTML = `
+        <div class="flex items-center justify-center">
+          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+          <span>Eliminando...</span>
+        </div>
+      `
+      confirmDeleteProfileBtn.disabled = true
+      cancelDeleteProfileBtn.disabled = true
+
+      fetch("/perfil/eliminar_imagen_perfil", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            // Mostrar mensaje de éxito dentro del modal
+            const successMessage = document.createElement("div")
+            successMessage.className =
+              "bg-green-100 text-green-700 p-3 rounded-lg mt-4 flex items-center animate-fade-in"
+            successMessage.innerHTML = `
+              <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+              <span>Imagen de perfil eliminada correctamente</span>
+            `
+
+            // Añadir el mensaje al modal
+            const modalBody = deleteProfileModal.querySelector(".p-6")
+            modalBody.appendChild(successMessage)
+
+            // Cerrar el modal después de un momento
+            setTimeout(() => {
+              closeDeleteProfileModal()
+
+              // Actualizar la visualización para mostrar iniciales
+              profileImage.classList.add("hidden")
+              document.getElementById("profile-initials").classList.remove("hidden")
+              document.getElementById("profile-initials").classList.add("animate-initials-appear")
+
+              // Ocultar el botón de eliminar
+              const deleteBtn = document.getElementById("delete-profile-image")
+              deleteBtn.classList.add("hidden", "opacity-0")
+              deleteBtn.classList.remove("opacity-100", "hover:opacity-100")
+
+              showAlert("Imagen de perfil eliminada correctamente", "success")
+            }, 1500)
+          } else {
+            closeDeleteProfileModal()
+            showAlert(data.error || "Error al eliminar la imagen de perfil", "error")
+          }
+
+          // Restaurar el botón
+          confirmDeleteProfileBtn.innerHTML = `Eliminar`
+          confirmDeleteProfileBtn.disabled = false
+          cancelDeleteProfileBtn.disabled = false
+        })
+        .catch((error) => {
+          console.error("Error:", error)
+          closeDeleteProfileModal()
+          showAlert("Error al eliminar la imagen de perfil", "error")
+
+          // Restaurar el botón
+          confirmDeleteProfileBtn.innerHTML = `Eliminar`
+          confirmDeleteProfileBtn.disabled = false
+          cancelDeleteProfileBtn.disabled = false
+        })
+    })
+  }
+
+  // Mejora 4: Mejorar la interacción con los campos de formulario
+  const formInputs = document.querySelectorAll(
+    'input[type="text"], input[type="email"], input[type="tel"], input[type="password"], select, textarea',
+  )
+
+  formInputs.forEach((input) => {
+    // Añadir efectos de hover y focus mejorados
+    input.addEventListener("focus", () => {
+      input.classList.add("border-primary-400", "ring-2", "ring-primary-600/10")
+    })
+
+    input.addEventListener("blur", () => {
+      input.classList.remove("border-primary-400", "ring-2", "ring-primary-600/10")
+    })
+
+    // Añadir validación visual en tiempo real
+    input.addEventListener("input", () => {
+      if (input.value.trim() !== "") {
+        input.classList.add("border-green-300")
+        input.classList.remove("border-red-300")
+      } else if (input.required) {
+        input.classList.add("border-red-300")
+        input.classList.remove("border-green-300")
+      }
+    })
+  })
+
+  // Mejora 5: Mejorar la experiencia de usuario en los modales
+  const modals = document.querySelectorAll("#otp-modal, #delete-account-modal, #asesoria-details-modal")
+
+  // 4. Mejorar el cierre al hacer clic fuera del modal
+  modals.forEach((modal) => {
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        // Añadir animación de cierre
+        const modalContent = modal.querySelector(".bg-white")
+        modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+        setTimeout(() => {
+          modal.classList.add("hidden")
+          modal.classList.remove("flex")
+          modalContent.classList.remove("opacity-0", "scale-95")
+
+          // Limpiar el intervalo si es el modal OTP
+          if (modal.id === "otp-modal") {
+            clearInterval(countdownInterval)
+          }
+
+          // Limpiar el campo de confirmación si es el modal de eliminar cuenta
+          if (modal.id === "delete-account-modal" && deleteConfirmationInput) {
+            deleteConfirmationInput.value = ""
+            confirmDeleteBtn.disabled = true
+          }
+        }, 300)
+      }
+    })
+  })
+
+  // Mejora 6: Mejorar la interacción con las filas de la tabla de asesorías
+  const asesoriasRows = document.querySelectorAll("#asesorias-table-body tr")
+
+  asesoriasRows.forEach((row) => {
+    row.addEventListener("mouseenter", () => {
+      row.classList.add("bg-primary-50", "transform", "scale-[1.01]", "shadow-sm", "z-10")
+    })
+
+    row.addEventListener("mouseleave", () => {
+      row.classList.remove("bg-primary-50", "transform", "scale-[1.01]", "shadow-sm", "z-10")
+    })
+
+    // Añadir efecto de clic para mostrar detalles
+    row.addEventListener("click", () => {
+      // Simulación de apertura de modal de detalles
+      const asesoriaId = row.querySelector(".numero-asesoria")?.textContent.replace("#", "") || "1"
+      const modal = document.getElementById("asesoria-details-modal")
+      if (modal) {
+        modal.classList.remove("hidden")
+        modal.classList.add("flex")
+
+        // Añadir animación de entrada
+        const modalContent = modal.querySelector(".bg-white")
+        modalContent.classList.add("animate-scale-in")
+
+        // Simular carga de datos
+        const detailsContent = document.getElementById("asesoria-details-content")
+        if (detailsContent) {
+          detailsContent.innerHTML = `
+        <div class="flex justify-center items-center py-8">
+          <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-t-2 border-primary-600"></div>
+          <p class="ml-3 text-primary-600 text-sm">Cargando detalles...</p>
+        </div>
+      `
+
+          // Simular carga completada después de 1 segundo
+          setTimeout(() => {
+            detailsContent.innerHTML = `
+          <div class="space-y-4 animate-fade-in">
+            <div class="bg-primary-50 p-4 rounded-lg border border-primary-100">
+              <h3 class="font-medium text-primary-800 mb-2">Asesoría #${asesoriaId}</h3>
+              <p class="text-sm text-gray-600">Detalles simulados de la asesoría para demostración</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="p-4 bg-white rounded-lg border border-gray-200">
+                <h4 class="text-sm font-medium text-gray-700 mb-2">Información General</h4>
+                <ul class="space-y-2 text-sm">
+                  <li class="flex justify-between">
+                    <span class="text-gray-500">Tipo:</span>
+                    <span class="font-medium">Asesoría de Visa</span>
+                  </li>
+                  <li class="flex justify-between">
+                    <span class="text-gray-500">Fecha:</span>
+                    <span class="font-medium">01/01/2023</span>
+                  </li>
+                  <li class="flex justify-between">
+                    <span class="text-gray-500">Asesor:</span>
+                    <span class="font-medium">Juan Pérez</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <div class="p-4 bg-white rounded-lg border border-gray-200">
+                <h4 class="text-sm font-medium text-gray-700 mb-2">Estado</h4>
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-500">Progreso:</span>
+                  <div class="w-32">
+                    <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div class="h-full w-3/4 bg-primary-500 rounded-full"></div>
+                    </div>
+                    <p class="text-xs text-right mt-1 text-primary-600">75% completado</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="p-4 bg-white rounded-lg border border-gray-200">
+              <h4 class="text-sm font-medium text-gray-700 mb-2">Documentos Requeridos</h4>
+              <ul class="space-y-2 text-sm">
+                <li class="flex items-center">
+                  <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                  <span>Pasaporte</span>
+                </li>
+                <li class="flex items-center">
+                  <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                  <span>Formulario DS-160</span>
+                </li>
+                <li class="flex items-center">
+                  <svg class="w-4 h-4 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                  </svg>
+                  <span>Comprobante de pago</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        `
+          }, 1000)
+        }
+      }
+    })
+  })
+
+  // Cerrar modales con botones específicos
+  const closeDetailsBtns = document.querySelectorAll("#close-details-btn, #close-details-btn-bottom")
+  // 3. Para el modal de detalles de asesoría
+  closeDetailsBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const modal = document.getElementById("asesoria-details-modal")
+      if (modal) {
+        // Añadir animación de cierre
+        const modalContent = modal.querySelector(".bg-white")
+        modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+        setTimeout(() => {
+          modal.classList.add("hidden")
+          modal.classList.remove("flex")
+          modalContent.classList.remove("opacity-0", "scale-95")
+        }, 300)
+      }
+    })
+  })
 
   // Mejorar la función para mostrar alertas con animaciones más suaves
   function showAlert(message, type) {
@@ -1178,101 +1563,107 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (alertContainer && alert) {
       alert.textContent = message
-      alert.className = "p-4 rounded-xl border animate-fade-in shadow-md"
+      alert.className = "p-4 rounded-xl border animate-fade-in shadow-md transform transition-all duration-300"
 
       if (type === "success") {
         alert.classList.add("bg-green-50", "text-green-800", "border-green-200")
         alert.innerHTML = `
-        <div class="flex items-center">
-          <div class="flex-shrink-0">
-            <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-          </div>
-          <div class="ml-3">
-            <p class="text-sm font-medium">${message}</p>
-          </div>
-          <div class="ml-auto pl-3">
-            <button class="inline-flex text-green-400 hover:text-green-500 focus:outline-none cursor-pointer">
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-      `
+    <div class="flex items-center">
+      <div class="flex-shrink-0">
+        <svg class="h-5 w-5 text-green-500 animate-check-mark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+      </div>
+      <div class="ml-3">
+        <p class="text-sm font-medium">${message}</p>
+      </div>
+      <div class="ml-auto pl-3">
+        <button class="inline-flex text-green-400 hover:text-green-500 focus:outline-none cursor-pointer transition-colors duration-300">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  `
       } else if (type === "error") {
         alert.classList.add("bg-primary-50", "text-primary-800", "border-primary-200")
         alert.innerHTML = `
-        <div class="flex items-center">
-          <div class="flex-shrink-0">
-            <svg class="h-5 w-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-          </div>
-          <div class="ml-3">
-            <p class="text-sm font-medium">${message}</p>
-          </div>
-          <div class="ml-auto pl-3">
-            <button class="inline-flex text-primary-400 hover:text-primary-500 focus:outline-none cursor-pointer">
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-      `
+    <div class="flex items-center">
+      <div class="flex-shrink-0">
+        <svg class="h-5 w-5 text-primary-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <div class="ml-3">
+        <p class="text-sm font-medium">${message}</p>
+      </div>
+      <div class="ml-auto pl-3">
+        <button class="inline-flex text-primary-400 hover:text-primary-500 focus:outline-none cursor-pointer transition-colors duration-300">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  `
       } else if (type === "warning") {
         alert.classList.add("bg-yellow-50", "text-yellow-800", "border-yellow-200")
         alert.innerHTML = `
-        <div class="flex items-center">
-          <div class="flex-shrink-0">
-            <svg class="h-5 w-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-            </svg>
-          </div>
-          <div class="ml-3">
-            <p class="text-sm font-medium">${message}</p>
-          </div>
-          <div class="ml-auto pl-3">
-            <button class="inline-flex text-yellow-400 hover:text-yellow-500 focus:outline-none cursor-pointer">
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-      `
+    <div class="flex items-center">
+      <div class="flex-shrink-0">
+        <svg class="h-5 w-5 text-yellow-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <div class="ml-3">
+        <p class="text-sm font-medium">${message}</p>
+      </div>
+      <div class="ml-auto pl-3">
+        <button class="inline-flex text-yellow-400 hover:text-yellow-500 focus:outline-none cursor-pointer transition-colors duration-300">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  `
       } else {
         alert.classList.add("bg-blue-50", "text-blue-800", "border-blue-200")
         alert.innerHTML = `
-        <div class="flex items-center">
-          <div class="flex-shrink-0">
-            <svg class="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-          </div>
-          <div class="ml-3">
-            <p class="text-sm font-medium">${message}</p>
-          </div>
-          <div class="ml-auto pl-3">
-            <button class="inline-flex text-blue-400 hover:text-blue-500 focus:outline-none cursor-pointer">
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-      `
+    <div class="flex items-center">
+      <div class="flex-shrink-0">
+        <svg class="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <div class="ml-3">
+        <p class="text-sm font-medium">${message}</p>
+      </div>
+      <div class="ml-auto pl-3">
+        <button class="inline-flex text-blue-400 hover:text-blue-500 focus:outline-none cursor-pointer transition-colors duration-300">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  `
       }
 
       alertContainer.classList.remove("hidden")
+      alertContainer.classList.add("flex")
 
-      // Añadir evento para cerrar la alerta al hacer clic en el botón
+      // Añadir evento para cerrar la alerta al hacer clic en el botón con animación
       const closeBtn = alert.querySelector("button")
       if (closeBtn) {
         closeBtn.addEventListener("click", () => {
-          alertContainer.classList.add("hidden")
+          alert.classList.add("opacity-0", "transform", "translate-y-[-10px]", "transition-all", "duration-500")
+          setTimeout(() => {
+            alertContainer.classList.add("hidden")
+            alertContainer.classList.remove("flex")
+            alert.classList.remove("opacity-0", "transform", "translate-y-[-10px]", "transition-all", "duration-500")
+          }, 500)
         })
       }
 
@@ -1281,6 +1672,7 @@ document.addEventListener("DOMContentLoaded", () => {
         alert.classList.add("opacity-0", "transform", "translate-y-[-10px]", "transition-all", "duration-500")
         setTimeout(() => {
           alertContainer.classList.add("hidden")
+          alertContainer.classList.remove("flex")
           alert.classList.remove("opacity-0", "transform", "translate-y-[-10px]", "transition-all", "duration-500")
         }, 500)
       }, 5000)
@@ -1296,8 +1688,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Ordenar de mayor a menor por "codigo_asesoria"
     rows.sort((a, b) => {
-      const idA = Number.parseInt(a.querySelector(".numero-asesoria").textContent.replace("#", ""))
-      const idB = Number.parseInt(b.querySelector(".numero-asesoria").textContent.replace("#", ""))
+      const numCell = a.querySelector(".numero-asesoria")
+      const numCellB = b.querySelector(".numero-asesoria")
+      if (!numCell || !numCellB) return 0
+
+      const idA = Number.parseInt(numCell.textContent.replace("#", ""))
+      const idB = Number.parseInt(numCellB.textContent.replace("#", ""))
       return idB - idA // Orden descendente
     })
 
@@ -1308,19 +1704,6 @@ document.addEventListener("DOMContentLoaded", () => {
         numCell.textContent = `#${rows.length - index}` // Asigna número inverso
       }
       tbody.appendChild(row) // Mueve la fila al final
-    })
-  }
-
-  // Asegurar que los toggles de verificación en dos pasos funcionen
-  if (toggle2fa) {
-    toggle2fa.addEventListener("click", function () {
-      this.checked = !this.checked
-      if (this.checked) {
-        setup2fa.classList.remove("hidden")
-        setup2fa.classList.add("animate-fade-in")
-      } else {
-        setup2fa.classList.add("hidden")
-      }
     })
   }
 
@@ -1366,4 +1749,90 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Inicializar el resto de funcionalidades
   ordenarYNumerarAsesorias()
+
+  // Buscar todos los botones de cierre (x) en los modales y añadirles la funcionalidad de cierre con animación
+  const closeButtons = document.querySelectorAll(".modal-close-btn")
+  closeButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      // Encontrar el modal padre
+      const modal = btn.closest("[id$='-modal']")
+      if (!modal) return
+
+      // Añadir animación de cierre
+      const modalContent = modal.querySelector(".bg-white")
+      if (modalContent) {
+        modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+        setTimeout(() => {
+          modal.classList.add("hidden")
+          modal.classList.remove("flex")
+          modalContent.classList.remove("opacity-0", "scale-95")
+
+          // Limpiar el intervalo si es el modal OTP
+          if (modal.id === "otp-modal") {
+            clearInterval(countdownInterval)
+          }
+
+          // Limpiar el campo de confirmación si es el modal de eliminar cuenta
+          if (modal.id === "delete-account-modal" && deleteConfirmationInput) {
+            deleteConfirmationInput.value = ""
+            confirmDeleteBtn.disabled = true
+          }
+        }, 300)
+      }
+    })
+  })
+
+  // Asegurarnos de que el botón de cierre del modal de eliminar foto de perfil funcione correctamente
+  if (closeDeleteProfileModalBtn) {
+    closeDeleteProfileModalBtn.addEventListener("click", () => {
+      const modalContent = deleteProfileModal.querySelector(".bg-white")
+      modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+      setTimeout(() => {
+        deleteProfileModal.classList.add("hidden")
+        deleteProfileModal.classList.remove("flex")
+        modalContent.classList.remove("opacity-0", "scale-95")
+      }, 300)
+    })
+  }
+
+  // Solución específica para el botón de cierre (x) del modal de eliminar cuenta
+  const deleteAccountCloseBtn = document.querySelector(
+    "#delete-account-modal .modal-close-btn, #delete-account-modal [aria-label='Cerrar']",
+  )
+  if (deleteAccountCloseBtn) {
+    deleteAccountCloseBtn.addEventListener("click", () => {
+      const modal = document.getElementById("delete-account-modal")
+      const modalContent = modal.querySelector(".bg-white")
+
+      modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+      setTimeout(() => {
+        modal.classList.add("hidden")
+        modal.classList.remove("flex")
+        modalContent.classList.remove("opacity-0", "scale-95")
+
+        // Limpiar el campo de confirmación
+        if (deleteConfirmationInput) {
+          deleteConfirmationInput.value = ""
+          confirmDeleteBtn.disabled = true
+        }
+      }, 300)
+    })
+  }
 })
+
+// Inicializar la pestaña activa con efectos visuales mejorados
+window.addEventListener("DOMContentLoaded", () => {
+  const activeTab = localStorage.getItem("activeTab") || "personal-info"
+  const activeButton = document.querySelector(`.tab-button[data-tab="${activeTab}"]`)
+
+  if (activeButton) {
+    // Añadir un pequeño retraso para que la animación sea visible
+    setTimeout(() => {
+      activeButton.click()
+    }, 100)
+  }
+})
+
+// Eliminar la función genérica closeModalWithAnimation que no está funcionando correctamente
+// Eliminar esta función del final del archivo:
+// function closeModalWithAnimation(modalId) { ... }
