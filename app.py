@@ -125,7 +125,6 @@ def inject_urls():
         # Rutas de usuario
         'url_for_solicitantes': lambda: url_for('user.solicitantes'),
         'url_for_formularios': lambda: url_for('user.formularios'),
-        'url_for_formulario_solicitud': lambda: url_for('formularios.solicitud'),
         'url_for_asesorias': lambda: url_for('asesorias.asesorias'),
         'url_for_pagos': lambda: url_for('user.pagos'),
         'url_for_chat': lambda: url_for('user.chat'),
