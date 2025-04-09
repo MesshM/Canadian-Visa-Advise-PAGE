@@ -1,4 +1,5 @@
 from flask import Flask, redirect, url_for, render_template
+from routes import formularios
 from routes.user import user_bp
 from routes.auth import auth_bp
 from routes.asesorias import asesorias_bp
@@ -25,6 +26,21 @@ def inject_stripe_key():
 def split_filter(value, delimiter=' '):
     return value.split(delimiter)
 
+# Registrar funciones de utilidad para las plantillas
+@app.context_processor
+def utility_processor():
+    from datetime import datetime
+    def now():
+        return datetime.now()
+    
+    return dict(
+        now=now,
+        url_for_asesorias=url_for_asesorias,
+        url_for_perfil=url_for_perfil,
+        url_for_documentos=url_for_documentos,
+        url_for_chat=url_for_chat
+    )
+
 # Registrar los blueprints
 app.register_blueprint(user_bp, url_prefix='/user')
 app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -32,14 +48,18 @@ app.register_blueprint(asesorias_bp, url_prefix='/asesorias')
 app.register_blueprint(pagos_bp, url_prefix='/pagos')
 app.register_blueprint(perfil_bp, url_prefix='/perfil')
 app.register_blueprint(admin_bp, url_prefix='/admin')
+app.register_blueprint(formularios, url_prefix='/formularios')
 
 # Rutas de redirección para mantener compatibilidad con URLs antiguas
 
+# Añadir esta redirección para mantener compatibilidad
+@app.route('/formulario_solicitud')
+def formulario_solicitud_redirect():
+    return redirect(url_for('formularios.solicitud'))
 
 @app.route('/formularios')
 def formularios_redirect():
     return redirect(url_for('user.formularios'))
-
 
 @app.route('/asesorias')
 def asesorias_redirect():
@@ -107,9 +127,10 @@ def admin_pagos_redirect():
 def admin_reportes_redirect():
     return redirect(url_for('admin.reportes'))
 
-# Contexto global para las plantillas
+# Actualizar la función inject_urls para incluir las nuevas rutas
 @app.context_processor
 def inject_urls():
+    from datetime import datetime
     return {
         # Rutas de autenticación
         'url_for_login': lambda: url_for('auth.login'),
@@ -119,6 +140,7 @@ def inject_urls():
         # Rutas de usuario
         'url_for_solicitantes': lambda: url_for('user.solicitantes'),
         'url_for_formularios': lambda: url_for('user.formularios'),
+        'url_for_formulario_solicitud': lambda: url_for('formularios.solicitud'),
         'url_for_asesorias': lambda: url_for('asesorias.asesorias'),
         'url_for_pagos': lambda: url_for('user.pagos'),
         'url_for_chat': lambda: url_for('user.chat'),
