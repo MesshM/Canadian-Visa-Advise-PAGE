@@ -8,7 +8,7 @@ from mysql.connector import Error
 
 auth_bp = Blueprint('auth', __name__)
 
-# Función para cargar la imagen de perfil en la sesión
+# Modificar la función cargar_imagen_perfil_en_sesion para que sea más eficiente
 def cargar_imagen_perfil_en_sesion(user_id):
     try:
         connection = create_connection()
@@ -17,15 +17,25 @@ def cargar_imagen_perfil_en_sesion(user_id):
             
             # Obtener la imagen de perfil del usuario
             cursor.execute("""
-                SELECT ruta_foto FROM tbl_perfil_fotos
+                SELECT cloudinary_public_id FROM tbl_perfil_fotos
                 WHERE id_usuario = %s
             """, (user_id,))
             
             profile_photo = cursor.fetchone()
-            if profile_photo and profile_photo['ruta_foto']:
+            if profile_photo and profile_photo['cloudinary_public_id']:
                 # Guardar la URL de la imagen en la sesión
-                from flask import url_for
-                session['profile_photo'] = url_for('perfil.obtener_imagen_perfil_archivo', filename=profile_photo['ruta_foto'], _external=True)
+                import cloudinary
+                import cloudinary.api
+                
+                # Construir la URL con Cloudinary para optimizar la carga
+                session['profile_photo'] = cloudinary.CloudinaryImage(profile_photo['cloudinary_public_id']).build_url(
+                    width=200, 
+                    height=200, 
+                    crop="fill", 
+                    gravity="face", 
+                    fetch_format="auto", 
+                    quality="auto"
+                )
             else:
                 # Si no hay foto de perfil, asegurarse de que no haya una URL en la sesión
                 if 'profile_photo' in session:

@@ -1,61 +1,39 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Añadir esta función al inicio del archivo, justo después de document.addEventListener("DOMContentLoaded", () => {
-  // Función para actualizar la imagen de perfil en el sidebar
-  function actualizarImagenPerfilEnSidebar(imageUrl = null) {
-    // Buscar los elementos en el sidebar
-    const sidebarProfileContainer = document.querySelector("aside a[href*='perfil'] .flex.items-center.justify-center")
-    const sidebarProfileImage = sidebarProfileContainer.querySelector("img")
-    const sidebarProfileInitials = sidebarProfileContainer.querySelector("div.text-xl.font-bold")
+  // Función específica para perfil.js que actualiza la imagen de perfil
+  // Esta función se comunica con _sidebar.js para mantener la coherencia visual
+  function actualizarImagenPerfil(imageUrl = null) {
+    // Actualizar la imagen en el sidebar usando la función global
+    if (window.actualizarImagenPerfilEnSidebar) {
+      window.actualizarImagenPerfilEnSidebar(imageUrl)
+    }
 
-    if (imageUrl) {
-      // Si hay una URL de imagen, mostrarla y ocultar las iniciales
-      if (!sidebarProfileImage) {
-        // Si no existe la imagen, crearla
-        const newImg = document.createElement("img")
-        newImg.alt = "Foto de perfil"
-        newImg.className = "w-full h-full object-cover rounded-full"
-        // Insertar la imagen antes de las iniciales
-        sidebarProfileContainer.insertBefore(newImg, sidebarProfileInitials)
-        // Actualizar la referencia
-        const sidebarProfileImage = newImg
-      }
+    // Actualizar la imagen en la página de perfil
+    const profileImage = document.getElementById("profile-image")
+    const profileInitials = document.getElementById("profile-initials")
 
-      // Añadir un parámetro de tiempo para evitar caché
-      sidebarProfileImage.src = imageUrl + "?t=" + new Date().getTime()
-      sidebarProfileImage.classList.remove("hidden")
+    if (profileImage && profileInitials) {
+      if (imageUrl) {
+        // Si hay una URL de imagen, mostrarla y ocultar las iniciales
+        profileImage.src = imageUrl + "?t=" + new Date().getTime()
+        profileImage.classList.remove("hidden")
+        profileInitials.classList.add("hidden")
 
-      // Ocultar las iniciales
-      if (sidebarProfileInitials) {
-        sidebarProfileInitials.classList.add("hidden")
-      }
-    } else {
-      // Si no hay imagen, ocultar la imagen y mostrar las iniciales
-      if (sidebarProfileImage) {
-        sidebarProfileImage.classList.add("hidden")
-      }
-
-      // Mostrar las iniciales
-      if (sidebarProfileInitials) {
-        sidebarProfileInitials.classList.remove("hidden")
+        // Mostrar el botón de eliminar si existe
+        const deleteBtn = document.getElementById("delete-profile-image")
+        if (deleteBtn) {
+          deleteBtn.classList.remove("opacity-0", "hidden")
+          deleteBtn.classList.add("opacity-100", "hover:opacity-100")
+        }
       } else {
-        // Si no existen las iniciales, crearlas
-        const nombreUsuario = document
-          .querySelector(".font-medium.text-gray-900.group-hover\\:text-red-500")
-          ?.textContent.trim()
+        // Si no hay imagen, ocultar la imagen y mostrar las iniciales
+        profileImage.classList.add("hidden")
+        profileInitials.classList.remove("hidden")
 
-        if (nombreUsuario) {
-          const nombres = nombreUsuario.split(" ")
-          let iniciales = nombres[0][0] // Primera letra del primer nombre
-
-          if (nombres.length > 1) {
-            iniciales += nombres[nombres.length - 1][0] // Primera letra del último nombre/apellido
-          }
-
-          // Crear el div de iniciales
-          const inicialesDiv = document.createElement("div")
-          inicialesDiv.className = "text-xl font-bold text-white select-none"
-          inicialesDiv.textContent = iniciales
-          sidebarProfileContainer.appendChild(inicialesDiv)
+        // Ocultar el botón de eliminar si existe
+        const deleteBtn = document.getElementById("delete-profile-image")
+        if (deleteBtn) {
+          deleteBtn.classList.add("hidden", "opacity-0")
+          deleteBtn.classList.remove("opacity-100", "hover:opacity-100")
         }
       }
     }
@@ -412,8 +390,6 @@ document.addEventListener("DOMContentLoaded", () => {
         })
     })
   }
-
-  // Reemplazar la función closeModalWithAnimation con implementaciones específicas para cada modal
 
   // 1. Para el modal OTP (verificación de código)
   if (cancelOtpBtn) {
@@ -908,6 +884,11 @@ document.addEventListener("DOMContentLoaded", () => {
               const firstName = document.getElementById("first-name").value
               const lastName = document.getElementById("last-name").value
               sidebarName.textContent = `${firstName} ${lastName}`
+
+              // Actualizar las iniciales en el sidebar
+              if (window.actualizarInicialesSidebar) {
+                window.actualizarInicialesSidebar()
+              }
             }
           } else {
             showAlert(data.error || "Error al actualizar la información", "error")
@@ -1165,8 +1146,10 @@ document.addEventListener("DOMContentLoaded", () => {
             // Permitir que el botón responda al hover
             deleteBtn.classList.add("hover:opacity-100")
 
-            // Actualizar también la imagen en el sidebar
-            actualizarImagenPerfilEnSidebar(data.image_url)
+            // Actualizar también la imagen en el sidebar usando la función global
+            if (window.actualizarImagenPerfilEnSidebar) {
+              window.actualizarImagenPerfilEnSidebar(data.image_url)
+            }
           } else {
             // Si no hay imagen de perfil, mostrar iniciales
             profileImage.classList.add("hidden")
@@ -1185,8 +1168,10 @@ document.addEventListener("DOMContentLoaded", () => {
             deleteBtn.classList.add("hidden", "opacity-0")
             deleteBtn.classList.remove("opacity-100", "hover:opacity-100", "group-hover:opacity-100")
 
-            // Actualizar el sidebar para mostrar iniciales
-            actualizarImagenPerfilEnSidebar(null)
+            // Actualizar el sidebar para mostrar iniciales usando la función global
+            if (window.actualizarImagenPerfilEnSidebar) {
+              window.actualizarImagenPerfilEnSidebar(null)
+            }
           }
         } else {
           // En caso de error, mostrar iniciales
@@ -1199,7 +1184,9 @@ document.addEventListener("DOMContentLoaded", () => {
           deleteBtn.classList.remove("opacity-100", "hover:opacity-100", "group-hover:opacity-100")
 
           // Actualizar el sidebar para mostrar iniciales
-          actualizarImagenPerfilEnSidebar(null)
+          if (window.actualizarImagenPerfilEnSidebar) {
+            window.actualizarImagenPerfilEnSidebar(null)
+          }
         }
       })
       .catch((error) => {
@@ -1214,7 +1201,9 @@ document.addEventListener("DOMContentLoaded", () => {
         deleteBtn.classList.remove("opacity-100", "hover:opacity-100", "group-hover:opacity-100")
 
         // Actualizar el sidebar para mostrar iniciales
-        actualizarImagenPerfilEnSidebar(null)
+        if (window.actualizarImagenPerfilEnSidebar) {
+          window.actualizarImagenPerfilEnSidebar(null)
+        }
       })
   }
 
@@ -1222,9 +1211,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (profileImageContainer && profileImageUpload && changeProfileImageBtn) {
     // Cargar imagen al iniciar
     loadProfileImage()
-
-    // También actualizar las iniciales en el sidebar si es necesario
-    actualizarInicialesSidebar()
 
     // Abrir selector de archivos al hacer clic en el botón o en la imagen
     changeProfileImageBtn.addEventListener("click", () => {
@@ -1278,11 +1264,6 @@ document.addEventListener("DOMContentLoaded", () => {
     <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
   `
 
-        // Modificar la función de subir imagen de perfil para actualizar el sidebar
-        // Buscar la sección donde se maneja la respuesta exitosa del fetch en subir_imagen_perfil
-        // y añadir el código para actualizar el sidebar
-
-        // Reemplazar este bloque en la función de subir imagen de perfil:
         const formData = new FormData()
         formData.append("profile_image", file)
 
@@ -1315,7 +1296,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.getElementById("delete-profile-image").classList.add("opacity-100", "hover:opacity-100")
 
                 // Actualizar inmediatamente la imagen en el sidebar
-                actualizarImagenPerfilEnSidebar(data.image_url)
+                if (window.actualizarImagenPerfilEnSidebar) {
+                  window.actualizarImagenPerfilEnSidebar(data.image_url)
+                }
               }, 300)
             } else {
               showAlert(data.error || "Error al subir la imagen", "error")
@@ -1384,11 +1367,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   })
 
-  // También modificar la función de eliminar imagen de perfil para actualizar el sidebar
-  // Buscar la sección donde se maneja la respuesta exitosa del fetch en eliminar_imagen_perfil
-  // y añadir el código para actualizar el sidebar
-
-  // Reemplazar este bloque en la función de confirmar eliminación de foto de perfil:
   // Confirmar eliminación de foto de perfil
   if (confirmDeleteProfileBtn) {
     confirmDeleteProfileBtn.addEventListener("click", () => {
@@ -1426,7 +1404,9 @@ document.addEventListener("DOMContentLoaded", () => {
               deleteBtn.classList.remove("opacity-100", "hover:opacity-100")
 
               // Actualizar inmediatamente el sidebar para mostrar iniciales
-              actualizarImagenPerfilEnSidebar(null)
+              if (window.actualizarImagenPerfilEnSidebar) {
+                window.actualizarImagenPerfilEnSidebar(null)
+              }
 
               showAlert("Imagen de perfil eliminada correctamente", "success")
             }, 1500)
@@ -1913,35 +1893,3 @@ window.addEventListener("DOMContentLoaded", () => {
     }, 100)
   }
 })
-
-// Eliminar la función genérica closeModalWithAnimation que no está funcionando correctamente
-// Eliminar esta función del final del archivo:
-// function closeModalWithAnimation(modalId) { ... }
-
-function actualizarInicialesSidebar() {
-  const sidebarProfileDiv = document.querySelector("aside a[href*='perfil'] .flex.items-center.justify-center")
-  const nombreUsuario = document
-    .querySelector(".font-medium.text-gray-900.group-hover\\:text-red-500")
-    ?.textContent.trim()
-
-  if (sidebarProfileDiv && nombreUsuario) {
-    const nombres = nombreUsuario.split(" ")
-    let iniciales = nombres[0][0]
-
-    if (nombres.length > 1) {
-      iniciales += nombres[nombres.length - 1][0]
-    }
-
-    let inicialesDiv = sidebarProfileDiv.querySelector("div.text-xl.font-bold")
-    if (!inicialesDiv) {
-      const svg = sidebarProfileDiv.querySelector("svg")
-      if (svg) svg.remove()
-
-      inicialesDiv = document.createElement("div")
-      inicialesDiv.className = "text-xl font-bold text-white select-none"
-      sidebarProfileDiv.appendChild(inicialesDiv)
-    }
-
-    inicialesDiv.textContent = iniciales
-  }
-}

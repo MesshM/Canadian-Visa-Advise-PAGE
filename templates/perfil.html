@@ -5,12 +5,10 @@
 {% block main %}
 
 <!-- Main Content -->
-<main class="bg-gradient-to-r from-primary-50 via-white to-primary-50 transition-all duration-300">
-  <div class="max-w-7xl mx-auto px-4 py-6 mb-6 animate-fade-in">
-      <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2 font-roboto">Perfil de Usuario</h1>
-      <p class="text-gray-600 text-sm">Gestiona tu información personal y preferencias</p>
-  </div>
-
+<div class="flex justify-between items-center mb-8 animate-fade-in">
+    <h1 class="text-3xl font-bold text-gray-900 font-roboto">Perfil de Usuario</h1>
+    {% include 'includes/_notification.html' %}
+</div>
   <!-- Contenedor de alertas mejorado -->
   <div id="alert-container" class="fixed top-4 right-4 z-50 max-w-md hidden">
       <div id="alert" class="p-4 rounded-xl border animate-fade-in shadow-md"></div>
@@ -81,7 +79,7 @@
                       
   <div class="relative w-32 h-32 mb-4 group mx-auto">
     <div id="profile-image-container" class="w-32 h-32 rounded-full overflow-hidden border-4 border-primary-100 shadow-md transition-all duration-300 group-hover:border-primary-300 group-hover:shadow-lg cursor-pointer bg-gradient-to-r from-primary-100 to-primary-200 flex items-center justify-center">
-        <img id="profile-image" src="/static/img/default-avatar.webp" alt="Foto de perfil" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+        <img id="profile-image" src="/static/img/default-avatar.webp" alt="" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
         <div id="profile-initials" class="hidden text-4xl font-bold text-primary-600 select-none">
             {{ user.nombres[0] if user and user.nombres else 'U' }}{{ user.apellidos[0] if user and user.apellidos else 'S' }}
         </div>
@@ -683,7 +681,6 @@
           </div>
       </div>
   </div>
-</main>
 <!-- Modal para confirmar eliminación de foto de perfil -->
 <div id="delete-profile-modal" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
   <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 animate-scale-in">
