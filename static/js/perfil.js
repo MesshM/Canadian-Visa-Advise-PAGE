@@ -1,4 +1,66 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // Añadir esta función al inicio del archivo, justo después de document.addEventListener("DOMContentLoaded", () => {
+  // Función para actualizar la imagen de perfil en el sidebar
+  function actualizarImagenPerfilEnSidebar(imageUrl = null) {
+    // Buscar los elementos en el sidebar
+    const sidebarProfileContainer = document.querySelector("aside a[href*='perfil'] .flex.items-center.justify-center")
+    const sidebarProfileImage = sidebarProfileContainer.querySelector("img")
+    const sidebarProfileInitials = sidebarProfileContainer.querySelector("div.text-xl.font-bold")
+
+    if (imageUrl) {
+      // Si hay una URL de imagen, mostrarla y ocultar las iniciales
+      if (!sidebarProfileImage) {
+        // Si no existe la imagen, crearla
+        const newImg = document.createElement("img")
+        newImg.alt = "Foto de perfil"
+        newImg.className = "w-full h-full object-cover rounded-full"
+        // Insertar la imagen antes de las iniciales
+        sidebarProfileContainer.insertBefore(newImg, sidebarProfileInitials)
+        // Actualizar la referencia
+        const sidebarProfileImage = newImg
+      }
+
+      // Añadir un parámetro de tiempo para evitar caché
+      sidebarProfileImage.src = imageUrl + "?t=" + new Date().getTime()
+      sidebarProfileImage.classList.remove("hidden")
+
+      // Ocultar las iniciales
+      if (sidebarProfileInitials) {
+        sidebarProfileInitials.classList.add("hidden")
+      }
+    } else {
+      // Si no hay imagen, ocultar la imagen y mostrar las iniciales
+      if (sidebarProfileImage) {
+        sidebarProfileImage.classList.add("hidden")
+      }
+
+      // Mostrar las iniciales
+      if (sidebarProfileInitials) {
+        sidebarProfileInitials.classList.remove("hidden")
+      } else {
+        // Si no existen las iniciales, crearlas
+        const nombreUsuario = document
+          .querySelector(".font-medium.text-gray-900.group-hover\\:text-red-500")
+          ?.textContent.trim()
+
+        if (nombreUsuario) {
+          const nombres = nombreUsuario.split(" ")
+          let iniciales = nombres[0][0] // Primera letra del primer nombre
+
+          if (nombres.length > 1) {
+            iniciales += nombres[nombres.length - 1][0] // Primera letra del último nombre/apellido
+          }
+
+          // Crear el div de iniciales
+          const inicialesDiv = document.createElement("div")
+          inicialesDiv.className = "text-xl font-bold text-white select-none"
+          inicialesDiv.textContent = iniciales
+          sidebarProfileContainer.appendChild(inicialesDiv)
+        }
+      }
+    }
+  }
+
   // Navegación de pestañas
   const tabButtons = document.querySelectorAll(".tab-button")
   const tabContents = document.querySelectorAll(".tab-content")
@@ -1147,6 +1209,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Cargar imagen al iniciar
     loadProfileImage()
 
+    // También actualizar las iniciales en el sidebar si es necesario
+    actualizarInicialesSidebar()
+
     // Abrir selector de archivos al hacer clic en el botón o en la imagen
     changeProfileImageBtn.addEventListener("click", () => {
       profileImageUpload.click()
@@ -1199,9 +1264,15 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
     `
 
+        // Modificar la función de subir imagen de perfil para actualizar el sidebar
+        // Buscar la sección donde se maneja la respuesta exitosa del fetch en subir_imagen_perfil
+        // y añadir el código para actualizar el sidebar
+
+        // Reemplazar este bloque en la función de subir imagen de perfil:
         const formData = new FormData()
         formData.append("profile_image", file)
 
+        // Modificar la función de subir imagen de perfil para actualizar el sidebar
         fetch("/perfil/subir_imagen_perfil", {
           method: "POST",
           body: formData,
@@ -1210,11 +1281,11 @@ document.addEventListener("DOMContentLoaded", () => {
           .then((data) => {
             profileImageContainer.classList.remove("animate-pulse", "border-primary-300")
             changeProfileImageBtn.innerHTML = `
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-            </svg>
-          `
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+</svg>
+`
 
             if (data.success) {
               showAlert("Imagen de perfil actualizada con éxito", "success")
@@ -1228,6 +1299,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Mostrar el botón de eliminar
                 document.getElementById("delete-profile-image").classList.remove("opacity-0", "hidden")
                 document.getElementById("delete-profile-image").classList.add("opacity-100", "hover:opacity-100")
+
+                // Actualizar inmediatamente la imagen en el sidebar
+                actualizarImagenPerfilEnSidebar(data.image_url)
               }, 300)
             } else {
               showAlert(data.error || "Error al subir la imagen", "error")
@@ -1236,11 +1310,11 @@ document.addEventListener("DOMContentLoaded", () => {
           .catch((error) => {
             profileImageContainer.classList.remove("animate-pulse", "border-primary-300")
             changeProfileImageBtn.innerHTML = `
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-            </svg>
-          `
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+    </svg>
+  `
             console.error("Error:", error)
             showAlert("Error al subir la imagen", "error")
           })
@@ -1296,16 +1370,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   })
 
+  // También modificar la función de eliminar imagen de perfil para actualizar el sidebar
+  // Buscar la sección donde se maneja la respuesta exitosa del fetch en eliminar_imagen_perfil
+  // y añadir el código para actualizar el sidebar
+
+  // Reemplazar este bloque en la función de confirmar eliminación de foto de perfil:
   // Confirmar eliminación de foto de perfil
   if (confirmDeleteProfileBtn) {
     confirmDeleteProfileBtn.addEventListener("click", () => {
       // Añadir animación de carga
       confirmDeleteProfileBtn.innerHTML = `
-        <div class="flex items-center justify-center">
-          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-          <span>Eliminando...</span>
-        </div>
-      `
+      <div class="flex items-center justify-center">
+        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+        <span>Eliminando...</span>
+      </div>
+    `
       confirmDeleteProfileBtn.disabled = true
       cancelDeleteProfileBtn.disabled = true
 
@@ -1318,21 +1397,6 @@ document.addEventListener("DOMContentLoaded", () => {
         .then((response) => response.json())
         .then((data) => {
           if (data.success) {
-            // Mostrar mensaje de éxito dentro del modal
-            const successMessage = document.createElement("div")
-            successMessage.className =
-              "bg-green-100 text-green-700 p-3 rounded-lg mt-4 flex items-center animate-fade-in"
-            successMessage.innerHTML = `
-              <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              <span>Imagen de perfil eliminada correctamente</span>
-            `
-
-            // Añadir el mensaje al modal
-            const modalBody = deleteProfileModal.querySelector(".p-6")
-            modalBody.appendChild(successMessage)
-
             // Cerrar el modal después de un momento
             setTimeout(() => {
               closeDeleteProfileModal()
@@ -1346,6 +1410,9 @@ document.addEventListener("DOMContentLoaded", () => {
               const deleteBtn = document.getElementById("delete-profile-image")
               deleteBtn.classList.add("hidden", "opacity-0")
               deleteBtn.classList.remove("opacity-100", "hover:opacity-100")
+
+              // Actualizar inmediatamente el sidebar para mostrar iniciales
+              actualizarImagenPerfilEnSidebar(null)
 
               showAlert("Imagen de perfil eliminada correctamente", "success")
             }, 1500)
@@ -1836,3 +1903,31 @@ window.addEventListener("DOMContentLoaded", () => {
 // Eliminar la función genérica closeModalWithAnimation que no está funcionando correctamente
 // Eliminar esta función del final del archivo:
 // function closeModalWithAnimation(modalId) { ... }
+
+function actualizarInicialesSidebar() {
+  const sidebarProfileDiv = document.querySelector("aside a[href*='perfil'] .flex.items-center.justify-center")
+  const nombreUsuario = document
+    .querySelector(".font-medium.text-gray-900.group-hover\\:text-red-500")
+    ?.textContent.trim()
+
+  if (sidebarProfileDiv && nombreUsuario) {
+    const nombres = nombreUsuario.split(" ")
+    let iniciales = nombres[0][0]
+
+    if (nombres.length > 1) {
+      iniciales += nombres[nombres.length - 1][0]
+    }
+
+    let inicialesDiv = sidebarProfileDiv.querySelector("div.text-xl.font-bold")
+    if (!inicialesDiv) {
+      const svg = sidebarProfileDiv.querySelector("svg")
+      if (svg) svg.remove()
+
+      inicialesDiv = document.createElement("div")
+      inicialesDiv.className = "text-xl font-bold text-white select-none"
+      sidebarProfileDiv.appendChild(inicialesDiv)
+    }
+
+    inicialesDiv.textContent = iniciales
+  }
+}

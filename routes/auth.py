@@ -8,6 +8,37 @@ from mysql.connector import Error
 
 auth_bp = Blueprint('auth', __name__)
 
+# Función para cargar la imagen de perfil en la sesión
+def cargar_imagen_perfil_en_sesion(user_id):
+    try:
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Obtener la imagen de perfil del usuario
+            cursor.execute("""
+                SELECT ruta_foto FROM tbl_perfil_fotos
+                WHERE id_usuario = %s
+            """, (user_id,))
+            
+            profile_photo = cursor.fetchone()
+            if profile_photo and profile_photo['ruta_foto']:
+                # Guardar la URL de la imagen en la sesión
+                from flask import url_for
+                session['profile_photo'] = url_for('perfil.obtener_imagen_perfil_archivo', filename=profile_photo['ruta_foto'], _external=True)
+            else:
+                # Si no hay foto de perfil, asegurarse de que no haya una URL en la sesión
+                if 'profile_photo' in session:
+                    session.pop('profile_photo')
+            
+            cursor.close()
+            connection.close()
+            
+            return True
+    except Exception as e:
+        print(f"Error al cargar imagen de perfil en sesión: {str(e)}")
+        return False
+
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -40,6 +71,9 @@ def login():
                 else:
                     session.permanent = False
                 
+                # Cargar la imagen de perfil en la sesión
+                cargar_imagen_perfil_en_sesion(user['id_usuario'])
+                
                 # Redirigir según el rol
                 if email.endswith('@cva.com'):
                     return redirect(url_for('admin.index_asesor'))
@@ -56,7 +90,7 @@ def login():
 def logout():
     # Limpiar toda la sesión en lugar de solo user_id y user_name
     session.clear()
-    return redirect(url_for('auth.login'))
+    return redirect(url_for('index'))
 
 @auth_bp.route('/registro', methods=['GET', 'POST'])
 def registro():
@@ -219,4 +253,3 @@ def reset_password(token):
         flash('Error de conexión a la base de datos', 'error')
     
     return redirect(url_for('auth.login'))
-
