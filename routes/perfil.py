@@ -239,48 +239,6 @@ def get_cloudinary_image_with_cache(public_id, width=200, height=200):
     
     return None
 
-@perfil_bp.route('/actualizar_informacion_basica', methods=['POST'])
-def actualizar_informacion_basica():
-  if 'user_id' not in session:
-      return jsonify({'error': 'No autorizado'}), 401
-  
-  try:
-      data = request.get_json()
-      
-      # Obtener los datos del formulario
-      nombres = data.get('first-name')
-      apellidos = data.get('last-name')
-      tipo_documento = data.get('document-type')
-      numero_documento = data.get('id-document')
-      correo = data.get('email')
-      telefono = data.get('phone')
-      direccion = data.get('address')
-      
-      connection = create_connection()
-      if connection:
-          cursor = connection.cursor()
-          
-          # Actualizar la información del usuario
-          cursor.execute("""
-              UPDATE tbl_usuario 
-              SET nombres = %s, apellidos = %s, correo = %s
-              WHERE id_usuario = %s
-          """, (nombres, apellidos, correo, session['user_id']))
-          
-          # Actualizar la sesión con el nuevo nombre
-          session['user_name'] = f"{nombres} {apellidos}"
-          
-          connection.commit()
-          cursor.close()
-          connection.close()
-          
-          return jsonify({'success': True, 'message': 'Información actualizada con éxito'})
-      else:
-          return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-  except Exception as e:
-      print(f"Error al actualizar información básica: {str(e)}")
-      return jsonify({'error': str(e)}), 500
-
 @perfil_bp.route('/cambiar_contrasena', methods=['POST'])
 def cambiar_contrasena():
   if 'user_id' not in session:
@@ -433,6 +391,128 @@ def actualizar_preferencias_notificaciones():
   except Exception as e:
       print(f"Error al actualizar preferencias: {str(e)}")
       return jsonify({'error': str(e)}), 500
+
+# Modificar la función actualizar_datos_personales para manejar mejor los valores nulos
+@perfil_bp.route('/actualizar_datos_personales', methods=['POST'])
+def actualizar_datos_personales():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        nombres = data.get('nombres')
+        apellidos = data.get('apellidos')
+        correo = data.get('correo')
+        celular = data.get('celular')
+        password = data.get('password')
+        
+        # Solo la contraseña es obligatoria para confirmar los cambios
+        if not password:
+            return jsonify({'error': 'La contraseña es requerida para confirmar los cambios'}), 400
+        
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Verificar la contraseña actual
+            cursor.execute("SELECT contrasena, nombres, apellidos, correo, fecha_nacimiento, celular FROM tbl_usuario WHERE id_usuario = %s", (session['user_id'],))
+            user = cursor.fetchone()
+            
+            if not user or not verify_password(user['contrasena'], password):
+                return jsonify({'error': 'La contraseña es incorrecta'}), 400
+            
+            # Verificar si el correo ya está en uso por otro usuario (solo si se está cambiando)
+            if correo and correo != user.get('correo'):
+                cursor.execute("SELECT id_usuario FROM tbl_usuario WHERE correo = %s AND id_usuario != %s", 
+                              (correo, session['user_id']))
+                existing_email = cursor.fetchone()
+                if existing_email:
+                    return jsonify({'error': 'El correo electrónico ya está en uso por otro usuario'}), 400
+            
+            # Construir la consulta SQL dinámicamente basada en los campos que se están actualizando
+            update_fields = []
+            update_values = []
+            
+            # Solo incluir campos que no estén vacíos y que hayan cambiado
+            if nombres is not None and nombres != user.get('nombres'):
+                update_fields.append("nombres = %s")
+                update_values.append(nombres)
+            else:
+                nombres = user.get('nombres')
+            
+            if apellidos is not None and apellidos != user.get('apellidos'):
+                update_fields.append("apellidos = %s")
+                update_values.append(apellidos)
+            else:
+                apellidos = user.get('apellidos')
+            
+            if correo is not None and correo != user.get('correo'):
+                update_fields.append("correo = %s")
+                update_values.append(correo)
+            else:
+                correo = user.get('correo')
+            
+            if celular is not None and celular != user.get('celular'):
+                update_fields.append("celular = %s")
+                update_values.append(celular)
+            else:
+                celular = user.get('celular')
+            
+            # Si no hay campos para actualizar, devolver éxito sin hacer cambios
+            if not update_fields:
+                return jsonify({
+                    'success': True, 
+                    'message': 'No se detectaron cambios en los datos',
+                    'user': {
+                        'nombres': nombres,
+                        'apellidos': apellidos,
+                        'correo': correo,
+                        'celular': celular,
+                        'fecha_nacimiento': user['fecha_nacimiento'].strftime('%Y-%m-%d') if user['fecha_nacimiento'] else None
+                    }
+                })
+            
+            # Construir y ejecutar la consulta SQL
+            sql = "UPDATE tbl_usuario SET " + ", ".join(update_fields) + " WHERE id_usuario = %s"
+            update_values.append(session['user_id'])
+            
+            cursor.execute(sql, update_values)
+            connection.commit()
+            
+            # Actualizar la sesión con el nuevo nombre si cambió
+            if nombres != user.get('nombres') or apellidos != user.get('apellidos'):
+                session['user_name'] = f"{nombres} {apellidos}"
+            
+            # Obtener los datos actualizados para devolver
+            cursor.execute("""
+                SELECT nombres, apellidos, correo, fecha_nacimiento, celular
+                FROM tbl_usuario
+                WHERE id_usuario = %s
+            """, (session['user_id'],))
+            
+            updated_user = cursor.fetchone()
+            
+            cursor.close()
+            connection.close()
+            
+            if updated_user:
+                # Convertir fecha a string para JSON
+                if updated_user.get('fecha_nacimiento'):
+                    updated_user['fecha_nacimiento'] = updated_user['fecha_nacimiento'].strftime('%Y-%m-%d')
+                
+                return jsonify({
+                    'success': True, 
+                    'message': 'Datos actualizados correctamente',
+                    'user': updated_user
+                })
+            else:
+                return jsonify({'error': 'Error al obtener los datos actualizados'}), 500
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al actualizar datos personales: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @perfil_bp.route('/actualizar_preferencias_idioma', methods=['POST'])
 def actualizar_preferencias_idioma():
@@ -677,7 +757,6 @@ def subir_imagen_perfil():
               {"quality": "auto", "fetch_format": "auto"}
           ]
       )
-      
       # Guardar la referencia en la base de datos
       connection = create_connection()
       if connection:
