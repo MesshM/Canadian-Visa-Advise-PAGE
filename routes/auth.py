@@ -96,12 +96,6 @@ def login():
     
     return render_template('login.html')
 
-@auth_bp.route('/logout')
-def logout():
-    # Limpiar toda la sesión en lugar de solo user_id y user_name
-    session.clear()
-    return redirect(url_for('index'))
-
 @auth_bp.route('/registro', methods=['GET', 'POST'])
 def registro():
     if request.method == 'POST':
@@ -262,4 +256,11 @@ def reset_password(token):
     else:
         flash('Error de conexión a la base de datos', 'error')
     
+    return redirect(url_for('auth.login'))
+
+@auth_bp.route('/logout')
+def logout():
+    # Eliminar todas las variables de sesión
+    session.clear()
+    flash('Has cerrado sesión correctamente', 'success')
     return redirect(url_for('auth.login'))

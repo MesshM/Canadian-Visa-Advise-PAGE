@@ -392,128 +392,6 @@ def actualizar_preferencias_notificaciones():
       print(f"Error al actualizar preferencias: {str(e)}")
       return jsonify({'error': str(e)}), 500
 
-# Modificar la función actualizar_datos_personales para manejar mejor los valores nulos
-@perfil_bp.route('/actualizar_datos_personales', methods=['POST'])
-def actualizar_datos_personales():
-    if 'user_id' not in session:
-        return jsonify({'error': 'No autorizado'}), 401
-    
-    try:
-        data = request.get_json()
-        
-        nombres = data.get('nombres')
-        apellidos = data.get('apellidos')
-        correo = data.get('correo')
-        celular = data.get('celular')
-        password = data.get('password')
-        
-        # Solo la contraseña es obligatoria para confirmar los cambios
-        if not password:
-            return jsonify({'error': 'La contraseña es requerida para confirmar los cambios'}), 400
-        
-        connection = create_connection()
-        if connection:
-            cursor = connection.cursor(dictionary=True)
-            
-            # Verificar la contraseña actual
-            cursor.execute("SELECT contrasena, nombres, apellidos, correo, fecha_nacimiento, celular FROM tbl_usuario WHERE id_usuario = %s", (session['user_id'],))
-            user = cursor.fetchone()
-            
-            if not user or not verify_password(user['contrasena'], password):
-                return jsonify({'error': 'La contraseña es incorrecta'}), 400
-            
-            # Verificar si el correo ya está en uso por otro usuario (solo si se está cambiando)
-            if correo and correo != user.get('correo'):
-                cursor.execute("SELECT id_usuario FROM tbl_usuario WHERE correo = %s AND id_usuario != %s", 
-                              (correo, session['user_id']))
-                existing_email = cursor.fetchone()
-                if existing_email:
-                    return jsonify({'error': 'El correo electrónico ya está en uso por otro usuario'}), 400
-            
-            # Construir la consulta SQL dinámicamente basada en los campos que se están actualizando
-            update_fields = []
-            update_values = []
-            
-            # Solo incluir campos que no estén vacíos y que hayan cambiado
-            if nombres is not None and nombres != user.get('nombres'):
-                update_fields.append("nombres = %s")
-                update_values.append(nombres)
-            else:
-                nombres = user.get('nombres')
-            
-            if apellidos is not None and apellidos != user.get('apellidos'):
-                update_fields.append("apellidos = %s")
-                update_values.append(apellidos)
-            else:
-                apellidos = user.get('apellidos')
-            
-            if correo is not None and correo != user.get('correo'):
-                update_fields.append("correo = %s")
-                update_values.append(correo)
-            else:
-                correo = user.get('correo')
-            
-            if celular is not None and celular != user.get('celular'):
-                update_fields.append("celular = %s")
-                update_values.append(celular)
-            else:
-                celular = user.get('celular')
-            
-            # Si no hay campos para actualizar, devolver éxito sin hacer cambios
-            if not update_fields:
-                return jsonify({
-                    'success': True, 
-                    'message': 'No se detectaron cambios en los datos',
-                    'user': {
-                        'nombres': nombres,
-                        'apellidos': apellidos,
-                        'correo': correo,
-                        'celular': celular,
-                        'fecha_nacimiento': user['fecha_nacimiento'].strftime('%Y-%m-%d') if user['fecha_nacimiento'] else None
-                    }
-                })
-            
-            # Construir y ejecutar la consulta SQL
-            sql = "UPDATE tbl_usuario SET " + ", ".join(update_fields) + " WHERE id_usuario = %s"
-            update_values.append(session['user_id'])
-            
-            cursor.execute(sql, update_values)
-            connection.commit()
-            
-            # Actualizar la sesión con el nuevo nombre si cambió
-            if nombres != user.get('nombres') or apellidos != user.get('apellidos'):
-                session['user_name'] = f"{nombres} {apellidos}"
-            
-            # Obtener los datos actualizados para devolver
-            cursor.execute("""
-                SELECT nombres, apellidos, correo, fecha_nacimiento, celular
-                FROM tbl_usuario
-                WHERE id_usuario = %s
-            """, (session['user_id'],))
-            
-            updated_user = cursor.fetchone()
-            
-            cursor.close()
-            connection.close()
-            
-            if updated_user:
-                # Convertir fecha a string para JSON
-                if updated_user.get('fecha_nacimiento'):
-                    updated_user['fecha_nacimiento'] = updated_user['fecha_nacimiento'].strftime('%Y-%m-%d')
-                
-                return jsonify({
-                    'success': True, 
-                    'message': 'Datos actualizados correctamente',
-                    'user': updated_user
-                })
-            else:
-                return jsonify({'error': 'Error al obtener los datos actualizados'}), 500
-        else:
-            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-    except Exception as e:
-        print(f"Error al actualizar datos personales: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
 @perfil_bp.route('/actualizar_preferencias_idioma', methods=['POST'])
 def actualizar_preferencias_idioma():
   if 'user_id' not in session:
@@ -939,3 +817,206 @@ def obtener_imagen_perfil_cache(filename):
       return send_from_directory(CACHE_FOLDER, filename)
   else:
       return "Archivo no encontrado", 404
+
+@perfil_bp.route('/actualizar_datos_personales', methods=['POST'])
+def actualizar_datos_personales():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        # Verificar que todos los campos requeridos estén presentes
+        required_fields = ['nombres', 'apellidos', 'correo', 'fecha_nacimiento', 'password']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'Falta el campo {field}'}), 400
+        
+        # Validar el formato del correo electrónico
+        import re
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", data['correo']):
+            return jsonify({'error': 'Formato de correo electrónico inválido'}), 400
+        
+        # Validar la fecha de nacimiento
+        try:
+            from datetime import datetime, date
+            fecha_nac = datetime.strptime(data['fecha_nacimiento'], '%Y-%m-%d').date()
+            hoy = date.today()
+            edad = hoy.year - fecha_nac.year - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
+            if edad < 18:
+                return jsonify({'error': 'Debes tener al menos 18 años'}), 400
+        except ValueError:
+            return jsonify({'error': 'Formato de fecha inválido'}), 400
+        
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Verificar la contraseña actual
+            cursor.execute("SELECT contrasena FROM tbl_usuario WHERE id_usuario = %s", (session['user_id'],))
+            user = cursor.fetchone()
+            
+            if not user or not verify_password(user['contrasena'], data['password']):
+                return jsonify({'error': 'Contraseña incorrecta'}), 400
+            
+            # Verificar si el correo ya está en uso por otro usuario
+            if data['correo'] != session.get('user_email'):
+                cursor.execute("SELECT id_usuario FROM tbl_usuario WHERE correo = %s AND id_usuario != %s", 
+                              (data['correo'], session['user_id']))
+                existing_email = cursor.fetchone()
+                if existing_email:
+                    return jsonify({'error': 'El correo electrónico ya está en uso por otro usuario'}), 400
+            
+            # Obtener la fecha de nacimiento actual del usuario
+            cursor.execute("SELECT fecha_nacimiento FROM tbl_usuario WHERE id_usuario = %s", (session['user_id'],))
+            fecha_actual = cursor.fetchone()['fecha_nacimiento']
+
+            # Verificar si el correo ha cambiado
+            if data['correo'] != session.get('user_email'):
+                # Si el correo ha cambiado, actualizar el correo y establecer correo_verificado a 0
+                cursor.execute("""
+                    UPDATE tbl_usuario 
+                    SET nombres = %s, apellidos = %s, correo = %s, correo_verificado = 0
+                    WHERE id_usuario = %s
+                """, (data['nombres'], data['apellidos'], data['correo'], session['user_id']))
+            else:
+                # Si el correo no ha cambiado, actualizar solo nombres y apellidos
+                cursor.execute("""
+                    UPDATE tbl_usuario 
+                    SET nombres = %s, apellidos = %s
+                    WHERE id_usuario = %s
+                """, (data['nombres'], data['apellidos'], session['user_id']))
+            
+            connection.commit()
+            
+            # Actualizar la sesión con el nuevo nombre
+            session['user_name'] = f"{data['nombres']} {data['apellidos']}"
+            session['user_email'] = data['correo']
+            
+            cursor.close()
+            connection.close()
+            
+            return jsonify({
+                'success': True, 
+                'message': 'Tus datos personales han sido actualizados correctamente'
+            })
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al actualizar datos personales: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@perfil_bp.route('/enviar_verificacion_correo', methods=['POST'])
+def enviar_verificacion_correo():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        
+        if not email:
+            return jsonify({'error': 'Falta el correo electrónico'}), 400
+        
+        # Validar formato de correo
+        import re
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            return jsonify({'error': 'Formato de correo electrónico inválido'}), 400
+        
+        # Generar código OTP de 6 dígitos
+        otp = ''.join(random.choices(string.digits, k=6))
+        
+        # Guardar el OTP en la sesión para verificarlo después
+        session['email_verification_otp'] = otp
+        session['email_verification_email'] = email
+        session['email_verification_expiry'] = (datetime.now() + timedelta(minutes=10)).timestamp()
+        
+        # Enviar el código por correo
+        subject = "Verificación de Correo Electrónico - Canadian Visa Advise"
+        body = f"""
+        Hola {session.get('user_name', 'Usuario')},
+        
+        Tu código de verificación es: {otp}
+        
+        Este código expirará en 10 minutos.
+        
+        Atentamente,
+        Equipo CVA
+        """
+        
+        if send_email_via_zoho(email, subject, body):
+            return jsonify({'success': True, 'message': 'Código enviado al correo electrónico'})
+        else:
+            return jsonify({'error': 'Error al enviar el correo electrónico'}), 500
+    
+    except Exception as e:
+        print(f"Error al enviar código de verificación: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@perfil_bp.route('/verificar_codigo_correo', methods=['POST'])
+def verificar_codigo_correo():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        otp = data.get('otp')
+        email = data.get('email')
+        
+        if not otp or not email:
+            return jsonify({'error': 'Faltan parámetros requeridos'}), 400
+        
+        # Verificar que el OTP existe en la sesión y no ha expirado
+        session_otp = session.get('email_verification_otp')
+        session_email = session.get('email_verification_email')
+        expiry = session.get('email_verification_expiry')
+        
+        if not session_otp or not session_email or not expiry:
+            return jsonify({'error': 'No hay un código de verificación activo'}), 400
+        
+        if datetime.now().timestamp() > expiry:
+            # Limpiar el OTP expirado
+            session.pop('email_verification_otp', None)
+            session.pop('email_verification_email', None)
+            session.pop('email_verification_expiry', None)
+            return jsonify({'error': 'El código ha expirado'}), 400
+        
+        if otp != session_otp or email != session_email:
+            return jsonify({'error': 'Código incorrecto o correo electrónico no coincide'}), 400
+        
+        # Código correcto, marcar el correo como verificado en la base de datos
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor()
+            
+            # Verificar si ya existe la columna correo_verificado en la tabla tbl_usuario
+            try:
+                cursor.execute("SELECT * FROM information_schema.COLUMNS WHERE TABLE_NAME = 'tbl_usuario' AND COLUMN_NAME = 'correo_verificado'")
+                column_exists = cursor.fetchone()
+                
+                # Si la columna no existe, crearla
+                if not column_exists:
+                    cursor.execute("ALTER TABLE tbl_usuario ADD COLUMN correo_verificado TINYINT(1) DEFAULT 0")
+                    connection.commit()
+            except Exception as e:
+                print(f"Error al verificar/crear columna: {str(e)}")
+            
+            # Actualizar el estado de verificación del correo
+            cursor.execute("UPDATE tbl_usuario SET correo = %s, correo_verificado = 1 WHERE id_usuario = %s", 
+                          (email, session['user_id']))
+            
+            connection.commit()
+            cursor.close()
+            connection.close()
+            
+            # Limpiar el OTP usado
+            session.pop('email_verification_otp', None)
+            session.pop('email_verification_email', None)
+            session.pop('email_verification_expiry', None)
+            
+            return jsonify({'success': True, 'message': 'Correo electrónico verificado con éxito'})
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al verificar código: {str(e)}")
+        return jsonify({'error': str(e)}), 500

@@ -268,6 +268,24 @@ function formatTimeRemaining(milliseconds) {
 
 // Inicializar los botones de consejos útiles cuando se carga la página
 document.addEventListener("DOMContentLoaded", () => {
+  // Añadir eventos para cerrar modales al hacer clic fuera del contenido
+  const modals = [
+    { id: "pagoModal", closeFunction: closePagoModal },
+    { id: "cancelarAsesoriaModal", closeFunction: closeCancelarAsesoriaModal },
+    { id: "chatHistorialModal", closeFunction: closeChatHistorialModal },
+    { id: "newAdvisoryModal", closeFunction: closeNewAdvisoryModal },
+  ]
+
+  modals.forEach((modal) => {
+    const modalElement = document.getElementById(modal.id)
+    if (modalElement) {
+      modalElement.addEventListener("click", (e) => {
+        if (e.target === modalElement) {
+          modal.closeFunction()
+        }
+      })
+    }
+  })
   // Inicializar el resto de funcionalidades
   ordenarYNumerarAsesorias()
 
@@ -451,6 +469,12 @@ function toggleDetails(asesoriaId) {
   if (detailsRow.classList.contains("hidden")) {
     // Mostrar detalles con animación
     detailsRow.classList.remove("hidden")
+
+    // Añadir animación de entrada
+    const detailsContent = detailsRow.querySelector("div")
+    if (detailsContent) {
+      detailsContent.classList.add("animate-fade-in")
+    }
 
     // Obtener datos de la asesoría para mostrar detalles más completos
     const mainRow = document.querySelector(`tr[data-asesoria-id="${asesoriaId}"]`)
@@ -719,8 +743,17 @@ function toggleDetails(asesoriaId) {
       }
     }
   } else {
-    // Ocultar detalles
-    detailsRow.classList.add("hidden")
+    // Ocultar detalles con animación
+    const detailsContent = detailsRow.querySelector("div")
+    if (detailsContent) {
+      detailsContent.classList.add("opacity-0", "transition-opacity", "duration-300")
+      setTimeout(() => {
+        detailsRow.classList.add("hidden")
+        detailsContent.classList.remove("opacity-0")
+      }, 300)
+    } else {
+      detailsRow.classList.add("hidden")
+    }
   }
 }
 
@@ -760,8 +793,14 @@ function closeChatHistorialModal() {
   const modal = document.getElementById("chatHistorialModal")
   if (!modal) return
 
-  modal.classList.remove("flex")
-  modal.classList.add("hidden")
+  // Añadir animación de cierre
+  const modalContent = modal.querySelector(".bg-white")
+  modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+  setTimeout(() => {
+    modal.classList.remove("flex")
+    modal.classList.add("hidden")
+    modalContent.classList.remove("opacity-0", "scale-95")
+  }, 300)
 }
 
 // Función para enviar mensaje en el chat
@@ -1092,8 +1131,14 @@ function closePagoModal() {
   const modal = document.getElementById("pagoModal")
   if (!modal) return
 
-  modal.classList.remove("flex")
-  modal.classList.add("hidden")
+  // Añadir animación de cierre
+  const modalContent = modal.querySelector(".bg-white")
+  modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+  setTimeout(() => {
+    modal.classList.remove("flex")
+    modal.classList.add("hidden")
+    modalContent.classList.remove("opacity-0", "scale-95")
+  }, 300)
 }
 
 // Función para cancelar una asesoría
@@ -1168,8 +1213,14 @@ function closeCancelarAsesoriaModal() {
   const modal = document.getElementById("cancelarAsesoriaModal")
   if (!modal) return
 
-  modal.classList.remove("flex")
-  modal.classList.add("hidden")
+  // Añadir animación de cierre
+  const modalContent = modal.querySelector(".bg-white")
+  modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+  setTimeout(() => {
+    modal.classList.remove("flex")
+    modal.classList.add("hidden")
+    modalContent.classList.remove("opacity-0", "scale-95")
+  }, 300)
 }
 
 // Función para reiniciar la pasarela de pago con Stripe
@@ -1305,14 +1356,21 @@ function openNewAdvisoryModal() {
   // Reiniciar el stepper
   resetStepper()
 
-  // Mostrar el modal
+  // Mostrar el modal con animación
   modal.classList.remove("hidden")
   modal.classList.add("flex")
+
+  // Animar la entrada del contenido
+  const modalContent = modal.querySelector(".bg-white")
+  if (modalContent) {
+    modalContent.classList.add("animate-scale-in")
+  }
 
   // Cargar asesores para el primer paso
   loadAsesores()
 }
 
+// Función para cerrar el modal de nueva asesoría
 function closeNewAdvisoryModal() {
   const modal = document.getElementById("newAdvisoryModal")
   if (!modal) return
@@ -1323,17 +1381,22 @@ function closeNewAdvisoryModal() {
     reservationId = null
   }
 
-  // Ocultar el modal
-  modal.classList.remove("flex")
-  modal.classList.add("hidden")
+  // Añadir animación de cierre
+  const modalContent = modal.querySelector(".bg-white")
+  modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+  setTimeout(() => {
+    modal.classList.remove("flex")
+    modal.classList.add("hidden")
+    modalContent.classList.remove("opacity-0", "scale-95")
 
-  // Reiniciar variables
-  selectedAsesorId = null
-  selectedAsesorName = null
-  selectedAsesorEspecialidad = null
-  selectedDate = null
-  selectedTime = null
-  reservationId = null
+    // Reiniciar variables
+    selectedAsesorId = null
+    selectedAsesorName = null
+    selectedAsesorEspecialidad = null
+    selectedDate = null
+    selectedTime = null
+    reservationId = null
+  }, 300)
 }
 
 function initStepper() {
@@ -2370,4 +2433,3 @@ window.openNewAdvisoryModal = openNewAdvisoryModal
 window.closeNewAdvisoryModal = closeNewAdvisoryModal
 window.showTipsTooltip = showTipsTooltip
 window.startNewAppointmentTimer = startNewAppointmentTimer
-
