@@ -241,99 +241,157 @@ def get_cloudinary_image_with_cache(public_id, width=200, height=200):
 
 @perfil_bp.route('/cambiar_contrasena', methods=['POST'])
 def cambiar_contrasena():
-  if 'user_id' not in session:
-      return jsonify({'error': 'No autorizado'}), 401
-  
-  try:
-      data = request.get_json()
-      
-      current_password = data.get('current_password')
-      new_password = data.get('new_password')
-      
-      if not current_password or not new_password:
-          return jsonify({'error': 'Faltan parámetros requeridos'}), 400
-      
-      connection = create_connection()
-      if connection:
-          cursor = connection.cursor(dictionary=True)
-          
-          # Verificar la contraseña actual
-          cursor.execute("SELECT contrasena FROM tbl_usuario WHERE id_usuario = %s", (session['user_id'],))
-          user = cursor.fetchone()
-          
-          if not user or not verify_password(user['contrasena'], current_password):
-              return jsonify({'error': 'La contraseña actual es incorrecta'}), 400
-          
-          # Actualizar la contraseña
-          hashed_password = hash_password(new_password)
-          cursor.execute("UPDATE tbl_usuario SET contrasena = %s WHERE id_usuario = %s", 
-                        (hashed_password, session['user_id']))
-          
-          connection.commit()
-          cursor.close()
-          connection.close()
-          
-          return jsonify({'success': True, 'message': 'Contraseña actualizada con éxito'})
-      else:
-          return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-  except Exception as e:
-      print(f"Error al cambiar contraseña: {str(e)}")
-      return jsonify({'error': str(e)}), 500
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+        
+        if not current_password or not new_password:
+            return jsonify({'error': 'Faltan parámetros requeridos'}), 400
+        
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Verificar la contraseña actual
+            cursor.execute("SELECT contrasena FROM tbl_usuario WHERE id_usuario = %s", (session['user_id'],))
+            user = cursor.fetchone()
+            
+            if not user or not verify_password(user['contrasena'], current_password):
+                return jsonify({'error': 'La contraseña actual es incorrecta'}), 400
+            
+            cursor.close()
+            connection.close()
+            
+            return jsonify({'success': True, 'message': 'Contraseña verificada, proceda con la verificación OTP'})
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al verificar contraseña: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
-@perfil_bp.route('/enviar_codigo_verificacion', methods=['POST'])
-def enviar_codigo_verificacion():
-  if 'user_id' not in session:
-      return jsonify({'error': 'No autorizado'}), 401
-  
-  try:
-      data = request.get_json()
-      method = data.get('method')
-      
-      if method not in ['email', 'sms']:
-          return jsonify({'error': 'Método de verificación no válido'}), 400
-      
-      # Generar código OTP de 6 dígitos
-      otp = ''.join(random.choices(string.digits, k=6))
-      
-      # Guardar el OTP en la sesión para verificarlo después
-      session[f'otp_{method}'] = otp
-      session[f'otp_{method}_expiry'] = (datetime.now() + timedelta(minutes=10)).timestamp()
-      
-      if method == 'email':
-          email = data.get('email')
-          if not email:
-              return jsonify({'error': 'Falta el correo electrónico'}), 400
-          
-          # Enviar el código por correo
-          subject = "Código de verificación - Canadian Visa Advise"
-          body = f"""
-          Hola {session.get('user_name', 'Usuario')},
-          
-          Tu código de verificación es: {otp}
-          
-          Este código expirará en 10 minutos.
-          
-          Atentamente,
-          Equipo CVA
-          """
-          
-          if send_email_via_zoho(email, subject, body):
-              return jsonify({'success': True, 'message': 'Código enviado al correo electrónico'})
-          else:
-              return jsonify({'error': 'Error al enviar el correo electrónico'}), 500
-      
-      elif method == 'sms':
-          phone = data.get('phone')
-          if not phone:
-              return jsonify({'error': 'Falta el número de teléfono'}), 400
-          
-          # Aquí iría la lógica para enviar SMS (requiere un servicio externo como Twilio)
-          # Por ahora, simulamos que se envió correctamente
-          return jsonify({'success': True, 'message': 'Código enviado al teléfono (simulado)'})
-      
-  except Exception as e:
-      print(f"Error al enviar código de verificación: {str(e)}")
-      return jsonify({'error': str(e)}), 500
+@perfil_bp.route('/enviar_codigo_cambio_contrasena', methods=['POST'])
+def enviar_codigo_cambio_contrasena():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        current_password = data.get('current_password')
+        
+        if not current_password:
+            return jsonify({'error': 'Falta la contraseña actual'}), 400
+        
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Verificar la contraseña actual
+            cursor.execute("SELECT contrasena, correo FROM tbl_usuario WHERE id_usuario = %s", (session['user_id'],))
+            user = cursor.fetchone()
+            
+            if not user or not verify_password(user['contrasena'], current_password):
+                return jsonify({'error': 'La contraseña actual es incorrecta'}), 400
+            
+            # Generar código OTP de 4 dígitos
+            otp = ''.join(random.choices(string.digits, k=4))
+            
+            # Guardar el OTP en la sesión para verificarlo después
+            session['password_change_otp'] = otp
+            session['password_change_expiry'] = (datetime.now() + timedelta(minutes=10)).timestamp()
+            
+            # Establecer un tiempo de espera de 60 segundos antes de permitir un nuevo envío
+            cooldown_key = f'password_change_cooldown_{session["user_id"]}'
+            session[cooldown_key] = (datetime.now() + timedelta(seconds=60)).timestamp()
+            
+            # Enviar el código por correo
+            subject = "Código de Verificación para Cambio de Contraseña - Canadian Visa Advise"
+            body = f"""
+            Hola {session.get('user_name', 'Usuario')},
+            
+            Tu código de verificación para cambiar la contraseña es: {otp}
+            
+            Este código expirará en 10 minutos.
+            
+            Si no solicitaste este cambio, por favor ignora este mensaje o contacta a soporte.
+            
+            Atentamente,
+            Equipo CVA
+            """
+            
+            if send_email_via_zoho(user['correo'], subject, body):
+                return jsonify({
+                    'success': True, 
+                    'message': 'Código enviado al correo electrónico',
+                    'cooldown_seconds': 60  # Informar al frontend del tiempo de espera
+                })
+            else:
+                return jsonify({'error': 'Error al enviar el correo electrónico'}), 500
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al enviar código de verificación: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@perfil_bp.route('/verificar_codigo_cambio_contrasena', methods=['POST'])
+def verificar_codigo_cambio_contrasena():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        otp = data.get('otp')
+        new_password = data.get('new_password')
+        
+        if not otp or not new_password:
+            return jsonify({'error': 'Faltan parámetros requeridos'}), 400
+        
+        # Verificar que el OTP existe en la sesión y no ha expirado
+        session_otp = session.get('password_change_otp')
+        expiry = session.get('password_change_expiry')
+        
+        if not session_otp or not expiry:
+            return jsonify({'error': 'No hay un código de verificación activo'}), 400
+        
+        if datetime.now().timestamp() > expiry:
+            # Limpiar el OTP expirado
+            session.pop('password_change_otp', None)
+            session.pop('password_change_expiry', None)
+            return jsonify({'error': 'El código ha expirado'}), 400
+        
+        if otp != session_otp:
+            return jsonify({'error': 'Código incorrecto'}), 400
+        
+        # Código correcto, actualizar la contraseña
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Actualizar la contraseña
+            hashed_password = hash_password(new_password)
+            cursor.execute("UPDATE tbl_usuario SET contrasena = %s WHERE id_usuario = %s", 
+                          (hashed_password, session['user_id']))
+            
+            connection.commit()
+            cursor.close()
+            connection.close()
+            
+            # Limpiar el OTP usado
+            session.pop('password_change_otp', None)
+            session.pop('password_change_expiry', None)
+            
+            return jsonify({'success': True, 'message': 'Contraseña actualizada con éxito'})
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al verificar código: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 
 @perfil_bp.route('/verificar_codigo', methods=['POST'])
 def verificar_codigo():
@@ -923,6 +981,22 @@ def enviar_verificacion_correo():
         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             return jsonify({'error': 'Formato de correo electrónico inválido'}), 400
         
+        # Verificar si hay un tiempo de espera activo para este usuario
+        current_time = datetime.now().timestamp()
+        cooldown_key = f'email_verification_cooldown_{session["user_id"]}'
+        
+        if cooldown_key in session:
+            cooldown_until = session[cooldown_key]
+            
+            # Si el tiempo de espera no ha expirado, devolver error con tiempo restante
+            if current_time < cooldown_until:
+                remaining_seconds = int(cooldown_until - current_time)
+                return jsonify({
+                    'error': 'Debes esperar antes de solicitar un nuevo código',
+                    'cooldown': True,
+                    'remaining_seconds': remaining_seconds
+                }), 429  # 429 Too Many Requests
+        
         # Generar código OTP de 6 dígitos
         otp = ''.join(random.choices(string.digits, k=6))
         
@@ -930,6 +1004,9 @@ def enviar_verificacion_correo():
         session['email_verification_otp'] = otp
         session['email_verification_email'] = email
         session['email_verification_expiry'] = (datetime.now() + timedelta(minutes=10)).timestamp()
+        
+        # Establecer un tiempo de espera de 60 segundos antes de permitir un nuevo envío
+        session[cooldown_key] = (datetime.now() + timedelta(seconds=60)).timestamp()
         
         # Enviar el código por correo
         subject = "Verificación de Correo Electrónico - Canadian Visa Advise"
@@ -945,12 +1022,47 @@ def enviar_verificacion_correo():
         """
         
         if send_email_via_zoho(email, subject, body):
-            return jsonify({'success': True, 'message': 'Código enviado al correo electrónico'})
+            return jsonify({
+                'success': True, 
+                'message': 'Código enviado al correo electrónico',
+                'cooldown_seconds': 60  # Informar al frontend del tiempo de espera
+            })
         else:
             return jsonify({'error': 'Error al enviar el correo electrónico'}), 500
     
     except Exception as e:
         print(f"Error al enviar código de verificación: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Añadir una nueva ruta para verificar el estado del cooldown
+@perfil_bp.route('/verificar_cooldown_correo', methods=['GET'])
+def verificar_cooldown_correo():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        current_time = datetime.now().timestamp()
+        cooldown_key = f'email_verification_cooldown_{session["user_id"]}'
+        
+        if cooldown_key in session:
+            cooldown_until = session[cooldown_key]
+            
+            # Si el tiempo de espera no ha expirado, devolver tiempo restante
+            if current_time < cooldown_until:
+                remaining_seconds = int(cooldown_until - current_time)
+                return jsonify({
+                    'cooldown': True,
+                    'remaining_seconds': remaining_seconds
+                })
+        
+        # Si no hay cooldown o ya expiró
+        return jsonify({
+            'cooldown': False,
+            'remaining_seconds': 0
+        })
+    
+    except Exception as e:
+        print(f"Error al verificar cooldown: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @perfil_bp.route('/verificar_codigo_correo', methods=['POST'])
@@ -984,28 +1096,15 @@ def verificar_codigo_correo():
         if otp != session_otp or email != session_email:
             return jsonify({'error': 'Código incorrecto o correo electrónico no coincide'}), 400
         
-        # Código correcto, marcar el correo como verificado en la base de datos
+        # Código correcto, marcar el correo como verificado
         connection = create_connection()
         if connection:
             cursor = connection.cursor()
             
-            # Verificar si ya existe la columna correo_verificado en la tabla tbl_usuario
-            try:
-                cursor.execute("SELECT * FROM information_schema.COLUMNS WHERE TABLE_NAME = 'tbl_usuario' AND COLUMN_NAME = 'correo_verificado'")
-                column_exists = cursor.fetchone()
-                
-                # Si la columna no existe, crearla
-                if not column_exists:
-                    cursor.execute("ALTER TABLE tbl_usuario ADD COLUMN correo_verificado TINYINT(1) DEFAULT 0")
-                    connection.commit()
-            except Exception as e:
-                print(f"Error al verificar/crear columna: {str(e)}")
-            
             # Actualizar el estado de verificación del correo
-            cursor.execute("UPDATE tbl_usuario SET correo = %s, correo_verificado = 1 WHERE id_usuario = %s", 
-                          (email, session['user_id']))
-            
+            cursor.execute("UPDATE tbl_usuario SET correo_verificado = 1 WHERE id_usuario = %s", (session['user_id'],))
             connection.commit()
+            
             cursor.close()
             connection.close()
             
@@ -1018,5 +1117,5 @@ def verificar_codigo_correo():
         else:
             return jsonify({'error': 'Error de conexión a la base de datos'}), 500
     except Exception as e:
-        print(f"Error al verificar código: {str(e)}")
+        print(f"Error al verificar código de correo: {str(e)}")
         return jsonify({'error': str(e)}), 500

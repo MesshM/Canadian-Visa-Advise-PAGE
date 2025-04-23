@@ -703,13 +703,180 @@ document.addEventListener("DOMContentLoaded", () => {
                     .then((response) => response.json())
                     .then((data) => {
                       if (data.success) {
-                        showAlert("Código de verificación enviado a tu correo electrónico", "success")
-                        // Mostrar el modal de OTP
+                        // Mostrar el modal de verificación OTP
                         const otpModal = document.getElementById("otp-modal")
                         if (otpModal) {
                           otpModal.classList.remove("hidden")
                           otpModal.classList.add("flex")
+
+                          // Añadir animación de entrada al contenido del modal
+                          const modalContent = otpModal.querySelector(".bg-white")
+                          modalContent.classList.add("animate-scale-in")
+
+                          // Actualizar el método de verificación en el modal
+                          const verificationMethod = document.getElementById("verification-method")
+                          if (verificationMethod) {
+                            verificationMethod.textContent = "correo electrónico"
+                          }
+
+                          // Limpiar los campos de OTP
+                          otpInputs.forEach((input) => {
+                            input.value = ""
+                          })
+
+                          // Enfocar el primer campo
+                          if (otpInputs.length > 0) {
+                            otpInputs[0].focus()
+                          }
+
+                          // Inicializar el temporizador para el botón de reenvío
+                          setupResendButton()
+
+                          // Configurar el botón de verificación OTP
+                          const verifyOtpBtn = document.getElementById("verify-otp-btn")
+                          if (verifyOtpBtn) {
+                            verifyOtpBtn.onclick = () => {
+                              // Obtener el código OTP completo
+                              let otp = ""
+                              document.querySelectorAll(".otp-input").forEach((input) => {
+                                otp += input.value
+                              })
+
+                              if (otp.length !== 6) {
+                                showAlert("Por favor, ingresa el código completo de 6 dígitos", "error")
+                                return
+                              }
+
+                              // Cambiar el botón a estado de carga
+                              verifyOtpBtn.innerHTML = `
+                                <div class="flex items-center justify-center">
+                                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                  <span>Verificando...</span>
+                                </div>
+                              `
+                              verifyOtpBtn.disabled = true
+
+                              // Enviar solicitud para verificar el código OTP
+                              fetch("/perfil/verificar_codigo_correo", {
+                                method: "POST",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({ otp: otp, email: email }),
+                              })
+                                .then((response) => response.json())
+                                .then((data) => {
+                                  if (data.success) {
+                                    // Cerrar el modal con animación
+                                    const modalContent = otpModal.querySelector(".bg-white")
+                                    modalContent.classList.add(
+                                      "opacity-0",
+                                      "scale-95",
+                                      "transition-all",
+                                      "duration-300",
+                                    )
+                                    setTimeout(() => {
+                                      otpModal.classList.add("hidden")
+                                      otpModal.classList.remove("flex")
+                                      modalContent.classList.remove("opacity-0", "scale-95")
+                                    }, 300)
+
+                                    // Actualizar la UI para mostrar que el correo está verificado
+                                    if (verifyEmailBtn.parentNode) {
+                                      verifyEmailBtn.parentNode.innerHTML = `
+                                        <span class="text-green-500 flex items-center" title="Correo verificado">
+                                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                          </svg>
+                                        </span>
+                                      `
+                                    }
+
+                                    if (emailVerificationStatus) {
+                                      emailVerificationStatus.textContent = "Correo verificado"
+                                      emailVerificationStatus.classList.remove("text-gray-500", "text-yellow-500")
+                                      emailVerificationStatus.classList.add("text-green-500")
+                                    }
+
+                                    showAlert("¡Correo electrónico verificado con éxito!", "success")
+                                  } else {
+                                    showAlert(data.error || "Error al verificar el código", "error")
+
+                                    // Restaurar el botón
+                                    verifyOtpBtn.innerHTML = `
+                                      <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                                      <div class="relative flex items-center justify-center">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <span>Verificar</span>
+                                      </div>
+                                    `
+                                    verifyOtpBtn.disabled = false
+                                  }
+                                })
+                                .catch((error) => {
+                                  console.error("Error:", error)
+                                  showAlert("Error al verificar el código", "error")
+
+                                  // Restaurar el botón
+                                  verifyOtpBtn.innerHTML = `
+                                      <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                                      <div class="relative flex items-center justify-center">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <span>Verificar</span>
+                                      </div>
+                                    `
+                                  verifyOtpBtn.disabled = false
+                                })
+                            }
+                          }
+
+                          // Configurar el botón de cancelar con animación
+                          const cancelOtpBtn = document.getElementById("cancel-otp-btn")
+                          if (cancelOtpBtn) {
+                            cancelOtpBtn.onclick = () => {
+                              const modalContent = otpModal.querySelector(".bg-white")
+                              modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+                              setTimeout(() => {
+                                otpModal.classList.add("hidden")
+                                otpModal.classList.remove("flex")
+                                modalContent.classList.remove("opacity-0", "scale-95")
+                              }, 300)
+                            }
+                          }
+
+                          // Configurar el botón de cerrar con animación
+                          const closeOtpModal = document.getElementById("close-otp-modal")
+                          if (closeOtpModal) {
+                            closeOtpModal.onclick = () => {
+                              const modalContent = otpModal.querySelector(".bg-white")
+                              modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+                              setTimeout(() => {
+                                otpModal.classList.add("hidden")
+                                otpModal.classList.remove("flex")
+                                modalContent.classList.remove("opacity-0", "scale-95")
+                              }, 300)
+                            }
+                          }
+
+                          // Cerrar el modal al hacer clic fuera del contenido
+                          otpModal.addEventListener("click", (e) => {
+                            if (e.target === otpModal) {
+                              const modalContent = otpModal.querySelector(".bg-white")
+                              modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+                              setTimeout(() => {
+                                otpModal.classList.add("hidden")
+                                otpModal.classList.remove("flex")
+                                modalContent.classList.remove("opacity-0", "scale-95")
+                              }, 300)
+                            }
+                          })
                         }
+
+                        showAlert("Código de verificación enviado a tu correo electrónico", "success")
                       } else {
                         showAlert(data.error || "Error al enviar el código de verificación", "error")
                       }
@@ -720,8 +887,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     })
                     .finally(() => {
                       // Restaurar el botón
-                      verifyBtn.innerHTML = "Verificar"
-                      verifyBtn.disabled = false
+                      verifyEmailBtn.innerHTML = "Verificar"
+                      verifyEmailBtn.disabled = false
                     })
                 })
               }
@@ -773,6 +940,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const emailVerificationStatus = document.getElementById("email-verification-status")
   const emailInput = document.getElementById("correo")
 
+  // Modificar la función verifyEmailBtnClickHandler para manejar el cooldown desde el backend
+  // Buscar la función verifyEmailBtnClickHandler y reemplazarla con:
+
   const verifyEmailBtnClickHandler = () => {
     const email = emailInput.value.trim()
 
@@ -790,11 +960,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Cambiar el botón a estado de carga
     verifyEmailBtn.innerHTML = `
-      <div class="flex items-center">
-        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 mr-1"></div>
-        <span>Enviando...</span>
-      </div>
-    `
+    <div class="flex items-center">
+      <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 mr-1"></div>
+      <span>Enviando...</span>
+    </div>
+  `
     verifyEmailBtn.disabled = true
 
     // Enviar solicitud para verificar correo
@@ -814,6 +984,10 @@ document.addEventListener("DOMContentLoaded", () => {
             otpModal.classList.remove("hidden")
             otpModal.classList.add("flex")
 
+            // Añadir animación de entrada al contenido del modal
+            const modalContent = otpModal.querySelector(".bg-white")
+            modalContent.classList.add("animate-scale-in")
+
             // Actualizar el método de verificación en el modal
             const verificationMethod = document.getElementById("verification-method")
             if (verificationMethod) {
@@ -830,8 +1004,12 @@ document.addEventListener("DOMContentLoaded", () => {
               otpInputs[0].focus()
             }
 
-            // Inicializar el temporizador para el botón de reenvío
-            setupResendButton()
+            // Inicializar el temporizador para el botón de reenvío con el tiempo del servidor
+            if (data.cooldown_seconds) {
+              startResendTimer(data.cooldown_seconds)
+            } else {
+              startResendTimer(60) // Valor por defecto si el servidor no lo proporciona
+            }
 
             // Configurar el botón de verificación OTP
             const verifyOtpBtn = document.getElementById("verify-otp-btn")
@@ -850,11 +1028,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // Cambiar el botón a estado de carga
                 verifyOtpBtn.innerHTML = `
-                  <div class="flex items-center justify-center">
-                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    <span>Verificando...</span>
-                  </div>
-                `
+                <div class="flex items-center justify-center">
+                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <span>Verificando...</span>
+                </div>
+              `
                 verifyOtpBtn.disabled = true
 
                 // Enviar solicitud para verificar el código OTP
@@ -868,19 +1046,24 @@ document.addEventListener("DOMContentLoaded", () => {
                   .then((response) => response.json())
                   .then((data) => {
                     if (data.success) {
-                      // Cerrar el modal
-                      otpModal.classList.add("hidden")
-                      otpModal.classList.remove("flex")
+                      // Cerrar el modal con animación
+                      const modalContent = otpModal.querySelector(".bg-white")
+                      modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+                      setTimeout(() => {
+                        otpModal.classList.add("hidden")
+                        otpModal.classList.remove("flex")
+                        modalContent.classList.remove("opacity-0", "scale-95")
+                      }, 300)
 
                       // Actualizar la UI para mostrar que el correo está verificado
                       if (verifyEmailBtn.parentNode) {
                         verifyEmailBtn.parentNode.innerHTML = `
-                          <span class="text-green-500 flex items-center" title="Correo verificado">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                          </span>
-                        `
+                        <span class="text-green-500 flex items-center" title="Correo verificado">
+                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                          </svg>
+                        </span>
+                      `
                       }
 
                       if (emailVerificationStatus) {
@@ -895,14 +1078,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
                       // Restaurar el botón
                       verifyOtpBtn.innerHTML = `
-                        <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
-                        <div class="relative flex items-center justify-center">
-                          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                          </svg>
-                          <span>Verificar</span>
-                        </div>
-                      `
+                      <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                      <div class="relative flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Verificar</span>
+                      </div>
+                    `
                       verifyOtpBtn.disabled = false
                     }
                   })
@@ -912,39 +1095,65 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     // Restaurar el botón
                     verifyOtpBtn.innerHTML = `
-                        <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
-                        <div class="relative flex items-center justify-center">
-                          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                          </svg>
-                          <span>Verificar</span>
-                        </div>
-                      `
+                      <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                      <div class="relative flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Verificar</span>
+                      </div>
+                    `
                     verifyOtpBtn.disabled = false
                   })
               }
             }
 
-            // Configurar el botón de cancelar
+            // Configurar el botón de cancelar con animación
             const cancelOtpBtn = document.getElementById("cancel-otp-btn")
             if (cancelOtpBtn) {
               cancelOtpBtn.onclick = () => {
-                otpModal.classList.add("hidden")
-                otpModal.classList.remove("flex")
+                const modalContent = otpModal.querySelector(".bg-white")
+                modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+                setTimeout(() => {
+                  otpModal.classList.add("hidden")
+                  otpModal.classList.remove("flex")
+                  modalContent.classList.remove("opacity-0", "scale-95")
+                }, 300)
               }
             }
 
-            // Configurar el botón de cerrar
+            // Configurar el botón de cerrar con animación
             const closeOtpModal = document.getElementById("close-otp-modal")
             if (closeOtpModal) {
               closeOtpModal.onclick = () => {
-                otpModal.classList.add("hidden")
-                otpModal.classList.remove("flex")
+                const modalContent = otpModal.querySelector(".bg-white")
+                modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+                setTimeout(() => {
+                  otpModal.classList.add("hidden")
+                  otpModal.classList.remove("flex")
+                  modalContent.classList.remove("opacity-0", "scale-95")
+                }, 300)
               }
             }
+
+            // Cerrar el modal al hacer clic fuera del contenido
+            otpModal.addEventListener("click", (e) => {
+              if (e.target === otpModal) {
+                const modalContent = otpModal.querySelector(".bg-white")
+                modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+                setTimeout(() => {
+                  otpModal.classList.add("hidden")
+                  otpModal.classList.remove("flex")
+                  modalContent.classList.remove("opacity-0", "scale-95")
+                }, 300)
+              }
+            })
           }
 
           showAlert("Código de verificación enviado a tu correo electrónico", "success")
+        } else if (data.cooldown) {
+          // Si hay un tiempo de espera activo, mostrar mensaje con tiempo restante
+          showAlert(`Debes esperar ${data.remaining_seconds} segundos antes de solicitar un nuevo código`, "warning")
         } else {
           showAlert(data.error || "Error al enviar el código de verificación", "error")
         }
@@ -1110,17 +1319,26 @@ document.addEventListener("DOMContentLoaded", () => {
     observer.observe(otpModal, { attributes: true })
   }
 
-  // Configurar el botón de reenviar código con temporizador
+  // Modificar la función setupResendButton para consultar el estado del cooldown desde el servidor
+  // Buscar la función setupResendButton y reemplazarla con:
+
   function setupResendButton() {
     const resendBtn = document.getElementById("resend-code")
     const countdownEl = document.getElementById("countdown")
 
     if (resendBtn && countdownEl) {
-      let countdownTime = 60 // 1 minuto en segundos
+      let countdownTime = 60 // 1 minuto en segundos por defecto
+      let countdownInterval = null
 
       // Función para actualizar el contador
       function updateCountdown() {
         if (countdownTime <= 0) {
+          // Detener el intervalo
+          if (countdownInterval) {
+            clearInterval(countdownInterval)
+            countdownInterval = null
+          }
+
           // Habilitar el botón cuando el contador llega a cero
           resendBtn.classList.remove("cursor-not-allowed", "text-gray-400")
           resendBtn.classList.add("text-primary-600", "hover:text-primary-800")
@@ -1132,19 +1350,46 @@ document.addEventListener("DOMContentLoaded", () => {
         // Mostrar el tiempo restante
         countdownEl.textContent = `Puedes solicitar un nuevo código en ${countdownTime} segundos`
         countdownTime--
-        setTimeout(updateCountdown, 1000)
       }
 
-      // Iniciar el contador cuando se abre el modal
-      function startResendTimer() {
+      // Iniciar el contador con un tiempo específico
+      function startResendTimer(seconds = 60) {
+        // Detener cualquier intervalo existente
+        if (countdownInterval) {
+          clearInterval(countdownInterval)
+        }
+
         // Deshabilitar el botón
         resendBtn.classList.add("cursor-not-allowed", "text-gray-400")
         resendBtn.classList.remove("text-primary-600", "hover:text-primary-800")
         resendBtn.disabled = true
 
-        // Iniciar el contador
-        countdownTime = 60
-        updateCountdown()
+        // Iniciar el contador con el tiempo proporcionado
+        countdownTime = seconds
+        updateCountdown() // Actualizar inmediatamente
+        countdownInterval = setInterval(updateCountdown, 1000)
+      }
+
+      // Verificar el estado del cooldown desde el servidor cuando se abre el modal
+      function checkServerCooldown() {
+        fetch("/perfil/verificar_cooldown_correo")
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.cooldown && data.remaining_seconds > 0) {
+              startResendTimer(data.remaining_seconds)
+            } else {
+              // Si no hay cooldown activo, habilitar el botón
+              resendBtn.classList.remove("cursor-not-allowed", "text-gray-400")
+              resendBtn.classList.add("text-primary-600", "hover:text-primary-800")
+              countdownEl.textContent = "Puedes solicitar un nuevo código ahora"
+              resendBtn.disabled = false
+            }
+          })
+          .catch((error) => {
+            console.error("Error al verificar cooldown:", error)
+            // En caso de error, usar el comportamiento predeterminado
+            startResendTimer()
+          })
       }
 
       // Configurar el evento de clic para reenviar el código
@@ -1168,11 +1413,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Mostrar estado de carga
         this.innerHTML = `
-        <div class="flex items-center">
-          <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-primary-600 mr-1"></div>
-          <span>Enviando...</span>
-        </div>
-      `
+      <div class="flex items-center">
+        <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-primary-600 mr-1"></div>
+        <span>Enviando...</span>
+      </div>
+    `
 
         // Enviar solicitud para verificar correo
         fetch("/perfil/enviar_verificacion_correo", {
@@ -1201,8 +1446,20 @@ document.addEventListener("DOMContentLoaded", () => {
               // Restaurar el texto del botón
               this.textContent = "Reenviar"
 
-              // Reiniciar el temporizador
-              startResendTimer()
+              // Iniciar el temporizador con el tiempo proporcionado por el servidor
+              if (data.cooldown_seconds) {
+                startResendTimer(data.cooldown_seconds)
+              } else {
+                startResendTimer(60) // Valor por defecto
+              }
+            } else if (data.cooldown) {
+              // Si hay un tiempo de espera activo, mostrar mensaje y actualizar el contador
+              showAlert(
+                `Debes esperar ${data.remaining_seconds} segundos antes de solicitar un nuevo código`,
+                "warning",
+              )
+              startResendTimer(data.remaining_seconds)
+              this.textContent = "Reenviar"
             } else {
               showAlert(data.error || "Error al enviar el código de verificación", "error")
               this.textContent = "Reenviar"
@@ -1215,14 +1472,15 @@ document.addEventListener("DOMContentLoaded", () => {
           })
       })
 
-      // Iniciar el temporizador cuando se muestra el modal
+      // Inicializar el temporizador cuando se muestra el modal
       if (otpModal) {
         // Observar cambios en la visibilidad del modal
         const observer = new MutationObserver((mutations) => {
           mutations.forEach((mutation) => {
             if (mutation.attributeName === "class") {
               if (!otpModal.classList.contains("hidden")) {
-                startResendTimer()
+                // Verificar el estado del cooldown desde el servidor
+                checkServerCooldown()
               }
             }
           })
@@ -1230,11 +1488,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         observer.observe(otpModal, { attributes: true })
 
-        // También iniciar el temporizador si el modal ya está visible
+        // También verificar el estado si el modal ya está visible
         if (!otpModal.classList.contains("hidden")) {
-          startResendTimer()
+          checkServerCooldown()
         }
       }
+
+      // Exponer la función startResendTimer para que pueda ser llamada desde fuera
+      window.startResendTimer = startResendTimer
     }
   }
 
