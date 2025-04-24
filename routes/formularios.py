@@ -4,6 +4,7 @@ from utils.auth_helpers import login_required
 from datetime import datetime
 import os
 import uuid
+import traceback
 
 formulario_bp = Blueprint('formularios', __name__)
 
@@ -29,6 +30,16 @@ def procesar_formulario():
         # Obtener datos del formulario
         form_data = request.form
         files = request.files
+        
+        # Imprimir datos para depuración
+        print("Datos del formulario recibidos:")
+        for key, value in form_data.items():
+            print(f"{key}: {value}")
+        
+        print("Archivos recibidos:")
+        for key in files:
+            if files[key].filename:
+                print(f"{key}: {files[key].filename}")
         
         # Validar datos básicos
         required_fields = ['proposito', 'tiempo_estadia', 'pais_residencia', 'fecha_nacimiento', 
@@ -63,48 +74,80 @@ def procesar_formulario():
                 
                 id_solicitante = solicitante['id_solicitante']
                 
-                # Generar un código único para la solicitud
-                codigo_solicitud = f"SOL-{uuid.uuid4().hex[:8].upper()}"
+                # Insertar datos en la tabla tbl_form_eligibilidadCVA
+                try:
+                    cursor.execute("""
+                        INSERT INTO tbl_form_eligibilidadCVA (
+                            motivo_viaje, pais_residencia, familiares_canada,
+                            relacion_familiares_can, estado_civil, provincia_destino, 
+                            trabajo_actual, negocios_actuales, co_deudor, 
+                            viajes_recientes, acompanante_canada, antecedente_judiciales, 
+                            examenes_medicos, aplicacion_familiares, acceso_aplicacion, 
+                            biometricos_canada, pago_tasas, metodo_pago, id_solicitante
+                        ) VALUES (
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        )
+                    """, (
+                        form_data.get('proposito'), 
+                        form_data.get('pais_residencia'),
+                        form_data.get('familiar_canada', 'No'), 
+                        form_data.get('relacion_familiar', 'N/A'),
+                        form_data.get('estado_civil'),
+                        form_data.get('provincia_destino'),
+                        form_data.get('empleo_origen', 'No'),
+                        form_data.get('negocios_actuales', 'No'),
+                        form_data.get('dependencia_economica', 'No'),
+                        form_data.get('viajes_previos', 'No'),
+                        form_data.get('acompana_familiar', 'No'),
+                        form_data.get('antecedentes_penales', 'No'),
+                        form_data.get('examenes_medicos', 'No'),
+                        form_data.get('aplicacion_familiares', 'No'),
+                        form_data.get('acceso_aplicacion', 'Sí'),
+                        form_data.get('biometricos_canada', 'No'),
+                        form_data.get('pago_online', 'Sí'),
+                        form_data.get('metodo_pago', 'Tarjeta de crédito'),
+                        id_solicitante
+                    ))
+                except Exception as e:
+                    print(f"Error al insertar en tbl_form_eligibilidadCVA: {str(e)}")
+                    print(traceback.format_exc())
+                    raise
                 
-                # Insertar la solicitud en la base de datos
-                cursor.execute("""
-                    INSERT INTO tbl_solicitud (
-                        id_solicitante, codigo_solicitud, proposito, tiempo_estadia, 
-                        pais_residencia, fecha_nacimiento, familiar_canada, relacion_familiar,
-                        residente_permanente, estado_civil, provincia_destino, proposito_principal,
-                        empleo_origen, dependencia_economica, viajes_previos, acompana_familiar,
-                        antecedentes_penales, examenes_medicos, pago_online, metodo_pago,
-                        fecha_creacion, estado
-                    ) VALUES (
-                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), 'pendiente'
-                    )
-                """, (
-                    id_solicitante, codigo_solicitud, form_data.get('proposito'), form_data.get('tiempo_estadia'),
-                    form_data.get('pais_residencia'), form_data.get('fecha_nacimiento'), 
-                    form_data.get('familiar_canada'), form_data.get('relacion_familiar', None),
-                    form_data.get('residente_permanente'), form_data.get('estado_civil'),
-                    form_data.get('provincia_destino'), form_data.get('proposito_principal'),
-                    form_data.get('empleo_origen'), form_data.get('dependencia_economica'),
-                    form_data.get('viajes_previos'), form_data.get('acompana_familiar'),
-                    form_data.get('antecedentes_penales'), form_data.get('examenes_medicos'),
-                    form_data.get('pago_online'), form_data.get('metodo_pago', None)
-                ))
-                
-                # Obtener el ID de la solicitud recién creada
-                cursor.execute("SELECT id_solicitud FROM tbl_solicitud WHERE codigo_solicitud = %s", (codigo_solicitud,))
-                solicitud = cursor.fetchone()
-                id_solicitud = solicitud['id_solicitud']
+                # Obtener el ID del formulario de elegibilidad recién creado
+                cursor.execute("SELECT LAST_INSERT_ID() as id_formElegibilidad")
+                form_elegibilidad = cursor.fetchone()
+                id_formElegibilidad = form_elegibilidad['id_formElegibilidad']
                 
                 # Procesar archivos adjuntos
                 upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads', 'documentos')
                 os.makedirs(upload_dir, exist_ok=True)
                 
-                # Lista de archivos a procesar
-                file_fields = ['doc_historial_viajes', 'doc_recursos_financieros', 'doc_relaciones_familiares', 'doc_hoja_vida']
+                # Mapeo de campos de archivos a campos en la tabla tbl_documentos_adjuntos
+                file_field_mapping = {
+                    'doc_historial_viajes': 'historial_viajes',
+                    'doc_recursos_financieros': 'comprobante_recursos_financieros',
+                    'doc_relaciones_familiares': 'informacion_familiar',
+                    'doc_hoja_vida': 'aplicacion_IMM5257'
+                }
                 
-                for field in file_fields:
-                    if field in files and files[field].filename:
-                        file = files[field]
+                # Inicializar diccionario para almacenar rutas de archivos
+                document_paths = {
+                    'historial_viajes': None,
+                    'pasaporte': None,
+                    'comprobante_recursos_financieros': None,
+                    'comprobante_mediosApoyo': None,
+                    'foto_digital': None,
+                    'proposito_viaje': None,
+                    'prueba_estadoCivil': None,
+                    'informacion_familiar': None,
+                    'aplicacion_IMM5257': None,
+                    'informacion_cliente': None
+                }
+                
+                # Procesar cada archivo
+                for field_name, db_field in file_field_mapping.items():
+                    if field_name in files and files[field_name].filename:
+                        file = files[field_name]
                         # Generar un nombre de archivo único
                         filename = f"{uuid.uuid4().hex}_{file.filename}"
                         file_path = os.path.join(upload_dir, filename)
@@ -112,18 +155,54 @@ def procesar_formulario():
                         # Guardar el archivo
                         file.save(file_path)
                         
-                        # Registrar el archivo en la base de datos
-                        cursor.execute("""
-                            INSERT INTO tbl_documentos (id_solicitud, tipo_documento, nombre_archivo, ruta_archivo, fecha_carga)
-                            VALUES (%s, %s, %s, %s, NOW())
-                        """, (id_solicitud, field, file.filename, filename))
+                        # Almacenar la ruta del archivo
+                        document_paths[db_field] = filename
+                
+                # Insertar en la tabla tbl_documentos_adjuntos
+                try:
+                    cursor.execute("""
+                        INSERT INTO tbl_documentos_adjuntos (
+                            historial_viajes, pasaporte, comprobante_recursos_financieros,
+                            comprobante_mediosApoyo, foto_digital, proposito_viaje,
+                            prueba_estadoCivil, informacion_familiar, aplicacion_IMM5257,
+                            informacion_cliente, id_formElegibilidad
+                        ) VALUES (
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        )
+                    """, (
+                        document_paths['historial_viajes'],
+                        document_paths['pasaporte'],
+                        document_paths['comprobante_recursos_financieros'],
+                        document_paths['comprobante_mediosApoyo'],
+                        document_paths['foto_digital'],
+                        document_paths['proposito_viaje'],
+                        document_paths['prueba_estadoCivil'],
+                        document_paths['informacion_familiar'],
+                        document_paths['aplicacion_IMM5257'],
+                        document_paths['informacion_cliente'],
+                        id_formElegibilidad
+                    ))
+                except Exception as e:
+                    print(f"Error al insertar en tbl_documentos_adjuntos: {str(e)}")
+                    print(traceback.format_exc())
+                    raise
                 
                 connection.commit()
-                flash('Solicitud enviada correctamente. Nos pondremos en contacto contigo pronto.', 'success')
-                return redirect(url_for('user.dashboard'))
+                flash('Formulario enviado correctamente. Nuestros asesores revisarán su caso y le brindarán asistencia pronto.', 'success')
+                success_url = url_for('formularios.solicitud_exitosa', form_id=id_formElegibilidad)
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({
+                        'success': True,
+                        'message': 'Formulario enviado correctamente. Nuestros asesores revisarán su caso y le brindarán asistencia pronto.',
+                        'redirect': success_url
+                    })
+                return redirect(success_url)
                 
             except Exception as e:
                 connection.rollback()
+                error_details = traceback.format_exc()
+                print(f"Error al procesar la solicitud: {str(e)}")
+                print(f"Detalles del error: {error_details}")
                 flash(f'Error al procesar la solicitud: {str(e)}', 'error')
                 return redirect(url_for('formularios.solicitud'))
             finally:
@@ -134,8 +213,19 @@ def procesar_formulario():
             return redirect(url_for('formularios.solicitud'))
     
     except Exception as e:
+        error_details = traceback.format_exc()
+        print(f"Error general: {str(e)}")
+        print(f"Detalles del error: {error_details}")
         flash(f'Error al procesar la solicitud: {str(e)}', 'error')
         return redirect(url_for('formularios.solicitud'))
+
+@formulario_bp.route('/solicitud_exitosa/<int:form_id>')
+@login_required
+def solicitud_exitosa(form_id):
+    """
+    Muestra la página de éxito después de enviar el formulario.
+    """
+    return render_template('solicitud_exitosa.html', form_id=form_id)
 
 @formulario_bp.route('/generar_reporte_pdf')
 @login_required
