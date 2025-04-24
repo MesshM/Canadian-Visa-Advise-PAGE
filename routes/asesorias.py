@@ -7,11 +7,6 @@ import json
 import threading
 import time
 from mysql.connector import Error
-import stripe
-import os
-
-# Configurar Stripe
-stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 
 asesorias_bp = Blueprint('asesorias', __name__)
 

@@ -1,4 +1,5 @@
 from flask import Flask, redirect, url_for, render_template
+from config.stripe_config import inject_stripe_key
 from routes.user import user_bp
 from routes.auth import auth_bp
 from routes.asesorias import asesorias_bp
@@ -15,12 +16,7 @@ app.secret_key = os.urandom(24)
 app.permanent_session_lifetime = timedelta(days=30)
 
 # Asegúrate de que esta función se ejecute antes de renderizar la plantilla base
-@app.context_processor
-def inject_stripe_key():
-    """Inyecta la clave pública de Stripe en todas las plantillas."""
-    return {
-        'STRIPE_PUBLIC_KEY': os.getenv('STRIPE_PUBLIC_KEY')
-    }
+app.context_processor(inject_stripe_key)
 # Registrar filtro personalizado para split
 @app.template_filter('split')
 def split_filter(value, delimiter=' '):

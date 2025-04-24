@@ -488,6 +488,558 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   }
 
+  // Agregar después de la sección donde se define celularInput
+
+  // Funcionalidad para verificar número de celular
+  const celularVerifyBtn = document.getElementById("verify-phone-btn")
+
+  if (celularVerifyBtn) {
+    celularVerifyBtn.addEventListener("click", () => {
+      const celular = document.getElementById("celular").value.trim()
+
+      if (!celular) {
+        showAlert("Por favor, ingresa un número de celular válido", "error")
+        return
+      }
+
+      // Validar formato de celular (solo números y 10 dígitos para Colombia)
+      if (!/^\d{10}$/.test(celular)) {
+        showAlert("Por favor, ingresa un número de celular válido de 10 dígitos", "error")
+        return
+      }
+
+      // Cambiar el botón a estado de carga
+      celularVerifyBtn.innerHTML = `
+      <div class="flex items-center">
+        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 mr-1"></div>
+        <span>Enviando...</span>
+      </div>
+    `
+      celularVerifyBtn.disabled = true
+
+      // Enviar solicitud para verificar celular
+      fetch("/perfil/enviar_verificacion_telefono", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ phone: celular }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            // Mostrar el modal de verificación OTP para teléfono
+            const phoneOtpModal = document.getElementById("phone-otp-modal")
+            if (phoneOtpModal) {
+              phoneOtpModal.classList.remove("hidden")
+              phoneOtpModal.classList.add("flex")
+
+              // Añadir animación de entrada al contenido del modal
+              const modalContent = phoneOtpModal.querySelector(".bg-white")
+              modalContent.classList.add("animate-scale-in")
+
+              // Actualizar el método de verificación en el modal
+              const verificationMethod = document.getElementById("phone-verification-method")
+              if (verificationMethod) {
+                verificationMethod.textContent = "número de celular"
+              }
+
+              // Limpiar los campos de OTP
+              const phoneOtpInputs = document.querySelectorAll(".phone-otp-input")
+              phoneOtpInputs.forEach((input) => {
+                input.value = ""
+              })
+
+              // Enfocar el primer campo
+              if (phoneOtpInputs.length > 0) {
+                phoneOtpInputs[0].focus()
+              }
+
+              // Inicializar el temporizador para el botón de reenvío
+              setupPhoneResendButton()
+
+              // Configurar el botón de verificación OTP
+              const verifyPhoneOtpBtn = document.getElementById("verify-phone-otp-btn")
+              if (verifyPhoneOtpBtn) {
+                verifyPhoneOtpBtn.onclick = () => {
+                  // Obtener el código OTP completo
+                  let otp = ""
+                  document.querySelectorAll(".phone-otp-input").forEach((input) => {
+                    otp += input.value
+                  })
+
+                  if (otp.length !== 6) {
+                    showAlert("Por favor, ingresa el código completo de 6 dígitos", "error")
+                    return
+                  }
+
+                  // Cambiar el botón a estado de carga
+                  verifyPhoneOtpBtn.innerHTML = `
+                  <div class="flex items-center justify-center">
+                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <span>Verificando...</span>
+                  </div>
+                `
+                  verifyPhoneOtpBtn.disabled = true
+
+                  // Enviar solicitud para verificar el código OTP
+                  fetch("/perfil/verificar_codigo_telefono", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ otp: otp, phone: celular }),
+                  })
+                    .then((response) => response.json())
+                    .then((data) => {
+                      if (data.success) {
+                        // Cerrar el modal con animación
+                        const modalContent = phoneOtpModal.querySelector(".bg-white")
+                        modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+                        setTimeout(() => {
+                          phoneOtpModal.classList.add("hidden")
+                          phoneOtpModal.classList.remove("flex")
+                          modalContent.classList.remove("opacity-0", "scale-95")
+                        }, 300)
+
+                        // Actualizar la UI para mostrar que el celular está verificado
+                        if (celularVerifyBtn.parentNode) {
+                          celularVerifyBtn.parentNode.innerHTML = `
+                          <span class="text-green-500 flex items-center" title="Celular verificado">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                          </span>
+                        `
+                        }
+
+                        const phoneVerificationStatus = document.getElementById("phone-verification-status")
+                        if (phoneVerificationStatus) {
+                          phoneVerificationStatus.textContent = "Número verificado"
+                          phoneVerificationStatus.classList.remove("text-gray-500", "text-yellow-500")
+                          phoneVerificationStatus.classList.add("text-green-500")
+                        }
+
+                        showAlert("¡Número de celular verificado con éxito!", "success")
+                      } else {
+                        showAlert(data.error || "Error al verificar el código", "error")
+
+                        // Restaurar el botón
+                        verifyPhoneOtpBtn.innerHTML = `
+                        <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                        <div class="relative flex items-center justify-center">
+                          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                          </svg>
+                          <span>Verificar</span>
+                        </div>
+                      `
+                        verifyPhoneOtpBtn.disabled = false
+                      }
+                    })
+                    .catch((error) => {
+                      console.error("Error:", error)
+                      showAlert("Error al verificar el código", "error")
+
+                      // Restaurar el botón
+                      verifyPhoneOtpBtn.innerHTML = `
+                      <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                      <div class="relative flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Verificar</span>
+                      </div>
+                    `
+                      verifyPhoneOtpBtn.disabled = false
+                    })
+                }
+              }
+
+              // Configurar el botón de cancelar con animación
+              const cancelPhoneOtpBtn = document.getElementById("cancel-phone-otp-btn")
+              if (cancelPhoneOtpBtn) {
+                cancelPhoneOtpBtn.onclick = () => {
+                  const modalContent = phoneOtpModal.querySelector(".bg-white")
+                  modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+                  setTimeout(() => {
+                    phoneOtpModal.classList.add("hidden")
+                    phoneOtpModal.classList.remove("flex")
+                    modalContent.classList.remove("opacity-0", "scale-95")
+                  }, 300)
+                }
+              }
+
+              // Configurar el botón de cerrar con animación
+              const closePhoneOtpModal = document.getElementById("close-phone-otp-modal")
+              if (closePhoneOtpModal) {
+                closePhoneOtpModal.onclick = () => {
+                  const modalContent = phoneOtpModal.querySelector(".bg-white")
+                  modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+                  setTimeout(() => {
+                    phoneOtpModal.classList.add("hidden")
+                    phoneOtpModal.classList.remove("flex")
+                    modalContent.classList.remove("opacity-0", "scale-95")
+                  }, 300)
+                }
+              }
+
+              // Cerrar el modal al hacer clic fuera del contenido
+              phoneOtpModal.addEventListener("click", (e) => {
+                if (e.target === phoneOtpModal) {
+                  const modalContent = phoneOtpModal.querySelector(".bg-white")
+                  modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+                  setTimeout(() => {
+                    phoneOtpModal.classList.add("hidden")
+                    phoneOtpModal.classList.remove("flex")
+                    modalContent.classList.remove("opacity-0", "scale-95")
+                  }, 300)
+                }
+              })
+            }
+
+            showAlert("Código de verificación enviado a tu número de celular", "success")
+          } else if (data.cooldown) {
+            // Si hay un tiempo de espera activo, mostrar mensaje con tiempo restante
+            showAlert(`Debes esperar ${data.remaining_seconds} segundos antes de solicitar un nuevo código`, "warning")
+          } else {
+            showAlert(data.error || "Error al enviar el código de verificación", "error")
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error)
+          showAlert("Error al enviar el código de verificación", "error")
+        })
+        .finally(() => {
+          // Restaurar el botón
+          celularVerifyBtn.innerHTML = "Verificar"
+          celularVerifyBtn.disabled = false
+        })
+    })
+  }
+
+  // Función para configurar los campos OTP para teléfono
+  function setupPhoneOTPInputs() {
+    const phoneOtpInputs = document.querySelectorAll(".phone-otp-input")
+
+    // Eliminar eventos anteriores para evitar duplicados
+    phoneOtpInputs.forEach((input) => {
+      const newInput = input.cloneNode(true)
+      input.parentNode.replaceChild(newInput, input)
+    })
+
+    // Obtener referencias actualizadas
+    const refreshedInputs = document.querySelectorAll(".phone-otp-input")
+
+    refreshedInputs.forEach((input, index) => {
+      // Manejar el evento keydown
+      input.addEventListener("keydown", function (e) {
+        // Permitir solo números y teclas de control
+        if (!/^\d$/.test(e.key) && !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(e.key)) {
+          e.preventDefault()
+          return
+        }
+
+        // Si es un número
+        if (/^\d$/.test(e.key)) {
+          // Reemplazar el contenido actual
+          this.value = e.key
+
+          // Mover al siguiente campo si no es el último
+          if (index < refreshedInputs.length - 1) {
+            e.preventDefault() // Prevenir la entrada predeterminada
+            refreshedInputs[index + 1].focus()
+          }
+
+          // Disparar evento para validación
+          this.dispatchEvent(new Event("input"))
+          // Disparar evento de cambio para asegurar que el valor se registre
+          this.dispatchEvent(new Event("change"))
+
+          // Si es el último campo y se ha ingresado un número, verificar automáticamente
+          if (index === refreshedInputs.length - 1) {
+            // Verificar si todos los campos están llenos
+            const allFilled = Array.from(refreshedInputs).every((input) => input.value.length === 1)
+            if (allFilled) {
+              // Opcional: verificar automáticamente después de un breve retraso
+              setTimeout(() => {
+                const verifyPhoneOtpBtn = document.getElementById("verify-phone-otp-btn")
+                if (verifyPhoneOtpBtn) verifyPhoneOtpBtn.click()
+              }, 500)
+            }
+          }
+          return
+        }
+
+        // Manejar retroceso (Backspace)
+        if (e.key === "Backspace") {
+          if (this.value) {
+            // Si hay un valor, borrarlo
+            this.value = ""
+          } else if (index > 0) {
+            // Si no hay valor y no es el primer campo, ir al anterior
+            e.preventDefault()
+            refreshedInputs[index - 1].focus()
+            refreshedInputs[index - 1].value = ""
+          }
+        }
+
+        // Manejar teclas de flecha
+        if (e.key === "ArrowLeft" && index > 0) {
+          e.preventDefault()
+          refreshedInputs[index - 1].focus()
+        }
+
+        if (e.key === "ArrowRight" && index < refreshedInputs.length - 1) {
+          e.preventDefault()
+          refreshedInputs[index + 1].focus()
+        }
+      })
+
+      // Prevenir entrada directa en el evento input
+      input.addEventListener("input", function (e) {
+        // Si se ingresó más de un carácter, mantener solo el primero
+        if (this.value.length > 1) {
+          this.value = this.value.charAt(0)
+        }
+
+        // Asegurarse de que sea un número
+        if (!/^\d*$/.test(this.value)) {
+          this.value = ""
+        }
+      })
+
+      // Seleccionar todo el contenido al enfocar
+      input.addEventListener("focus", function () {
+        this.select()
+      })
+
+      // Manejar pegado de texto
+      input.addEventListener("paste", (e) => {
+        e.preventDefault()
+
+        // Obtener el texto pegado
+        const pastedText = (e.clipboardData || window.clipboardData).getData("text").trim()
+
+        // Si es un número de 6 dígitos, distribuirlo en los campos
+        if (/^\d{6}$/.test(pastedText)) {
+          refreshedInputs.forEach((input, i) => {
+            input.value = pastedText.charAt(i)
+          })
+
+          // Enfocar el último campo
+          refreshedInputs[refreshedInputs.length - 1].focus()
+        }
+      })
+    })
+  }
+
+  // Configurar los campos OTP para teléfono inicialmente
+  document.addEventListener("DOMContentLoaded", () => {
+    setupPhoneOTPInputs()
+
+    // Configurar los campos OTP cuando se abra el modal
+    const phoneOtpModal = document.getElementById("phone-otp-modal")
+    if (phoneOtpModal) {
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.attributeName === "class" && !phoneOtpModal.classList.contains("hidden")) {
+            // Limpiar y configurar los campos OTP
+            const phoneOtpInputs = document.querySelectorAll(".phone-otp-input")
+            phoneOtpInputs.forEach((input) => (input.value = ""))
+
+            // Enfocar el primer campo después de un breve retraso
+            setTimeout(() => {
+              if (phoneOtpInputs.length > 0) phoneOtpInputs[0].focus()
+            }, 100)
+
+            // Configurar los campos OTP
+            setupPhoneOTPInputs()
+          }
+        })
+      })
+
+      observer.observe(phoneOtpModal, { attributes: true })
+    }
+  })
+
+  // Función para configurar el botón de reenvío para teléfono
+  function setupPhoneResendButton() {
+    const resendPhoneBtn = document.getElementById("resend-phone-code")
+    const phoneCountdownEl = document.getElementById("phone-countdown")
+
+    if (resendPhoneBtn && phoneCountdownEl) {
+      let countdownTime = 60 // 1 minuto en segundos por defecto
+      let countdownInterval = null
+
+      // Función para actualizar el contador
+      function updatePhoneCountdown() {
+        if (countdownTime <= 0) {
+          // Detener el intervalo
+          if (countdownInterval) {
+            clearInterval(countdownInterval)
+            countdownInterval = null
+          }
+
+          // Habilitar el botón cuando el contador llega a cero
+          resendPhoneBtn.classList.remove("cursor-not-allowed", "text-gray-400")
+          resendPhoneBtn.classList.add("text-primary-600", "hover:text-primary-800")
+          phoneCountdownEl.textContent = "Puedes solicitar un nuevo código ahora"
+          resendPhoneBtn.disabled = false
+          return
+        }
+
+        // Mostrar el tiempo restante
+        phoneCountdownEl.textContent = `Puedes solicitar un nuevo código en ${countdownTime} segundos`
+        countdownTime--
+      }
+
+      // Iniciar el contador con un tiempo específico
+      function startPhoneResendTimer(seconds = 60) {
+        // Detener cualquier intervalo existente
+        if (countdownInterval) {
+          clearInterval(countdownInterval)
+        }
+
+        // Deshabilitar el botón
+        resendPhoneBtn.classList.add("cursor-not-allowed", "text-gray-400")
+        resendPhoneBtn.classList.remove("text-primary-600", "hover:text-primary-800")
+        resendPhoneBtn.disabled = true
+
+        // Iniciar el contador con el tiempo proporcionado
+        countdownTime = seconds
+        updatePhoneCountdown() // Actualizar inmediatamente
+        countdownInterval = setInterval(updatePhoneCountdown, 1000)
+      }
+
+      // Verificar el estado del cooldown desde el servidor
+      function checkPhoneServerCooldown() {
+        fetch("/perfil/verificar_cooldown_telefono")
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.cooldown && data.remaining_seconds > 0) {
+              startPhoneResendTimer(data.remaining_seconds)
+            } else {
+              // Si no hay cooldown activo, habilitar el botón
+              resendPhoneBtn.classList.remove("cursor-not-allowed", "text-gray-400")
+              resendPhoneBtn.classList.add("text-primary-600", "hover:text-primary-800")
+              phoneCountdownEl.textContent = "Puedes solicitar un nuevo código ahora"
+              resendPhoneBtn.disabled = false
+            }
+          })
+          .catch((error) => {
+            console.error("Error al verificar cooldown:", error)
+            // En caso de error, usar el comportamiento predeterminado
+            startPhoneResendTimer()
+          })
+      }
+
+      // Configurar el evento de clic para reenviar el código
+      resendPhoneBtn.addEventListener("click", function () {
+        if (this.disabled) return
+
+        const celular = document.getElementById("celular").value.trim()
+
+        // Validar el celular
+        if (!celular) {
+          showAlert("Por favor, ingresa un número de celular válido", "error")
+          return
+        }
+
+        // Validar formato de celular
+        if (!/^\d{10}$/.test(celular)) {
+          showAlert("Por favor, ingresa un número de celular válido de 10 dígitos", "error")
+          return
+        }
+
+        // Mostrar estado de carga
+        this.innerHTML = `
+        <div class="flex items-center">
+          <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-primary-600 mr-1"></div>
+          <span>Enviando...</span>
+        </div>
+      `
+
+        // Enviar solicitud para verificar celular
+        fetch("/perfil/enviar_verificacion_telefono", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ phone: celular }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              showAlert("Nuevo código de verificación enviado a tu número de celular", "success")
+
+              // Limpiar los campos de OTP
+              const phoneOtpInputs = document.querySelectorAll(".phone-otp-input")
+              phoneOtpInputs.forEach((input) => {
+                input.value = ""
+              })
+
+              // Enfocar el primer campo
+              if (phoneOtpInputs.length > 0) {
+                phoneOtpInputs[0].focus()
+              }
+
+              // Restaurar el texto del botón
+              this.textContent = "Reenviar"
+
+              // Iniciar el temporizador con el tiempo proporcionado por el servidor
+              if (data.cooldown_seconds) {
+                startPhoneResendTimer(data.cooldown_seconds)
+              } else {
+                startPhoneResendTimer(60) // Valor por defecto
+              }
+            } else if (data.cooldown) {
+              // Si hay un tiempo de espera activo, mostrar mensaje y actualizar el contador
+              showAlert(
+                `Debes esperar ${data.remaining_seconds} segundos antes de solicitar un nuevo código`,
+                "warning",
+              )
+              startPhoneResendTimer(data.remaining_seconds)
+              this.textContent = "Reenviar"
+            } else {
+              showAlert(data.error || "Error al enviar el código de verificación", "error")
+              this.textContent = "Reenviar"
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error)
+            showAlert("Error al enviar el código de verificación", "error")
+            this.textContent = "Reenviar"
+          })
+      })
+
+      // Inicializar el temporizador cuando se muestra el modal
+      if (phoneOtpModal) {
+        // Observar cambios en la visibilidad del modal
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.attributeName === "class") {
+              if (!phoneOtpModal.classList.contains("hidden")) {
+                // Verificar el estado del cooldown desde el servidor
+                checkPhoneServerCooldown()
+              }
+            }
+          })
+        })
+
+        observer.observe(phoneOtpModal, { attributes: true })
+
+        // También verificar el estado si el modal ya está visible
+        if (!phoneOtpModal.classList.contains("hidden")) {
+          checkPhoneServerCooldown()
+        }
+      }
+
+      // Exponer la función startPhoneResendTimer para que pueda ser llamada desde fuera
+      window.startPhoneResendTimer = startPhoneResendTimer
+    }
+  }
+
   if (editPersonalDataBtn) {
     editPersonalDataBtn.addEventListener("click", () => {
       // Verificar si hay cambios en el formulario
@@ -887,8 +1439,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     })
                     .finally(() => {
                       // Restaurar el botón
-                      verifyEmailBtn.innerHTML = "Verificar"
-                      verifyEmailBtn.disabled = false
+                      verifyBtn.innerHTML = "Verificar"
+                      verifyBtn.disabled = false
                     })
                 })
               }
@@ -1507,4 +2059,321 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Declarar otpInputs aquí para que esté en el scope correcto
   const otpInputs = document.querySelectorAll(".otp-input")
+
+  // phone otp inputs
+  function setupPhoneOTPInputs() {
+    const phoneOtpInputs = document.querySelectorAll(".phone-otp-input")
+
+    // Eliminar eventos anteriores para evitar duplicados
+    phoneOtpInputs.forEach((input) => {
+      const newInput = input.cloneNode(true)
+      input.parentNode.replaceChild(newInput, input)
+    })
+
+    // Obtener referencias actualizadas
+    const refreshedInputs = document.querySelectorAll(".phone-otp-input")
+
+    refreshedInputs.forEach((input, index) => {
+      // Manejar el evento keydown
+      input.addEventListener("keydown", function (e) {
+        // Permitir solo números y teclas de control
+        if (!/^\d$/.test(e.key) && !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(e.key)) {
+          e.preventDefault()
+          return
+        }
+
+        // Si es un número
+        if (/^\d$/.test(e.key)) {
+          // Reemplazar el contenido actual
+          this.value = e.key
+
+          // Mover al siguiente campo si no es el último
+          if (index < refreshedInputs.length - 1) {
+            e.preventDefault() // Prevenir la entrada predeterminada
+            refreshedInputs[index + 1].focus()
+          }
+
+          // Disparar evento para validación
+          this.dispatchEvent(new Event("input"))
+          // Disparar evento de cambio para asegurar que el valor se registre
+          this.dispatchEvent(new Event("change"))
+
+          // Si es el último campo y se ha ingresado un número, verificar automáticamente
+          if (index === refreshedInputs.length - 1) {
+            // Verificar si todos los campos están llenos
+            const allFilled = Array.from(refreshedInputs).every((input) => input.value.length === 1)
+            if (allFilled) {
+              // Opcional: verificar automáticamente después de un breve retraso
+              setTimeout(() => {
+                const verifyPhoneOtpBtn = document.getElementById("verify-phone-otp-btn")
+                if (verifyPhoneOtpBtn) verifyPhoneOtpBtn.click()
+              }, 500)
+            }
+          }
+          return
+        }
+
+        // Manejar retroceso (Backspace)
+        if (e.key === "Backspace") {
+          if (this.value) {
+            // Si hay un valor, borrarlo
+            this.value = ""
+          } else if (index > 0) {
+            // Si no hay valor y no es el primer campo, ir al anterior
+            e.preventDefault()
+            refreshedInputs[index - 1].focus()
+            refreshedInputs[index - 1].value = ""
+          }
+        }
+
+        // Manejar teclas de flecha
+        if (e.key === "ArrowLeft" && index > 0) {
+          e.preventDefault()
+          refreshedInputs[index - 1].focus()
+        }
+
+        if (e.key === "ArrowRight" && index < refreshedInputs.length - 1) {
+          e.preventDefault()
+          refreshedInputs[index + 1].focus()
+        }
+      })
+
+      // Prevenir entrada directa en el evento input
+      input.addEventListener("input", function (e) {
+        // Si se ingresó más de un carácter, mantener solo el primero
+        if (this.value.length > 1) {
+          this.value = this.value.charAt(0)
+        }
+
+        // Asegurarse de que sea un número
+        if (!/^\d*$/.test(this.value)) {
+          this.value = ""
+        }
+      })
+
+      // Seleccionar todo el contenido al enfocar
+      input.addEventListener("focus", function () {
+        this.select()
+      })
+
+      // Manejar pegado de texto
+      input.addEventListener("paste", (e) => {
+        e.preventDefault()
+
+        // Obtener el texto pegado
+        const pastedText = (e.clipboardData || window.clipboardData).getData("text").trim()
+
+        // Si es un número de 6 dígitos, distribuirlo en los campos
+        if (/^\d{6}$/.test(pastedText)) {
+          refreshedInputs.forEach((input, i) => {
+            input.value = pastedText.charAt(i)
+          })
+
+          // Enfocar el último campo
+          refreshedInputs[refreshedInputs.length - 1].focus()
+        }
+      })
+    })
+  }
+
+  // Configurar los campos OTP para teléfono inicialmente
+  const phoneOtpModal = document.getElementById("phone-otp-modal")
+  if (phoneOtpModal) {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === "class" && !phoneOtpModal.classList.contains("hidden")) {
+          // Limpiar y configurar los campos OTP
+          const phoneOtpInputs = document.querySelectorAll(".phone-otp-input")
+          phoneOtpInputs.forEach((input) => (input.value = ""))
+
+          // Enfocar el primer campo después de un breve retraso
+          setTimeout(() => {
+            if (phoneOtpInputs.length > 0) phoneOtpInputs[0].focus()
+          }, 100)
+
+          // Configurar los campos OTP
+          setupPhoneOTPInputs()
+        }
+      })
+    })
+
+    observer.observe(phoneOtpModal, { attributes: true })
+  }
+
+  // Función para configurar el botón de reenvío para teléfono
+  function setupPhoneResendButton() {
+    const resendPhoneBtn = document.getElementById("resend-phone-code")
+    const phoneCountdownEl = document.getElementById("phone-countdown")
+
+    if (resendPhoneBtn && phoneCountdownEl) {
+      let countdownTime = 60 // 1 minuto en segundos por defecto
+      let countdownInterval = null
+
+      // Función para actualizar el contador
+      function updatePhoneCountdown() {
+        if (countdownTime <= 0) {
+          // Detener el intervalo
+          if (countdownInterval) {
+            clearInterval(countdownInterval)
+            countdownInterval = null
+          }
+
+          // Habilitar el botón cuando el contador llega a cero
+          resendPhoneBtn.classList.remove("cursor-not-allowed", "text-gray-400")
+          resendPhoneBtn.classList.add("text-primary-600", "hover:text-primary-800")
+          phoneCountdownEl.textContent = "Puedes solicitar un nuevo código ahora"
+          resendPhoneBtn.disabled = false
+          return
+        }
+
+        // Mostrar el tiempo restante
+        phoneCountdownEl.textContent = `Puedes solicitar un nuevo código en ${countdownTime} segundos`
+        countdownTime--
+      }
+
+      // Iniciar el contador con un tiempo específico
+      function startPhoneResendTimer(seconds = 60) {
+        // Detener cualquier intervalo existente
+        if (countdownInterval) {
+          clearInterval(countdownInterval)
+        }
+
+        // Deshabilitar el botón
+        resendPhoneBtn.classList.add("cursor-not-allowed", "text-gray-400")
+        resendPhoneBtn.classList.remove("text-primary-600", "hover:text-primary-800")
+        resendPhoneBtn.disabled = true
+
+        // Iniciar el contador con el tiempo proporcionado
+        countdownTime = seconds
+        updatePhoneCountdown() // Actualizar inmediatamente
+        countdownInterval = setInterval(updatePhoneCountdown, 1000)
+      }
+
+      // Verificar el estado del cooldown desde el servidor
+      function checkPhoneServerCooldown() {
+        fetch("/perfil/verificar_cooldown_telefono")
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.cooldown && data.remaining_seconds > 0) {
+              startPhoneResendTimer(data.remaining_seconds)
+            } else {
+              // Si no hay cooldown activo, habilitar el botón
+              resendPhoneBtn.classList.remove("cursor-not-allowed", "text-gray-400")
+              resendPhoneBtn.classList.add("text-primary-600", "hover:text-primary-800")
+              phoneCountdownEl.textContent = "Puedes solicitar un nuevo código ahora"
+              resendPhoneBtn.disabled = false
+            }
+          })
+          .catch((error) => {
+            console.error("Error al verificar cooldown:", error)
+            // En caso de error, usar el comportamiento predeterminado
+            startPhoneResendTimer()
+          })
+      }
+
+      // Configurar el evento de clic para reenviar el código
+      resendPhoneBtn.addEventListener("click", function () {
+        if (this.disabled) return
+
+        const celular = document.getElementById("celular").value.trim()
+
+        // Validar el celular
+        if (!celular) {
+          showAlert("Por favor, ingresa un número de celular válido", "error")
+          return
+        }
+
+        // Validar formato de celular
+        if (!/^\d{10}$/.test(celular)) {
+          showAlert("Por favor, ingresa un número de celular válido de 10 dígitos", "error")
+          return
+        }
+
+        // Mostrar estado de carga
+        this.innerHTML = `
+        <div class="flex items-center">
+          <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-primary-600 mr-1"></div>
+          <span>Enviando...</span>
+        </div>
+      `
+
+        // Enviar solicitud para verificar celular
+        fetch("/perfil/enviar_verificacion_telefono", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ phone: celular }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              showAlert("Nuevo código de verificación enviado a tu número de celular", "success")
+
+              // Limpiar los campos de OTP
+              const phoneOtpInputs = document.querySelectorAll(".phone-otp-input")
+              phoneOtpInputs.forEach((input) => {
+                input.value = ""
+              })
+
+              // Enfocar el primer campo
+              if (phoneOtpInputs.length > 0) {
+                phoneOtpInputs[0].focus()
+              }
+
+              // Restaurar el texto del botón
+              this.textContent = "Reenviar"
+
+              // Iniciar el temporizador con el tiempo proporcionado por el servidor
+              if (data.cooldown_seconds) {
+                startPhoneResendTimer(data.cooldown_seconds)
+              } else {
+                startPhoneResendTimer(60) // Valor por defecto
+              }
+            } else if (data.cooldown) {
+              // Si hay un tiempo de espera activo, mostrar mensaje y actualizar el contador
+              showAlert(
+                `Debes esperar ${data.remaining_seconds} segundos antes de solicitar un nuevo código`,
+                "warning",
+              )
+              startPhoneResendTimer(data.remaining_seconds)
+              this.textContent = "Reenviar"
+            } else {
+              showAlert(data.error || "Error al enviar el código de verificación", "error")
+              this.textContent = "Reenviar"
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error)
+            showAlert("Error al enviar el código de verificación", "error")
+            this.textContent = "Reenviar"
+          })
+      })
+
+      // Inicializar el temporizador cuando se muestra el modal
+      if (phoneOtpModal) {
+        // Observar cambios en la visibilidad del modal
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.attributeName === "class") {
+              if (!phoneOtpModal.classList.contains("hidden")) {
+                // Verificar el estado del cooldown desde el servidor
+                checkPhoneServerCooldown()
+              }
+            }
+          })
+        })
+
+        observer.observe(phoneOtpModal, { attributes: true })
+
+        // También verificar el estado si el modal ya está visible
+        if (!phoneOtpModal.classList.contains("hidden")) {
+          checkPhoneServerCooldown()
+        }
+      }
+
+      // Exponer la función startPhoneResendTimer para que pueda ser llamada desde fuera
+      window.startPhoneResendTimer = startPhoneResendTimer
+    }
+  }
 })

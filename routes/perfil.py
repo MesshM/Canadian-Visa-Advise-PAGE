@@ -20,6 +20,9 @@ from datetime import datetime, timedelta
 import io
 from werkzeug.utils import secure_filename
 
+# Agregar las importaciones de Twilio al principio del archivo
+from config.twilio_config import send_verification_code, check_verification_code
+
 perfil_bp = Blueprint('perfil', __name__)
 
 # Definir la carpeta para almacenar las imágenes de perfil en caché local
@@ -1130,4 +1133,208 @@ def verificar_codigo_correo():
             return jsonify({'error': 'Error de conexión a la base de datos'}), 500
     except Exception as e:
         print(f"Error al verificar código de correo: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Agregar estas nuevas rutas después de la ruta '/verificar_codigo_correo'
+
+@perfil_bp.route('/enviar_verificacion_telefono', methods=['POST'])
+def enviar_verificacion_telefono():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        phone = data.get('phone')
+        
+        if not phone:
+            return jsonify({'error': 'Falta el número de teléfono'}), 400
+        
+        # Validar formato de teléfono (solo números)
+        import re
+        if not re.match(r"^\d+$", phone):
+            return jsonify({'error': 'Formato de teléfono inválido, solo se permiten números'}), 400
+        
+        # Agregar el código de país de Colombia (+57) si no está presente
+        if not phone.startswith('+'):
+            phone = '+57' + phone
+        
+        # Verificar si hay un tiempo de espera activo para este usuario
+        current_time = datetime.now().timestamp()
+        cooldown_key = f'phone_verification_cooldown_{session["user_id"]}'
+        
+        if cooldown_key in session:
+            cooldown_until = session[cooldown_key]
+            
+            # Si el tiempo de espera no ha expirado, devolver error con tiempo restante
+            if current_time < cooldown_until:
+                remaining_seconds = int(cooldown_until - current_time)
+                return jsonify({
+                    'error': 'Debes esperar antes de solicitar un nuevo código',
+                    'cooldown': True,
+                    'remaining_seconds': remaining_seconds
+                }), 429  # 429 Too Many Requests
+        
+        # Importar la función de Twilio aquí para evitar problemas de importación circular
+        from config.twilio_config import send_verification_code
+        
+        # Enviar el código de verificación a través de Twilio
+        result = send_verification_code(phone)
+        
+        if result['success']:
+            # Guardar el teléfono en la sesión para verificarlo después
+            session['phone_verification_phone'] = phone
+            session['phone_verification_expiry'] = (datetime.now() + timedelta(minutes=10)).timestamp()
+            
+            # Si estamos usando SMS directo, guardar el código en la sesión
+            if 'code' in result:
+                session['direct_verification_code'] = result['code']
+            
+            # Establecer un tiempo de espera de 60 segundos antes de permitir un nuevo envío
+            session[cooldown_key] = (datetime.now() + timedelta(seconds=60)).timestamp()
+            
+            return jsonify({
+                'success': True, 
+                'message': 'Código enviado al número de teléfono',
+                'cooldown_seconds': 60  # Informar al frontend del tiempo de espera
+            })
+        else:
+            # Registrar el error en los logs del servidor
+            print(f"Error al enviar código de verificación a {phone}: {result['message']}")
+            return jsonify({'error': result['message']}), 500
+    
+    except Exception as e:
+        # Registrar la excepción completa para depuración
+        import traceback
+        print(f"Error al enviar código de verificación al teléfono: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({'error': 'Error interno del servidor. Por favor, inténtalo de nuevo más tarde.'}), 500
+
+@perfil_bp.route('/verificar_codigo_telefono', methods=['POST'])
+def verificar_codigo_telefono():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        otp = data.get('otp')
+        phone = data.get('phone')
+        
+        if not otp or not phone:
+            return jsonify({'error': 'Faltan parámetros requeridos'}), 400
+        
+        # Verificar que hay una verificación activa y no ha expirado
+        session_phone = session.get('phone_verification_phone')
+        expiry = session.get('phone_verification_expiry')
+        
+        if not session_phone or not expiry:
+            return jsonify({'error': 'No hay una verificación de teléfono activa'}), 400
+        
+        if datetime.now().timestamp() > expiry:
+            # Limpiar la verificación expirada
+            session.pop('phone_verification_phone', None)
+            session.pop('phone_verification_expiry', None)
+            if 'direct_verification_code' in session:
+                session.pop('direct_verification_code', None)
+            return jsonify({'error': 'La verificación ha expirado'}), 400
+        
+        # Agregar el código de país de Colombia (+57) si no está presente
+        if not phone.startswith('+'):
+            phone = '+57' + phone
+        
+        if phone != session_phone:
+            return jsonify({'error': 'El número de teléfono no coincide con el verificado'}), 400
+        
+        # Verificar si estamos usando verificación directa o Twilio Verify
+        verification_success = False
+        
+        if 'direct_verification_code' in session:
+            # Verificación directa por SMS
+            direct_code = session.get('direct_verification_code')
+            verification_success = (otp == direct_code)
+            
+            if verification_success:
+                print(f"Código verificado correctamente para {phone} (verificación directa)")
+            else:
+                print(f"Código incorrecto para {phone}: {otp} != {direct_code}")
+        else:
+            # Importar la función de Twilio aquí para evitar problemas de importación circular
+            from config.twilio_config import check_verification_code
+            
+            # Verificar el código con Twilio Verify
+            result = check_verification_code(phone, otp)
+            
+            if result.get('direct', False):
+                # Si es verificación directa pero no tenemos el código en la sesión
+                return jsonify({'error': 'Error de configuración. Por favor, solicita un nuevo código.'}), 400
+            
+            verification_success = result.get('success', False)
+        
+        if verification_success:
+            # Código correcto, marcar el teléfono como verificado en la base de datos
+            connection = create_connection()
+            if connection:
+                try:
+                    cursor = connection.cursor()
+                    
+                    # Actualizar el número de teléfono y marcarlo como verificado
+                    cursor.execute("""
+                        UPDATE tbl_usuario 
+                        SET celular = %s, celular_verificado = 1 
+                        WHERE id_usuario = %s
+                    """, (phone.replace('+57', ''), session['user_id']))
+                    connection.commit()
+                    
+                    cursor.close()
+                    
+                    # Limpiar la verificación usada
+                    session.pop('phone_verification_phone', None)
+                    session.pop('phone_verification_expiry', None)
+                    if 'direct_verification_code' in session:
+                        session.pop('direct_verification_code', None)
+                    
+                    return jsonify({'success': True, 'message': 'Número de teléfono verificado con éxito'})
+                except Exception as db_error:
+                    print(f"Error de base de datos: {str(db_error)}")
+                    return jsonify({'error': f'Error al actualizar la base de datos: {str(db_error)}'}), 500
+                finally:
+                    connection.close()
+            else:
+                return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+        else:
+            return jsonify({'error': 'Código incorrecto'}), 400
+    except Exception as e:
+        # Registrar la excepción completa para depuración
+        import traceback
+        print(f"Error al verificar código de teléfono: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
+
+@perfil_bp.route('/verificar_cooldown_telefono', methods=['GET'])
+def verificar_cooldown_telefono():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        current_time = datetime.now().timestamp()
+        cooldown_key = f'phone_verification_cooldown_{session["user_id"]}'
+        
+        if cooldown_key in session:
+            cooldown_until = session[cooldown_key]
+            
+            # Si el tiempo de espera no ha expirado, devolver tiempo restante
+            if current_time < cooldown_until:
+                remaining_seconds = int(cooldown_until - current_time)
+                return jsonify({
+                    'cooldown': True,
+                    'remaining_seconds': remaining_seconds
+                })
+        
+        # Si no hay cooldown o ya expiró
+        return jsonify({
+            'cooldown': False,
+            'remaining_seconds': 0
+        })
+    
+    except Exception as e:
+        print(f"Error al verificar cooldown de teléfono: {str(e)}")
         return jsonify({'error': str(e)}), 500
