@@ -298,6 +298,19 @@ def enviar_codigo_cambio_contrasena():
             if not user or not verify_password(user['contrasena'], current_password):
                 return jsonify({'error': 'La contraseña actual es incorrecta'}), 400
             
+            # Verificar si hay un tiempo de espera activo para este usuario
+            cooldown_key = f'password_change_cooldown_{session["user_id"]}'
+            if cooldown_key in session:
+                cooldown_until = session.get(cooldown_key)
+                if datetime.now().timestamp() < cooldown_until:
+                    # Si el tiempo de espera no ha expirado, devolver error con tiempo restante
+                    remaining_seconds = int(cooldown_until - datetime.now().timestamp())
+                    return jsonify({
+                        'error': 'Debes esperar antes de solicitar un nuevo código',
+                        'cooldown': True,
+                        'remaining_seconds': remaining_seconds
+                    }), 429  # 429 Too Many Requests
+            
             # Generar código OTP de 4 dígitos
             otp = ''.join(random.choices(string.digits, k=4))
             
@@ -306,7 +319,6 @@ def enviar_codigo_cambio_contrasena():
             session['password_change_expiry'] = (datetime.now() + timedelta(minutes=10)).timestamp()
             
             # Establecer un tiempo de espera de 60 segundos antes de permitir un nuevo envío
-            cooldown_key = f'password_change_cooldown_{session["user_id"]}'
             session[cooldown_key] = (datetime.now() + timedelta(seconds=60)).timestamp()
             
             # Enviar el código por correo
