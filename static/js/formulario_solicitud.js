@@ -7,9 +7,13 @@
  */
 
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("Formulario de solicitud JS cargado")
+
   // Referencias a los elementos del formulario
   const form = document.getElementById("visa-form")
+  console.log("Formulario encontrado:", form)
   const sections = document.querySelectorAll(".form-section")
+  console.log("Secciones encontradas:", sections.length)
   const progressBar = document.getElementById("progress-bar")
   const progressText = document.getElementById("progress-text")
   const progressPercentage = document.getElementById("progress-percentage")
@@ -18,11 +22,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Botones de navegación
   const next1Button = document.getElementById("next-1")
+  console.log("Botón next-1 encontrado:", next1Button)
   const next2Button = document.getElementById("next-2")
+  console.log("Botón next-2 encontrado:", next2Button)
   const next3Button = document.getElementById("next-3")
+  console.log("Botón next-3 encontrado:", next3Button)
   const prev2Button = document.getElementById("prev-2")
+  console.log("Botón prev-2 encontrado:", prev2Button)
   const prev3Button = document.getElementById("prev-3")
+  console.log("Botón prev-3 encontrado:", prev3Button)
   const prev4Button = document.getElementById("prev-4")
+  console.log("Botón prev-4 encontrado:", prev4Button)
 
   // Campos condicionales
   const familiarCanada = document.querySelectorAll('input[name="familiar_canada"]')
@@ -70,171 +80,17 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentSection = 0
   let formSubmitting = false
 
-  // Inicialización
-  updateProgressBar()
-  setupConditionalFields()
-  setupFileInputs()
-  setupFormValidation()
-
-  // Configurar navegación entre secciones
-  if (next1Button) {
-    next1Button.addEventListener("click", () => {
-      if (validateSection(0)) {
-        showSection(1)
-      }
-    })
-  }
-
-  if (next2Button) {
-    next2Button.addEventListener("click", () => {
-      if (validateSection(1)) {
-        showSection(2)
-      }
-    })
-  }
-
-  if (next3Button) {
-    next3Button.addEventListener("click", () => {
-      if (validateSection(2)) {
-        updateSummary()
-        showSection(3)
-      }
-    })
-  }
-
-  if (prev2Button) {
-    prev2Button.addEventListener("click", () => {
-      showSection(0)
-    })
-  }
-
-  if (prev3Button) {
-    prev3Button.addEventListener("click", () => {
-      showSection(1)
-    })
-  }
-
-  if (prev4Button) {
-    prev4Button.addEventListener("click", () => {
-      showSection(2)
-    })
-  }
-
-  // Validación del formulario antes de enviar
-  if (form) {
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault()
-
-      if (formSubmitting) {
-        return // Evitar envíos múltiples
-      }
-
-      if (!validateSection(3)) {
-        showAlert("Por favor, complete todos los campos obligatorios y acepte los términos y condiciones.", "error")
-        return
-      }
-
-      // Mostrar indicador de carga
-      formSubmitting = true
-      const submitButton = form.querySelector('button[type="submit"]')
-      const originalButtonText = submitButton.innerHTML
-      submitButton.innerHTML = `
-              <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Enviando...
-          `
-      submitButton.disabled = true
-
-      try {
-        // Enviar formulario con AJAX
-        const formData = new FormData(form)
-
-        const response = await fetch(form.action, {
-          method: "POST",
-          body: formData,
-          headers: {
-            "X-Requested-With": "XMLHttpRequest",
-          },
-        })
-
-        // Procesar respuesta
-        if (response.redirected) {
-          // Si el servidor redirige, seguir la redirección
-          window.location.href = response.url
-          return
-        }
-
-        const data = await response.json()
-
-        if (response.ok) {
-          showAlert(
-            data.message || "Formulario enviado correctamente. Nos pondremos en contacto contigo pronto.",
-            "success",
-          )
-
-          // Redirigir después de un breve retraso
-          setTimeout(() => {
-            window.location.href = data.redirect || "/dashboard"
-          }, 2000)
-        } else {
-          showAlert(data.error || "Error al enviar el formulario. Por favor, inténtelo de nuevo.", "error")
-          submitButton.innerHTML = originalButtonText
-          submitButton.disabled = false
-          formSubmitting = false
-        }
-      } catch (error) {
-        console.error("Error al enviar el formulario:", error)
-        showAlert("Error al enviar el formulario. Por favor, inténtelo de nuevo.", "error")
-        submitButton.innerHTML = originalButtonText
-        submitButton.disabled = false
-        formSubmitting = false
-      }
-    })
-  }
-
-  // Manejo de reportes
-  if (downloadReportBtn) {
-    downloadReportBtn.addEventListener("click", () => {
-      // Verificar si hay datos suficientes para generar un reporte
-      if (!document.getElementById("proposito").value || !document.getElementById("pais_residencia").value) {
-        showAlert("Por favor, complete al menos los campos básicos del formulario para generar un reporte.", "warning")
-        return
-      }
-
-      // Recopilar datos del formulario
-      const formData = new FormData(form)
-
-      // Enviar solicitud para generar el PDF
-      window.location.href = "/formularios/generar_reporte_pdf?" + new URLSearchParams(formData).toString()
-    })
-  }
-
-  if (previewReportBtn) {
-    previewReportBtn.addEventListener("click", () => {
-      // Verificar si hay datos suficientes para generar un reporte
-      if (!document.getElementById("proposito").value || !document.getElementById("pais_residencia").value) {
-        showAlert("Por favor, complete al menos los campos básicos del formulario para generar un reporte.", "warning")
-        return
-      }
-
-      // Recopilar datos del formulario
-      const formData = new FormData(form)
-
-      // Abrir vista previa en una nueva ventana
-      window.open("/formularios/vista_previa_reporte?" + new URLSearchParams(formData).toString(), "_blank")
-    })
-  }
-
   // Funciones auxiliares
   function showSection(sectionIndex) {
-    if (!sections || sections.length === 0) return
+    console.log(`Mostrando sección ${sectionIndex}`)
+    console.log(`Número de secciones: ${sections.length}`)
 
     sections.forEach((section, index) => {
+      console.log(`Ocultando sección ${index}`)
       section.classList.add("hidden")
     })
 
+    console.log(`Mostrando sección ${sectionIndex}`)
     sections[sectionIndex].classList.remove("hidden")
     currentSection = sectionIndex
     updateProgressBar()
@@ -247,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function updateProgressBar() {
-    if (!progressBar || !progressText || !progressPercentage || !sections || sections.length === 0) return
+    if (!progressBar || !progressText || !progressPercentage) return
 
     const progress = ((currentSection + 1) / sections.length) * 100
     progressBar.style.width = `${progress}%`
@@ -256,10 +112,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function validateSection(sectionIndex) {
-    if (!sections || sections.length === 0) return true
-
+    console.log(`Validando sección ${sectionIndex}`)
     const section = sections[sectionIndex]
     const requiredFields = section.querySelectorAll("[required]")
+    console.log(`Campos requeridos encontrados: ${requiredFields.length}`)
     let valid = true
 
     // Limpiar mensajes de error previos
@@ -272,16 +128,19 @@ document.addEventListener("DOMContentLoaded", () => {
     requiredFields.forEach((field) => {
       // Validar campos requeridos
       if (!field.value) {
+        console.log(`Campo requerido sin valor: ${field.id || field.name}`)
         markFieldAsInvalid(field, "Este campo es obligatorio")
         valid = false
       }
       // Validar correos electrónicos
       else if (field.type === "email" && !validateEmail(field.value)) {
+        console.log(`Email inválido: ${field.value}`)
         markFieldAsInvalid(field, "Ingrese un correo electrónico válido")
         valid = false
       }
       // Validar fechas
       else if (field.type === "date" && !validateDate(field.value)) {
+        console.log(`Fecha inválida: ${field.value}`)
         markFieldAsInvalid(field, "Ingrese una fecha válida")
         valid = false
       }
@@ -293,18 +152,23 @@ document.addEventListener("DOMContentLoaded", () => {
       const privacidad = document.getElementById("privacidad")
 
       if (terminos && !terminos.checked) {
+        console.log("Términos y condiciones no aceptados")
         markFieldAsInvalid(terminos, "Debe aceptar los términos y condiciones")
         valid = false
       }
 
       if (privacidad && !privacidad.checked) {
+        console.log("Política de privacidad no aceptada")
         markFieldAsInvalid(privacidad, "Debe aceptar la política de privacidad")
         valid = false
       }
     }
 
     if (!valid) {
+      console.log("Validación fallida")
       showAlert("Por favor, complete todos los campos obligatorios correctamente.", "error")
+    } else {
+      console.log("Validación exitosa")
     }
 
     return valid
@@ -618,5 +482,228 @@ document.addEventListener("DOMContentLoaded", () => {
                     <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
                 </svg>`
     }
+  }
+
+  // Inicialización
+  updateProgressBar()
+  setupConditionalFields()
+  setupFileInputs()
+  setupFormValidation()
+
+  // Configurar navegación entre secciones
+  if (next1Button) {
+    console.log("Añadiendo event listener a next-1")
+    next1Button.addEventListener("click", () => {
+      console.log("Botón next-1 clickeado")
+      if (validateSection(0)) {
+        console.log("Sección 0 validada, mostrando sección 1")
+        showSection(1)
+      }
+    })
+  } else {
+    console.error("Botón next-1 no encontrado")
+  }
+
+  if (next2Button) {
+    console.log("Añadiendo event listener a next-2")
+    next2Button.addEventListener("click", () => {
+      console.log("Botón next-2 clickeado")
+      if (validateSection(1)) {
+        console.log("Sección 1 validada, mostrando sección 2")
+        showSection(2)
+      }
+    })
+  } else {
+    console.error("Botón next-2 no encontrado")
+  }
+
+  if (next3Button) {
+    console.log("Añadiendo event listener a next-3")
+    next3Button.addEventListener("click", () => {
+      console.log("Botón next-3 clickeado")
+      if (validateSection(2)) {
+        console.log("Sección 2 validada, actualizando resumen y mostrando sección 3")
+        updateSummary()
+        showSection(3)
+      }
+    })
+  } else {
+    console.error("Botón next-3 no encontrado")
+  }
+
+  if (prev2Button) {
+    console.log("Añadiendo event listener a prev-2")
+    prev2Button.addEventListener("click", () => {
+      console.log("Botón prev-2 clickeado, mostrando sección 0")
+      showSection(0)
+    })
+  } else {
+    console.error("Botón prev-2 no encontrado")
+  }
+
+  if (prev3Button) {
+    console.log("Añadiendo event listener a prev-3")
+    prev3Button.addEventListener("click", () => {
+      console.log("Botón prev-3 clickeado, mostrando sección 1")
+      showSection(1)
+    })
+  } else {
+    console.error("Botón prev-3 no encontrado")
+  }
+
+  if (prev4Button) {
+    console.log("Añadiendo event listener a prev-4")
+    prev4Button.addEventListener("click", () => {
+      console.log("Botón prev-4 clickeado, mostrando sección 2")
+      showSection(2)
+    })
+  } else {
+    console.error("Botón prev-4 no encontrado")
+  }
+
+  // Validación del formulario antes de enviar
+  if (form) {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault()
+      console.log("Formulario enviado")
+
+      if (formSubmitting) {
+        console.log("Formulario ya está siendo enviado, ignorando")
+        return // Evitar envíos múltiples
+      }
+
+      if (!validateSection(3)) {
+        console.log("Validación de sección 3 fallida")
+        showAlert("Por favor, complete todos los campos obligatorios y acepte los términos y condiciones.", "error")
+        return
+      }
+
+      // Mostrar indicador de carga
+      formSubmitting = true
+      const submitButton = form.querySelector('button[type="submit"]')
+      const originalButtonText = submitButton.innerHTML
+      submitButton.innerHTML = `
+              <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Enviando...
+          `
+      submitButton.disabled = true
+
+      try {
+        // Crear FormData para enviar
+        const formData = new FormData(form)
+
+        // Imprimir los datos del formulario para depuración
+        console.log("Datos del formulario a enviar:")
+        for (const [key, value] of formData.entries()) {
+          console.log(`${key}: ${value}`)
+        }
+
+        // Enviar formulario con AJAX
+        console.log("Enviando formulario a:", form.action)
+        const response = await fetch(form.action, {
+          method: "POST",
+          body: formData,
+        })
+
+        console.log("Respuesta recibida:", response)
+        console.log("Status:", response.status)
+        console.log("OK:", response.ok)
+        console.log("Redirected:", response.redirected)
+
+        // Procesar respuesta
+        if (response.redirected) {
+          // Si el servidor redirige, seguir la redirección
+          console.log("Redirigiendo a:", response.url)
+          window.location.href = response.url
+          return
+        }
+
+        // Intentar obtener respuesta como JSON
+        let data
+        try {
+          data = await response.json()
+          console.log("Datos de respuesta:", data)
+        } catch (e) {
+          console.error("Error al parsear respuesta JSON:", e)
+          // Si no es JSON, obtener texto
+          const text = await response.text()
+          console.log("Respuesta como texto:", text)
+          data = { error: "Error al procesar la respuesta del servidor" }
+        }
+
+        if (response.ok) {
+          showAlert(
+            data.message || "Formulario enviado correctamente. Nos pondremos en contacto contigo pronto.",
+            "success",
+          )
+
+          // Redirigir después de un breve retraso
+          setTimeout(() => {
+            console.log("Redirigiendo después del éxito")
+            window.location.href = data.redirect || "/formularios/solicitud_exitosa"
+          }, 2000)
+        } else {
+          console.error("Error en la respuesta:", data.error || "Error desconocido")
+          showAlert(data.error || "Error al enviar el formulario. Por favor, inténtelo de nuevo.", "error")
+          submitButton.innerHTML = originalButtonText
+          submitButton.disabled = false
+          formSubmitting = false
+        }
+      } catch (error) {
+        console.error("Error al enviar el formulario:", error)
+        showAlert("Error al enviar el formulario. Por favor, inténtelo de nuevo.", "error")
+        submitButton.innerHTML = originalButtonText
+        submitButton.disabled = false
+        formSubmitting = false
+      }
+    })
+  }
+
+  // Manejo de reportes
+  if (downloadReportBtn) {
+    console.log("Añadiendo event listener al botón de descarga de reporte")
+    downloadReportBtn.addEventListener("click", () => {
+      console.log("Botón de descarga de reporte clickeado")
+      // Verificar si hay datos suficientes para generar un reporte
+      if (!document.getElementById("proposito").value || !document.getElementById("pais_residencia").value) {
+        console.log("Datos insuficientes para generar reporte")
+        showAlert("Por favor, complete al menos los campos básicos del formulario para generar un reporte.", "warning")
+        return
+      }
+
+      // Recopilar datos del formulario
+      const formData = new FormData(form)
+
+      // Enviar solicitud para generar el PDF
+      console.log("Redirigiendo a generar_reporte_pdf")
+      window.location.href = "/formularios/generar_reporte_pdf?" + new URLSearchParams(formData).toString()
+    })
+  } else {
+    console.error("Botón de descarga de reporte no encontrado")
+  }
+
+  if (previewReportBtn) {
+    console.log("Añadiendo event listener al botón de vista previa")
+    previewReportBtn.addEventListener("click", () => {
+      console.log("Botón de vista previa clickeado")
+      // Verificar si hay datos suficientes para generar un reporte
+      if (!document.getElementById("proposito").value || !document.getElementById("pais_residencia").value) {
+        console.log("Datos insuficientes para generar vista previa")
+        showAlert("Por favor, complete al menos los campos básicos del formulario para generar un reporte.", "warning")
+        return
+      }
+
+      // Recopilar datos del formulario
+      const formData = new FormData(form)
+
+      // Abrir vista previa en una nueva ventana
+      console.log("Abriendo vista previa")
+      window.open("/formularios/vista_previa_reporte?" + new URLSearchParams(formData).toString(), "_blank")
+    })
+  } else {
+    console.error("Botón de vista previa no encontrado")
   }
 })
