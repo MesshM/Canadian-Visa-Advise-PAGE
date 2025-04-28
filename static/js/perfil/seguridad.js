@@ -1,3 +1,78 @@
+// Modificar la función showAlert para que esté disponible globalmente
+function showAlert(message, type = "success") {
+  // Crear el elemento de notificación
+  const notification = document.createElement("div")
+  notification.className = `fixed top-4 right-4 p-4 rounded-xl shadow-lg z-50 transform transition-all duration-500 translate-x-full`
+
+  // Aplicar estilos según el tipo
+  if (type === "success") {
+    notification.classList.add("bg-green-100", "text-green-800", "border-l-4", "border-green-500")
+  } else if (type === "error") {
+    notification.classList.add("bg-red-100", "text-red-800", "border-l-4", "border-red-500")
+  } else if (type === "warning") {
+    notification.classList.add("bg-yellow-100", "text-yellow-800", "border-l-4", "border-yellow-500")
+  } else {
+    notification.classList.add("bg-blue-100", "text-blue-800", "border-l-4", "border-blue-200")
+  }
+
+  // Agregar el mensaje
+  notification.innerHTML = `
+    <div class="flex items-center">
+        <div class="flex-shrink-0">
+            ${
+              type === "success"
+                ? '<svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
+                : type === "error"
+                  ? '<svg class="h-5 w-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>'
+                  : type === "warning"
+                    ? '<svg class="h-5 w-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>'
+                    : '<svg class="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+            }
+        </div>
+        <div class="ml-3">
+            <p class="text-sm">${message}</p>
+        </div>
+        <div class="ml-auto pl-3">
+            <button class="inline-flex text-gray-400 hover:text-gray-500 focus:outline-none cursor-pointer">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+    </div>
+`
+
+  // Agregar al DOM
+  document.body.appendChild(notification)
+
+  // Animar la entrada
+  setTimeout(() => {
+    notification.classList.remove("translate-x-full")
+    notification.classList.add("translate-x-0")
+  }, 100)
+
+  // Configurar la eliminación automática
+  setTimeout(() => {
+    notification.classList.remove("translate-x-0")
+    notification.classList.add("translate-x-full")
+
+    // Eliminar del DOM después de la animación
+    setTimeout(() => {
+      notification.remove()
+    }, 500)
+  }, 5000)
+
+  // Agregar evento para cerrar manualmente
+  notification.querySelector("button").addEventListener("click", () => {
+    notification.classList.remove("translate-x-0")
+    notification.classList.add("translate-x-full")
+
+    // Eliminar del DOM después de la animación
+    setTimeout(() => {
+      notification.remove()
+    }, 500)
+  })
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   // Referencias a elementos del DOM para cambio de contraseña
   const passwordForm = document.getElementById("password-form")
@@ -14,81 +89,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Botones para mostrar/ocultar contraseñas
   const togglePasswordButtons = document.querySelectorAll(".toggle-password")
-
-  // Modificar la función showAlert para que coincida con el estilo de información-personal
-  function showAlert(message, type = "success") {
-    // Crear el elemento de notificación
-    const notification = document.createElement("div")
-    notification.className = `fixed top-4 right-4 p-4 rounded-xl shadow-lg z-50 transform transition-all duration-500 translate-x-full`
-
-    // Aplicar estilos según el tipo
-    if (type === "success") {
-      notification.classList.add("bg-green-100", "text-green-800", "border-l-4", "border-green-500")
-    } else if (type === "error") {
-      notification.classList.add("bg-red-100", "text-red-800", "border-l-4", "border-red-500")
-    } else if (type === "warning") {
-      notification.classList.add("bg-yellow-100", "text-yellow-800", "border-l-4", "border-yellow-500")
-    } else {
-      notification.classList.add("bg-blue-100", "text-blue-800", "border-l-4", "border-blue-200")
-    }
-
-    // Agregar el mensaje
-    notification.innerHTML = `
-              <div class="flex items-center">
-                  <div class="flex-shrink-0">
-                      ${
-                        type === "success"
-                          ? '<svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
-                          : type === "error"
-                            ? '<svg class="h-5 w-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>'
-                            : type === "warning"
-                              ? '<svg class="h-5 w-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>'
-                              : '<svg class="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
-                      }
-                  </div>
-                  <div class="ml-3">
-                      <p class="text-sm">${message}</p>
-                  </div>
-                  <div class="ml-auto pl-3">
-                      <button class="inline-flex text-gray-400 hover:text-gray-500 focus:outline-none cursor-pointer">
-                          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                      </button>
-                  </div>
-              </div>
-          `
-
-    // Agregar al DOM
-    document.body.appendChild(notification)
-
-    // Animar la entrada
-    setTimeout(() => {
-      notification.classList.remove("translate-x-full")
-      notification.classList.add("translate-x-0")
-    }, 100)
-
-    // Configurar la eliminación automática
-    setTimeout(() => {
-      notification.classList.remove("translate-x-0")
-      notification.classList.add("translate-x-full")
-
-      // Eliminar del DOM después de la animación
-      setTimeout(() => {
-        notification.remove()
-      }, 500)
-    }, 5000)
-
-    // Agregar evento para cerrar manualmente
-    notification.querySelector("button").addEventListener("click", () => {
-      notification.classList.remove("translate-x-0")
-      notification.classList.add("translate-x-full")
-
-      // Eliminar del DOM después de la animación
-      setTimeout(() => {
-        notification.remove()
-      }, 500)
-    })
-  }
 
   // Añadir después de la función showAlert
   function highlightFieldError(inputElement, message = "") {
@@ -253,6 +253,8 @@ document.addEventListener("DOMContentLoaded", () => {
       })
     })
   }
+
+  // Agregar después de la función setupPasswordOtpInputs()
 
   // Función para verificar si las contraseñas coinciden
   function checkPasswordsMatch() {
@@ -787,4 +789,621 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Configurar los campos OTP para cambio de contraseña
   setupPasswordOtpInputs()
+
+  // Agregar después de todo el código existente, pero antes del cierre del evento DOMContentLoaded
+
+  // Funcionalidad para autenticación en dos pasos
+  const toggle2faBtn = document.getElementById("toggle-2fa-btn")
+  const twoFactorStatus = document.getElementById("two-factor-status")
+  const twoFactorModal = document.getElementById("two-factor-modal")
+  const disable2faModal = document.getElementById("disable-2fa-modal")
+
+  // Referencias a elementos del modal de activación
+  const close2faModal = document.getElementById("close-2fa-modal")
+  const cancel2faSetup = document.getElementById("cancel-2fa-setup")
+  const continue2faSetup = document.getElementById("continue-2fa-setup")
+  const backToStep1 = document.getElementById("back-to-step-1")
+  const continueToVerification = document.getElementById("continue-to-verification")
+  const backToStep2 = document.getElementById("back-to-step-2")
+  const verify2faCode = document.getElementById("verify-2fa-code")
+  const finish2faSetup = document.getElementById("finish-2fa-setup")
+
+  // Referencias a elementos del modal de desactivación
+  const closeDisable2faModal = document.getElementById("close-disable-2fa-modal")
+  const cancelDisable2fa = document.getElementById("cancel-disable-2fa")
+  const confirmDisable2fa = document.getElementById("confirm-disable-2fa")
+  const disable2faPassword = document.getElementById("disable-2fa-password")
+
+  // Referencias a los pasos del modal
+  const step1 = document.getElementById("step-1-2fa")
+  const step2 = document.getElementById("step-2-2fa")
+  const step3 = document.getElementById("step-3-2fa")
+  const step4 = document.getElementById("step-4-2fa")
+
+  // Referencias a elementos específicos
+  const qrCodeContainer = document.getElementById("qr-code-container")
+  const secretKey = document.getElementById("secret-key")
+  const verificationInputs = document.querySelectorAll(".verification-code-input")
+
+  // Función corregida para verificar el estado de 2FA
+  function check2faStatus() {
+    fetch("/perfil/verificar_estado_2fa") // Corregir la ruta añadiendo el prefijo /perfil/
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Error HTTP: ${response.status}`)
+        }
+        return response.json()
+      })
+      .then((data) => {
+        if (data.success) {
+          if (data.active) {
+            twoFactorStatus.textContent = "Activada"
+            twoFactorStatus.classList.add("text-green-600")
+            toggle2faBtn.innerHTML = `
+            <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+            <div class="relative flex items-center justify-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+              <span>Desactivar</span>
+            </div>
+          `
+            toggle2faBtn.classList.remove(
+              "from-primary-600",
+              "to-primary-500",
+              "hover:from-primary-500",
+              "hover:to-primary-600",
+              "hover:shadow-primary-500/30",
+            )
+            toggle2faBtn.classList.add(
+              "from-red-600",
+              "to-red-500",
+              "hover:from-red-500",
+              "hover:to-red-600",
+              "hover:shadow-red-500/30",
+            )
+          } else {
+            twoFactorStatus.textContent = "No activada"
+            twoFactorStatus.classList.remove("text-green-600")
+            toggle2faBtn.innerHTML = `
+            <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+            <div class="relative flex items-center justify-center">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+              </svg>
+              <span>Activar</span>
+            </div>
+          `
+            toggle2faBtn.classList.add(
+              "from-primary-600",
+              "to-primary-500",
+              "hover:from-primary-500",
+              "hover:to-primary-600",
+              "hover:shadow-primary-500/30",
+            )
+            toggle2faBtn.classList.remove(
+              "from-red-600",
+              "to-red-500",
+              "hover:from-red-500",
+              "hover:to-red-600",
+              "hover:shadow-red-500/30",
+            )
+          }
+        } else {
+          showAlert("Error al verificar el estado de la autenticación en dos pasos", "error")
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error)
+        showAlert("Error de conexión al verificar el estado de 2FA. Detalles: " + error.message, "error")
+      })
+  }
+
+  // Verificar el estado al cargar la página
+  if (toggle2faBtn) {
+    check2faStatus()
+  }
+
+  // Configurar los campos de verificación
+  function setupVerificationInputs() {
+    verificationInputs.forEach((input, index) => {
+      // Solo permitir números
+      input.addEventListener("input", function (e) {
+        this.value = this.value.replace(/[^0-9]/g, "")
+
+        // Mover al siguiente input si se completó este
+        if (this.value && index < verificationInputs.length - 1) {
+          verificationInputs[index + 1].focus()
+        }
+      })
+
+      // Manejar la tecla de retroceso
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Backspace" && !this.value && index > 0) {
+          verificationInputs[index - 1].focus()
+        }
+      })
+
+      // Manejar pegar (para pegar el código completo)
+      input.addEventListener("paste", (e) => {
+        e.preventDefault()
+        const pasteData = e.clipboardData.getData("text")
+        const digits = pasteData.match(/\d/g)
+
+        if (digits) {
+          verificationInputs.forEach((input, i) => {
+            if (digits[i]) {
+              input.value = digits[i]
+            }
+          })
+
+          // Enfocar el último campo o el siguiente vacío
+          for (let i = 0; i < verificationInputs.length; i++) {
+            if (!verificationInputs[i].value) {
+              verificationInputs[i].focus()
+              break
+            }
+            if (i === verificationInputs.length - 1) {
+              verificationInputs[i].focus()
+            }
+          }
+        }
+      })
+    })
+  }
+
+  // Mostrar el modal de activación de 2FA
+  function show2faModal() {
+    // Mostrar el primer paso
+    step1.classList.remove("hidden")
+    step2.classList.add("hidden")
+    step3.classList.add("hidden")
+    step4.classList.add("hidden")
+
+    // Mostrar el modal con animación
+    twoFactorModal.classList.remove("hidden")
+    twoFactorModal.classList.add("flex")
+
+    // Añadir animación de entrada al contenido del modal
+    const modalContent = twoFactorModal.querySelector(".bg-white")
+    modalContent.classList.add("animate-scale-in")
+
+    // Configurar los campos de verificación
+    setupVerificationInputs()
+  }
+
+  // Mostrar el modal de desactivación de 2FA
+  function showDisable2faModal() {
+    // Limpiar el campo de contraseña
+    disable2faPassword.value = ""
+
+    // Mostrar el modal con animación
+    disable2faModal.classList.remove("hidden")
+    disable2faModal.classList.add("flex")
+
+    // Añadir animación de entrada al contenido del modal
+    const modalContent = disable2faModal.querySelector(".bg-white")
+    modalContent.classList.add("animate-scale-in")
+  }
+
+  // Cerrar el modal de activación
+  // Modificar la función close2faModalFunc para que cierre el modal correctamente desde cualquier paso
+  function close2faModalFunc() {
+    const modalContent = twoFactorModal.querySelector(".bg-white")
+    modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+    setTimeout(() => {
+      twoFactorModal.classList.add("hidden")
+      twoFactorModal.classList.remove("flex")
+      modalContent.classList.remove("opacity-0", "scale-95")
+    }, 300)
+  }
+
+  // Cerrar el modal de desactivación
+  function closeDisable2faModalFunc() {
+    const modalContent = disable2faModal.querySelector(".bg-white")
+    modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+    setTimeout(() => {
+      disable2faModal.classList.add("hidden")
+      disable2faModal.classList.remove("flex")
+      modalContent.classList.remove("opacity-0", "scale-95")
+    }, 300)
+  }
+
+  /// Generar el código QR y la clave secreta
+  function generateQRCode() {
+    // Cambiar el botón a estado de carga
+    continue2faSetup.innerHTML = `
+    <div class="flex items-center justify-center">
+      <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+      <span>Generando...</span>
+    </div>
+  `
+    continue2faSetup.disabled = true
+
+    // Mostrar indicador de carga
+    qrCodeContainer.innerHTML = `
+    <div class="animate-pulse flex flex-col items-center justify-center w-48 h-48">
+      <div class="w-10 h-10 bg-gray-200 rounded-full mb-2"></div>
+      <div class="h-2 bg-gray-200 rounded w-32 mb-2"></div>
+      <div class="h-2 bg-gray-200 rounded w-24"></div>
+    </div>
+  `
+
+    // Solicitar al servidor que genere la clave secreta y el código QR
+    fetch("/perfil/generar_2fa", {
+      // Corregir la ruta añadiendo el prefijo /perfil/
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "same-origin",
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Error HTTP: ${response.status}`)
+        }
+        return response.json()
+      })
+      .then((data) => {
+        if (data.success) {
+          // Restaurar el botón a su estado original
+          continue2faSetup.innerHTML = `
+          <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+          <div class="relative flex items-center justify-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+            </svg>
+            <span>Continuar</span>
+          </div>
+        `
+          continue2faSetup.disabled = false
+
+          // Mostrar el código QR
+          qrCodeContainer.innerHTML = `<img src="data:image/png;base64,${data.qr_code}" alt="Código QR para autenticación en dos pasos" class="w-48 h-48">`
+
+          // Mostrar la clave secreta
+          secretKey.textContent = data.secret
+
+          // Mostrar el paso 2
+          step1.classList.add("hidden")
+          step2.classList.remove("hidden")
+        } else {
+          // Restaurar el botón a su estado original
+          continue2faSetup.innerHTML = `
+          <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+          <div class="relative flex items-center justify-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+            </svg>
+            <span>Continuar</span>
+          </div>
+        `
+          continue2faSetup.disabled = false
+
+          showAlert(data.error || "Error al generar el código QR", "error")
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error)
+
+        // Restaurar el botón a su estado original
+        continue2faSetup.innerHTML = `
+        <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+        <div class="relative flex items-center justify-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+          </svg>
+          <span>Continuar</span>
+        </div>
+      `
+        continue2faSetup.disabled = false
+
+        showAlert("Error de conexión al generar el código QR. Detalles: " + error.message, "error")
+      })
+  }
+
+  // Modificar la función continueToVerification para añadir animación de carga al botón
+  if (continueToVerification) {
+    continueToVerification.addEventListener("click", () => {
+      // Cambiar el botón a estado de carga
+      continueToVerification.innerHTML = `
+      <div class="flex items-center justify-center">
+        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+        <span>Cargando...</span>
+      </div>
+    `
+      continueToVerification.disabled = true
+
+      // Pequeño retraso para mostrar la animación
+      setTimeout(() => {
+        // Restaurar el botón a su estado original
+        continueToVerification.innerHTML = `
+        <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+        <div class="relative flex items-center justify-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+          </svg>
+          <span>Continuar</span>
+        </div>
+      `
+        continueToVerification.disabled = false
+
+        step2.classList.add("hidden")
+        step3.classList.remove("hidden")
+        verificationInputs[0].focus()
+      }, 300)
+    })
+  }
+
+  // Modificar la función disable2fa para añadir animación de carga al botón
+  function disable2fa() {
+    const password = disable2faPassword.value
+
+    if (!password) {
+      showAlert("Por favor, ingresa tu contraseña", "error")
+      return
+    }
+
+    // Cambiar el botón a estado de carga
+    confirmDisable2fa.innerHTML = `
+    <div class="flex items-center justify-center">
+      <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+      <span>Desactivando...</span>
+    </div>
+  `
+    confirmDisable2fa.disabled = true
+
+    // Enviar la solicitud al servidor
+    fetch("/perfil/desactivar_2fa", {
+      // Corregir la ruta añadiendo el prefijo /perfil/
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ password }),
+      credentials: "same-origin",
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Error HTTP: ${response.status}`)
+        }
+        return response.json()
+      })
+      .then((data) => {
+        if (data.success) {
+          showAlert("Verificación en dos pasos desactivada correctamente", "success")
+
+          // Cerrar el modal con animación
+          const modalContent = disable2faModal.querySelector(".bg-white")
+          modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+          setTimeout(() => {
+            disable2faModal.classList.add("hidden")
+            disable2faModal.classList.remove("flex")
+            modalContent.classList.remove("opacity-0", "scale-95")
+          }, 300)
+
+          // Actualizar el estado en la interfaz
+          check2faStatus()
+        } else {
+          showAlert(data.error || "Error al desactivar la verificación en dos pasos", "error")
+
+          // Restaurar el botón
+          confirmDisable2fa.innerHTML = `
+        <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+        <div class="relative flex items-center justify-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+          </svg>
+          <span>Desactivar</span>
+        </div>
+      `
+          confirmDisable2fa.disabled = false
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error)
+        showAlert("Error de conexión al desactivar la verificación en dos pasos. Detalles: " + error.message, "error")
+
+        // Restaurar el botón
+        confirmDisable2fa.innerHTML = `
+      <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+      <div class="relative flex items-center justify-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+        </svg>
+        <span>Desactivar</span>
+      </div>
+    `
+        confirmDisable2fa.disabled = false
+      })
+  }
+
+  // Asignar eventos
+  // Modificar el evento click del botón toggle2faBtn para añadir animación de carga
+  if (toggle2faBtn) {
+    toggle2faBtn.addEventListener("click", () => {
+      // Guardar el contenido original del botón
+      const originalButtonContent = toggle2faBtn.innerHTML
+
+      // Cambiar el botón a estado de carga
+      toggle2faBtn.innerHTML = `
+        <div class="flex items-center justify-center">
+          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+          <span>Cargando...</span>
+        </div>
+      `
+      toggle2faBtn.disabled = true
+
+      // Verificar el estado actual
+      fetch("/perfil/verificar_estado_2fa")
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`)
+          }
+          return response.json()
+        })
+        .then((data) => {
+          if (data.success) {
+            // Mostrar el modal correspondiente inmediatamente cuando los datos estén listos
+            toggle2faBtn.innerHTML = originalButtonContent
+            toggle2faBtn.disabled = false
+
+            if (data.active) {
+              // Si está activado, mostrar el modal de desactivación
+              showDisable2faModal()
+            } else {
+              // Si no está activado, mostrar el modal de activación
+              show2faModal()
+            }
+          } else {
+            // Restaurar el botón a su estado original
+            toggle2faBtn.innerHTML = originalButtonContent
+            toggle2faBtn.disabled = false
+            showAlert("Error al verificar el estado de la autenticación en dos pasos", "error")
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error)
+
+          // Restaurar el botón a su estado original
+          toggle2faBtn.innerHTML = originalButtonContent
+          toggle2faBtn.disabled = false
+          showAlert("Error de conexión al verificar el estado de 2FA. Detalles: " + error.message, "error")
+        })
+    })
+  }
+
+  // Eventos para el modal de activación
+  if (close2faModal) {
+    document.querySelectorAll("#close-2fa-modal").forEach((button) => {
+      button.addEventListener("click", close2faModalFunc)
+    })
+  }
+  if (cancel2faSetup) cancel2faSetup.addEventListener("click", close2faModalFunc)
+  if (continue2faSetup) continue2faSetup.addEventListener("click", generateQRCode)
+  if (backToStep1)
+    backToStep1.addEventListener("click", () => {
+      step2.classList.add("hidden")
+      step1.classList.remove("hidden")
+    })
+  if (continueToVerification)
+    continueToVerification.addEventListener("click", () => {
+      step2.classList.add("hidden")
+      step3.classList.remove("hidden")
+      verificationInputs[0].focus()
+    })
+  if (backToStep2)
+    backToStep2.addEventListener("click", () => {
+      step3.classList.add("hidden")
+      step2.classList.remove("hidden")
+    })
+  if (verify2faCode) {
+    verify2faCode.addEventListener("click", () => {
+      // Obtener el código completo
+      let code = ""
+      verificationInputs.forEach((input) => {
+        code += input.value
+      })
+
+      // Verificar que el código tenga 6 dígitos
+      if (code.length !== 6) {
+        showAlert("Por favor, ingresa un código de 6 dígitos", "error")
+        return
+      }
+
+      // Cambiar el botón a estado de carga
+      verify2faCode.innerHTML = `
+      <div class="flex items-center justify-center">
+        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+        <span>Verificando...</span>
+      </div>
+    `
+      verify2faCode.disabled = true
+
+      // Enviar el código al servidor para verificación
+      fetch("/perfil/verificar_2fa", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code }),
+        credentials: "same-origin",
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`)
+          }
+          return response.json()
+        })
+        .then((data) => {
+          if (data.success) {
+            // Mostrar el paso de éxito
+            step3.classList.add("hidden")
+            step4.classList.remove("hidden")
+
+            // Actualizar el estado en la interfaz
+            check2faStatus()
+          } else {
+            showAlert(data.error || "Código incorrecto. Inténtalo de nuevo.", "error")
+
+            // Restaurar el botón
+            verify2faCode.innerHTML = `
+          <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+          <div class="relative flex items-center justify-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span>Verificar</span>
+          </div>
+        `
+            verify2faCode.disabled = false
+
+            // Limpiar los campos de entrada
+            verificationInputs.forEach((input) => {
+              input.value = ""
+            })
+            verificationInputs[0].focus()
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error)
+          showAlert("Error de conexión al verificar el código. Detalles: " + error.message, "error")
+
+          // Restaurar el botón
+          verify2faCode.innerHTML = `
+        <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+        <div class="relative flex items-center justify-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <span>Verificar</span>
+        </div>
+      `
+          verify2faCode.disabled = false
+        })
+    })
+  }
+  if (finish2faSetup) finish2faSetup.addEventListener("click", close2faModalFunc)
+
+  // Eventos para el modal de desactivación
+  if (closeDisable2faModal) closeDisable2faModal.addEventListener("click", closeDisable2faModalFunc)
+  if (cancelDisable2fa) cancelDisable2fa.addEventListener("click", closeDisable2faModalFunc)
+  if (confirmDisable2fa) confirmDisable2fa.addEventListener("click", disable2fa)
+
+  // Cerrar los modales al hacer clic fuera de ellos
+  if (twoFactorModal) {
+    twoFactorModal.addEventListener("click", (e) => {
+      if (e.target === twoFactorModal) {
+        close2faModalFunc()
+      }
+    })
+  }
+
+  if (disable2faModal) {
+    disable2faModal.addEventListener("click", (e) => {
+      if (e.target === disable2faModal) {
+        closeDisable2faModalFunc()
+      }
+    })
+  }
 })

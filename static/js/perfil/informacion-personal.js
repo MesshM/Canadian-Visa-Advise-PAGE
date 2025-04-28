@@ -372,7 +372,6 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   }
 
-  // Update modal animations to match asesorias.js
   // Function to close the modal with animation
   function closeDeleteProfileModal() {
     const modalContent = deleteProfileModal.querySelector(".bg-white")
@@ -556,7 +555,7 @@ document.addEventListener("DOMContentLoaded", () => {
               }
 
               // Inicializar el temporizador para el botón de reenvío
-              setupPhoneResendButton()
+              setupPhoneResendButtonFunc()
 
               // Configurar el botón de verificación OTP
               const verifyPhoneOtpBtn = document.getElementById("verify-phone-otp-btn")
@@ -719,7 +718,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Función para configurar los campos OTP para teléfono
-  function setupPhoneOTPInputs() {
+  function setupPhoneOTPInputsFunc() {
     const phoneOtpInputs = document.querySelectorAll(".phone-otp-input")
 
     // Eliminar eventos anteriores para evitar duplicados
@@ -836,7 +835,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Configurar los campos OTP para teléfono inicialmente
   document.addEventListener("DOMContentLoaded", () => {
-    setupPhoneOTPInputs()
+    setupPhoneOTPInputsFunc()
 
     // Configurar los campos OTP cuando se abra el modal
     const phoneOtpModal = document.getElementById("phone-otp-modal")
@@ -854,7 +853,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }, 100)
 
             // Configurar los campos OTP
-            setupPhoneOTPInputs()
+            setupPhoneOTPInputsFunc()
           }
         })
       })
@@ -864,7 +863,7 @@ document.addEventListener("DOMContentLoaded", () => {
   })
 
   // Función para configurar el botón de reenvío para teléfono
-  function setupPhoneResendButton() {
+  function setupPhoneResendButtonFunc() {
     const resendPhoneBtn = document.getElementById("resend-phone-code")
     const phoneCountdownEl = document.getElementById("phone-countdown")
 
@@ -980,9 +979,9 @@ document.addEventListener("DOMContentLoaded", () => {
               })
 
               // Enfocar el primer campo
-              if (phoneOtpInputs.length > 0) {
-                phoneOtpInputs[0].focus()
-              }
+              setTimeout(() => {
+                if (phoneOtpInputs.length > 0) phoneOtpInputs[0].focus()
+              }, 100)
 
               // Restaurar el texto del botón
               this.textContent = "Reenviar"
@@ -1035,9 +1034,452 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // Exponer la función startPhoneResendTimer para que pueda ser llamada desde fuera
+      // Exponer la función startPhoneResendTimer función para que pueda ser llamada desde fuera
       window.startPhoneResendTimer = startPhoneResendTimer
     }
+  }
+
+  // Function to close the email OTP modal
+  function closeOtpModal() {
+    const otpModal = document.getElementById("otp-modal")
+    if (otpModal) {
+      const modalContent = otpModal.querySelector(".bg-white")
+      modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+      setTimeout(() => {
+        otpModal.classList.add("hidden")
+        otpModal.classList.remove("flex")
+        modalContent.classList.remove("opacity-0", "scale-95")
+      }, 300)
+    }
+  }
+
+  // Function to close the phone OTP modal
+  function closePhoneOtpModal() {
+    const phoneOtpModal = document.getElementById("phone-otp-modal")
+    if (phoneOtpModal) {
+      const modalContent = phoneOtpModal.querySelector(".bg-white")
+      modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+      setTimeout(() => {
+        phoneOtpModal.classList.add("hidden")
+        phoneOtpModal.classList.remove("flex")
+        modalContent.classList.remove("opacity-0", "scale-95")
+      }, 300)
+    }
+  }
+
+  // Now update the event listeners for the modal close buttons
+  // Find the section where the close buttons are configured and update it:
+
+  // Update the event listeners for the OTP modal
+  document.addEventListener("DOMContentLoaded", () => {
+    // Email OTP modal close buttons
+    const closeOtpModalBtn = document.getElementById("close-otp-modal")
+    const cancelOtpBtn = document.getElementById("cancel-otp-btn")
+    const otpModal = document.getElementById("otp-modal")
+
+    if (closeOtpModalBtn) {
+      closeOtpModalBtn.addEventListener("click", closeOtpModal)
+    }
+
+    if (cancelOtpBtn) {
+      cancelOtpBtn.addEventListener("click", closeOtpModal)
+    }
+
+    if (otpModal) {
+      otpModal.addEventListener("click", (e) => {
+        if (e.target === otpModal) {
+          closeOtpModal()
+        }
+      })
+    }
+
+    // Phone OTP modal close buttons
+    const closePhoneOtpModalBtn = document.getElementById("close-phone-otp-modal")
+    const cancelPhoneOtpBtn = document.getElementById("cancel-phone-otp-btn")
+    const phoneOtpModal = document.getElementById("phone-otp-modal")
+
+    if (closePhoneOtpModalBtn) {
+      closePhoneOtpModalBtn.addEventListener("click", closePhoneOtpModal)
+    }
+
+    if (cancelPhoneOtpBtn) {
+      cancelPhoneOtpBtn.addEventListener("click", closePhoneOtpModal)
+    }
+
+    if (phoneOtpModal) {
+      phoneOtpModal.addEventListener("click", (e) => {
+        if (e.target === phoneOtpModal) {
+          closePhoneOtpModal()
+        }
+      })
+    }
+  })
+
+  // Now let's fix the countdown timer functionality
+  // Replace the setupResendButton function with this improved version:
+
+  function setupResendButtonFunc() {
+    const resendBtn = document.getElementById("resend-code")
+    const countdownEl = document.getElementById("countdown")
+
+    if (resendBtn && countdownEl) {
+      let countdownTime = 60 // 1 minute in seconds by default
+      let countdownInterval = null
+
+      // Function to update the countdown
+      function updateCountdown() {
+        if (countdownTime <= 0) {
+          // Detener el intervalo
+          if (countdownInterval) {
+            clearInterval(countdownInterval)
+            countdownInterval = null
+          }
+
+          // Habilitar el botón cuando el contador llega a cero
+          resendBtn.classList.remove("cursor-not-allowed", "text-gray-400")
+          resendBtn.classList.add("text-primary-600", "hover:text-primary-800")
+          countdownEl.textContent = "Puedes solicitar un nuevo código ahora"
+          resendBtn.disabled = false
+          return
+        }
+
+        // Mostrar el tiempo restante
+        countdownEl.textContent = `Puedes solicitar un nuevo código en ${countdownTime} segundos`
+        countdownTime--
+      }
+
+      // Iniciar el contador con un tiempo específico
+      function startResendTimer(seconds = 60) {
+        // Detener cualquier intervalo existente
+        if (countdownInterval) {
+          clearInterval(countdownInterval)
+        }
+
+        // Deshabilitar el botón
+        resendBtn.classList.add("cursor-not-allowed", "text-gray-400")
+        resendBtn.classList.remove("text-primary-600", "hover:text-primary-800")
+        resendBtn.disabled = true
+
+        // Iniciar el contador con el tiempo proporcionado
+        countdownTime = seconds
+        updateCountdown() // Actualizar inmediatamente
+        countdownInterval = setInterval(updateCountdown, 1000)
+      }
+
+      // Verificar el estado del cooldown desde el servidor
+      function checkServerCooldown() {
+        fetch("/perfil/verificar_cooldown_correo")
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.cooldown && data.remaining_seconds > 0) {
+              startResendTimer(data.remaining_seconds)
+            } else {
+              // Si no hay cooldown activo, habilitar el botón
+              resendBtn.classList.remove("cursor-not-allowed", "text-gray-400")
+              resendBtn.classList.add("text-primary-600", "hover:text-primary-800")
+              countdownEl.textContent = "Puedes solicitar un nuevo código ahora"
+              resendBtn.disabled = false
+            }
+          })
+          .catch((error) => {
+            console.error("Error al verificar cooldown:", error)
+            // En caso de error, usar el comportamiento predeterminado
+            startResendTimer()
+          })
+      }
+
+      // Configurar el evento de clic para reenviar el código
+      resendBtn.addEventListener("click", function () {
+        if (this.disabled) return
+
+        const email = document.getElementById("correo").value.trim()
+
+        // Validar el correo
+        if (!email) {
+          showAlert("Por favor, ingresa un correo electrónico válido", "error")
+          return
+        }
+
+        // Validar formato de correo
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(email)) {
+          showAlert("Por favor, ingresa un correo electrónico válido", "error")
+          return
+        }
+
+        // Mostrar estado de carga
+        this.innerHTML = `
+      <div class="flex items-center">
+        <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-primary-600 mr-1"></div>
+        <span>Enviando...</span>
+      </div>
+    `
+
+        // Enviar solicitud para verificar correo
+        fetch("/perfil/enviar_verificacion_correo", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email: email }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              showAlert("Nuevo código de verificación enviado a tu correo electrónico", "success")
+
+              // Limpiar los campos de OTP
+              const otpInputs = document.querySelectorAll(".otp-input")
+              otpInputs.forEach((input) => {
+                input.value = ""
+              })
+
+              // Enfocar el primer campo
+              if (otpInputs.length > 0) {
+                otpInputs[0].focus()
+              }
+
+              // Restaurar el texto del botón
+              this.textContent = "Reenviar"
+
+              // Iniciar el temporizador con el tiempo proporcionado por el servidor
+              if (data.cooldown_seconds) {
+                startResendTimer(data.cooldown_seconds)
+              } else {
+                startResendTimer(60) // Valor por defecto
+              }
+            } else if (data.cooldown) {
+              // Si hay un tiempo de espera activo, mostrar mensaje y actualizar el contador
+              showAlert(
+                `Debes esperar ${data.remaining_seconds} segundos antes de solicitar un nuevo código`,
+                "warning",
+              )
+              startResendTimer(data.remaining_seconds)
+              this.textContent = "Reenviar"
+            } else {
+              showAlert(data.error || "Error al enviar el código de verificación", "error")
+              this.textContent = "Reenviar"
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error)
+            showAlert("Error al enviar el código de verificación", "error")
+            this.textContent = "Reenviar"
+          })
+      })
+
+      // Inicializar el temporizador cuando se muestra el modal
+      if (otpModal) {
+        // Observar cambios en la visibilidad del modal
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.attributeName === "class") {
+              if (!otpModal.classList.contains("hidden")) {
+                // Verificar el estado del cooldown desde el servidor
+                checkServerCooldown()
+              }
+            }
+          })
+        })
+
+        observer.observe(otpModal, { attributes: true })
+
+        // También verificar el estado si el modal ya está visible
+        if (!otpModal.classList.contains("hidden")) {
+          checkServerCooldown()
+        }
+      }
+
+      // Exponer la función startResendTimer para que pueda ser llamada desde fuera
+      window.startResendTimer = startResendTimer
+
+      return { startResendTimer, checkServerCooldown }
+    }
+
+    return null
+  }
+
+  // Similarly, update the setupPhoneResendButton function:
+
+  function setupPhoneResendButtonFunc() {
+    const resendPhoneBtn = document.getElementById("resend-phone-code")
+    const phoneCountdownEl = document.getElementById("phone-countdown")
+
+    if (resendPhoneBtn && phoneCountdownEl) {
+      let countdownTime = 60 // 1 minute in seconds by default
+      let countdownInterval = null
+
+      // Function to update the counter
+      function updatePhoneCountdown() {
+        if (countdownTime <= 0) {
+          // Stop the interval
+          if (countdownInterval) {
+            clearInterval(countdownInterval)
+            countdownInterval = null
+          }
+
+          // Enable the button when the counter reaches zero
+          resendPhoneBtn.classList.remove("cursor-not-allowed", "text-gray-400")
+          resendPhoneBtn.classList.add("text-primary-600", "hover:text-primary-800")
+          phoneCountdownEl.textContent = "Puedes solicitar un nuevo código ahora"
+          resendPhoneBtn.disabled = false
+          return
+        }
+
+        // Show the remaining time
+        phoneCountdownEl.textContent = `Puedes solicitar un nuevo código en ${countdownTime} segundos`
+        countdownTime--
+      }
+
+      // Start the counter with a specific time
+      function startPhoneResendTimer(seconds = 60) {
+        // Stop any existing interval
+        if (countdownInterval) {
+          clearInterval(countdownInterval)
+        }
+
+        // Disable the button
+        resendPhoneBtn.classList.add("cursor-not-allowed", "text-gray-400")
+        resendPhoneBtn.classList.remove("text-primary-600", "hover:text-primary-800")
+        resendPhoneBtn.disabled = true
+
+        // Start the counter with the provided time
+        countdownTime = seconds
+        updatePhoneCountdown() // Update immediately
+        countdownInterval = setInterval(updatePhoneCountdown, 1000)
+      }
+
+      // Check the cooldown status from the server
+      function checkPhoneServerCooldown() {
+        fetch("/perfil/verificar_cooldown_telefono")
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.cooldown && data.remaining_seconds > 0) {
+              startPhoneResendTimer(data.remaining_seconds)
+            } else {
+              // If there's no active cooldown, enable the button
+              resendPhoneBtn.classList.remove("cursor-not-allowed", "text-gray-400")
+              resendPhoneBtn.classList.add("text-primary-600", "hover:text-primary-800")
+              phoneCountdownEl.textContent = "Puedes solicitar un nuevo código ahora"
+              resendPhoneBtn.disabled = false
+            }
+          })
+          .catch((error) => {
+            console.error("Error al verificar cooldown:", error)
+            // In case of error, use the default behavior
+            startPhoneResendTimer()
+          })
+      }
+
+      // Configure the click event to resend the code
+      resendPhoneBtn.addEventListener("click", function () {
+        if (this.disabled) return
+
+        const celular = document.getElementById("celular").value.trim()
+
+        // Validate the phone number
+        if (!celular) {
+          showAlert("Por favor, ingresa un número de celular válido", "error")
+          return
+        }
+
+        // Validate phone format
+        if (!/^\d{10}$/.test(celular)) {
+          showAlert("Por favor, ingresa un número de celular válido de 10 dígitos", "error")
+          return
+        }
+
+        // Show loading state
+        this.innerHTML = `
+        <div class="flex items-center">
+          <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-primary-600 mr-1"></div>
+          <span>Enviando...</span>
+        </div>
+      `
+
+        // Send request to verify phone
+        fetch("/perfil/enviar_verificacion_telefono", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ phone: celular }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              showAlert("Nuevo código de verificación enviado a tu número de celular", "success")
+
+              // Clear OTP fields
+              const phoneOtpInputs = document.querySelectorAll(".phone-otp-input")
+              phoneOtpInputs.forEach((input) => {
+                input.value = ""
+              })
+
+              // Focus the first field
+              if (phoneOtpInputs.length > 0) {
+                phoneOtpInputs[0].focus()
+              }
+
+              // Restore the button text
+              this.textContent = "Reenviar"
+
+              // Start the timer with the time provided by the server
+              if (data.cooldown_seconds) {
+                startPhoneResendTimer(data.cooldown_seconds)
+              } else {
+                startPhoneResendTimer(60) // Default value
+              }
+            } else if (data.cooldown) {
+              // If there's an active waiting time, show message and update the counter
+              showAlert(
+                `Debes esperar ${data.remaining_seconds} segundos antes de solicitar un nuevo código`,
+                "warning",
+              )
+              startPhoneResendTimer(data.remaining_seconds)
+              this.textContent = "Reenviar"
+            } else {
+              showAlert(data.error || "Error al enviar el código de verificación", "error")
+              this.textContent = "Reenviar"
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error)
+            showAlert("Error al enviar el código de verificación", "error")
+            this.textContent = "Reenviar"
+          })
+      })
+
+      // Initialize the timer when the modal is shown
+      const phoneOtpModal = document.getElementById("phone-otp-modal")
+      if (phoneOtpModal) {
+        // Observe changes in modal visibility
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.attributeName === "class") {
+              if (!phoneOtpModal.classList.contains("hidden")) {
+                // Check the cooldown status from the server
+                checkPhoneServerCooldown()
+              }
+            }
+          })
+        })
+
+        observer.observe(phoneOtpModal, { attributes: true })
+
+        // Also check the status if the modal is already visible
+        if (!phoneOtpModal.classList.contains("hidden")) {
+          checkPhoneServerCooldown()
+        }
+      }
+
+      // Expose the startPhoneResendTimer función so it can be called from outside
+      window.startPhoneResendTimer = startPhoneResendTimer
+
+      return { startPhoneResendTimer, checkPhoneServerCooldown }
+    }
+
+    return null
   }
 
   if (editPersonalDataBtn) {
@@ -1089,7 +1531,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Function to close verification modal
   function closeVerificationModal() {
     const modalContent = passwordVerificationModal.querySelector(".bg-white")
-    modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+    modalContent.classList.add("opacity-0", "scale-95")
     setTimeout(() => {
       passwordVerificationModal.classList.add("hidden")
       passwordVerificationModal.classList.remove("flex")
@@ -1104,7 +1546,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   })
 
-  // Confirmar verificación y guardar cambios
+  // Confirmar eliminación y guardar cambios
   // Modificar la función para actualizar datos personales para verificar el correo cuando cambie
   // Buscar la sección donde se maneja el evento del botón "confirm-verification" y modificarla:
 
@@ -1282,7 +1724,7 @@ document.addEventListener("DOMContentLoaded", () => {
                           }
 
                           // Inicializar el temporizador para el botón de reenvío
-                          setupResendButton()
+                          setupResendButtonFunc()
 
                           // Configurar el botón de verificación OTP
                           const verifyOtpBtn = document.getElementById("verify-otp-btn")
@@ -1729,7 +2171,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // NUEVA IMPLEMENTACIÓN DE LA FUNCIONALIDAD OTP
   // Función para configurar los campos OTP
-  function setupOTPInputs() {
+  function setupOTPInputsFunc() {
     const otpInputs = document.querySelectorAll(".otp-input")
 
     // Eliminar eventos anteriores para evitar duplicados
@@ -1845,7 +2287,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Configurar los campos OTP inicialmente
-  setupOTPInputs()
+  setupOTPInputsFunc()
 
   // Configurar los campos OTP cuando se abra el modal
   const otpModal = document.getElementById("otp-modal")
@@ -1863,7 +2305,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }, 100)
 
           // Configurar los campos OTP
-          setupOTPInputs()
+          setupOTPInputsFunc()
         }
       })
     })
@@ -1874,7 +2316,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Modificar la función setupResendButton para consultar el estado del cooldown desde el servidor
   // Buscar la función setupResendButton y reemplazarla con:
 
-  function setupResendButton() {
+  function setupResendButtonFunc() {
     const resendBtn = document.getElementById("resend-code")
     const countdownEl = document.getElementById("countdown")
 
@@ -2052,7 +2494,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Inicializar el temporizador para el botón de reenvío cuando el DOM esté listo
-  setupResendButton()
+  setupResendButtonFunc()
 
   // Exportar la función para que esté disponible globalmente
   window.actualizarImagenPerfil = actualizarImagenPerfil
@@ -2061,7 +2503,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const otpInputs = document.querySelectorAll(".otp-input")
 
   // phone otp inputs
-  function setupPhoneOTPInputs() {
+  function setupPhoneOTPInputsFunc() {
     const phoneOtpInputs = document.querySelectorAll(".phone-otp-input")
 
     // Eliminar eventos anteriores para evitar duplicados
@@ -2132,6 +2574,7 @@ document.addEventListener("DOMContentLoaded", () => {
           refreshedInputs[index - 1].focus()
         }
 
+        // Manejar teclas de flecha
         if (e.key === "ArrowRight" && index < refreshedInputs.length - 1) {
           e.preventDefault()
           refreshedInputs[index + 1].focus()
@@ -2186,13 +2629,13 @@ document.addEventListener("DOMContentLoaded", () => {
           const phoneOtpInputs = document.querySelectorAll(".phone-otp-input")
           phoneOtpInputs.forEach((input) => (input.value = ""))
 
-          // Enfocar el primer campo después de un breve retraso
+          // Enfocar el primer campo
           setTimeout(() => {
             if (phoneOtpInputs.length > 0) phoneOtpInputs[0].focus()
           }, 100)
 
           // Configurar los campos OTP
-          setupPhoneOTPInputs()
+          setupPhoneOTPInputsFunc()
         }
       })
     })
@@ -2201,7 +2644,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Función para configurar el botón de reenvío para teléfono
-  function setupPhoneResendButton() {
+  function setupPhoneResendButtonFunc() {
     const resendPhoneBtn = document.getElementById("resend-phone-code")
     const phoneCountdownEl = document.getElementById("phone-countdown")
 
@@ -2317,9 +2760,9 @@ document.addEventListener("DOMContentLoaded", () => {
               })
 
               // Enfocar el primer campo
-              if (phoneOtpInputs.length > 0) {
-                phoneOtpInputs[0].focus()
-              }
+              setTimeout(() => {
+                if (phoneOtpInputs.length > 0) phoneOtpInputs[0].focus()
+              }, 100)
 
               // Restaurar el texto del botón
               this.textContent = "Reenviar"
@@ -2372,7 +2815,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // Exponer la función startPhoneResendTimer para que pueda ser llamada desde fuera
+      // Exponer la función startPhoneResendTimer función para que pueda ser llamada desde fuera
       window.startPhoneResendTimer = startPhoneResendTimer
     }
   }

@@ -10,7 +10,6 @@ import json
 import time
 import hashlib
 from flask import Blueprint, request, redirect, url_for, flash, render_template, session, jsonify, send_file, send_from_directory
-from config.cloudinary_config import configure_cloudinary
 from config.database import create_connection
 from utils.auth_helpers import hash_password, verify_password
 from config.email import send_email_via_zoho
@@ -19,6 +18,11 @@ import string
 from datetime import datetime, timedelta
 import io
 from werkzeug.utils import secure_filename
+
+# Importar las bibliotecas necesarias para 2FA
+import pyotp
+import qrcode
+import base64
 
 # Agregar las importaciones de Twilio al principio del archivo
 from config.twilio_config import send_verification_code, check_verification_code
@@ -86,8 +90,15 @@ def perfil():
               """, (user['id_solicitante'],))
               asesorias = cursor.fetchall()
           
+          # Verificar si el usuario tiene 2FA activado
+          cursor.execute("""
+              SELECT * FROM tbl_2fa
+              WHERE id_usuario = %s AND activo = 1
+          """, (session['user_id'],))
+          has_2fa = cursor.fetchone() is not None
+          
           # Incluir CSS adicional para correcciones
-          return render_template('perfil.html', user=user, asesorias=asesorias)
+          return render_template('perfil.html', user=user, asesorias=asesorias, has_2fa=has_2fa)
       except Exception as e:
           flash(f'Error al cargar el perfil: {str(e)}', 'error')
       finally:
@@ -98,6 +109,287 @@ def perfil():
   
   return redirect(url_for('index'))
 
+# Agregar nuevas rutas para 2FA
+
+@perfil_bp.route('/generar_2fa', methods=['POST'])
+def generar_2fa():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        # Generar una clave secreta para TOTP
+        secret = pyotp.random_base32()
+        
+        # Obtener información del usuario para el QR
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute("SELECT correo FROM tbl_usuario WHERE id_usuario = %s", (session['user_id'],))
+            user = cursor.fetchone()
+            cursor.close()
+            connection.close()
+            
+            if not user:
+                return jsonify({'error': 'Usuario no encontrado'}), 404
+            
+            # Crear el URI para el QR code
+            totp = pyotp.TOTP(secret)
+            uri = totp.provisioning_uri(user['correo'], issuer_name="Canadian Visa Advise")
+            
+            # Generar el QR code
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(uri)
+            qr.make(fit=True)
+            
+            img = qr.make_image(fill_color="black", back_color="white")
+            
+            # Convertir la imagen a base64 para enviarla al frontend
+            buffered = BytesIO()
+            img.save(buffered, format="PNG")
+            img_str = base64.b64encode(buffered.getvalue()).decode()
+            
+            # Guardar la clave secreta en la base de datos (pero aún no activarla)
+            connection = create_connection()
+            if connection:
+                cursor = connection.cursor()
+                
+                # Verificar si ya existe un registro para este usuario
+                cursor.execute("SELECT id FROM tbl_2fa WHERE id_usuario = %s", (session['user_id'],))
+                existing = cursor.fetchone()
+                
+                if existing:
+                    # Actualizar el registro existente
+                    cursor.execute("""
+                        UPDATE tbl_2fa 
+                        SET secret_key = %s, activo = 0, fecha_actualizacion = NOW() 
+                        WHERE id_usuario = %s
+                    """, (secret, session['user_id']))
+                else:
+                    # Crear un nuevo registro
+                    cursor.execute("""
+                        INSERT INTO tbl_2fa (id_usuario, secret_key, activo, fecha_creacion) 
+                        VALUES (%s, %s, 0, NOW())
+                    """, (session['user_id'], secret))
+                
+                connection.commit()
+                cursor.close()
+                connection.close()
+                
+                return jsonify({
+                    'success': True,
+                    'qr_code': img_str,
+                    'secret': secret
+                })
+            else:
+                return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al generar 2FA: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@perfil_bp.route('/verificar_2fa', methods=['POST'])
+def verificar_2fa():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        code = data.get('code')
+        
+        if not code:
+            return jsonify({'error': 'Código no proporcionado'}), 400
+        
+        # Validar formato del código (6 dígitos)
+        if not code.isdigit() or len(code) != 6:
+            return jsonify({'error': 'El código debe ser de 6 dígitos numéricos'}), 400
+        
+        # Obtener la clave secreta de la base de datos
+        connection = create_connection()
+        if not connection:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+            
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT secret_key FROM tbl_2fa WHERE id_usuario = %s", (session['user_id'],))
+        result = cursor.fetchone()
+        
+        if not result:
+            cursor.close()
+            connection.close()
+            return jsonify({'error': 'No se encontró configuración 2FA para este usuario'}), 404
+        
+        secret = result['secret_key']
+        
+        # Verificar el código TOTP
+        totp = pyotp.TOTP(secret)
+        # Permitir una ventana de validación más amplia (1 periodo anterior y 1 posterior)
+        if totp.verify(code, valid_window=1):
+            # Activar 2FA para el usuario
+            try:
+                cursor.execute("""
+                    UPDATE tbl_2fa 
+                    SET activo = 1, fecha_actualizacion = NOW() 
+                    WHERE id_usuario = %s
+                """, (session['user_id'],))
+                connection.commit()
+                
+                cursor.close()
+                connection.close()
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Verificación en dos pasos activada correctamente'
+                })
+            except Exception as db_error:
+                if connection.is_connected():
+                    connection.rollback()
+                    cursor.close()
+                    connection.close()
+                print(f"Error de base de datos: {str(db_error)}")
+                return jsonify({'error': f'Error de base de datos: {str(db_error)}'}), 500
+        else:
+            # Intentar verificar manualmente con un margen de tiempo
+            for drift in range(-2, 3):
+                timestamp = datetime.now().timestamp() + drift * 30
+                if totp.verify(code, for_time=timestamp):
+                    # Activar 2FA para el usuario
+                    try:
+                        cursor.execute("""
+                            UPDATE tbl_2fa 
+                            SET activo = 1, fecha_actualizacion = NOW() 
+                            WHERE id_usuario = %s
+                        """, (session['user_id'],))
+                        connection.commit()
+                        
+                        cursor.close()
+                        connection.close()
+                        
+                        return jsonify({
+                            'success': True,
+                            'message': 'Verificación en dos pasos activada correctamente'
+                        })
+                    except Exception as db_error:
+                        if connection.is_connected():
+                            connection.rollback()
+                            cursor.close()
+                            connection.close()
+                        print(f"Error de base de datos: {str(db_error)}")
+                        return jsonify({'error': f'Error de base de datos: {str(db_error)}'}), 500
+        
+            cursor.close()
+            connection.close()
+            return jsonify({'error': 'Código incorrecto. Asegúrate de que el código sea actual.'}), 400
+    except Exception as e:
+        print(f"Error al verificar 2FA: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Mejorar la función desactivar_2fa para manejar mejor los errores
+@perfil_bp.route('/desactivar_2fa', methods=['POST'])
+def desactivar_2fa():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        password = data.get('password')
+        
+        if not password:
+            return jsonify({'error': 'Contraseña no proporcionada'}), 400
+        
+        # Verificar la contraseña del usuario
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Obtener la contraseña actual del usuario
+            cursor.execute("SELECT contrasena FROM tbl_usuario WHERE id_usuario = %s", (session['user_id'],))
+            user = cursor.fetchone()
+            
+            if not user:
+                cursor.close()
+                connection.close()
+                return jsonify({'error': 'Usuario no encontrado'}), 404
+            
+            if not verify_password(user['contrasena'], password):
+                cursor.close()
+                connection.close()
+                return jsonify({'error': 'Contraseña incorrecta'}), 400
+            
+            # Verificar si 2FA está activo
+            cursor.execute("SELECT activo FROM tbl_2fa WHERE id_usuario = %s", (session['user_id'],))
+            twofa = cursor.fetchone()
+            
+            if not twofa:
+                cursor.close()
+                connection.close()
+                return jsonify({'error': 'No se encontró configuración 2FA para este usuario'}), 404
+            
+            if not twofa['activo']:
+                cursor.close()
+                connection.close()
+                return jsonify({'error': 'La verificación en dos pasos ya está desactivada'}), 400
+            
+            # Desactivar 2FA
+            cursor.execute("""
+                UPDATE tbl_2fa 
+                SET activo = 0, fecha_actualizacion = NOW() 
+                WHERE id_usuario = %s
+            """, (session['user_id'],))
+            connection.commit()
+            
+            cursor.close()
+            connection.close()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Verificación en dos pasos desactivada correctamente'
+            })
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al desactivar 2FA: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Mejorar la función verificar_estado_2fa para manejar mejor los errores
+@perfil_bp.route('/verificar_estado_2fa', methods=['GET'])
+def verificar_estado_2fa():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute("SELECT activo FROM tbl_2fa WHERE id_usuario = %s", (session['user_id'],))
+            result = cursor.fetchone()
+            
+            cursor.close()
+            connection.close()
+            
+            if result:
+                return jsonify({
+                    'success': True,
+                    'active': bool(result['activo'])
+                })
+            else:
+                return jsonify({
+                    'success': True,
+                    'active': False
+                })
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al verificar estado 2FA: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+# Resto del código original...
+# (Mantener todas las demás funciones sin cambios)
 @perfil_bp.route('/cargar_imagen_perfil_sesion', methods=['POST'])
 def cargar_imagen_perfil_sesion():
   """
@@ -930,15 +1222,33 @@ def actualizar_datos_personales():
             user = cursor.fetchone()
             
             if not user or not verify_password(user['contrasena'], data['password']):
+                cursor.close()
+                connection.close()
                 return jsonify({'error': 'Contraseña incorrecta'}), 400
             
-            # Verificar si el correo ya está en uso por otro usuario
+            # Verificar si el correo ya está en uso por otro usuario Y está verificado
             if data['correo'] != session.get('user_email'):
-                cursor.execute("SELECT id_usuario FROM tbl_usuario WHERE correo = %s AND id_usuario != %s", 
-                              (data['correo'], session['user_id']))
-                existing_email = cursor.fetchone()
-                if existing_email:
-                    return jsonify({'error': 'El correo electrónico ya está en uso por otro usuario'}), 400
+                cursor.execute("""
+                    SELECT id_usuario FROM tbl_usuario 
+                    WHERE correo = %s AND id_usuario != %s AND correo_verificado = 1
+                """, (data['correo'], session['user_id']))
+                existing_verified_email = cursor.fetchone()
+                if existing_verified_email:
+                    cursor.close()
+                    connection.close()
+                    return jsonify({'error': 'El correo electrónico ya está verificado por otro usuario. Por favor, utiliza un correo diferente.'}), 400
+            
+            # Verificar si el celular ya está en uso por otro usuario Y está verificado
+            if 'celular' in data and data['celular'] and data['celular'] != user.get('celular'):
+                cursor.execute("""
+                    SELECT id_usuario FROM tbl_usuario 
+                    WHERE celular = %s AND id_usuario != %s AND celular_verificado = 1
+                """, (data['celular'], session['user_id']))
+                existing_verified_phone = cursor.fetchone()
+                if existing_verified_phone:
+                    cursor.close()
+                    connection.close()
+                    return jsonify({'error': 'El número de celular ya está verificado por otro usuario. Por favor, utiliza un número diferente.'}), 400
             
             # Obtener la fecha de nacimiento actual del usuario
             cursor.execute("SELECT fecha_nacimiento FROM tbl_usuario WHERE id_usuario = %s", (session['user_id'],))
@@ -1011,6 +1321,30 @@ def enviar_verificacion_correo():
                     'cooldown': True,
                     'remaining_seconds': remaining_seconds
                 }), 429  # 429 Too Many Requests
+        
+        # NUEVA FUNCIONALIDAD: Verificar si el correo ya está verificado por otro usuario
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Consultar si el correo ya está verificado por otro usuario
+            cursor.execute("""
+                SELECT id_usuario FROM tbl_usuario 
+                WHERE correo = %s AND correo_verificado = 1 AND id_usuario != %s
+            """, (email, session['user_id']))
+            
+            existing_verified = cursor.fetchone()
+            
+            if existing_verified:
+                cursor.close()
+                connection.close()
+                return jsonify({
+                    'error': 'Este correo electrónico ya está verificado por otro usuario. Por favor, utiliza un correo diferente.',
+                    'duplicate': True
+                }), 400
+            
+            cursor.close()
+            connection.close()
         
         # Generar código OTP de 6 dígitos
         otp = ''.join(random.choices(string.digits, k=6))
@@ -1173,6 +1507,33 @@ def enviar_verificacion_telefono():
                     'cooldown': True,
                     'remaining_seconds': remaining_seconds
                 }), 429  # 429 Too Many Requests
+        
+        # NUEVA FUNCIONALIDAD: Verificar si el teléfono ya está verificado por otro usuario
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Obtener el número sin el código de país para la comparación
+            phone_without_code = phone.replace('+57', '')
+            
+            # Consultar si el teléfono ya está verificado por otro usuario
+            cursor.execute("""
+                SELECT id_usuario FROM tbl_usuario 
+                WHERE celular = %s AND celular_verificado = 1 AND id_usuario != %s
+            """, (phone_without_code, session['user_id']))
+            
+            existing_verified = cursor.fetchone()
+            
+            if existing_verified:
+                cursor.close()
+                connection.close()
+                return jsonify({
+                    'error': 'Este número de teléfono ya está verificado por otro usuario. Por favor, utiliza un número diferente.',
+                    'duplicate': True
+                }), 400
+            
+            cursor.close()
+            connection.close()
         
         # Importar la función de Twilio aquí para evitar problemas de importación circular
         from config.twilio_config import send_verification_code
