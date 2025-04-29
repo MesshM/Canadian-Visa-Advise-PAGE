@@ -18,13 +18,9 @@ import string
 from datetime import datetime, timedelta
 import io
 from werkzeug.utils import secure_filename
-
-# Importar las bibliotecas necesarias para 2FA
 import pyotp
 import qrcode
 import base64
-
-# Agregar las importaciones de Twilio al principio del archivo
 from config.twilio_config import send_verification_code, check_verification_code
 
 perfil_bp = Blueprint('perfil', __name__)
