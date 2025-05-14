@@ -140,50 +140,5 @@ document.addEventListener("DOMContentLoaded", () => {
   window.actualizarInicialesSidebar = actualizarInicialesSidebar
   window.actualizarImagenPerfilEnSidebar = actualizarImagenPerfilEnSidebar
 
-  // Agregar botón de cerrar sesión al sidebar
-  const nav = document.querySelector("aside nav")
-  if (nav) {
-    // Verificar si ya existe un botón de logout para evitar duplicados
-    if (!document.querySelector("a[href='/logout']")) {
-      // Crear el elemento de separador
-      const separator = document.createElement("div")
-      separator.className = "border-t border-gray-200 my-4"
-      nav.appendChild(separator)
-      
-      // Crear el enlace de logout
-      const logoutLink = document.createElement("a")
-      logoutLink.href = "/logout"
-      logoutLink.className = "flex items-center px-4 py-3 text-gray-500 border-l-3 border-transparent hover:text-primary-600 hover:translate-x-1 transition-all duration-200 group"
-      
-      // Crear el contenido del enlace
-      const linkContent = document.createElement("div")
-      linkContent.className = "flex items-center"
-      
-      // Crear el icono de logout
-      const iconContainer = document.createElement("div")
-      iconContainer.className = "mr-3 flex items-center justify-center w-6 h-6 text-gray-400 group-hover:text-primary-600"
-      iconContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>`
-      
-      // Crear el texto del enlace
-      const linkText = document.createElement("span")
-      linkText.className = "font-medium"
-      linkText.textContent = "Cerrar Sesión"
-      
-      // Ensamblar todo
-      linkContent.appendChild(iconContainer)
-      linkContent.appendChild(linkText)
-      logoutLink.appendChild(linkContent)
-      nav.appendChild(logoutLink)
-      
-      // Agregar el mismo event listener que tienen los otros enlaces
-      logoutLink.addEventListener("click", () => {
-        document.querySelectorAll("nav a").forEach((l) => {
-          l.classList.remove("text-primary-600", "border-l-3", "border-primary-600", "font-medium", "bg-primary-50")
-          l.classList.add("text-gray-500", "border-transparent", "hover:text-primary-600", "hover:translate-x-1")
-        })
-        logoutLink.classList.remove("text-gray-500", "border-transparent", "hover:text-primary-600", "hover:translate-x-1")
-        logoutLink.classList.add("text-primary-600", "border-l-3", "border-primary-600", "font-medium", "bg-primary-50")
-      })
-    }
-  }
+  
 })

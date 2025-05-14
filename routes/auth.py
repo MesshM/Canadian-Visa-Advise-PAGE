@@ -5,6 +5,7 @@ from config.database import create_connection
 from config.email import send_email_via_zoho
 from utils.auth_helpers import generate_captcha_text, generate_reset_token, generate_token_expiration
 from mysql.connector import Error
+import pyotp  # Añadir esta importación
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -51,6 +52,15 @@ def cargar_imagen_perfil_en_sesion(user_id):
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    if request.method == 'GET':
+        # Limpiar variables temporales de 2FA si existen
+        session.pop('temp_user_id', None)
+        session.pop('temp_user_name', None)
+        session.pop('temp_remember_me', None)
+        session.pop('temp_email', None)
+        session.pop('needs_2fa', None)
+        session.pop('2fa_secret', None)
+    
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
@@ -61,10 +71,26 @@ def login():
             cursor = connection.cursor(dictionary=True)
             cursor.execute("SELECT * FROM tbl_usuario WHERE correo = %s", (email,))
             user = cursor.fetchone()
-            cursor.close()
-            connection.close()
             
             if user and check_password_hash(user['contrasena'], password):
+                # Verificar si el usuario tiene 2FA activado
+                cursor.execute("SELECT * FROM tbl_2fa WHERE id_usuario = %s AND activo = 1", (user['id_usuario'],))
+                has_2fa = cursor.fetchone()
+                
+                if has_2fa:
+                    # Si tiene 2FA, guardar datos temporales en la sesión y mostrar pantalla de verificación
+                    session['temp_user_id'] = user['id_usuario']
+                    session['temp_user_name'] = f"{user['nombres']} {user['apellidos']}"
+                    session['temp_remember_me'] = True if remember_me else False
+                    session['temp_email'] = email
+                    session['needs_2fa'] = True
+                    session['2fa_secret'] = has_2fa['secret_key']
+                    
+                    cursor.close()
+                    connection.close()
+                    return render_template('login.html', needs_2fa=True)
+                
+                # Si no tiene 2FA o después de verificarlo, continuar con el login normal
                 session['user_id'] = user['id_usuario']
                 session['user_name'] = f"{user['nombres']} {user['apellidos']}"
                 
@@ -91,10 +117,94 @@ def login():
                     return redirect(url_for('index'))
             else:
                 flash('Correo o contraseña incorrectos', 'error')
+                cursor.close()
+                connection.close()
         else:
             flash('Error de conexión a la base de datos', 'error')
     
-    return render_template('login.html')
+    return render_template('login.html', needs_2fa=session.get('needs_2fa', False))
+
+@auth_bp.route('/verify_2fa', methods=['POST'])
+def verify_2fa():
+    if 'temp_user_id' not in session or '2fa_secret' not in session:
+        return redirect(url_for('auth.login'))
+    
+    code = request.form.get('totp_code')
+    if not code:
+        flash('Código de verificación requerido', 'error')
+        return render_template('login.html', needs_2fa=True)
+    
+    # Limpiar el código (eliminar espacios y caracteres no numéricos)
+    code = ''.join(c for c in code if c.isdigit())
+    
+    # Verificar que el código tenga 6 dígitos
+    if len(code) != 6:
+        flash('El código debe tener 6 dígitos', 'error')
+        return render_template('login.html', needs_2fa=True)
+    
+    # Importar pyotp para verificar el código
+    import pyotp
+    
+    # Crear objeto TOTP con la clave secreta
+    totp = pyotp.TOTP(session['2fa_secret'])
+    
+    # Intentar verificar con una ventana de tiempo más amplia (2 periodos antes y después)
+    verified = False
+    
+    # Verificar el código con la ventana de validación estándar
+    if totp.verify(code, valid_window=2):
+        verified = True
+    else:
+        # Si falla, intentar verificar manualmente con diferentes desplazamientos de tiempo
+        # Esto ayuda con problemas de sincronización de reloj
+        import time
+        timestamp = int(time.time())
+        for drift in range(-4, 5):  # Probar con un rango más amplio de desplazamiento
+            drift_timestamp = timestamp + (drift * 30)
+            if totp.verify(code, for_time=drift_timestamp):
+                verified = True
+                break
+    
+    if verified:
+        # Código válido, completar el inicio de sesión
+        user_id = session['temp_user_id']
+        
+        # Establecer las variables de sesión permanentes
+        session['user_id'] = user_id
+        session['user_name'] = session['temp_user_name']
+        
+        # Verificar el rol del usuario
+        if session['temp_email'].endswith('@cva.com'):
+            session['user_role'] = 'Asesor'
+            session['is_admin'] = True
+        else:
+            session['user_role'] = 'Usuario'
+            session['is_admin'] = False
+        
+        if session.get('temp_remember_me'):
+            session.permanent = True
+        else:
+            session.permanent = False
+        
+        # Cargar la imagen de perfil en la sesión
+        cargar_imagen_perfil_en_sesion(user_id)
+        
+        # Limpiar variables temporales
+        session.pop('temp_user_id', None)
+        session.pop('temp_user_name', None)
+        session.pop('temp_remember_me', None)
+        session.pop('temp_email', None)
+        session.pop('needs_2fa', None)
+        session.pop('2fa_secret', None)
+        
+        # Redirigir según el rol
+        if session.get('user_role') == 'Asesor':
+            return redirect(url_for('admin.index_asesor'))
+        else:
+            return redirect(url_for('index'))
+    else:
+        flash('Código de verificación incorrecto. Por favor, inténtalo de nuevo.', 'error')
+        return render_template('login.html', needs_2fa=True)
 
 @auth_bp.route('/registro', methods=['GET', 'POST'])
 def registro():

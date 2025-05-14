@@ -7,11 +7,6 @@ import json
 import threading
 import time
 from mysql.connector import Error
-import stripe
-import os
-
-# Configurar Stripe
-stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 
 asesorias_bp = Blueprint('asesorias', __name__)
 
@@ -634,12 +629,14 @@ def obtener_detalles_asesoria(codigo_asesoria):
         if connection:
             cursor = connection.cursor(dictionary=True)
             
-            # Verificar que la asesoría pertenece al usuario actual
+            # Verificar que la asesoría pertenece al usuario actual y obtener el correo del asesor
             cursor.execute("""
-                SELECT a.*, pa.monto, pa.metodo_pago as metodo_pago_stripe
+                SELECT a.*, pa.monto, pa.metodo_pago as metodo_pago_stripe, 
+                       ase.correo as correo
                 FROM tbl_asesoria a
                 LEFT JOIN tbl_pago_asesoria pa ON a.codigo_asesoria = pa.codigo_asesoria
                 JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
+                LEFT JOIN tbl_asesor ase ON a.id_asesor = ase.id_asesor
                 WHERE a.codigo_asesoria = %s AND s.id_usuario = %s
             """, (codigo_asesoria, session['user_id']))
             
@@ -664,4 +661,3 @@ def obtener_detalles_asesoria(codigo_asesoria):
     except Exception as e:
         print(f"Error al obtener detalles de asesoría: {str(e)}")
         return jsonify({'error': str(e)}), 500
-

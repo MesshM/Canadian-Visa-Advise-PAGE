@@ -1,31 +1,7 @@
-// Funcionalidad para historial de asesorías
 document.addEventListener("DOMContentLoaded", () => {
-  // Aquí se puede agregar la funcionalidad específica para el historial de asesorías
-  // Por ejemplo, cargar datos de asesorías pasadas, filtrar por fecha, etc.
-
-  // Esta sección está vacía en el código original, pero se puede implementar
-  // la funcionalidad necesaria para mostrar y gestionar el historial de asesorías
-
-  // Ejemplo de cómo podría ser la implementación:
+  // Filtros para el historial de asesorías (si existen)
   const filtroFechaBtn = document.getElementById("filtro-fecha-btn")
   const filtroEstadoSelect = document.getElementById("filtro-estado")
-
-  // Función para mostrar alertas
-  function showAlert(message, type = "success") {
-    const alertDiv = document.createElement("div")
-    alertDiv.className = `fixed top-4 right-4 z-50 bg-${type === "success" ? "green" : "red"}-100 border border-${type === "success" ? "green" : "red"}-500 text-${type === "success" ? "green" : "red"}-700 px-4 py-3 rounded`
-    alertDiv.setAttribute("role", "alert")
-    alertDiv.innerHTML = `
-      <strong class="font-bold">${type === "success" ? "Éxito:" : "Error:"}</strong>
-      <span class="block sm:inline">${message}</span>
-    `
-    document.body.appendChild(alertDiv)
-
-    // Desaparecer después de 3 segundos
-    setTimeout(() => {
-      alertDiv.remove()
-    }, 3000)
-  }
 
   if (filtroFechaBtn) {
     filtroFechaBtn.addEventListener("click", () => {
@@ -52,6 +28,48 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   }
 
+  // Función para mostrar alertas
+  function showAlert(message, type = "success") {
+    const alertContainer = document.getElementById("alert-container")
+    const alertElement = document.getElementById("alert")
+
+    if (alertContainer && alertElement) {
+      // Configurar el estilo según el tipo de alerta
+      if (type === "success") {
+        alertElement.className =
+          "p-4 rounded-xl border animate-fade-in shadow-md bg-green-50 border-green-200 text-green-700"
+      } else {
+        alertElement.className = "p-4 rounded-xl border animate-fade-in shadow-md bg-red-50 border-red-200 text-red-700"
+      }
+
+      // Establecer el mensaje
+      alertElement.textContent = message
+
+      // Mostrar la alerta
+      alertContainer.classList.remove("hidden")
+
+      // Ocultar después de 3 segundos
+      setTimeout(() => {
+        alertContainer.classList.add("hidden")
+      }, 3000)
+    } else {
+      // Fallback si no existe el contenedor de alertas
+      const alertDiv = document.createElement("div")
+      alertDiv.className = `fixed top-4 right-4 z-50 bg-${type === "success" ? "green" : "red"}-100 border border-${type === "success" ? "green" : "red"}-500 text-${type === "success" ? "green" : "red"}-700 px-4 py-3 rounded`
+      alertDiv.setAttribute("role", "alert")
+      alertDiv.innerHTML = `
+        <strong class="font-bold">${type === "success" ? "Éxito:" : "Error:"}</strong>
+        <span class="block sm:inline">${message}</span>
+      `
+      document.body.appendChild(alertDiv)
+
+      // Desaparecer después de 3 segundos
+      setTimeout(() => {
+        alertDiv.remove()
+      }, 3000)
+    }
+  }
+
   // Función para cargar el historial de asesorías
   function cargarHistorialAsesorias(fechaInicio = null, fechaFin = null, estado = "todos") {
     // Mostrar indicador de carga
@@ -59,7 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (historialContainer) {
       historialContainer.innerHTML = `
         <div class="flex justify-center items-center p-8">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-t-2 border-primary-600"></div>
         </div>
       `
 
@@ -120,30 +138,65 @@ document.addEventListener("DOMContentLoaded", () => {
     asesorias.forEach((asesoria) => {
       // Determinar el color según el estado
       let statusColor = "gray"
-      if (asesoria.estado === "completada") statusColor = "green"
+      if (asesoria.estado === "completada" || asesoria.estado === "Pagada") statusColor = "green"
       else if (asesoria.estado === "cancelada") statusColor = "red"
-      else if (asesoria.estado === "pendiente") statusColor = "yellow"
+      else if (asesoria.estado === "pendiente" || asesoria.estado === "Pendiente") statusColor = "yellow"
+      else if (asesoria.estado === "en proceso" || asesoria.estado === "En Proceso Activo") statusColor = "blue"
+
+      // Formatear la fecha
+      const fechaCreacion = new Date(asesoria.fecha_creacion)
+      const fechaFormateada = fechaCreacion.toLocaleDateString("es-ES", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+
+      // Formatear la fecha de asesoría si existe
+      let fechaAsesoria = ""
+      if (asesoria.fecha_asesoria) {
+        const fecha = new Date(asesoria.fecha_asesoria)
+        fechaAsesoria = fecha.toLocaleDateString("es-ES", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      }
 
       html += `
         <div class="border rounded-lg p-4 hover:shadow-md transition-shadow">
           <div class="flex justify-between items-start">
             <div>
-              <h3 class="font-medium">${asesoria.titulo}</h3>
-              <p class="text-sm text-gray-600">${asesoria.fecha} - ${asesoria.hora}</p>
-              <p class="text-sm mt-2">${asesoria.descripcion}</p>
+              <h3 class="font-medium">Asesoría #${asesoria.codigo_asesoria}</h3>
+              <p class="text-sm text-gray-600">${fechaFormateada} - ${asesoria.tipo_asesoria}</p>
+              <p class="text-sm mt-2">${asesoria.descripcion || "Sin descripción"}</p>
             </div>
             <div class="text-${statusColor}-600 bg-${statusColor}-100 px-3 py-1 rounded-full text-sm">
               ${asesoria.estado}
             </div>
           </div>
-          <div class="mt-3 pt-3 border-t flex justify-between items-center">
-            <div class="flex items-center">
-              <img src="${asesoria.asesor.imagen || "/placeholder.svg"}" alt="${asesoria.asesor.nombre}" 
-                class="w-8 h-8 rounded-full mr-2">
-              <span class="text-sm">${asesoria.asesor.nombre}</span>
+          <div class="mt-3 pt-3 border-t">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div>
+                <span class="text-sm text-gray-500">Asesor:</span>
+                <span class="text-sm">${asesoria.asesor_asignado || "No asignado"}</span>
+              </div>
+              ${
+                fechaAsesoria
+                  ? `
+              <div>
+                <span class="text-sm text-gray-500">Fecha de asesoría:</span>
+                <span class="text-sm">${fechaAsesoria}</span>
+              </div>
+              `
+                  : ""
+              }
+              <div>
+                <span class="text-sm text-gray-500">Lugar:</span>
+                <span class="text-sm">${asesoria.lugar || "Virtual (Zoom)"}</span>
+              </div>
             </div>
-            <button class="text-primary-600 hover:text-primary-800 text-sm" 
-              data-id="${asesoria.id}">Ver detalles</button>
           </div>
         </div>
       `
@@ -151,150 +204,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
     html += `</div>`
     historialContainer.innerHTML = html
-
-    // Agregar event listeners a los botones de detalles
-    document.querySelectorAll("[data-id]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const asesoriaId = button.getAttribute("data-id")
-        // Aquí se implementaría la lógica para mostrar los detalles de la asesoría
-        mostrarDetallesAsesoria(asesoriaId)
-      })
-    })
   }
-
-  // Función para mostrar los detalles de una asesoría
-  function mostrarDetallesAsesoria(id) {
-    // Aquí se implementaría la lógica para mostrar un modal con los detalles
-    // de la asesoría seleccionada
-    console.log(`Mostrar detalles de la asesoría ${id}`)
-
-    // Ejemplo de implementación:
-    fetch(`/perfil/asesoria/${id}`)
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success) {
-          // Crear y mostrar un modal con los detalles
-          const modal = document.createElement("div")
-          modal.className = "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          modal.innerHTML = `
-            <div class="bg-white rounded-lg p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto animate-scale-in">
-              <div class="flex justify-between items-start mb-4">
-                <h2 class="text-xl font-bold">${data.asesoria.titulo}</h2>
-                <button class="text-gray-500 hover:text-gray-700" id="cerrar-detalles">
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                  </svg>
-                </button>
-              </div>
-              
-              <div class="mb-4">
-                <p class="text-sm text-gray-600 mb-2">
-                  <span class="font-medium">Fecha y hora:</span> 
-                  ${data.asesoria.fecha} a las ${data.asesoria.hora}
-                </p>
-                <p class="text-sm text-gray-600 mb-2">
-                  <span class="font-medium">Estado:</span> 
-                  <span class="px-2 py-1 rounded-full text-xs bg-${
-                    data.asesoria.estado === "completada"
-                      ? "green"
-                      : data.asesoria.estado === "cancelada"
-                        ? "red"
-                        : data.asesoria.estado === "pendiente"
-                          ? "yellow"
-                          : "gray"
-                  }-100 text-${
-                    data.asesoria.estado === "completada"
-                      ? "green"
-                      : data.asesoria.estado === "cancelada"
-                        ? "red"
-                        : data.asesoria.estado === "pendiente"
-                          ? "yellow"
-                          : "gray"
-                  }-600">${data.asesoria.estado}</span>
-                </p>
-                <p class="text-sm text-gray-600 mb-4">
-                  <span class="font-medium">Duración:</span> ${data.asesoria.duracion} minutos
-                </p>
-              </div>
-              
-              <div class="mb-4">
-                <h3 class="font-medium mb-2">Descripción</h3>
-                <p class="text-sm text-gray-700">${data.asesoria.descripcion}</p>
-              </div>
-              
-              <div class="mb-4">
-                <h3 class="font-medium mb-2">Asesor</h3>
-                <div class="flex items-center">
-                  <img src="${data.asesoria.asesor.imagen || "/placeholder.svg"}" 
-                    alt="${data.asesoria.asesor.nombre}" 
-                    class="w-10 h-10 rounded-full mr-3">
-                  <div>
-                    <p class="font-medium">${data.asesoria.asesor.nombre}</p>
-                    <p class="text-sm text-gray-600">${data.asesoria.asesor.especialidad}</p>
-                  </div>
-                </div>
-              </div>
-              
-              ${
-                data.asesoria.notas
-                  ? `
-                <div class="mb-4">
-                  <h3 class="font-medium mb-2">Notas</h3>
-                  <p class="text-sm text-gray-700">${data.asesoria.notas}</p>
-                </div>
-              `
-                  : ""
-              }
-              
-              <div class="flex justify-end mt-6">
-                <button class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 mr-2">
-                  Cerrar
-                </button>
-                ${
-                  data.asesoria.estado === "pendiente"
-                    ? `
-                  <button class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700">
-                    Reprogramar
-                  </button>
-                `
-                    : ""
-                }
-              </div>
-            </div>
-          `
-
-          document.body.appendChild(modal)
-
-          // Cerrar el modal
-          const cerrarBtn = document.getElementById("cerrar-detalles")
-          if (cerrarBtn) {
-            cerrarBtn.addEventListener("click", () => {
-              modal.classList.add("opacity-0")
-              setTimeout(() => {
-                document.body.removeChild(modal)
-              }, 300)
-            })
-          }
-
-          // También cerrar al hacer clic fuera del contenido
-          modal.addEventListener("click", (e) => {
-            if (e.target === modal) {
-              modal.classList.add("opacity-0")
-              setTimeout(() => {
-                document.body.removeChild(modal)
-              }, 300)
-            }
-          })
-        } else {
-          showAlert("No se pudieron cargar los detalles de la asesoría", "error")
-        }
-      })
-      .catch((error) => {
-        console.error("Error:", error)
-        showAlert("Error al cargar los detalles de la asesoría", "error")
-      })
-  }
-
-  // Cargar el historial de asesorías al iniciar
-  cargarHistorialAsesorias()
 })

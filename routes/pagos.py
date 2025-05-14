@@ -93,9 +93,9 @@ def procesar_pago():
                 connection.commit()
                 
                 if request.is_json:
-                    return jsonify({'success': True, 'message': 'Pago procesado exitosamente'})
+                    return jsonify({'success': True, 'message': 'Pago procesado exitosamente, dirigirte a Formulario de elegibilidad'})
                 else:
-                    flash('Pago procesado exitosamente', 'success')
+                    # No mostrar flash message, JavaScript se encargará de la alerta
                     return redirect(url_for('asesorias.asesorias'))
                     
             except Exception as e:
@@ -305,7 +305,7 @@ def confirmar_pago():
                     except Exception as e:
                         print(f"Error al enviar correo de confirmación: {e}")
                     
-                    flash('Pago procesado exitosamente', 'success')
+                    # No mostrar flash message, JavaScript se encargará de la alerta
                 else:
                     flash('Error de conexión a la base de datos', 'error')
             else:
@@ -316,4 +316,3 @@ def confirmar_pago():
         flash(f'Error al procesar el pago: {str(e)}', 'error')
     
     return redirect(url_for('asesorias.asesorias'))
-

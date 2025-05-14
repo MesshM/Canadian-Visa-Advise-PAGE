@@ -68,6 +68,7 @@
     --color-zinc-700: oklch(0.37 0.013 285.805);
     --color-zinc-800: oklch(0.274 0.006 286.033);
     --color-zinc-900: oklch(0.21 0.006 285.885);
+    --color-zinc-950: oklch(0.141 0.005 285.823);
     --color-black: #000;
     --color-white: #fff;
     --spacing: 0.25rem;
@@ -75,6 +76,7 @@
     --container-md: 28rem;
     --container-lg: 32rem;
     --container-2xl: 42rem;
+    --container-3xl: 48rem;
     --container-4xl: 56rem;
     --container-5xl: 64rem;
     --container-7xl: 80rem;
@@ -554,9 +556,6 @@
   .-my-1\.5 {
     margin-block: calc(var(--spacing) * -1.5);
   }
-  .my-4 {
-    margin-block: calc(var(--spacing) * 4);
-  }
   .-mt-12 {
     margin-top: calc(var(--spacing) * -12);
   }
@@ -788,6 +787,9 @@
   .h-12 {
     height: calc(var(--spacing) * 12);
   }
+  .h-14 {
+    height: calc(var(--spacing) * 14);
+  }
   .h-15 {
     height: calc(var(--spacing) * 15);
   }
@@ -899,6 +901,9 @@
   .w-24 {
     width: calc(var(--spacing) * 24);
   }
+  .w-32 {
+    width: calc(var(--spacing) * 32);
+  }
   .w-48 {
     width: calc(var(--spacing) * 48);
   }
@@ -922,6 +927,9 @@
   }
   .max-w-2xl {
     max-width: var(--container-2xl);
+  }
+  .max-w-3xl {
+    max-width: var(--container-3xl);
   }
   .max-w-4xl {
     max-width: var(--container-4xl);
@@ -1867,6 +1875,9 @@
   .border-primary-300 {
     border-color: #ffa0a0;
   }
+  .border-primary-400 {
+    border-color: #ff6b6b;
+  }
   .border-primary-500 {
     border-color: #ff3e3e;
   }
@@ -1944,6 +1955,9 @@
   }
   .bg-blue-100 {
     background-color: var(--color-blue-100);
+  }
+  .bg-blue-500 {
+    background-color: var(--color-blue-500);
   }
   .bg-blue-600 {
     background-color: var(--color-blue-600);
@@ -2028,6 +2042,9 @@
   }
   .bg-purple-100 {
     background-color: var(--color-purple-100);
+  }
+  .bg-purple-500 {
+    background-color: var(--color-purple-500);
   }
   .bg-red-50 {
     background-color: var(--color-red-50);
@@ -2838,6 +2855,9 @@
   .text-zinc-700 {
     color: var(--color-zinc-700);
   }
+  .text-zinc-950 {
+    color: var(--color-zinc-950);
+  }
   .capitalize {
     text-transform: capitalize;
   }
@@ -3331,6 +3351,10 @@
     --tw-outline-style: solid;
     outline-style: solid;
   }
+  .select-all {
+    -webkit-user-select: all;
+    user-select: all;
+  }
   .select-none {
     -webkit-user-select: none;
     user-select: none;
@@ -3692,13 +3716,6 @@
     &:hover {
       @media (hover: hover) {
         background-color: var(--color-gray-50);
-      }
-    }
-  }
-  .hover\:bg-gray-100 {
-    &:hover {
-      @media (hover: hover) {
-        background-color: var(--color-gray-100);
       }
     }
   }
