@@ -26,7 +26,7 @@
             <span class="absolute inset-0 w-0 bg-primary-50 -z-10 transition-all duration-300 ease-in-out group-hover:w-full"></span>
         </a>
 
-        <a href="#" class="flex items-center px-6 py-3 {{ 'text-primary-600 border-l-3 border-primary-600 font-medium bg-primary-50' if '/formularios/solicitud' in request.path else 'text-gray-500 border-l-3 border-transparent hover:text-primary-600 hover:translate-x-1' }} no-underline transition-all duration-300 ease-in-out relative overflow-hidden group font-inter">
+        <a href="{{ url_for('formularios.solicitud') }}" class="flex items-center px-6 py-3 {{ 'text-primary-600 border-l-3 border-primary-600 font-medium bg-primary-50' if '/formularios/solicitud' in request.path else 'text-gray-500 border-l-3 border-transparent hover:text-primary-600 hover:translate-x-1' }} no-underline transition-all duration-300 ease-in-out relative overflow-hidden group font-inter">
             <svg class="w-5 h-5 mr-3 transition-transform duration-300 ease-in-out group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
             </svg>
@@ -59,7 +59,7 @@
         <a href="{{ url_for_perfil() }}" class="flex items-center w-full group">
             <div class="flex items-center justify-center w-10 h-10 rounded-full bg-red-500 mr-3 text-white transition-all duration-300 ease-in-out shadow-sm group-hover:shadow-md group-hover:scale-110">
                 {% if session.get('profile_photo') %}
-                    <img src="{{ session.get('profile_photo') }}" alt="Foto de perfil" class="w-full h-full object-cover rounded-full">
+                    <img src="{{ session.get('profile_photo') }}?t={{ now().timestamp() }}" alt="Foto de perfil" class="w-full h-full object-cover rounded-full">
                     <!-- Iniciales ocultas cuando hay foto -->
                     <div class="text-xl font-bold text-white select-none hidden">
                         {% if session is defined and 'user_name' in session %}
@@ -87,23 +87,23 @@
                         Usuario
                     {% endif %}
                 </div>
-                <div class="text-xs text-gray-500">
-                    {% if session is defined and 'user_role' in session %}
-                        {{ session['user_role'] }}
-                    {% else %}
-                        Usuario
-                    {% endif %}
-                </div>
             </div>
         </a>
     </div>
 
-    <a href="/logout" class="flex items-center w-full p-3 text-gray-500 border-t border-gray-100 transition-all duration-300 ease-in-out hover:text-red-500 hover:bg-gray-50 text-sm">
-        <svg class="w-5 h-5 mr-2 transition-transform duration-300 ease-in-out" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-        </svg>
-        <span>Cerrar sesión</span>
-    </a>
+    <!-- Botón de cerrar sesión -->
+    <div class="px-4 pb-4 pt-2">
+        <a href="/logout" class="relative overflow-hidden group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium py-2 px-4 rounded-xl shadow-lg hover:shadow-red-500/30 transition-all duration-300 cursor-pointer flex items-center justify-center">
+            <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+            <div class="relative flex items-center justify-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                </svg>
+                <span>Cerrar sesión</span>
+            </div>
+        </a>
+    </div>
+
     {% else %}
     <!-- Usuario no logueado - Mostrar botones de inicio de sesión y registro -->
     <div class="p-4 flex flex-col gap-3">

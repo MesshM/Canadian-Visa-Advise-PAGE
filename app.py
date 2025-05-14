@@ -5,6 +5,7 @@ from routes.asesorias import asesorias_bp
 from routes.pagos import pagos_bp
 from routes.perfil import perfil_bp
 from routes.admin import admin_bp
+from routes.formularios import formulario_bp
 import os
 from datetime import datetime, timedelta
 import secrets
@@ -33,6 +34,7 @@ app.register_blueprint(asesorias_bp, url_prefix='/asesorias')
 app.register_blueprint(pagos_bp, url_prefix='/pagos')
 app.register_blueprint(perfil_bp, url_prefix='/perfil')
 app.register_blueprint(admin_bp, url_prefix='/admin')
+app.register_blueprint(formulario_bp, url_prefix='/formularios')
 
 
 # Rutas de redirección para mantener compatibilidad con URLs antiguas
@@ -137,6 +139,10 @@ def inject_urls():
         'url_for_admin_pagos': lambda: url_for('admin.pagos'),
         'url_for_admin_reportes': lambda: url_for('admin.reportes'),
         'url_for_admin_dashboard': lambda: url_for('admin.dashboard'),
+        
+        # Ruta para el formulario de solicitud
+        'url_for_formulario_solicitud': lambda: url_for('formularios.solicitud'),
+        
         'now': lambda: datetime.now()
     }
 

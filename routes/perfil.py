@@ -3,289 +3,407 @@ import uuid
 from PIL import Image
 from io import BytesIO
 import re
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+import json
+import time
+import hashlib
 from flask import Blueprint, request, redirect, url_for, flash, render_template, session, jsonify, send_file, send_from_directory
+from config.cloudinary_config import configure_cloudinary
 from config.database import create_connection
 from utils.auth_helpers import hash_password, verify_password
 from config.email import send_email_via_zoho
 import random
 import string
 from datetime import datetime, timedelta
-import json
 import io
 from werkzeug.utils import secure_filename
 
 perfil_bp = Blueprint('perfil', __name__)
 
-# Definir la carpeta para almacenar las imágenes de perfil
-UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads', 'profile_images')
+# Definir la carpeta para almacenar las imágenes de perfil en caché local
+CACHE_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'cache', 'profile_images')
 # Asegurar que la carpeta existe
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(CACHE_FOLDER, exist_ok=True)
+
+# Tiempo de expiración de caché en segundos (1 día)
+CACHE_EXPIRATION = 86400
 
 @perfil_bp.route('/perfil')
 def perfil():
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-    
-    connection = create_connection()
-    if connection:
-        cursor = connection.cursor(dictionary=True)
-        try:
-            # Obtener información del usuario
-            cursor.execute("""
-                SELECT u.*, s.id_solicitante
-                FROM tbl_usuario u
-                LEFT JOIN tbl_solicitante s ON u.id_usuario = s.id_usuario
-                WHERE u.id_usuario = %s
-            """, (session['user_id'],))
-            
-            user = cursor.fetchone()
-            
-            if not user:
-                flash('Usuario no encontrado', 'error')
-                return redirect(url_for('index'))
-            
-            # Obtener la imagen de perfil del usuario
-            cursor.execute("""
-                SELECT ruta_foto FROM tbl_perfil_fotos
-                WHERE id_usuario = %s
-            """, (session['user_id'],))
-            
-            profile_photo = cursor.fetchone()
-            if profile_photo and profile_photo['ruta_foto']:
-                # Guardar la URL de la imagen en la sesión
-                session['profile_photo'] = url_for('perfil.obtener_imagen_perfil_archivo', filename=profile_photo['ruta_foto'])
-            
-            # Obtener asesorías del usuario si es solicitante
-            asesorias = []
-            if user['id_solicitante']:
-                cursor.execute("""
-                    SELECT a.codigo_asesoria, a.fecha_creacion, a.fecha_asesoria, a.tipo_asesoria, 
-                           a.asesor_asignado, a.estado, a.descripcion
-                    FROM tbl_asesoria a
-                    WHERE a.id_solicitante = %s
-                    ORDER BY a.fecha_creacion DESC
-                """, (user['id_solicitante'],))
-                asesorias = cursor.fetchall()
-            
-            # Incluir CSS adicional para correcciones
-            return render_template('perfil.html', user=user, asesorias=asesorias)
-        except Exception as e:
-            flash(f'Error al cargar el perfil: {str(e)}', 'error')
-        finally:
-            cursor.close()
-            connection.close()
-    else:
-        flash('Error de conexión a la base de datos', 'error')
-    
-    return redirect(url_for('index'))
+  if 'user_id' not in session:
+      return redirect(url_for('auth.login'))
+  
+  connection = create_connection()
+  if connection:
+      cursor = connection.cursor(dictionary=True)
+      try:
+          # Obtener información del usuario
+          cursor.execute("""
+              SELECT u.*, s.id_solicitante
+              FROM tbl_usuario u
+              LEFT JOIN tbl_solicitante s ON u.id_usuario = s.id_usuario
+              WHERE u.id_usuario = %s
+          """, (session['user_id'],))
+          
+          user = cursor.fetchone()
+          
+          if not user:
+              flash('Usuario no encontrado', 'error')
+              return redirect(url_for('index'))
+          
+          # Obtener la imagen de perfil del usuario
+          cursor.execute("""
+              SELECT cloudinary_public_id FROM tbl_perfil_fotos
+              WHERE id_usuario = %s
+          """, (session['user_id'],))
+          
+          profile_photo = cursor.fetchone()
+          if profile_photo and profile_photo['cloudinary_public_id']:
+              # Guardar la URL de la imagen en la sesión
+              session['profile_photo'] = cloudinary.CloudinaryImage(profile_photo['cloudinary_public_id']).build_url(
+                  width=200, 
+                  height=200, 
+                  crop="fill", 
+                  gravity="face", 
+                  fetch_format="auto", 
+                  quality="auto"
+              )
+          
+          # Obtener asesorías del usuario si es solicitante
+          asesorias = []
+          if user['id_solicitante']:
+              cursor.execute("""
+                  SELECT a.codigo_asesoria, a.fecha_creacion, a.fecha_asesoria, a.tipo_asesoria, 
+                         a.asesor_asignado, a.estado, a.descripcion
+                  FROM tbl_asesoria a
+                  WHERE a.id_solicitante = %s
+                  ORDER BY a.fecha_creacion DESC
+              """, (user['id_solicitante'],))
+              asesorias = cursor.fetchall()
+          
+          # Incluir CSS adicional para correcciones
+          return render_template('perfil.html', user=user, asesorias=asesorias)
+      except Exception as e:
+          flash(f'Error al cargar el perfil: {str(e)}', 'error')
+      finally:
+          cursor.close()
+          connection.close()
+  else:
+      flash('Error de conexión a la base de datos', 'error')
+  
+  return redirect(url_for('index'))
 
 @perfil_bp.route('/cargar_imagen_perfil_sesion', methods=['POST'])
 def cargar_imagen_perfil_sesion():
-    """
-    Función para cargar la imagen de perfil en la sesión.
-    Puede ser llamada directamente o desde el proceso de login.
-    """
-    if 'user_id' not in session:
-        return jsonify({'error': 'No autorizado'}), 401
-    
-    try:
-        connection = create_connection()
-        if connection:
-            cursor = connection.cursor(dictionary=True)
-            
-            # Obtener la imagen de perfil del usuario
-            cursor.execute("""
-                SELECT ruta_foto FROM tbl_perfil_fotos
-                WHERE id_usuario = %s
-            """, (session['user_id'],))
-            
-            profile_photo = cursor.fetchone()
-            if profile_photo and profile_photo['ruta_foto']:
-                # Guardar la URL de la imagen en la sesión
-                session['profile_photo'] = url_for('perfil.obtener_imagen_perfil_archivo', filename=profile_photo['ruta_foto'])
-                return jsonify({'success': True, 'image_url': session['profile_photo']})
-            else:
-                # Si no hay imagen, limpiar la sesión
-                if 'profile_photo' in session:
-                    session.pop('profile_photo')
-                return jsonify({'success': True, 'has_image': False})
-            
-            cursor.close()
-            connection.close()
-        else:
-            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-    except Exception as e:
-        print(f"Error al cargar imagen de perfil en sesión: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-def cargar_imagen_perfil_en_sesion(user_id):
-    """
-    Función auxiliar para cargar la imagen de perfil en la sesión.
-    Esta función puede ser importada y llamada desde el proceso de login.
-    """
-    try:
-        connection = create_connection()
-        if connection:
-            cursor = connection.cursor(dictionary=True)
-            
-            # Obtener la imagen de perfil del usuario
-            cursor.execute("""
-                SELECT ruta_foto FROM tbl_perfil_fotos
-                WHERE id_usuario = %s
-            """, (user_id,))
-            
-            profile_photo = cursor.fetchone()
-            if profile_photo and profile_photo['ruta_foto']:
-                # Guardar la URL de la imagen en la sesión
-                session['profile_photo'] = url_for('perfil.obtener_imagen_perfil_archivo', filename=profile_photo['ruta_foto'], _external=True)
-            
-            cursor.close()
-            connection.close()
-            
-            return True
-    except Exception as e:
-        print(f"Error al cargar imagen de perfil en sesión: {str(e)}")
-        return False
-
-
-
-@perfil_bp.route('/actualizar_informacion_basica', methods=['POST'])
-def actualizar_informacion_basica():
+  """
+  Función para cargar la imagen de perfil en la sesión.
+  Puede ser llamada directamente o desde el proceso de login.
+  """
   if 'user_id' not in session:
       return jsonify({'error': 'No autorizado'}), 401
   
   try:
-      data = request.get_json()
-      
-      # Obtener los datos del formulario
-      nombres = data.get('first-name')
-      apellidos = data.get('last-name')
-      tipo_documento = data.get('document-type')
-      numero_documento = data.get('id-document')
-      correo = data.get('email')
-      telefono = data.get('phone')
-      direccion = data.get('address')
-      
-      connection = create_connection()
-      if connection:
-          cursor = connection.cursor()
-          
-          # Actualizar la información del usuario
-          cursor.execute("""
-              UPDATE tbl_usuario 
-              SET nombres = %s, apellidos = %s, correo = %s
-              WHERE id_usuario = %s
-          """, (nombres, apellidos, correo, session['user_id']))
-          
-          # Actualizar la sesión con el nuevo nombre
-          session['user_name'] = f"{nombres} {apellidos}"
-          
-          connection.commit()
-          cursor.close()
-          connection.close()
-          
-          return jsonify({'success': True, 'message': 'Información actualizada con éxito'})
-      else:
-          return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-  except Exception as e:
-      print(f"Error al actualizar información básica: {str(e)}")
-      return jsonify({'error': str(e)}), 500
-
-@perfil_bp.route('/cambiar_contrasena', methods=['POST'])
-def cambiar_contrasena():
-  if 'user_id' not in session:
-      return jsonify({'error': 'No autorizado'}), 401
-  
-  try:
-      data = request.get_json()
-      
-      current_password = data.get('current_password')
-      new_password = data.get('new_password')
-      
-      if not current_password or not new_password:
-          return jsonify({'error': 'Faltan parámetros requeridos'}), 400
-      
       connection = create_connection()
       if connection:
           cursor = connection.cursor(dictionary=True)
           
-          # Verificar la contraseña actual
-          cursor.execute("SELECT contrasena FROM tbl_usuario WHERE id_usuario = %s", (session['user_id'],))
-          user = cursor.fetchone()
+          # Obtener la imagen de perfil del usuario
+          cursor.execute("""
+              SELECT cloudinary_public_id FROM tbl_perfil_fotos
+              WHERE id_usuario = %s
+          """, (session['user_id'],))
           
-          if not user or not verify_password(user['contrasena'], current_password):
-              return jsonify({'error': 'La contraseña actual es incorrecta'}), 400
+          profile_photo = cursor.fetchone()
+          if profile_photo and profile_photo['cloudinary_public_id']:
+              # Guardar la URL de la imagen en la sesión
+              image_url = cloudinary.CloudinaryImage(profile_photo['cloudinary_public_id']).build_url(
+                  width=200, 
+                  height=200, 
+                  crop="fill", 
+                  gravity="face", 
+                  fetch_format="auto", 
+                  quality="auto"
+              )
+              session['profile_photo'] = image_url
+              return jsonify({'success': True, 'image_url': image_url})
+          else:
+              # Si no hay imagen, limpiar la sesión
+              if 'profile_photo' in session:
+                  session.pop('profile_photo')
+              return jsonify({'success': True, 'has_image': False})
           
-          # Actualizar la contraseña
-          hashed_password = hash_password(new_password)
-          cursor.execute("UPDATE tbl_usuario SET contrasena = %s WHERE id_usuario = %s", 
-                        (hashed_password, session['user_id']))
-          
-          connection.commit()
           cursor.close()
           connection.close()
-          
-          return jsonify({'success': True, 'message': 'Contraseña actualizada con éxito'})
       else:
           return jsonify({'error': 'Error de conexión a la base de datos'}), 500
   except Exception as e:
-      print(f"Error al cambiar contraseña: {str(e)}")
+      print(f"Error al cargar imagen de perfil en sesión: {str(e)}")
       return jsonify({'error': str(e)}), 500
 
-@perfil_bp.route('/enviar_codigo_verificacion', methods=['POST'])
-def enviar_codigo_verificacion():
-  if 'user_id' not in session:
-      return jsonify({'error': 'No autorizado'}), 401
-  
+def cargar_imagen_perfil_en_sesion(user_id):
+  """
+  Función auxiliar para cargar la imagen de perfil en la sesión.
+  Esta función puede ser importada y llamada desde el proceso de login.
+  """
   try:
-      data = request.get_json()
-      method = data.get('method')
-      
-      if method not in ['email', 'sms']:
-          return jsonify({'error': 'Método de verificación no válido'}), 400
-      
-      # Generar código OTP de 6 dígitos
-      otp = ''.join(random.choices(string.digits, k=6))
-      
-      # Guardar el OTP en la sesión para verificarlo después
-      session[f'otp_{method}'] = otp
-      session[f'otp_{method}_expiry'] = (datetime.now() + timedelta(minutes=10)).timestamp()
-      
-      if method == 'email':
-          email = data.get('email')
-          if not email:
-              return jsonify({'error': 'Falta el correo electrónico'}), 400
+      connection = create_connection()
+      if connection:
+          cursor = connection.cursor(dictionary=True)
           
-          # Enviar el código por correo
-          subject = "Código de verificación - Canadian Visa Advise"
-          body = f"""
-          Hola {session.get('user_name', 'Usuario')},
+          # Obtener la imagen de perfil del usuario
+          cursor.execute("""
+              SELECT cloudinary_public_id FROM tbl_perfil_fotos
+              WHERE id_usuario = %s
+          """, (user_id,))
           
-          Tu código de verificación es: {otp}
+          profile_photo = cursor.fetchone()
+          if profile_photo and profile_photo['cloudinary_public_id']:
+              # Guardar la URL de la imagen en la sesión
+              session['profile_photo'] = cloudinary.CloudinaryImage(profile_photo['cloudinary_public_id']).build_url(
+                  width=200, 
+                  height=200, 
+                  crop="fill", 
+                  gravity="face", 
+                  fetch_format="auto", 
+                  quality="auto"
+              )
           
-          Este código expirará en 10 minutos.
+          cursor.close()
+          connection.close()
           
-          Atentamente,
-          Equipo CVA
-          """
-          
-          if send_email_via_zoho(email, subject, body):
-              return jsonify({'success': True, 'message': 'Código enviado al correo electrónico'})
-          else:
-              return jsonify({'error': 'Error al enviar el correo electrónico'}), 500
-      
-      elif method == 'sms':
-          phone = data.get('phone')
-          if not phone:
-              return jsonify({'error': 'Falta el número de teléfono'}), 400
-          
-          # Aquí iría la lógica para enviar SMS (requiere un servicio externo como Twilio)
-          # Por ahora, simulamos que se envió correctamente
-          return jsonify({'success': True, 'message': 'Código enviado al teléfono (simulado)'})
-      
+          return True
   except Exception as e:
-      print(f"Error al enviar código de verificación: {str(e)}")
-      return jsonify({'error': str(e)}), 500
+      print(f"Error al cargar imagen de perfil en sesión: {str(e)}")
+      return False
+
+# Función para obtener imagen de Cloudinary con caché
+def get_cloudinary_image_with_cache(public_id, width=200, height=200):
+    """
+    Obtiene una imagen de Cloudinary con sistema de caché local.
+    Si la imagen está en caché y no ha expirado, la devuelve desde el caché.
+    De lo contrario, la descarga de Cloudinary y la guarda en caché.
+    """
+    if not public_id:
+        return None
+    
+    # Crear un hash del public_id y parámetros para el nombre del archivo en caché
+    cache_key = hashlib.md5(f"{public_id}_{width}_{height}".encode()).hexdigest()
+    cache_path = os.path.join(CACHE_FOLDER, f"{cache_key}.webp")
+    cache_meta_path = os.path.join(CACHE_FOLDER, f"{cache_key}.meta")
+    
+    # Verificar si la imagen está en caché y no ha expirado
+    if os.path.exists(cache_path) and os.path.exists(cache_meta_path):
+        try:
+            with open(cache_meta_path, 'r') as f:
+                meta = json.load(f)
+            
+            # Verificar si el caché ha expirado
+            if time.time() - meta['timestamp'] < CACHE_EXPIRATION:
+                return cache_path
+        except Exception as e:
+            print(f"Error al leer metadatos de caché: {str(e)}")
+    
+    try:
+        # Construir la URL de Cloudinary
+        image_url = cloudinary.CloudinaryImage(public_id).build_url(
+            width=width, 
+            height=height, 
+            crop="fill", 
+            gravity="face", 
+            fetch_format="auto", 
+            quality="auto"
+        )
+        
+        # Descargar la imagen de Cloudinary
+        import requests
+        response = requests.get(image_url)
+        if response.status_code == 200:
+            # Guardar la imagen en caché
+            with open(cache_path, 'wb') as f:
+                f.write(response.content)
+            
+            # Guardar metadatos de caché
+            with open(cache_meta_path, 'w') as f:
+                json.dump({
+                    'timestamp': time.time(),
+                    'public_id': public_id,
+                    'width': width,
+                    'height': height
+                }, f)
+            
+            return cache_path
+    except Exception as e:
+        print(f"Error al obtener imagen de Cloudinary: {str(e)}")
+    
+    return None
+
+@perfil_bp.route('/cambiar_contrasena', methods=['POST'])
+def cambiar_contrasena():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+        
+        if not current_password or not new_password:
+            return jsonify({'error': 'Faltan parámetros requeridos'}), 400
+        
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Verificar la contraseña actual
+            cursor.execute("SELECT contrasena FROM tbl_usuario WHERE id_usuario = %s", (session['user_id'],))
+            user = cursor.fetchone()
+            
+            if not user or not verify_password(user['contrasena'], current_password):
+                return jsonify({'error': 'La contraseña actual es incorrecta'}), 400
+            
+            cursor.close()
+            connection.close()
+            
+            return jsonify({'success': True, 'message': 'Contraseña verificada, proceda con la verificación OTP'})
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al verificar contraseña: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@perfil_bp.route('/enviar_codigo_cambio_contrasena', methods=['POST'])
+def enviar_codigo_cambio_contrasena():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        current_password = data.get('current_password')
+        
+        if not current_password:
+            return jsonify({'error': 'Falta la contraseña actual'}), 400
+        
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Verificar la contraseña actual
+            cursor.execute("SELECT contrasena, correo FROM tbl_usuario WHERE id_usuario = %s", (session['user_id'],))
+            user = cursor.fetchone()
+            
+            if not user or not verify_password(user['contrasena'], current_password):
+                return jsonify({'error': 'La contraseña actual es incorrecta'}), 400
+            
+            # Verificar si hay un tiempo de espera activo para este usuario
+            cooldown_key = f'password_change_cooldown_{session["user_id"]}'
+            if cooldown_key in session:
+                cooldown_until = session.get(cooldown_key)
+                if datetime.now().timestamp() < cooldown_until:
+                    # Si el tiempo de espera no ha expirado, devolver error con tiempo restante
+                    remaining_seconds = int(cooldown_until - datetime.now().timestamp())
+                    return jsonify({
+                        'error': 'Debes esperar antes de solicitar un nuevo código',
+                        'cooldown': True,
+                        'remaining_seconds': remaining_seconds
+                    }), 429  # 429 Too Many Requests
+            
+            # Generar código OTP de 4 dígitos
+            otp = ''.join(random.choices(string.digits, k=4))
+            
+            # Guardar el OTP en la sesión para verificarlo después
+            session['password_change_otp'] = otp
+            session['password_change_expiry'] = (datetime.now() + timedelta(minutes=10)).timestamp()
+            
+            # Establecer un tiempo de espera de 60 segundos antes de permitir un nuevo envío
+            session[cooldown_key] = (datetime.now() + timedelta(seconds=60)).timestamp()
+            
+            # Enviar el código por correo
+            subject = "Código de Verificación para Cambio de Contraseña - Canadian Visa Advise"
+            body = f"""
+            Hola {session.get('user_name', 'Usuario')},
+            
+            Tu código de verificación para cambiar la contraseña es: {otp}
+            
+            Este código expirará en 10 minutos.
+            
+            Si no solicitaste este cambio, por favor ignora este mensaje o contacta a soporte.
+            
+            Atentamente,
+            Equipo CVA
+            """
+            
+            if send_email_via_zoho(user['correo'], subject, body):
+                return jsonify({
+                    'success': True, 
+                    'message': 'Código enviado al correo electrónico',
+                    'cooldown_seconds': 60  # Informar al frontend del tiempo de espera
+                })
+            else:
+                return jsonify({'error': 'Error al enviar el correo electrónico'}), 500
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al enviar código de verificación: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@perfil_bp.route('/verificar_codigo_cambio_contrasena', methods=['POST'])
+def verificar_codigo_cambio_contrasena():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        otp = data.get('otp')
+        new_password = data.get('new_password')
+        
+        if not otp or not new_password:
+            return jsonify({'error': 'Faltan parámetros requeridos'}), 400
+        
+        # Verificar que el OTP existe en la sesión y no ha expirado
+        session_otp = session.get('password_change_otp')
+        expiry = session.get('password_change_expiry')
+        
+        if not session_otp or not expiry:
+            return jsonify({'error': 'No hay un código de verificación activo'}), 400
+        
+        if datetime.now().timestamp() > expiry:
+            # Limpiar el OTP expirado
+            session.pop('password_change_otp', None)
+            session.pop('password_change_expiry', None)
+            return jsonify({'error': 'El código ha expirado'}), 400
+        
+        if otp != session_otp:
+            return jsonify({'error': 'Código incorrecto'}), 400
+        
+        # Código correcto, actualizar la contraseña
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Actualizar la contraseña
+            hashed_password = hash_password(new_password)
+            cursor.execute("UPDATE tbl_usuario SET contrasena = %s WHERE id_usuario = %s", 
+                          (hashed_password, session['user_id']))
+            
+            connection.commit()
+            cursor.close()
+            connection.close()
+            
+            # Limpiar el OTP usado
+            session.pop('password_change_otp', None)
+            session.pop('password_change_expiry', None)
+            
+            return jsonify({'success': True, 'message': 'Contraseña actualizada con éxito'})
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al verificar código: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 
 @perfil_bp.route('/verificar_codigo', methods=['POST'])
 def verificar_codigo():
@@ -461,6 +579,20 @@ def eliminar_cuenta():
           # Eliminar tokens de restablecimiento de contraseña
           cursor.execute("DELETE FROM tbl_password_reset WHERE user_id = %s", (session['user_id'],))
           
+          # Obtener la imagen de perfil para eliminarla de Cloudinary
+          cursor.execute("SELECT cloudinary_public_id FROM tbl_perfil_fotos WHERE id_usuario = %s", (session['user_id'],))
+          profile_photo = cursor.fetchone()
+          
+          if profile_photo and profile_photo[0]:
+              # Eliminar la imagen de Cloudinary
+              try:
+                  cloudinary.uploader.destroy(profile_photo[0])
+              except Exception as e:
+                  print(f"Error al eliminar imagen de Cloudinary: {str(e)}")
+          
+          # Eliminar el registro de la foto de perfil
+          cursor.execute("DELETE FROM tbl_perfil_fotos WHERE id_usuario = %s", (session['user_id'],))
+          
           # Finalmente, eliminar el usuario
           cursor.execute("DELETE FROM tbl_usuario WHERE id_usuario = %s", (session['user_id'],))
           
@@ -480,172 +612,211 @@ def eliminar_cuenta():
       print(f"Error al eliminar cuenta: {str(e)}")
       
       # Si hay una conexión activa, hacer rollback
-      if connection and connection.is_connected():
+      if 'connection' in locals() and connection and connection.is_connected():
           connection.rollback()
           cursor.close()
           connection.close()
       
       return jsonify({'error': str(e)}), 500
-  
+
 # Función para actualizar la imagen de perfil en todas las partes de la aplicación
 def actualizar_imagen_perfil_en_sidebar(user_id, image_url=None):
-    """
-    Actualiza la imagen de perfil en la sesión para que se refleje en el sidebar
-    """
-    if image_url:
-        session['profile_photo'] = image_url
-    else:
-        # Si no hay URL, intentar obtenerla de la base de datos
-        connection = create_connection()
-        if connection:
-            cursor = connection.cursor(dictionary=True)
-            
-            # Obtener la imagen de perfil del usuario
-            cursor.execute("""
-                SELECT ruta_foto FROM tbl_perfil_fotos
-                WHERE id_usuario = %s
-            """, (user_id,))
-            
-            profile_photo = cursor.fetchone()
-            if profile_photo and profile_photo['ruta_foto']:
-                # Guardar la URL de la imagen en la sesión
-                session['profile_photo'] = url_for('perfil.obtener_imagen_perfil_archivo', filename=profile_photo['ruta_foto'], _external=True)
-            elif 'profile_photo' in session:
-                # Si no hay imagen pero existe en la sesión, eliminarla
-                session.pop('profile_photo')
-            
-            cursor.close()
-            connection.close()
-            
-    return True
+  """
+  Actualiza la imagen de perfil en la sesión para que se refleje en el sidebar
+  """
+  if image_url:
+      session['profile_photo'] = image_url
+  else:
+      # Si no hay URL, intentar obtenerla de la base de datos
+      connection = create_connection()
+      if connection:
+          cursor = connection.cursor(dictionary=True)
+          
+          # Obtener la imagen de perfil del usuario
+          cursor.execute("""
+              SELECT cloudinary_public_id FROM tbl_perfil_fotos
+              WHERE id_usuario = %s
+          """, (user_id,))
+          
+          profile_photo = cursor.fetchone()
+          if profile_photo and profile_photo['cloudinary_public_id']:
+              # Guardar la URL de la imagen en la sesión
+              session['profile_photo'] = cloudinary.CloudinaryImage(profile_photo['cloudinary_public_id']).build_url(
+                  width=200, 
+                  height=200, 
+                  crop="fill", 
+                  gravity="face", 
+                  fetch_format="auto", 
+                  quality="auto"
+              )
+          elif 'profile_photo' in session:
+              # Si no hay imagen pero existe en la sesión, eliminarla
+              session.pop('profile_photo')
+          
+          cursor.close()
+          connection.close()
+          
+  return True
 
 @perfil_bp.route('/subir_imagen_perfil', methods=['POST'])
 def subir_imagen_perfil():
-    if 'user_id' not in session:
-        return jsonify({'error': 'No autorizado'}), 401
-    
-    try:
-        if 'profile_image' not in request.files:
-            return jsonify({'error': 'No se ha proporcionado ninguna imagen'}), 400
-        
-        file = request.files['profile_image']
-        
-        if file.filename == '':
-            return jsonify({'error': 'No se ha seleccionado ningún archivo'}), 400
-        
-        # Verificar que es una imagen
-        if not file.content_type.startswith('image/'):
-            return jsonify({'error': 'El archivo debe ser una imagen'}), 400
-        
-        # Generar un nombre aleatorio para la imagen
-        random_filename = str(uuid.uuid4())
-        webp_filename = f"{random_filename}.webp"
-        
-        # Abrir la imagen con PIL
-        img = Image.open(file)
-        
-        # Redimensionar si es demasiado grande (opcional)
-        max_size = (800, 800)
-        if img.width > max_size[0] or img.height > max_size[1]:
-            img.thumbnail(max_size, Image.LANCZOS)
-        
-        # Guardar como WebP
-        webp_path = os.path.join(UPLOAD_FOLDER, webp_filename)
-        img.save(webp_path, 'WEBP', quality=85)
-        
-        # Guardar la ruta en la base de datos
-        connection = create_connection()
-        if connection:
-            cursor = connection.cursor(dictionary=True)
-            
-            # Verificar si ya existe una imagen de perfil para este usuario
-            cursor.execute("SELECT id, ruta_foto FROM tbl_perfil_fotos WHERE id_usuario = %s", (session['user_id'],))
-            existing_image = cursor.fetchone()
-            
-            if existing_image:
-                # Eliminar la imagen anterior del sistema de archivos
-                if existing_image['ruta_foto']:
-                    old_image_path = os.path.join(UPLOAD_FOLDER, existing_image['ruta_foto'])
-                    if os.path.exists(old_image_path):
-                        os.remove(old_image_path)
-                
-                # Actualizar la imagen existente
-                cursor.execute(
-                    "UPDATE tbl_perfil_fotos SET ruta_foto = %s, fecha_creacion = NOW() WHERE id_usuario = %s",
-                    (webp_filename, session['user_id'])
-                )
-            else:
-                # Insertar nueva imagen
-                cursor.execute(
-                    "INSERT INTO tbl_perfil_fotos (id_usuario, ruta_foto) VALUES (%s, %s)",
-                    (session['user_id'], webp_filename)
-                )
-            
-            connection.commit()
-            cursor.close()
-            connection.close()
-            
-            # Guardar la URL de la imagen en la sesión para actualizar el sidebar
-            image_url = url_for('perfil.obtener_imagen_perfil_archivo', filename=webp_filename)
-            session['profile_photo'] = image_url
-            
-            # Devolver la URL de la imagen
-            return jsonify({
-                'success': True, 
-                'image_url': image_url,
-                'sidebar_update': True  # Indicador para el frontend
-            })
-        else:
-            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-    except Exception as e:
-        print(f"Error al subir imagen de perfil: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+  if 'user_id' not in session:
+      return jsonify({'error': 'No autorizado'}), 401
+  
+  try:
+      if 'profile_image' not in request.files:
+          return jsonify({'error': 'No se ha proporcionado ninguna imagen'}), 400
+      
+      file = request.files['profile_image']
+      
+      if file.filename == '':
+          return jsonify({'error': 'No se ha seleccionado ningún archivo'}), 400
+      
+      # Verificar que es una imagen
+      if not file.content_type.startswith('image/'):
+          return jsonify({'error': 'El archivo debe ser una imagen'}), 400
+      
+      # Generar un nombre aleatorio para la imagen
+      random_filename = str(uuid.uuid4())
+      
+      # Abrir la imagen con PIL
+      img = Image.open(file)
+      
+      # Redimensionar si es demasiado grande (opcional)
+      max_size = (800, 800)
+      if img.width > max_size[0] or img.height > max_size[1]:
+          img.thumbnail(max_size, Image.LANCZOS)
+      
+      # Convertir a BytesIO para subir a Cloudinary
+      buffer = BytesIO()
+      img.save(buffer, format='WEBP', quality=85)
+      buffer.seek(0)
+      
+      # Subir la imagen a Cloudinary
+      upload_result = cloudinary.uploader.upload(
+          buffer,
+          folder="profile_images",
+          public_id=random_filename,
+          overwrite=True,
+          resource_type="image",
+          format="webp",
+          transformation=[
+              {"width": 800, "height": 800, "crop": "limit"},
+              {"quality": "auto", "fetch_format": "auto"}
+          ]
+      )
+      # Guardar la referencia en la base de datos
+      connection = create_connection()
+      if connection:
+          cursor = connection.cursor(dictionary=True)
+          
+          # Verificar si ya existe una imagen de perfil para este usuario
+          cursor.execute("SELECT id, cloudinary_public_id FROM tbl_perfil_fotos WHERE id_usuario = %s", (session['user_id'],))
+          existing_image = cursor.fetchone()
+          
+          if existing_image:
+              # Eliminar la imagen anterior de Cloudinary
+              if existing_image['cloudinary_public_id']:
+                  try:
+                      cloudinary.uploader.destroy(existing_image['cloudinary_public_id'])
+                  except Exception as e:
+                      print(f"Error al eliminar imagen anterior de Cloudinary: {str(e)}")
+              
+              # Actualizar la imagen existente
+              cursor.execute(
+                  "UPDATE tbl_perfil_fotos SET cloudinary_public_id = %s, fecha_creacion = NOW() WHERE id_usuario = %s",
+                  (upload_result['public_id'], session['user_id'])
+              )
+          else:
+              # Insertar nueva imagen
+              cursor.execute(
+                  "INSERT INTO tbl_perfil_fotos (id_usuario, cloudinary_public_id) VALUES (%s, %s)",
+                  (session['user_id'], upload_result['public_id'])
+              )
+          
+          connection.commit()
+          cursor.close()
+          connection.close()
+          
+          # Construir la URL de la imagen con transformaciones
+          image_url = cloudinary.CloudinaryImage(upload_result['public_id']).build_url(
+              width=200, 
+              height=200, 
+              crop="fill", 
+              gravity="face", 
+              fetch_format="auto", 
+              quality="auto"
+          )
+          
+          # Guardar la URL de la imagen en la sesión para actualizar el sidebar
+          session['profile_photo'] = image_url
+          
+          # Devolver la URL de la imagen
+          return jsonify({
+              'success': True, 
+              'image_url': image_url,
+              'sidebar_update': True  # Indicador para el frontend
+          })
+      else:
+          return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+  except Exception as e:
+      print(f"Error al subir imagen de perfil: {str(e)}")
+      return jsonify({'error': str(e)}), 500
 
 @perfil_bp.route('/eliminar_imagen_perfil', methods=['POST'])
 def eliminar_imagen_perfil():
-    if 'user_id' not in session:
-        return jsonify({'error': 'No autorizado'}), 401
-    
-    try:
-        connection = create_connection()
-        if connection:
-            cursor = connection.cursor(dictionary=True)
-            
-            # Obtener la ruta de la imagen actual
-            cursor.execute("SELECT ruta_foto FROM tbl_perfil_fotos WHERE id_usuario = %s", (session['user_id'],))
-            result = cursor.fetchone()
-            
-            if result and result['ruta_foto']:
-                # Eliminar el archivo físico
-                file_path = os.path.join(UPLOAD_FOLDER, result['ruta_foto'])
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                
-                # Eliminar el registro de la base de datos
-                cursor.execute("DELETE FROM tbl_perfil_fotos WHERE id_usuario = %s", (session['user_id'],))
-                connection.commit()
-                
-                # Eliminar la URL de la imagen de la sesión
-                if 'profile_photo' in session:
-                    session.pop('profile_photo')
-                
-                cursor.close()
-                connection.close()
-                
-                return jsonify({
-                    'success': True, 
-                    'message': 'Imagen de perfil eliminada correctamente',
-                    'sidebar_update': True  # Indicador para el frontend
-                })
-            else:
-                cursor.close()
-                connection.close()
-                return jsonify({'error': 'No se encontró ninguna imagen de perfil'}), 404
-        else:
-            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-    except Exception as e:
-        print(f"Error al eliminar imagen de perfil: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+  if 'user_id' not in session:
+      return jsonify({'error': 'No autorizado'}), 401
+  
+  try:
+      connection = create_connection()
+      if connection:
+          cursor = connection.cursor(dictionary=True)
+          
+          # Obtener la referencia de la imagen actual
+          cursor.execute("SELECT cloudinary_public_id FROM tbl_perfil_fotos WHERE id_usuario = %s", (session['user_id'],))
+          result = cursor.fetchone()
+          
+          if result and result['cloudinary_public_id']:
+              # Eliminar la imagen de Cloudinary
+              try:
+                  cloudinary.uploader.destroy(result['cloudinary_public_id'])
+              except Exception as e:
+                  print(f"Error al eliminar imagen de Cloudinary: {str(e)}")
+              
+              # Eliminar el registro de la base de datos
+              cursor.execute("DELETE FROM tbl_perfil_fotos WHERE id_usuario = %s", (session['user_id'],))
+              connection.commit()
+              
+              # Eliminar la URL de la imagen de la sesión
+              if 'profile_photo' in session:
+                  session.pop('profile_photo')
+              
+              # Limpiar caché local
+              try:
+                  for file in os.listdir(CACHE_FOLDER):
+                      if file.endswith('.webp') or file.endswith('.meta'):
+                          os.remove(os.path.join(CACHE_FOLDER, file))
+              except Exception as e:
+                  print(f"Error al limpiar caché: {str(e)}")
+              
+              cursor.close()
+              connection.close()
+              
+              return jsonify({
+                  'success': True, 
+                  'message': 'Imagen de perfil eliminada correctamente',
+                  'sidebar_update': True  # Indicador para el frontend
+              })
+          else:
+              cursor.close()
+              connection.close()
+              return jsonify({'error': 'No se encontró ninguna imagen de perfil'}), 404
+      else:
+          return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+  except Exception as e:
+      print(f"Error al eliminar imagen de perfil: {str(e)}")
+      return jsonify({'error': str(e)}), 500
 
 @perfil_bp.route('/obtener_imagen_perfil')
 def obtener_imagen_perfil():
@@ -657,9 +828,9 @@ def obtener_imagen_perfil():
       if connection:
           cursor = connection.cursor(dictionary=True)
           
-          # Obtener la ruta de la imagen de perfil y datos del usuario
+          # Obtener la referencia de la imagen de perfil y datos del usuario
           cursor.execute("""
-              SELECT p.ruta_foto, u.nombres, u.apellidos 
+              SELECT p.cloudinary_public_id, u.nombres, u.apellidos 
               FROM tbl_perfil_fotos p
               RIGHT JOIN tbl_usuario u ON p.id_usuario = u.id_usuario
               WHERE u.id_usuario = %s
@@ -676,9 +847,17 @@ def obtener_imagen_perfil():
                   'apellidos': result['apellidos']
               }
               
-              if result['ruta_foto']:
+              if result['cloudinary_public_id']:
                   # Si hay imagen, devolver la URL
-                  response_data['image_url'] = url_for('perfil.obtener_imagen_perfil_archivo', filename=result['ruta_foto'])
+                  image_url = cloudinary.CloudinaryImage(result['cloudinary_public_id']).build_url(
+                      width=200, 
+                      height=200, 
+                      crop="fill", 
+                      gravity="face", 
+                      fetch_format="auto", 
+                      quality="auto"
+                  )
+                  response_data['image_url'] = image_url
                   response_data['has_image'] = True
               else:
                   # Si no hay imagen, indicarlo para mostrar iniciales
@@ -694,10 +873,261 @@ def obtener_imagen_perfil():
       print(f"Error al obtener imagen de perfil: {str(e)}")
       return jsonify({'error': str(e)}), 500
 
-@perfil_bp.route('/uploads/profile_images/<filename>')
-def obtener_imagen_perfil_archivo(filename):
+@perfil_bp.route('/imagen_perfil_cache/<filename>')
+def obtener_imagen_perfil_cache(filename):
+  """
+  Sirve imágenes de perfil desde el caché local
+  """
   # Validar el nombre del archivo para evitar ataques de path traversal
   if not re.match(r'^[a-zA-Z0-9_.-]+\.webp$', filename):
       return "Archivo no encontrado", 404
   
-  return send_from_directory(UPLOAD_FOLDER, filename)
+  cache_path = os.path.join(CACHE_FOLDER, filename)
+  if os.path.exists(cache_path):
+      return send_from_directory(CACHE_FOLDER, filename)
+  else:
+      return "Archivo no encontrado", 404
+
+@perfil_bp.route('/actualizar_datos_personales', methods=['POST'])
+def actualizar_datos_personales():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        # Verificar que todos los campos requeridos estén presentes
+        required_fields = ['nombres', 'apellidos', 'correo', 'fecha_nacimiento', 'password']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'Falta el campo {field}'}), 400
+        
+        # Validar el formato del correo electrónico
+        import re
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", data['correo']):
+            return jsonify({'error': 'Formato de correo electrónico inválido'}), 400
+        
+        # Validar la fecha de nacimiento
+        try:
+            from datetime import datetime, date
+            fecha_nac = datetime.strptime(data['fecha_nacimiento'], '%Y-%m-%d').date()
+            hoy = date.today()
+            edad = hoy.year - fecha_nac.year - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
+            if edad < 18:
+                return jsonify({'error': 'Debes tener al menos 18 años'}), 400
+        except ValueError:
+            return jsonify({'error': 'Formato de fecha inválido'}), 400
+        
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Verificar la contraseña actual
+            cursor.execute("SELECT contrasena FROM tbl_usuario WHERE id_usuario = %s", (session['user_id'],))
+            user = cursor.fetchone()
+            
+            if not user or not verify_password(user['contrasena'], data['password']):
+                return jsonify({'error': 'Contraseña incorrecta'}), 400
+            
+            # Verificar si el correo ya está en uso por otro usuario
+            if data['correo'] != session.get('user_email'):
+                cursor.execute("SELECT id_usuario FROM tbl_usuario WHERE correo = %s AND id_usuario != %s", 
+                              (data['correo'], session['user_id']))
+                existing_email = cursor.fetchone()
+                if existing_email:
+                    return jsonify({'error': 'El correo electrónico ya está en uso por otro usuario'}), 400
+            
+            # Obtener la fecha de nacimiento actual del usuario
+            cursor.execute("SELECT fecha_nacimiento FROM tbl_usuario WHERE id_usuario = %s", (session['user_id'],))
+            fecha_actual = cursor.fetchone()['fecha_nacimiento']
+
+            # Verificar si el correo ha cambiado
+            if data['correo'] != session.get('user_email'):
+                # Si el correo ha cambiado, actualizar el correo y establecer correo_verificado a 0
+                cursor.execute("""
+                    UPDATE tbl_usuario 
+                    SET nombres = %s, apellidos = %s, correo = %s, correo_verificado = 0
+                    WHERE id_usuario = %s
+                """, (data['nombres'], data['apellidos'], data['correo'], session['user_id']))
+            else:
+                # Si el correo no ha cambiado, actualizar solo nombres y apellidos
+                cursor.execute("""
+                    UPDATE tbl_usuario 
+                    SET nombres = %s, apellidos = %s
+                    WHERE id_usuario = %s
+                """, (data['nombres'], data['apellidos'], session['user_id']))
+            
+            connection.commit()
+            
+            # Actualizar la sesión con el nuevo nombre
+            session['user_name'] = f"{data['nombres']} {data['apellidos']}"
+            session['user_email'] = data['correo']
+            
+            cursor.close()
+            connection.close()
+            
+            return jsonify({
+                'success': True, 
+                'message': 'Tus datos personales han sido actualizados correctamente'
+            })
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al actualizar datos personales: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@perfil_bp.route('/enviar_verificacion_correo', methods=['POST'])
+def enviar_verificacion_correo():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        
+        if not email:
+            return jsonify({'error': 'Falta el correo electrónico'}), 400
+        
+        # Validar formato de correo
+        import re
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            return jsonify({'error': 'Formato de correo electrónico inválido'}), 400
+        
+        # Verificar si hay un tiempo de espera activo para este usuario
+        current_time = datetime.now().timestamp()
+        cooldown_key = f'email_verification_cooldown_{session["user_id"]}'
+        
+        if cooldown_key in session:
+            cooldown_until = session[cooldown_key]
+            
+            # Si el tiempo de espera no ha expirado, devolver error con tiempo restante
+            if current_time < cooldown_until:
+                remaining_seconds = int(cooldown_until - current_time)
+                return jsonify({
+                    'error': 'Debes esperar antes de solicitar un nuevo código',
+                    'cooldown': True,
+                    'remaining_seconds': remaining_seconds
+                }), 429  # 429 Too Many Requests
+        
+        # Generar código OTP de 6 dígitos
+        otp = ''.join(random.choices(string.digits, k=6))
+        
+        # Guardar el OTP en la sesión para verificarlo después
+        session['email_verification_otp'] = otp
+        session['email_verification_email'] = email
+        session['email_verification_expiry'] = (datetime.now() + timedelta(minutes=10)).timestamp()
+        
+        # Establecer un tiempo de espera de 60 segundos antes de permitir un nuevo envío
+        session[cooldown_key] = (datetime.now() + timedelta(seconds=60)).timestamp()
+        
+        # Enviar el código por correo
+        subject = "Verificación de Correo Electrónico - Canadian Visa Advise"
+        body = f"""
+        Hola {session.get('user_name', 'Usuario')},
+        
+        Tu código de verificación es: {otp}
+        
+        Este código expirará en 10 minutos.
+        
+        Atentamente,
+        Equipo CVA
+        """
+        
+        if send_email_via_zoho(email, subject, body):
+            return jsonify({
+                'success': True, 
+                'message': 'Código enviado al correo electrónico',
+                'cooldown_seconds': 60  # Informar al frontend del tiempo de espera
+            })
+        else:
+            return jsonify({'error': 'Error al enviar el correo electrónico'}), 500
+    
+    except Exception as e:
+        print(f"Error al enviar código de verificación: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Añadir una nueva ruta para verificar el estado del cooldown
+@perfil_bp.route('/verificar_cooldown_correo', methods=['GET'])
+def verificar_cooldown_correo():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        current_time = datetime.now().timestamp()
+        cooldown_key = f'email_verification_cooldown_{session["user_id"]}'
+        
+        if cooldown_key in session:
+            cooldown_until = session[cooldown_key]
+            
+            # Si el tiempo de espera no ha expirado, devolver tiempo restante
+            if current_time < cooldown_until:
+                remaining_seconds = int(cooldown_until - current_time)
+                return jsonify({
+                    'cooldown': True,
+                    'remaining_seconds': remaining_seconds
+                })
+        
+        # Si no hay cooldown o ya expiró
+        return jsonify({
+            'cooldown': False,
+            'remaining_seconds': 0
+        })
+    
+    except Exception as e:
+        print(f"Error al verificar cooldown: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@perfil_bp.route('/verificar_codigo_correo', methods=['POST'])
+def verificar_codigo_correo():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        otp = data.get('otp')
+        email = data.get('email')
+        
+        if not otp or not email:
+            return jsonify({'error': 'Faltan parámetros requeridos'}), 400
+        
+        # Verificar que el OTP existe en la sesión y no ha expirado
+        session_otp = session.get('email_verification_otp')
+        session_email = session.get('email_verification_email')
+        expiry = session.get('email_verification_expiry')
+        
+        if not session_otp or not session_email or not expiry:
+            return jsonify({'error': 'No hay un código de verificación activo'}), 400
+        
+        if datetime.now().timestamp() > expiry:
+            # Limpiar el OTP expirado
+            session.pop('email_verification_otp', None)
+            session.pop('email_verification_email', None)
+            session.pop('email_verification_expiry', None)
+            return jsonify({'error': 'El código ha expirado'}), 400
+        
+        if otp != session_otp or email != session_email:
+            return jsonify({'error': 'Código incorrecto o correo electrónico no coincide'}), 400
+        
+        # Código correcto, marcar el correo como verificado
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor()
+            
+            # Actualizar el estado de verificación del correo
+            cursor.execute("UPDATE tbl_usuario SET correo_verificado = 1 WHERE id_usuario = %s", (session['user_id'],))
+            connection.commit()
+            
+            cursor.close()
+            connection.close()
+            
+            # Limpiar el OTP usado
+            session.pop('email_verification_otp', None)
+            session.pop('email_verification_email', None)
+            session.pop('email_verification_expiry', None)
+            
+            return jsonify({'success': True, 'message': 'Correo electrónico verificado con éxito'})
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al verificar código de correo: {str(e)}")
+        return jsonify({'error': str(e)}), 500
