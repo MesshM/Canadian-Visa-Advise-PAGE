@@ -5,6 +5,7 @@ from config.database import create_connection
 from config.email import send_email_via_zoho
 from utils.auth_helpers import generate_captcha_text, generate_reset_token, generate_token_expiration
 from mysql.connector import Error
+import random, string
 import pyotp  # Añadir esta importación
 
 auth_bp = Blueprint('auth', __name__)
@@ -142,9 +143,6 @@ def verify_2fa():
         flash('El código debe tener 6 dígitos', 'error')
         return render_template('login.html', needs_2fa=True)
     
-    # Importar pyotp para verificar el código
-    import pyotp
-    
     # Crear objeto TOTP con la clave secreta
     totp = pyotp.TOTP(session['2fa_secret'])
     
@@ -254,7 +252,12 @@ def registro():
 
 @auth_bp.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
-    captcha_text = generate_captcha_text()  # Generar el texto del captcha
+    # Generar un nuevo captcha si no existe en la sesión o si es una solicitud GET
+    if 'captcha_text' not in session or request.method == 'GET':
+        captcha_text = generate_captcha_text()
+        session['captcha_text'] = captcha_text
+    else:
+        captcha_text = session['captcha_text']
     
     if request.method == 'POST':
         email = request.form['email']
@@ -263,8 +266,12 @@ def forgot_password():
         # Validar el captcha
         if user_captcha != session.get('captcha_text'):
             flash('El código de verificación es incorrecto', 'error')
-            return render_template('forgot_password.html', captcha_text=generate_captcha_text())
+            # Generar un nuevo captcha después de un intento fallido
+            new_captcha = generate_captcha_text()
+            session['captcha_text'] = new_captcha
+            return render_template('forgot_password.html', captcha_text=new_captcha)
         
+        # Verificar si el correo existe en la base de datos
         connection = create_connection()
         if connection:
             cursor = connection.cursor(dictionary=True)
@@ -272,49 +279,74 @@ def forgot_password():
                 cursor.execute("SELECT id_usuario FROM tbl_usuario WHERE correo = %s", (email,))
                 user = cursor.fetchone()
                 
-                if user:
-                    # Generar token y fecha de expiración
-                    token = generate_reset_token()
-                    expiration = generate_token_expiration()
-
-                    cursor.execute("""
-                        INSERT INTO tbl_password_reset (user_id, token, expiration)
-                        VALUES (%s, %s, %s)
-                    """, (user['id_usuario'], token, expiration))
-                    connection.commit()
-
-                    # Enviar correo electrónico
-                    reset_url = url_for('auth.reset_password', token=token, _external=True)
-                    body = f"""Para restablecer tu contraseña, haz clic en el siguiente enlace:
-                            {reset_url}
-                            
-                            Este enlace expirará en 1 hora."""
-                    
-                    if send_email_via_zoho(email, 'Restablecimiento de contraseña - CVA', body):
-                        flash('Se ha enviado un correo con instrucciones para restablecer tu contraseña', 'success')
-                    else:
-                        flash('Error al enviar el correo', 'error')
-                else:
+                if not user:
                     flash('No existe una cuenta con este correo electrónico', 'error')
-                    
-            except Error as e:
+                    return render_template('forgot_password.html', captcha_text=captcha_text)
+                
+                # Generar token y fecha de expiración
+                token = generate_reset_token()
+                expiration = generate_token_expiration()
+                
+                # Eliminar tokens anteriores para este usuario
+                cursor.execute("DELETE FROM tbl_password_reset WHERE user_id = %s", (user['id_usuario'],))
+                
+                # Guardar el nuevo token
+                cursor.execute("""
+                    INSERT INTO tbl_password_reset (user_id, token, expiration) 
+                    VALUES (%s, %s, %s)
+                """, (user['id_usuario'], token, expiration))
+                
+                connection.commit()
+                
+                # Construir URL de restablecimiento
+                reset_url = url_for('auth.reset_password', token=token, _external=True)
+                
+                # Enviar correo con instrucciones
+                subject = "Instrucciones para restablecer tu contraseña"
+                body = f"""
+                Hola,
+                
+                Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace para continuar:
+                
+                {reset_url}
+                
+                Este enlace expirará en 1 hora.
+                
+                Si no solicitaste restablecer tu contraseña, puedes ignorar este correo.
+                
+                Saludos,
+                El equipo de soporte
+                """
+                
+                send_email_via_zoho(email, subject, body)
+                
+                flash('Se han enviado instrucciones para restablecer tu contraseña a tu correo electrónico', 'success')
+                return redirect(url_for('auth.login'))
+                
+            except Exception as e:
                 connection.rollback()
-                flash('Error al procesar la solicitud', 'error')
+                print(f"Error en forgot_password: {str(e)}")
+                flash('Ocurrió un error al procesar tu solicitud', 'error')
             finally:
                 cursor.close()
                 connection.close()
         else:
             flash('Error de conexión a la base de datos', 'error')
     
-    # Guardar el captcha en la sesión para validarlo después
-    session['captcha_text'] = captcha_text
     return render_template('forgot_password.html', captcha_text=captcha_text)
 
 @auth_bp.route('/refresh_captcha')
 def refresh_captcha():
-    captcha_text = generate_captcha_text()
-    session['captcha_text'] = captcha_text  # Guardar el nuevo captcha en la sesión
-    return jsonify({'captcha_text': captcha_text})
+    try:
+        captcha_text = generate_captcha_text()
+        session['captcha_text'] = captcha_text  # Guardar el nuevo captcha en la sesión
+        return jsonify({'captcha_text': captcha_text, 'success': True})
+    except Exception as e:
+        print(f"Error al generar captcha: {str(e)}")
+        # Generar un captcha de respaldo en caso de error
+        backup_captcha = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
+        session['captcha_text'] = backup_captcha
+        return jsonify({'captcha_text': backup_captcha, 'success': True})
 
 @auth_bp.route('/reset_password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
