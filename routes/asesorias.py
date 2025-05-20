@@ -7,6 +7,8 @@ import json
 import threading
 import time
 from mysql.connector import Error
+from utils.notification import notify_appointment_created,  notify_payment_pending
+    
 
 asesorias_bp = Blueprint('asesorias', __name__)
 
@@ -444,6 +446,24 @@ def nueva_asesoria():
                     """, (metodo_pago, precio, id_solicitante))
                 
                 connection.commit()
+                
+                # Crear notificación de asesoría agendada
+                fecha_para_notificacion = fecha_obj if isinstance(fecha_asesoria, str) else fecha_asesoria
+                
+                notify_appointment_created(
+                    session['user_id'], 
+                    codigo_asesoria, 
+                    fecha_para_notificacion, 
+                    tipo_asesoria
+                )
+                
+                # Crear notificación de pago pendiente
+                notify_payment_pending(
+                    session['user_id'], 
+                    codigo_asesoria, 
+                    precio, 
+                    tipo_asesoria
+                )
                 
                 # Replace with updated response with timer reference:
                 if request.is_json:

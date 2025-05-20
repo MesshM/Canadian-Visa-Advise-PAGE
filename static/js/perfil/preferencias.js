@@ -133,13 +133,9 @@ document.addEventListener("DOMContentLoaded", () => {
       // Forzar actualización visual del toggle
       const toggleDiv = toggle.nextElementSibling
       if (toggleDiv) {
-        if (toggle.checked) {
-          toggleDiv.classList.add("peer-checked:bg-primary-600")
-          toggleDiv.classList.add("peer-checked:after:translate-x-full")
-        } else {
-          toggleDiv.classList.remove("peer-checked:bg-primary-600")
-          toggleDiv.classList.remove("peer-checked:after:translate-x-full")
-        }
+        // Las clases peer-checked se aplican automáticamente por Tailwind
+        // Solo necesitamos asegurarnos de que el estado checked del input sea correcto
+        toggle.checked = type ? preferences.notifications[type] : preferences.channels[channel]
       }
     })
 
@@ -188,55 +184,78 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Mostrar alerta
-  function showAlert(message, type) {
-    const alertContainer = document.getElementById("alert-container")
-    const alert = document.getElementById("alert")
+  function showAlert(message, type = "success") {
+    // Crear el elemento de notificación
+    const notification = document.createElement("div")
+    notification.className = `fixed top-4 right-4 p-4 rounded-xl shadow-lg z-50 transform transition-all duration-500 translate-x-full`
 
-    if (alertContainer && alert) {
-      // Configurar el estilo según el tipo
-      if (type === "success") {
-        alert.className = "p-4 rounded-xl border animate-fade-in shadow-md bg-green-50 border-green-200 text-green-700"
-        alert.innerHTML = `
-                <div class="flex items-start">
-                    <svg class="w-5 h-5 mr-3 mt-0.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span>${message}</span>
-                </div>
-            `
-      } else if (type === "warning") {
-        alert.className =
-          "p-4 rounded-xl border animate-fade-in shadow-md bg-yellow-50 border-yellow-200 text-yellow-700"
-        alert.innerHTML = `
-                <div class="flex items-start">
-                    <svg class="w-5 h-5 mr-3 mt-0.5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span>${message}</span>
-                </div>
-            `
-      } else {
-        alert.className = "p-4 rounded-xl border animate-fade-in shadow-md bg-red-50 border-red-200 text-red-700"
-        alert.innerHTML = `
-                <div class="flex items-start">
-                    <svg class="w-5 h-5 mr-3 mt-0.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span>${message}</span>
-                </div>
-            `
-      }
-
-      // Mostrar la alerta
-      alertContainer.classList.remove("hidden")
-      alertContainer.classList.add("flex")
-
-      // Ocultar después de 5 segundos
-      setTimeout(() => {
-        alertContainer.classList.add("hidden")
-        alertContainer.classList.remove("flex")
-      }, 5000)
+    // Aplicar estilos según el tipo
+    if (type === "success") {
+      notification.classList.add("bg-green-100", "text-green-800", "border-l-4", "border-green-500")
+    } else if (type === "error") {
+      notification.classList.add("bg-red-100", "text-red-800", "border-l-4", "border-red-500")
+    } else if (type === "warning") {
+      notification.classList.add("bg-yellow-100", "text-yellow-800", "border-l-4", "border-yellow-500")
+    } else {
+      notification.classList.add("bg-blue-100", "text-blue-800", "border-l-4", "border-blue-200")
     }
+
+    // Agregar el mensaje
+    notification.innerHTML = `
+    <div class="flex items-center">
+        <div class="flex-shrink-0">
+            ${
+              type === "success"
+                ? '<svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
+                : type === "error"
+                  ? '<svg class="h-5 w-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>'
+                  : type === "warning"
+                    ? '<svg class="h-5 w-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>'
+                    : '<svg class="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+            }
+        </div>
+        <div class="ml-3">
+            <p class="text-sm">${message}</p>
+        </div>
+        <div class="ml-auto pl-3">
+            <button class="inline-flex text-gray-400 hover:text-gray-500 focus:outline-none cursor-pointer">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+    </div>
+`
+
+    // Agregar al DOM
+    document.body.appendChild(notification)
+
+    // Animar la entrada
+    setTimeout(() => {
+      notification.classList.remove("translate-x-full")
+      notification.classList.add("translate-x-0")
+    }, 100)
+
+    // Configurar la eliminación automática
+    setTimeout(() => {
+      notification.classList.remove("translate-x-0")
+      notification.classList.add("translate-x-full")
+
+      // Eliminar del DOM después de la animación
+      setTimeout(() => {
+        notification.remove()
+      }, 500)
+    }, 5000)
+
+    // Agregar evento para cerrar manualmente
+    notification.querySelector("button").addEventListener("click", () => {
+      notification.classList.remove("translate-x-0")
+      notification.classList.add("translate-x-full")
+
+      // Eliminar del DOM después de la animación
+      setTimeout(() => {
+        notification.remove()
+      }, 500)
+    })
   }
 
   // Event listeners
@@ -254,6 +273,29 @@ document.addEventListener("DOMContentLoaded", () => {
       })
     })
   }
+
+  // Asegurar que los toggles respondan correctamente al clic
+  document.querySelectorAll(".notification-toggle").forEach((toggle) => {
+    const toggleParent = toggle.closest("label")
+    if (toggleParent) {
+      toggleParent.addEventListener("click", (e) => {
+        // Prevenir comportamiento predeterminado para manejar manualmente
+        e.preventDefault()
+        // Cambiar el estado del toggle
+        toggle.checked = !toggle.checked
+
+        // Actualizar las preferencias
+        const type = toggle.dataset.type
+        const channel = toggle.dataset.channel
+
+        if (type) {
+          preferences.notifications[type] = toggle.checked
+        } else if (channel) {
+          preferences.channels[channel] = toggle.checked
+        }
+      })
+    }
+  })
 
   if (languageSelector) {
     languageSelector.addEventListener("change", function () {

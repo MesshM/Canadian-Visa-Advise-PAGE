@@ -5,6 +5,9 @@ from datetime import datetime
 import os
 import uuid
 import traceback
+import threading
+import time
+from utils.notification import notify_form_submitted, notify_form_incomplete, check_incomplete_forms
 
 formulario_bp = Blueprint('formularios', __name__)
 
@@ -48,6 +51,8 @@ def procesar_formulario():
         for field in required_fields:
             if field not in form_data or not form_data[field]:
                 flash(f'El campo {field} es obligatorio', 'error')
+                # Notificar que el formulario está incompleto
+                notify_form_incomplete(session['user_id'])
                 return redirect(url_for('formularios.solicitud'))
         
         # Crear conexión a la base de datos
@@ -188,6 +193,10 @@ def procesar_formulario():
                     raise
                 
                 connection.commit()
+                
+                # Notificar que el formulario ha sido enviado correctamente
+                notify_form_submitted(session['user_id'], id_formElegibilidad)
+                
                 flash('Formulario enviado correctamente. Nuestros asesores revisarán su caso y le brindarán asistencia pronto.', 'success')
                 success_url = url_for('formularios.solicitud_exitosa', form_id=id_formElegibilidad)
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -203,6 +212,10 @@ def procesar_formulario():
                 error_details = traceback.format_exc()
                 print(f"Error al procesar la solicitud: {str(e)}")
                 print(f"Detalles del error: {error_details}")
+                
+                # Notificar que el formulario está incompleto debido a un error
+                notify_form_incomplete(session['user_id'])
+                
                 flash(f'Error al procesar la solicitud: {str(e)}', 'error')
                 return redirect(url_for('formularios.solicitud'))
             finally:
@@ -216,9 +229,12 @@ def procesar_formulario():
         error_details = traceback.format_exc()
         print(f"Error general: {str(e)}")
         print(f"Detalles del error: {error_details}")
+        
+        # Notificar que el formulario está incompleto debido a un error general
+        notify_form_incomplete(session['user_id'])
+        
         flash(f'Error al procesar la solicitud: {str(e)}', 'error')
         return redirect(url_for('formularios.solicitud'))
-
 @formulario_bp.route('/solicitud_exitosa/<int:form_id>')
 @login_required
 def solicitud_exitosa(form_id):
@@ -248,3 +264,33 @@ def vista_previa_reporte():
     # Por ahora, simplemente redirigimos a la página de solicitud
     flash('Funcionalidad de vista previa en desarrollo', 'info')
     return redirect(url_for('formularios.solicitud'))
+
+def check_all_users_incomplete_forms():
+    """
+    Verifica formularios incompletos para todos los usuarios y crea notificaciones.
+    """
+    while True:
+        try:
+            connection = create_connection()
+            if connection:
+                cursor = connection.cursor(dictionary=True)
+                
+                # Obtener todos los usuarios
+                cursor.execute("SELECT id_usuario FROM tbl_usuario")
+                users = cursor.fetchall()
+                
+                for user in users:
+                    # Verificar formularios incompletos para cada usuario
+                    check_incomplete_forms(user['id_usuario'])
+                
+                cursor.close()
+                connection.close()
+        except Exception as e:
+            print(f"Error al verificar formularios incompletos: {str(e)}")
+        
+        # Esperar 24 horas antes de la próxima verificación
+        time.sleep(24 * 60 * 60)
+
+# Iniciar el hilo para verificar formularios incompletos
+verificacion_thread = threading.Thread(target=check_all_users_incomplete_forms, daemon=True)
+verificacion_thread.start()

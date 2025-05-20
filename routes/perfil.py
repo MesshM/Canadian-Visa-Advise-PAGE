@@ -1839,3 +1839,112 @@ def verificar_cooldown_telefono():
     except Exception as e:
         print(f"Error al verificar cooldown de teléfono: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+# Agregar estas nuevas rutas al final del archivo perfil_bp
+
+@perfil_bp.route('/api/notificaciones')
+def obtener_notificaciones():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Construir la consulta base
+            query = """
+                SELECT * FROM tbl_notificaciones 
+                WHERE id_usuario = %s 
+                ORDER BY fecha_creacion DESC 
+                LIMIT 20
+            """
+            
+            # Ejecutar la consulta para obtener todas las notificaciones
+            cursor.execute(query, (session['user_id'],))
+            
+            notifications = cursor.fetchall()
+            
+            # Convertir fechas a formato string para JSON
+            for notif in notifications:
+                if 'fecha_creacion' in notif and notif['fecha_creacion']:
+                    notif['fecha_creacion'] = notif['fecha_creacion'].isoformat()
+                if 'fecha_lectura' in notif and notif['fecha_lectura']:
+                    notif['fecha_lectura'] = notif['fecha_lectura'].isoformat()
+            
+            cursor.close()
+            connection.close()
+            
+            return jsonify({'success': True, 'notifications': notifications})
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al obtener notificaciones: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@perfil_bp.route('/api/notificaciones/<int:notif_id>/leer', methods=['POST'])
+def marcar_notificacion_leida(notif_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor()
+            
+            # Verificar que la notificación pertenece al usuario
+            cursor.execute("""
+                SELECT id FROM tbl_notificaciones 
+                WHERE id = %s AND id_usuario = %s
+            """, (notif_id, session['user_id']))
+            
+            if not cursor.fetchone():
+                cursor.close()
+                connection.close()
+                return jsonify({'error': 'Notificación no encontrada'}), 404
+            
+            # Marcar como leída
+            cursor.execute("""
+                UPDATE tbl_notificaciones 
+                SET leida = 1, fecha_lectura = NOW() 
+                WHERE id = %s
+            """, (notif_id,))
+            
+            connection.commit()
+            cursor.close()
+            connection.close()
+            
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al marcar notificación como leída: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@perfil_bp.route('/api/notificaciones/leer-todas', methods=['POST'])
+def marcar_todas_leidas():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor()
+            
+            # Marcar todas las notificaciones como leídas
+            cursor.execute("""
+                UPDATE tbl_notificaciones 
+                SET leida = 1, fecha_lectura = NOW() 
+                WHERE id_usuario = %s AND leida = 0
+            """, (session['user_id'],))
+            
+            connection.commit()
+            cursor.close()
+            connection.close()
+            
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al marcar todas las notificaciones como leídas: {str(e)}")
+        return jsonify({'error': str(e)}), 500
