@@ -737,38 +737,182 @@ def verificar_codigo():
       print(f"Error al verificar código: {str(e)}")
       return jsonify({'error': str(e)}), 500
 
-@perfil_bp.route('/actualizar_preferencias_notificaciones', methods=['POST'])
-def actualizar_preferencias_notificaciones():
-  if 'user_id' not in session:
-      return jsonify({'error': 'No autorizado'}), 401
-  
-  try:
-      data = request.get_json()
-      
-      # Aquí iría la lógica para guardar las preferencias en la base de datos
-      # Por ahora, solo simulamos que se guardaron correctamente
-      
-      return jsonify({'success': True, 'message': 'Preferencias actualizadas con éxito'})
-  except Exception as e:
-      print(f"Error al actualizar preferencias: {str(e)}")
-      return jsonify({'error': str(e)}), 500
+@perfil_bp.route('/obtener_preferencias', methods=['GET'])
+def obtener_preferencias():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Verificar si el usuario ya tiene preferencias guardadas
+            cursor.execute("""
+                SELECT * FROM tbl_preferencias_notificaciones 
+                WHERE id_usuario = %s
+            """, (session['user_id'],))
+            
+            notif_prefs = cursor.fetchone()
+            
+            # Verificar si el usuario ya tiene preferencias de idioma/tema
+            cursor.execute("""
+                SELECT * FROM tbl_preferencias_usuario 
+                WHERE id_usuario = %s
+            """, (session['user_id'],))
+            
+            user_prefs = cursor.fetchone()
+            
+            cursor.close()
+            connection.close()
+            
+            # Si no hay preferencias guardadas, devolver valores predeterminados
+            if not notif_prefs and not user_prefs:
+                return jsonify({
+                    'success': False,
+                    'message': 'No hay preferencias guardadas'
+                })
+            
+            # Construir objeto de preferencias
+            preferences = {
+                'notifications': {
+                    'visa_updates': True,
+                    'document_reminders': True,
+                    'news': True,
+                    'appointments': True
+                },
+                'channels': {
+                    'email': True,
+                    'sms': True,
+                    'app': True
+                },
+                'language': 'es',
+                'theme': 'light'
+            }
+            
+            # Actualizar con datos de la base de datos si existen
+            if notif_prefs:
+                preferences['notifications']['visa_updates'] = bool(notif_prefs.get('visa_updates', True))
+                preferences['notifications']['document_reminders'] = bool(notif_prefs.get('document_reminders', True))
+                preferences['notifications']['news'] = bool(notif_prefs.get('news', True))
+                preferences['notifications']['appointments'] = bool(notif_prefs.get('appointments', True))
+                
+                # Procesar canales de JSON
+                channels = notif_prefs.get('channels')
+                if channels:
+                    if isinstance(channels, str):
+                        import json
+                        channels = json.loads(channels)
+                    
+                    preferences['channels']['email'] = bool(channels.get('email', True))
+                    preferences['channels']['sms'] = bool(channels.get('sms', True))
+                    preferences['channels']['app'] = bool(channels.get('app', True))
+            
+            if user_prefs:
+                preferences['language'] = user_prefs.get('idioma', 'es')
+                preferences['theme'] = user_prefs.get('tema', 'light')
+            
+            return jsonify({'success': True, 'preferences': preferences})
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al obtener preferencias: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
-@perfil_bp.route('/actualizar_preferencias_idioma', methods=['POST'])
-def actualizar_preferencias_idioma():
-  if 'user_id' not in session:
-      return jsonify({'error': 'No autorizado'}), 401
-  
-  try:
-      data = request.get_json()
-      language = data.get('language')
-      
-      # Guardar la preferencia de idioma en la sesión
-      session['language'] = language
-      
-      return jsonify({'success': True, 'message': 'Preferencias de idioma actualizadas con éxito'})
-  except Exception as e:
-      print(f"Error al actualizar preferencias de idioma: {str(e)}")
-      return jsonify({'error': str(e)}), 500
+@perfil_bp.route('/actualizar_preferencias', methods=['POST'])
+def actualizar_preferencias():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'Datos no proporcionados'}), 400
+        
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Extraer datos
+            notifications = data.get('notifications', {})
+            channels = data.get('channels', {})
+            language = data.get('language', 'es')
+            theme = data.get('theme', 'light')
+            
+            # Convertir channels a JSON para almacenar
+            import json
+            channels_json = json.dumps(channels)
+            
+            # Verificar si ya existen preferencias de notificaciones
+            cursor.execute("""
+                SELECT id FROM tbl_preferencias_notificaciones 
+                WHERE id_usuario = %s
+            """, (session['user_id'],))
+            
+            notif_exists = cursor.fetchone()
+            
+            # Actualizar o insertar preferencias de notificaciones
+            if notif_exists:
+                cursor.execute("""
+                    UPDATE tbl_preferencias_notificaciones 
+                    SET visa_updates = %s, document_reminders = %s, news = %s, 
+                        appointments = %s, channels = %s, fecha_actualizacion = NOW() 
+                    WHERE id_usuario = %s
+                """, (
+                    notifications.get('visa_updates', True),
+                    notifications.get('document_reminders', True),
+                    notifications.get('news', False),
+                    notifications.get('appointments', True),
+                    channels_json,
+                    session['user_id']
+                ))
+            else:
+                cursor.execute("""
+                    INSERT INTO tbl_preferencias_notificaciones 
+                    (id_usuario, visa_updates, document_reminders, news, appointments, channels, fecha_creacion) 
+                    VALUES (%s, %s, %s, %s, %s, %s, NOW())
+                """, (
+                    session['user_id'],
+                    notifications.get('visa_updates', True),
+                    notifications.get('document_reminders', True),
+                    notifications.get('news', False),
+                    notifications.get('appointments', True),
+                    channels_json
+                ))
+            
+            # Verificar si ya existen preferencias de usuario
+            cursor.execute("""
+                SELECT id FROM tbl_preferencias_usuario 
+                WHERE id_usuario = %s
+            """, (session['user_id'],))
+            
+            user_prefs_exists = cursor.fetchone()
+            
+            # Actualizar o insertar preferencias de usuario
+            if user_prefs_exists:
+                cursor.execute("""
+                    UPDATE tbl_preferencias_usuario 
+                    SET idioma = %s, tema = %s, fecha_actualizacion = NOW() 
+                    WHERE id_usuario = %s
+                """, (language, theme, session['user_id']))
+            else:
+                cursor.execute("""
+                    INSERT INTO tbl_preferencias_usuario 
+                    (id_usuario, idioma, tema, fecha_creacion) 
+                    VALUES (%s, %s, %s, NOW())
+                """, (session['user_id'], language, theme))
+            
+            connection.commit()
+            cursor.close()
+            connection.close()
+            
+            return jsonify({'success': True, 'message': 'Preferencias actualizadas correctamente'})
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al actualizar preferencias: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @perfil_bp.route('/descargar_datos_personales')
 def descargar_datos_personales():

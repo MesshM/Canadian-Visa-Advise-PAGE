@@ -1,118 +1,282 @@
-// Funcionalidad para preferencias
 document.addEventListener("DOMContentLoaded", () => {
-  // Aquí se puede agregar la funcionalidad específica para las preferencias del usuario
-  // Por ejemplo, configuración de notificaciones, temas, idioma, etc.
+  // Referencias a elementos del DOM
+  const notificationToggles = document.querySelectorAll(".notification-toggle")
+  const languageSelector = document.getElementById("language-selector")
+  const themeSelector = document.getElementById("theme-selector")
+  const savePreferencesBtn = document.getElementById("save-preferences-btn")
+  const preferencesContainer = document.querySelector(".tab-content#preferences-content")
 
-  // Esta sección está vacía en el código original, pero se puede implementar
-  // la funcionalidad necesaria para gestionar las preferencias del usuario
-
-  // Ejemplo de cómo podría ser la implementación:
-  const toggleNotificaciones = document.getElementById("toggle-notificaciones")
-  const toggleCorreos = document.getElementById("toggle-correos")
-  const toggleTemaOscuro = document.getElementById("toggle-tema-oscuro")
-  const idiomaSelect = document.getElementById("idioma-select")
-  const guardarPreferenciasBtn = document.getElementById("guardar-preferencias-btn")
-
-  // Función para mostrar alertas
-  function showAlert(message, type) {
-    // Implementa la lógica para mostrar alertas aquí
-    // Por ejemplo, puedes usar una librería como SweetAlert2 o crear tu propio sistema de alertas
-    console.log(`${type}: ${message}`) // Esto es solo un ejemplo
-    // Puedes reemplazar esto con tu propia implementación de alertas
+  // Añadir clase de carga y deshabilitar toggles inicialmente
+  if (preferencesContainer) {
+    preferencesContainer.classList.add("preferences-loading")
   }
 
-  // Función para cargar las preferencias actuales
-  function cargarPreferencias() {
+  // Deshabilitar todos los toggles y selectores durante la carga
+  notificationToggles.forEach((toggle) => {
+    toggle.disabled = true
+    // Ocultar el estado visual del toggle durante la carga
+    const toggleParent = toggle.closest("label")
+    if (toggleParent) {
+      toggleParent.classList.add("opacity-60")
+    }
+  })
+
+  if (languageSelector) languageSelector.disabled = true
+  if (themeSelector) themeSelector.disabled = true
+  if (savePreferencesBtn) savePreferencesBtn.disabled = true
+
+  // Estado inicial de las preferencias
+  let preferences = {
+    notifications: {
+      visa_updates: true,
+      document_reminders: true,
+      news: true,
+      appointments: true,
+    },
+    channels: {
+      email: true,
+      sms: true,
+      app: true,
+    },
+    language: "es",
+    theme: "light",
+  }
+
+  // Cargar preferencias del usuario
+  function loadUserPreferences() {
+    // Mostrar indicador de carga
+    if (savePreferencesBtn) {
+      savePreferencesBtn.innerHTML =
+        '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div><span>Cargando...</span></div>'
+    }
+
     fetch("/perfil/obtener_preferencias")
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
-          // Actualizar los toggles y selects con los valores guardados
-          if (toggleNotificaciones) toggleNotificaciones.checked = data.preferencias.notificaciones
-          if (toggleCorreos) toggleCorreos.checked = data.preferencias.correos
-          if (toggleTemaOscuro) toggleTemaOscuro.checked = data.preferencias.tema_oscuro
-          if (idiomaSelect) idiomaSelect.value = data.preferencias.idioma
-
-          // Si el tema oscuro está activado, aplicarlo
-          if (data.preferencias.tema_oscuro) {
-            document.documentElement.classList.add("dark-theme")
-          } else {
-            document.documentElement.classList.remove("dark-theme")
-          }
+          // Si hay preferencias guardadas, usarlas
+          preferences = data.preferences
         } else {
-          showAlert("No se pudieron cargar las preferencias", "error")
+          // Si no hay preferencias guardadas, usar los valores predeterminados (todas las notificaciones activas)
+          preferences = {
+            notifications: {
+              visa_updates: true,
+              document_reminders: true,
+              news: true,
+              appointments: true,
+            },
+            channels: {
+              email: true,
+              sms: true,
+              app: true,
+            },
+            language: "es",
+            theme: "light",
+          }
+        }
+        // Pequeño retraso para asegurar que el DOM esté listo
+        setTimeout(() => {
+          updateUIFromPreferences()
+          // Habilitar la interacción después de cargar
+          enableInteraction()
+        }, 100)
+      })
+      .catch((error) => {
+        console.error("Error al cargar preferencias:", error)
+        showAlert("No se pudieron cargar tus preferencias. Por favor, intenta de nuevo más tarde.", "error")
+        // Habilitar la interacción incluso si hay error, usando valores predeterminados
+        setTimeout(() => {
+          updateUIFromPreferences()
+          enableInteraction()
+        }, 100)
+      })
+  }
+
+  // Habilitar la interacción con los controles
+  function enableInteraction() {
+    // Quitar clase de carga
+    if (preferencesContainer) {
+      preferencesContainer.classList.remove("preferences-loading")
+    }
+
+    // Habilitar todos los toggles y selectores
+    notificationToggles.forEach((toggle) => {
+      toggle.disabled = false
+      const toggleParent = toggle.closest("label")
+      if (toggleParent) {
+        toggleParent.classList.remove("opacity-60")
+      }
+    })
+
+    if (languageSelector) languageSelector.disabled = false
+    if (themeSelector) themeSelector.disabled = false
+    if (savePreferencesBtn) {
+      savePreferencesBtn.disabled = false
+      savePreferencesBtn.innerHTML =
+        '<div class="relative flex items-center justify-center"><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>Guardar Cambios</span></div>'
+    }
+  }
+
+  // Actualizar la interfaz con las preferencias cargadas
+  function updateUIFromPreferences() {
+    // Actualizar toggles de notificaciones de forma más eficiente
+    notificationToggles.forEach((toggle) => {
+      const type = toggle.dataset.type
+      const channel = toggle.dataset.channel
+
+      if (type && preferences.notifications[type] !== undefined) {
+        toggle.checked = preferences.notifications[type]
+      } else if (channel && preferences.channels[channel] !== undefined) {
+        toggle.checked = preferences.channels[channel]
+      }
+
+      // Forzar actualización visual del toggle
+      const toggleDiv = toggle.nextElementSibling
+      if (toggleDiv) {
+        if (toggle.checked) {
+          toggleDiv.classList.add("peer-checked:bg-primary-600")
+          toggleDiv.classList.add("peer-checked:after:translate-x-full")
+        } else {
+          toggleDiv.classList.remove("peer-checked:bg-primary-600")
+          toggleDiv.classList.remove("peer-checked:after:translate-x-full")
+        }
+      }
+    })
+
+    // Actualizar selectores
+    if (languageSelector) {
+      languageSelector.value = preferences.language
+    }
+
+    if (themeSelector) {
+      themeSelector.value = preferences.theme
+    }
+  }
+
+  // Guardar preferencias
+  function savePreferences() {
+    // Mostrar indicador de carga
+    savePreferencesBtn.disabled = true
+    savePreferencesBtn.innerHTML =
+      '<div class="flex items-center justify-center"><div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div><span>Guardando...</span></div>'
+
+    fetch("/perfil/actualizar_preferencias", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(preferences),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          showAlert("Preferencias actualizadas correctamente", "success")
+        } else {
+          showAlert(data.error || "Error al actualizar preferencias", "error")
         }
       })
       .catch((error) => {
         console.error("Error:", error)
-        showAlert("Error al cargar las preferencias", "error")
+        showAlert("Error al guardar preferencias", "error")
+      })
+      .finally(() => {
+        // Restaurar botón
+        savePreferencesBtn.disabled = false
+        savePreferencesBtn.innerHTML =
+          '<div class="relative flex items-center justify-center"><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>Guardar Cambios</span></div>'
       })
   }
 
-  // Manejar cambio de tema oscuro en tiempo real
-  if (toggleTemaOscuro) {
-    toggleTemaOscuro.addEventListener("change", () => {
-      if (toggleTemaOscuro.checked) {
-        document.documentElement.classList.add("dark-theme")
+  // Mostrar alerta
+  function showAlert(message, type) {
+    const alertContainer = document.getElementById("alert-container")
+    const alert = document.getElementById("alert")
+
+    if (alertContainer && alert) {
+      // Configurar el estilo según el tipo
+      if (type === "success") {
+        alert.className = "p-4 rounded-xl border animate-fade-in shadow-md bg-green-50 border-green-200 text-green-700"
+        alert.innerHTML = `
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 mr-3 mt-0.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>${message}</span>
+                </div>
+            `
+      } else if (type === "warning") {
+        alert.className =
+          "p-4 rounded-xl border animate-fade-in shadow-md bg-yellow-50 border-yellow-200 text-yellow-700"
+        alert.innerHTML = `
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 mr-3 mt-0.5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>${message}</span>
+                </div>
+            `
       } else {
-        document.documentElement.classList.remove("dark-theme")
+        alert.className = "p-4 rounded-xl border animate-fade-in shadow-md bg-red-50 border-red-200 text-red-700"
+        alert.innerHTML = `
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 mr-3 mt-0.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>${message}</span>
+                </div>
+            `
       }
-    })
+
+      // Mostrar la alerta
+      alertContainer.classList.remove("hidden")
+      alertContainer.classList.add("flex")
+
+      // Ocultar después de 5 segundos
+      setTimeout(() => {
+        alertContainer.classList.add("hidden")
+        alertContainer.classList.remove("flex")
+      }, 5000)
+    }
   }
 
-  // Guardar las preferencias
-  if (guardarPreferenciasBtn) {
-    guardarPreferenciasBtn.addEventListener("click", () => {
-      // Añadir animación de carga
-      guardarPreferenciasBtn.innerHTML = `
-        <div class="flex items-center justify-center">
-          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-          <span>Guardando...</span>
-        </div>
-      `
-      guardarPreferenciasBtn.disabled = true
+  // Event listeners
+  if (notificationToggles) {
+    notificationToggles.forEach((toggle) => {
+      toggle.addEventListener("change", function () {
+        const type = this.dataset.type
+        const channel = this.dataset.channel
 
-      // Recopilar las preferencias actuales
-      const preferencias = {
-        notificaciones: toggleNotificaciones ? toggleNotificaciones.checked : false,
-        correos: toggleCorreos ? toggleCorreos.checked : false,
-        tema_oscuro: toggleTemaOscuro ? toggleTemaOscuro.checked : false,
-        idioma: idiomaSelect ? idiomaSelect.value : "es",
-      }
-
-      // Enviar solicitud para guardar preferencias
-      fetch("/perfil/guardar_preferencias", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(preferencias),
+        if (type) {
+          preferences.notifications[type] = this.checked
+        } else if (channel) {
+          preferences.channels[channel] = this.checked
+        }
       })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.success) {
-            showAlert("Preferencias guardadas correctamente", "success")
-          } else {
-            showAlert(data.error || "Error al guardar las preferencias", "error")
-          }
-        })
-        .catch((error) => {
-          console.error("Error:", error)
-          showAlert("Error al guardar las preferencias", "error")
-        })
-        .finally(() => {
-          // Restaurar el botón
-          guardarPreferenciasBtn.innerHTML = `
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-          </svg>
-          <span>Guardar preferencias</span>
-        `
-          guardarPreferenciasBtn.disabled = false
-        })
     })
   }
 
-  // Cargar las preferencias al iniciar
-  cargarPreferencias()
+  if (languageSelector) {
+    languageSelector.addEventListener("change", function () {
+      preferences.language = this.value
+      showAlert("Las opciones de idioma están en desarrollo y pueden no funcionar correctamente.", "warning")
+    })
+  }
+
+  if (themeSelector) {
+    themeSelector.addEventListener("change", function () {
+      preferences.theme = this.value
+      showAlert("Las opciones de tema están en desarrollo y pueden no funcionar correctamente.", "warning")
+
+      // Aplicar tema inmediatamente
+      document.documentElement.classList.remove("light", "dark")
+      document.documentElement.classList.add(this.value)
+    })
+  }
+
+  if (savePreferencesBtn) {
+    savePreferencesBtn.addEventListener("click", savePreferences)
+  }
+
+  // Cargar preferencias al iniciar
+  loadUserPreferences()
 })

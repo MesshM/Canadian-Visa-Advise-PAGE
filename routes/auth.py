@@ -5,8 +5,11 @@ from config.database import create_connection
 from config.email import send_email_via_zoho
 from utils.auth_helpers import generate_captcha_text, generate_reset_token, generate_token_expiration
 from mysql.connector import Error
+import cloudinary
+import cloudinary.api
 import random, string
-import pyotp  # Añadir esta importación
+import pyotp
+import time
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -25,9 +28,7 @@ def cargar_imagen_perfil_en_sesion(user_id):
             
             profile_photo = cursor.fetchone()
             if profile_photo and profile_photo['cloudinary_public_id']:
-                # Guardar la URL de la imagen en la sesión
-                import cloudinary
-                import cloudinary.api
+            # Guardar la URL de la imagen en la sesión
                 
                 # Construir la URL con Cloudinary para optimizar la carga
                 session['profile_photo'] = cloudinary.CloudinaryImage(profile_photo['cloudinary_public_id']).build_url(
@@ -155,7 +156,7 @@ def verify_2fa():
     else:
         # Si falla, intentar verificar manualmente con diferentes desplazamientos de tiempo
         # Esto ayuda con problemas de sincronización de reloj
-        import time
+        
         timestamp = int(time.time())
         for drift in range(-4, 5):  # Probar con un rango más amplio de desplazamiento
             drift_timestamp = timestamp + (drift * 30)
