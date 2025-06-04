@@ -75,7 +75,7 @@ def login():
                 cursor = connection.cursor(dictionary=True)
                 cursor.execute("SELECT * FROM tbl_asesor WHERE correo = %s", (email,))
                 asesor = cursor.fetchone()
-                if asesor and asesor['password'] == password:
+                if asesor and check_password_hash(asesor['password'], password):
                     # Iniciar sesión solo con datos de tbl_asesor
                     session['user_id'] = asesor['id_asesor']
                     session['user_name'] = f"{asesor['nombre']} {asesor['apellidos']}"
