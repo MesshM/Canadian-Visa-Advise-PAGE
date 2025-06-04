@@ -67,62 +67,88 @@ def login():
         email = request.form['email']
         password = request.form['password']
         remember_me = request.form.get('remember_me')
-        
-        connection = create_connection()
-        if connection:
-            cursor = connection.cursor(dictionary=True)
-            cursor.execute("SELECT * FROM tbl_usuario WHERE correo = %s", (email,))
-            user = cursor.fetchone()
-            
-            if user and check_password_hash(user['contrasena'], password):
-                # Verificar si el usuario tiene 2FA activado
-                cursor.execute("SELECT * FROM tbl_2fa WHERE id_usuario = %s AND activo = 1", (user['id_usuario'],))
-                has_2fa = cursor.fetchone()
-                
-                if has_2fa:
-                    # Si tiene 2FA, guardar datos temporales en la sesión y mostrar pantalla de verificación
-                    session['temp_user_id'] = user['id_usuario']
-                    session['temp_user_name'] = f"{user['nombres']} {user['apellidos']}"
-                    session['temp_remember_me'] = True if remember_me else False
-                    session['temp_email'] = email
-                    session['needs_2fa'] = True
-                    session['2fa_secret'] = has_2fa['secret_key']
-                    
-                    cursor.close()
-                    connection.close()
-                    return render_template('login.html', needs_2fa=True)
-                
-                # Si no tiene 2FA o después de verificarlo, continuar con el login normal
-                session['user_id'] = user['id_usuario']
-                session['user_name'] = f"{user['nombres']} {user['apellidos']}"
-                
-                # Verificar el rol del usuario
-                if email.endswith('@cva.com'):
+
+        if email.endswith('@cva.com'):
+            # Buscar en tbl_asesor
+            connection = create_connection()
+            if connection:
+                cursor = connection.cursor(dictionary=True)
+                cursor.execute("SELECT * FROM tbl_asesor WHERE correo = %s", (email,))
+                asesor = cursor.fetchone()
+                if asesor and asesor['password'] == password:
+                    # Iniciar sesión solo con datos de tbl_asesor
+                    session['user_id'] = asesor['id_asesor']
+                    session['user_name'] = f"{asesor['nombre']} {asesor['apellidos']}"
                     session['user_role'] = 'Asesor'
                     session['is_admin'] = True
-                else:
-                    session['user_role'] = 'Usuario'
-                    session['is_admin'] = False
-                
-                if remember_me:
-                    session.permanent = True
-                else:
-                    session.permanent = False
-                
-                # Cargar la imagen de perfil en la sesión
-                cargar_imagen_perfil_en_sesion(user['id_usuario'])
-                
-                # Redirigir según el rol
-                if email.endswith('@cva.com'):
+                    session.permanent = True if remember_me else False
+                    # Si tienes fotos de perfil para asesores, llama aquí a cargar_imagen_perfil_en_sesion(asesor['id_asesor'])
+                    cursor.close()
+                    connection.close()
                     return redirect(url_for('admin.index_asesor'))
                 else:
-                    return redirect(url_for('index'))
-            else:
-                flash('Correo o contraseña incorrectos', 'error')
+                    flash('Correo o contraseña incorrectos', 'error')
                 cursor.close()
                 connection.close()
+            else:
+                flash('Error de conexión a la base de datos', 'error')
+            return render_template('login.html', needs_2fa=False)
         else:
-            flash('Error de conexión a la base de datos', 'error')
+            connection = create_connection()
+            if connection:
+                cursor = connection.cursor(dictionary=True)
+                cursor.execute("SELECT * FROM tbl_usuario WHERE correo = %s", (email,))
+                user = cursor.fetchone()
+                
+                if user and check_password_hash(user['contrasena'], password):
+                    # Verificar si el usuario tiene 2FA activado
+                    cursor.execute("SELECT * FROM tbl_2fa WHERE id_usuario = %s AND activo = 1", (user['id_usuario'],))
+                    has_2fa = cursor.fetchone()
+                    
+                    if has_2fa:
+                        # Si tiene 2FA, guardar datos temporales en la sesión y mostrar pantalla de verificación
+                        session['temp_user_id'] = user['id_usuario']
+                        session['temp_user_name'] = f"{user['nombres']} {user['apellidos']}"
+                        session['temp_remember_me'] = True if remember_me else False
+                        session['temp_email'] = email
+                        session['needs_2fa'] = True
+                        session['2fa_secret'] = has_2fa['secret_key']
+                        
+                        cursor.close()
+                        connection.close()
+                        return render_template('login.html', needs_2fa=True)
+                    
+                    # Si no tiene 2FA o después de verificarlo, continuar con el login normal
+                    session['user_id'] = user['id_usuario']
+                    session['user_name'] = f"{user['nombres']} {user['apellidos']}"
+                    
+                    # Verificar el rol del usuario
+                    if email.endswith('@cva.com'):
+                        session['user_role'] = 'Asesor'
+                        session['is_admin'] = True
+                    else:
+                        session['user_role'] = 'Usuario'
+                        session['is_admin'] = False
+                    
+                    if remember_me:
+                        session.permanent = True
+                    else:
+                        session.permanent = False
+                    
+                    # Cargar la imagen de perfil en la sesión
+                    cargar_imagen_perfil_en_sesion(user['id_usuario'])
+                    
+                    # Redirigir según el rol
+                    if email.endswith('@cva.com'):
+                        return redirect(url_for('admin.index_asesor'))
+                    else:
+                        return redirect(url_for('index'))
+                else:
+                    flash('Correo o contraseña incorrectos', 'error')
+                    cursor.close()
+                    connection.close()
+            else:
+                flash('Error de conexión a la base de datos', 'error')
     
     return render_template('login.html', needs_2fa=session.get('needs_2fa', False))
 
