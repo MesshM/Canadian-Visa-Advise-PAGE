@@ -1,11 +1,11 @@
-from flask import Flask, redirect, url_for, render_template
+from flask import Flask, redirect, url_for, render_template, session
 from config.stripe_config import inject_stripe_key
 from routes.user import user_bp
 from routes.auth import auth_bp
 from routes.asesorias import asesorias_bp
 from routes.pagos import pagos_bp
 from routes.perfil import perfil_bp
-from routes.admin import admin_bp
+from routes.asesor import asesor_bp  # Cambia admin_bp por asesor_bp
 from routes.formularios import formulario_bp
 import os
 from datetime import datetime, timedelta
@@ -29,7 +29,7 @@ app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(asesorias_bp, url_prefix='/asesorias')
 app.register_blueprint(pagos_bp, url_prefix='/pagos')
 app.register_blueprint(perfil_bp, url_prefix='/perfil')
-app.register_blueprint(admin_bp, url_prefix='/admin')
+app.register_blueprint(asesor_bp, url_prefix='/asesor')  # Cambia admin_bp por asesor_bp
 app.register_blueprint(formulario_bp, url_prefix='/formularios')
 
 
@@ -84,31 +84,31 @@ def logout_redirect():
 def perfil_redirect():
     return redirect(url_for('perfil.perfil'))
 
-# Rutas para la sección de administrador
+# Rutas para la sección de asesor (antes admin)
 
-@app.route('/admin/solicitantes')
+@app.route('/asesor/solicitantes')
 def solicitantes_redirect():
     return redirect(url_for('user.solicitantes'))
 
-@app.route('/admin/clientes')
-def admin_clientes_redirect():
-    return redirect(url_for('admin.clientes'))
+@app.route('/asesor/clientes')
+def asesor_clientes_redirect():
+    return redirect(url_for('asesor.clientes'))
 
-@app.route('/admin/documentos_asesor')
-def admin_documentos_redirect():
-    return redirect(url_for('admin.documentos_asesor'))
+@app.route('/asesor/documentos_asesor')
+def asesor_documentos_redirect():
+    return redirect(url_for('asesor.documentos'))
 
-@app.route('/admin/asesorias')
-def admin_asesorias_redirect():
-    return redirect(url_for('admin.asesorias'))
+@app.route('/asesor/asesorias')
+def asesor_asesorias_redirect():
+    return redirect(url_for('asesor.asesorias_admin'))
 
-@app.route('/admin/pagos')
-def admin_pagos_redirect():
-    return redirect(url_for('admin.pagos'))
+@app.route('/asesor/pagos')
+def asesor_pagos_redirect():
+    return redirect(url_for('asesor.pagos_admin'))
 
-@app.route('/admin/reportes')
-def admin_reportes_redirect():
-    return redirect(url_for('admin.reportes'))
+@app.route('/asesor/reportes')
+def asesor_reportes_redirect():
+    return redirect(url_for('asesor.reportes'))
 
 # Actualizar la función inject_urls para incluir las nuevas rutas
 @app.context_processor
@@ -128,13 +128,13 @@ def inject_urls():
         'url_for_chat': lambda: url_for('user.chat'),
         'url_for_perfil': lambda: url_for('perfil.perfil'),
         
-        # Rutas de administrador
-        'url_for_admin_clientes': lambda: url_for('admin.clientes'),
-        'url_for_admin_documentos': lambda: url_for('admin.documentos_asesor'),
-        'url_for_admin_asesorias': lambda: url_for('admin.asesorias'),
-        'url_for_admin_pagos': lambda: url_for('admin.pagos'),
-        'url_for_admin_reportes': lambda: url_for('admin.reportes'),
-        'url_for_admin_dashboard': lambda: url_for('admin.dashboard'),
+        # Rutas de asesor (antes admin)
+        'url_for_asesor_clientes': lambda: url_for('asesor.clientes'),
+        'url_for_asesor_documentos': lambda: url_for('asesor.documentos'),
+        'url_for_asesor_asesorias': lambda: url_for('asesor.asesorias_admin'),
+        'url_for_asesor_pagos': lambda: url_for('asesor.pagos_admin'),
+        'url_for_asesor_reportes': lambda: url_for('asesor.reportes'),
+        'url_for_asesor_dashboard': lambda: url_for('asesor.dashboard_asesor'),
         
         # Ruta para el formulario de solicitud
         'url_for_formulario_solicitud': lambda: url_for('formularios.solicitud'),
@@ -145,7 +145,16 @@ def inject_urls():
 # Ruta principal
 @app.route('/')
 def index():
-    return render_template('index.html')
+    # Redirigir según el rol en sesión
+    if 'user_id' in session:
+        if session.get('user_role') == 'Asesor':
+            return redirect(url_for('asesor.index_asesor'))
+        # Puedes agregar más roles aquí si lo necesitas
+        # elif session.get('user_role') == 'OtroRol':
+        #     return redirect(url_for('otro_blueprint.dashboard'))
+        else:
+            return render_template('index.html')  # Usuario normal
+    return render_template('index.html')  # Visitante no autenticado
 
 if __name__ == '__main__':
     if not os.path.exists('static/uploads'):

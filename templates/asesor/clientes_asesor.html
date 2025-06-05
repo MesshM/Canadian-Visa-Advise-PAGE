@@ -253,7 +253,7 @@
                 </div>
             </div>
             <div class="p-6">
-                <form id="status-form" action="/cambiar_estado_cliente" method="post">
+                <form id="status-form" action="{{ url_for('asesor.crear_cliente_asesor') }}" method="post">
                     <input type="hidden" id="client-id" name="id_solicitante" value="">
                     
                     <div class="mb-4">
@@ -322,7 +322,7 @@
                 // Create a form to submit the POST request
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = "{{ url_for('admin.crear_cliente') }}";
+                form.action = "{{ url_for('asesor.crear_cliente_asesor') }}";
                 document.body.appendChild(form);
                 form.submit();
             });
@@ -337,7 +337,7 @@
                 button.addEventListener('click', function() {
                     const id = this.getAttribute('data-id');
                     // Cargar datos del cliente desde la base de datos
-                    fetch(`/obtener_cliente/${id}`)
+                    fetch(`/asesor/obtener_cliente_asesor/${id}`)
                         .then(response => response.json())
                         .then(data => {
                             document.getElementById('view-id').textContent = data.id_formateado;
@@ -446,7 +446,8 @@
         document.querySelectorAll('.edit-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const clientId = this.getAttribute('data-id');
-                window.location.href = `/editar_cliente/${clientId}`;
+                // Para editar cliente
+                window.location.href = `/asesor/editar_cliente_asesor/${clientId}`;
             });
         });
         

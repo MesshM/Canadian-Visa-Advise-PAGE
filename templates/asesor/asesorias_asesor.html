@@ -165,7 +165,7 @@
                 </div>
             </div>
             <div class="p-6">
-                <form id="appointment-form" action="{{ url_for('admin.crear_asesoria') }}" method="post">
+                <form id="appointment-form" action="{{ url_for('asesor.crear_asesoria_asesor') }}" method="post">
                     <div class="space-y-4">
                         <!-- Solicitante -->
                         <div>
@@ -293,7 +293,7 @@
                 </div>
             </div>
             <div class="p-6">
-                <form id="status-form" action="{{ url_for('admin.actualizar_estado_asesoria') }}" method="post">
+                <form id="status-form" action="{{ url_for('asesor.actualizar_estado_asesoria_asesor') }}" method="post">
                     <input type="hidden" id="appointment-id" name="appointment-id" value="">
                     
                     <div class="mb-4">
@@ -399,7 +399,7 @@
                 button.addEventListener('click', function() {
                     const id = this.getAttribute('data-id');
                     // Aquí se cargarían los datos reales de la asesoría
-                    fetch(`/admin/obtener_asesoria/${id}`)
+                    fetch(`/asesor/obtener_asesoria/${id}`)
                         .then(response => response.json())
                         .then(data => {
                             document.getElementById('view-code').textContent = data.codigo_asesoria;

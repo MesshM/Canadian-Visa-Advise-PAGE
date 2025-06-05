@@ -306,7 +306,7 @@
                 </div>
             </div>
             <div class="p-6">
-                <form id="payment-form" action="/registrar_pago" method="post">
+                <form id="payment-form" action="/asesor/registrar_pago" method="post">
                     <div class="space-y-4">
                         <!-- Cliente -->
                         <div>
@@ -456,7 +456,7 @@
                 </div>
             </div>
             <div class="p-6">
-                <form id="status-form" action="/actualizar_estado_pago" method="post">
+                <form id="status-form" action="/asesor/actualizar_estado_pago" method="post">
                     <input type="hidden" id="payment-id" name="payment-id" value="">
                     
                     <div class="mb-4">
@@ -544,7 +544,7 @@
             newPaymentBtn.addEventListener('click', function() {
                 newPaymentModal.classList.remove('hidden');
                 // Cargar clientes desde la base de datos
-                fetch('/obtener_clientes')
+                fetch('/asesor/obtener_clientes')
                     .then(response => response.json())
                     .then(data => {
                         const clientSelect = document.getElementById('client');
@@ -574,7 +574,7 @@
                 button.addEventListener('click', function() {
                     const id = this.getAttribute('data-id');
                     // Cargar datos del pago desde la base de datos
-                    fetch(`/obtener_pago/${id}`)
+                    fetch(`/asesor/obtener_pago/${id}`)
                         .then(response => response.json())
                         .then(data => {
                             document.getElementById('view-id').textContent = data.id_formateado;

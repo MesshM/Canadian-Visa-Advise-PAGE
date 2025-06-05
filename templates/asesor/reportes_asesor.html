@@ -215,7 +215,7 @@
         <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 animate-[fadeIn_0.5s_ease] transition-all duration-300 hover:shadow-xl">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-lg font-semibold text-gray-800">Asesorías Recientes</h2>
-                <a href="/admin/asesorias" class="text-red-500 hover:text-red-700 text-sm font-medium">Ver todas</a>
+                <a href="/asesor/asesorias" class="text-red-500 hover:text-red-700 text-sm font-medium">Ver todas</a>
             </div>
             
             <div class="overflow-x-auto rounded-xl border border-gray-200">
@@ -302,7 +302,7 @@
             // Aplicar filtros
             applyFilter.addEventListener('click', function() {
                 if (dateFrom.value && dateTo.value) {
-                    window.location.href = `/reportes?desde=${dateFrom.value}&hasta=${dateTo.value}`;
+                    window.location.href = `/asesor/reportes?desde=${dateFrom.value}&hasta=${dateTo.value}`;
                 } else {
                     alert('Por favor selecciona ambas fechas');
                 }
@@ -312,7 +312,7 @@
             resetFilter.addEventListener('click', function() {
                 dateFrom.value = firstDay.toISOString().split('T')[0];
                 dateTo.value = today.toISOString().split('T')[0];
-                window.location.href = '/reportes';
+                window.location.href = '/asesor/reportes';
             });
         });
     </script>

@@ -81,12 +81,11 @@ def login():
                     session['user_id'] = asesor['id_asesor']
                     session['user_name'] = f"{asesor['nombre']} {asesor['apellidos']}"
                     session['user_role'] = 'Asesor'
-                    session['is_admin'] = True
                     session.permanent = True if remember_me else False
                     # Si tienes fotos de perfil para asesores, llama aquí a cargar_imagen_perfil_en_sesion(asesor['id_asesor'])
                     cursor.close()
                     connection.close()
-                    return redirect(url_for('admin.index_asesor'))
+                    return redirect(url_for('asesor.index_asesor'))
                 else:
                     flash('Correo o contraseña incorrectos', 'error')
                 cursor.close()
@@ -141,7 +140,7 @@ def login():
                     
                     # Redirigir según el rol
                     if email.endswith('@cva.com'):
-                        return redirect(url_for('admin.index_asesor'))
+                        return redirect(url_for('asesor.index_asesor'))
                     else:
                         return redirect(url_for('index'))
                 else:
@@ -225,7 +224,7 @@ def verify_2fa():
         
         # Redirigir según el rol
         if session.get('user_role') == 'Asesor':
-            return redirect(url_for('admin.index_asesor'))
+            return redirect(url_for('asesor.index_asesor'))
         else:
             return redirect(url_for('index'))
     else:
