@@ -1,18 +1,9 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Documentos - Sistema de Inmigración Canadiense</title>
-    <link href="/static/css/output.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="font-['Inter'] bg-gray-50 text-gray-700 overflow-x-hidden m-0 p-0">
-    <!-- Sidebar -->
-    {% include 'includes/_sidebar_asesor.html' %}
-    <!-- Main Content -->
-    <main class="ml-[calc(240px+40px)] p-8 min-h-screen">
+{% extends 'asesor/base_asesor.html' %}
+
+{% block title %}CVA | Asesor | Documentos{% endblock %}
+
+{% block main_asesor %}
+
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900 m-0 mb-2">Documentación del Cliente</h1>
             <p class="text-gray-500 text-sm">A continuación puede visualizar los documentos que el cliente ha subido para su aplicación de VISA</p>
@@ -395,6 +386,4 @@
             }
         });
     </script>
-</body>
-</html>
-
+{% endblock %}

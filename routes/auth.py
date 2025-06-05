@@ -85,7 +85,7 @@ def login():
                     # Si tienes fotos de perfil para asesores, llama aquí a cargar_imagen_perfil_en_sesion(asesor['id_asesor'])
                     cursor.close()
                     connection.close()
-                    return redirect(url_for('asesor.index_asesor'))
+                    return redirect(url_for('panel_asesor.index_asesor'))
                 else:
                     flash('Correo o contraseña incorrectos', 'error')
                 cursor.close()

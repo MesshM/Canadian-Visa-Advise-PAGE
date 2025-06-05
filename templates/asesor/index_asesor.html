@@ -1,13 +1,13 @@
 {% extends 'asesor/base_asesor.html' %}
 
-{% block title %}CVA | Panel de Administración{% endblock %}
+{% block title %}CVA | Asesor | Panel de Asesor{% endblock %}
 
-{% block mainAsesor %}
+{% block main_asesor %}
     <!-- Main content area -->
     <div class="space-y-6">
         <!-- Header with admin title and notification icon -->
         <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow">
-            <h1 class="text-2xl font-bold text-gray-900 font-roboto">Panel de Administración</h1>
+            <h1 class="text-2xl font-bold text-gray-900 font-roboto">Panel de Asesor</h1>
             <div class="relative">
                 <button id="notificationBtn" class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-700 hover:bg-primary-100 hover:text-primary-600 transition-all duration-300 ease-in-out">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -247,7 +247,7 @@
                     </table>
                 </div>
                 <div class="flex justify-center mt-6">
-                    <a href="{{ url_for('asesor.solicitudes_asesor') }}" class="inline-flex items-center px-4 py-2 border border-primary-300 text-sm font-medium rounded-md text-primary-700 bg-white hover:bg-primary-50">
+                    <a href="{{ url_for('citas_asesor.solicitudes_asesor') }}" class="inline-flex items-center px-4 py-2 border border-primary-300 text-sm font-medium rounded-md text-primary-700 bg-white hover:bg-primary-50">
                         Ver todas las solicitudes
                     </a>
                 </div>
@@ -302,7 +302,7 @@
                 <h3 class="text-lg font-medium text-gray-900 text-center mb-2 font-roboto">Nueva Solicitud</h3>
                 <p class="text-gray-600 text-center mb-4">Crear una nueva solicitud de visa para un cliente.</p>
                 <div class="text-center">
-                    <a href="{{ url_for('asesor.solicitudes_asesor') }}" class="inline-flex items-center justify-center px-4 py-2 text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors duration-300 font-roboto text-sm">
+                    <a href="{{ url_for('citas_asesor.solicitudes_asesor') }}" class="inline-flex items-center justify-center px-4 py-2 text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors duration-300 font-roboto text-sm">
                         Crear solicitud
                     </a>
                 </div>
@@ -318,7 +318,7 @@
                 <h3 class="text-lg font-medium text-gray-900 text-center mb-2 font-roboto">Agendar Asesoría</h3>
                 <p class="text-gray-600 text-center mb-4">Programar una nueva asesoría con un cliente.</p>
                 <div class="text-center">
-                    <a href="{{ url_for('asesor.asesorias_asesor') }}" class="inline-flex items-center justify-center px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-300 font-roboto text-sm">
+                    <a href="{{ url_for('citas_asesor.asesorias_asesor') }}" class="inline-flex items-center justify-center px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-300 font-roboto text-sm">
                         Agendar ahora
                     </a>
                 </div>
@@ -334,59 +334,13 @@
                 <h3 class="text-lg font-medium text-gray-900 text-center mb-2 font-roboto">Generar Reporte</h3>
                 <p class="text-gray-600 text-center mb-4">Generar un reporte de solicitudes y asesorías.</p>
                 <div class="text-center">
-                    <a href="{{ url_for('asesor.reportes_asesor') }}" class="inline-flex items-center justify-center px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-300 font-roboto text-sm">
+                    <a href="{{ url_for('panel_asesor.reportes_asesor') }}" class="inline-flex items-center justify-center px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-300 font-roboto text-sm">
                         Generar reporte
                     </a>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- JavaScript for tabs and notification dropdown -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Tab switching functionality
-            const tabs = document.querySelectorAll('[data-tab]');
-            tabs.forEach(tab => {
-                tab.addEventListener('click', function() {
-                    // Remove active class from all tabs
-                    tabs.forEach(t => {
-                        t.classList.remove('border-primary-600', 'text-primary-600');
-                        t.classList.add('border-transparent', 'hover:text-primary-600', 'hover:border-primary-300');
-                        t.setAttribute('aria-selected', 'false');
-                    });
-                    
-                    // Add active class to clicked tab
-                    this.classList.add('border-primary-600', 'text-primary-600');
-                    this.classList.remove('border-transparent', 'hover:text-primary-600', 'hover:border-primary-300');
-                    this.setAttribute('aria-selected', 'true');
-                    
-                    // Hide all tab contents
-                    document.querySelectorAll('.tab-content').forEach(content => {
-                        content.classList.add('hidden');
-                    });
-                    
-                    // Show selected tab content
-                    document.getElementById(this.getAttribute('data-tab') + '-content').classList.remove('hidden');
-                });
-            });
-            
-            // Notification dropdown toggle
-            const notificationBtn = document.getElementById('notificationBtn');
-            const notificationDropdown = document.getElementById('notificationDropdown');
-            
-            if (notificationBtn && notificationDropdown) {
-                notificationBtn.addEventListener('click', function() {
-                    notificationDropdown.classList.toggle('hidden');
-                });
-                
-                // Close dropdown when clicking outside
-                document.addEventListener('click', function(event) {
-                    if (!notificationBtn.contains(event.target) && !notificationDropdown.contains(event.target)) {
-                        notificationDropdown.classList.add('hidden');
-                    }
-                });
-            }
-        });
-    </script>
+    
+    <script src="/static/js/asesor/index_asesor.js"></script>
 {% endblock %}
