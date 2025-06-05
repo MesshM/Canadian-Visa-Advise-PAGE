@@ -6,7 +6,11 @@
     <div class="mb-8 flex justify-between items-center">
         <div>
             <h1 class="text-3xl font-bold text-gray-900 m-0 mb-2">Asesorías</h1>
-            <p class="text-gray-500 text-sm">Gestiona las asesorías programadas con tus clientes</p>
+            {% if es_vista_filtrada and asesor_info %}
+                <p class="text-gray-500 text-sm">Mostrando asesorías asignadas a: <span class="font-medium text-red-600">{{ asesor_info.nombre }} {{ asesor_info.apellidos }}</span></p>
+            {% else %}
+                <p class="text-gray-500 text-sm">Gestiona las asesorías programadas con tus clientes</p>
+            {% endif %}
         </div>
         <button id="new-appointment-btn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center shadow-lg shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/30 transition-all duration-300 hover:translate-y-[-2px] active:translate-y-0">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -75,8 +79,8 @@
                                 </td>
                                 <td class="py-3 px-4 text-sm">
                                     <div>
-                                        <p class="text-gray-900">{{ asesoria.fecha_asesoria.strftime('%d %b, %Y') if asesoria.fecha_asesoria else 'No disponible' }}</p>
-                                        <p class="text-xs text-gray-500">{{ asesoria.fecha_asesoria.strftime('%H:%M') if asesoria.fecha_asesoria else '' }}</p>
+                                        <p class="text-gray-900">{{ asesoria.fecha_formateada|default(asesoria.fecha_asesoria.strftime('%d %b, %Y') if asesoria.fecha_asesoria else 'No disponible') }}</p>
+                                        <p class="text-xs text-gray-500">{{ asesoria.hora_formateada|default(asesoria.fecha_asesoria.strftime('%H:%M') if asesoria.fecha_asesoria else '') }}</p>
                                     </div>
                                 </td>
                                 <td class="py-3 px-4 text-sm">

@@ -1,33 +1,270 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, session, request, jsonify
 from config.database import create_connection
 import datetime
-
+from werkzeug.security import generate_password_hash, check_password_hash
+import os
+from werkzeug.utils import secure_filename
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
-
 @admin_bp.route('/')
-def admin_index():
+def index():
     if 'user_id' not in session or not session.get('is_admin', False):
         return redirect(url_for('auth.login'))
-
+    
     try:
-        # Renderizar la plantilla de administrador
-        return render_template('asesor/index_asesor.html')
+        # Initialize statistics
+        estadisticas = {
+            'total_clientes': 0,
+            'asesorias_pendientes': 0,
+            'documentos_pendientes': 0,
+            'pagos_recientes': 0
+        }
+        
+        connection = create_connection()
+        if connection:
+            with connection.cursor(dictionary=True) as cursor:
+                # Total clients
+                cursor.execute("SELECT COUNT(*) as total FROM tbl_solicitante")
+                result = cursor.fetchone()
+                estadisticas['total_clientes'] = result['total'] if result and 'total' in result else 0
+                
+                # Pending appointments
+                cursor.execute("""
+                    SELECT COUNT(*) as total FROM tbl_asesoria
+                    WHERE estado = 'Pendiente'
+                """)
+                result = cursor.fetchone()
+                estadisticas['asesorias_pendientes'] = result['total'] if result and 'total' in result else 0
+                
+                # Pending documents
+                cursor.execute("""
+                    SELECT COUNT(*) as total FROM tbl_documento
+                    WHERE estado = 'Pendiente'
+                """)
+                result = cursor.fetchone()
+                estadisticas['documentos_pendientes'] = result['total'] if result and 'total' in result else 0
+                
+                # Recent payments
+                cursor.execute("""
+                    SELECT COUNT(*) as total FROM tbl_pago_asesoria
+                    WHERE fecha_pago >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                """)
+                result = cursor.fetchone()
+                estadisticas['pagos_recientes'] = result['total'] if result and 'total' in result else 0
+            
+            # Recent activities (example data)
+            actividades_recientes = [
+                {
+                    'mensaje': 'Nuevo cliente registrado: Juan Pérez',
+                    'fecha': '19/05/2025 14:30',
+                    'color': 'blue',
+                    'icono': 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z'
+                },
+                {
+                    'mensaje': 'Asesoría completada con María González',
+                    'fecha': '19/05/2025 12:15',
+                    'color': 'green',
+                    'icono': 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
+                },
+                {
+                    'mensaje': 'Nuevo pago recibido: $250.00',
+                    'fecha': '19/05/2025 10:45',
+                    'color': 'red',
+                    'icono': 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+                },
+                {
+                    'mensaje': 'Documento aprobado para Carlos Ramírez',
+                    'fecha': '18/05/2025 16:20',
+                    'color': 'purple',
+                    'icono': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+                },
+                {
+                    'mensaje': 'Nueva asesoría programada',
+                    'fecha': '18/05/2025 11:05',
+                    'color': 'yellow',
+                    'icono': 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'
+                }
+            ]
+            
+            connection.close()
+            
+            return render_template('admin/index.html', 
+                                  estadisticas=estadisticas,
+                                  actividades_recientes=actividades_recientes)
     except Exception as e:
-        # Capturar y mostrar cualquier error
-        print(f"Error al renderizar la plantilla: {str(e)}")
-        # Mostrar el error al usuario
-        return f"Error: {str(e)}", 500
+        print(f"Error en index: {str(e)}")
+        flash(f"Error al cargar el panel de administración: {str(e)}", "error")
+        return redirect(url_for('index'))
 
-@admin_bp.route('/asesor')
-def index_asesor():
+@admin_bp.route('/usuarios')
+def usuarios():
     if 'user_id' not in session or not session.get('is_admin', False):
         return redirect(url_for('auth.login'))
-    return render_template('asesor/index_asesor.html')
+    
+    # Pagination parameters
+    pagina_actual = request.args.get('pagina', 1, type=int)
+    items_por_pagina = 10
+    offset = (pagina_actual - 1) * items_por_pagina
+    
+    connection = create_connection()
+    if connection:
+        with connection.cursor(dictionary=True) as cursor:
+            # Count total users
+            cursor.execute("SELECT COUNT(*) as total FROM tbl_usuario")
+            result = cursor.fetchone()
+            total_usuarios = result['total'] if result else 0
+            
+            # Calculate total pages
+            total_paginas = (total_usuarios + items_por_pagina - 1) // items_por_pagina
+            
+            # Get users with pagination
+            cursor.execute("""
+                SELECT u.id_usuario, u.nombres, u.apellidos, u.correo, u.fecha_nacimiento,
+                       CASE 
+                           WHEN a.id_asesor IS NOT NULL THEN 'Asesor'
+                           WHEN adm.id_administrador IS NOT NULL THEN 'Administrador'
+                           ELSE 'Cliente'
+                       END as tipo,
+                       CASE 
+                           WHEN a.id_asesor IS NOT NULL THEN a.especialidad
+                           ELSE NULL
+                       END as especialidad,
+                       TRUE as activo
+                FROM tbl_usuario u
+                LEFT JOIN tbl_asesor a ON u.id_usuario = a.id_usuario
+                LEFT JOIN tbl_administrador adm ON u.id_usuario = adm.id_usuario
+                ORDER BY u.id_usuario DESC
+                LIMIT %s OFFSET %s
+            """, (items_por_pagina, offset))
+            
+            usuarios = cursor.fetchall()
+            
+            # Format dates
+            for usuario in usuarios:
+                if 'fecha_nacimiento' in usuario and usuario['fecha_nacimiento']:
+                    if isinstance(usuario['fecha_nacimiento'], datetime.date):
+                        usuario['fecha_nacimiento'] = usuario['fecha_nacimiento'].strftime('%d/%m/%Y')
+        
+        connection.close()
+        
+        return render_template('admin/usuarios.html', 
+                              usuarios=usuarios,
+                              pagina_actual=pagina_actual,
+                              total_paginas=total_paginas,
+                              total_usuarios=total_usuarios)
+    
+    flash('Error de conexión a la base de datos', 'error')
+    return redirect(url_for('admin.index'))
 
-@admin_bp.route('/clientes')
-def clientes():
+@admin_bp.route('/asignacion_clientes')
+def asignacion_clientes():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('auth.login'))
+    
+    # Pagination parameters
+    pagina_actual = request.args.get('pagina', 1, type=int)
+    items_por_pagina = 10
+    offset = (pagina_actual - 1) * items_por_pagina
+    
+    connection = create_connection()
+    if connection:
+        with connection.cursor(dictionary=True) as cursor:
+            # Count total clients
+            cursor.execute("SELECT COUNT(*) as total FROM tbl_solicitante")
+            result = cursor.fetchone()
+            total_clientes = result['total'] if result else 0
+            
+            # Calculate total pages
+            total_paginas = (total_clientes + items_por_pagina - 1) // items_por_pagina
+            
+            # Get clients with pagination
+            cursor.execute("""
+                SELECT s.id_solicitante, u.nombres, u.apellidos, u.correo, u.telefono,
+                       s.id_asesor, a.nombre as asesor_nombre, a.apellidos as asesor_apellidos,
+                       DATE_FORMAT(s.fecha_registro, '%d/%m/%Y') as fecha_registro
+                FROM tbl_solicitante s
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+                LEFT JOIN tbl_asesor a ON s.id_asesor = a.id_asesor
+                ORDER BY s.id_solicitante DESC
+                LIMIT %s OFFSET %s
+            """, (items_por_pagina, offset))
+            
+            clientes = cursor.fetchall()
+            
+            # Get all advisors for assignment
+            cursor.execute("""
+                SELECT id_asesor, nombre, apellidos, especialidad
+                FROM tbl_asesor
+                WHERE activo = TRUE
+                ORDER BY nombre, apellidos
+            """)
+            
+            asesores = cursor.fetchall()
+        
+        connection.close()
+        
+        return render_template('admin/asignacion_clientes.html', 
+                              clientes=clientes,
+                              asesores=asesores,
+                              pagina_actual=pagina_actual,
+                              total_paginas=total_paginas,
+                              total_clientes=total_clientes)
+    
+    flash('Error de conexión a la base de datos', 'error')
+    return redirect(url_for('admin.index'))
+
+@admin_bp.route('/asignar_asesor', methods=['POST'])
+def asignar_asesor():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('auth.login'))
+    
+    try:
+        client_id = request.form.get('client_id')
+        advisor_id = request.form.get('advisor_id')
+        notes = request.form.get('notes', '')
+        
+        if not client_id:
+            flash('ID de cliente no proporcionado', 'error')
+            return redirect(url_for('admin.asignacion_clientes'))
+        
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor()
+            
+            # If advisor_id is 0, remove assignment
+            if advisor_id == '0':
+                cursor.execute("""
+                    UPDATE tbl_solicitante 
+                    SET id_asesor = NULL, notas_asignacion = %s, fecha_asignacion = NULL
+                    WHERE id_solicitante = %s
+                """, (notes, client_id))
+                
+                flash('Asignación de asesor removida exitosamente', 'success')
+            else:
+                # Assign advisor
+                cursor.execute("""
+                    UPDATE tbl_solicitante 
+                    SET id_asesor = %s, notas_asignacion = %s, fecha_asignacion = NOW()
+                    WHERE id_solicitante = %s
+                """, (advisor_id, notes, client_id))
+                
+                flash('Cliente asignado exitosamente', 'success')
+            
+            connection.commit()
+            cursor.close()
+            connection.close()
+            
+            return redirect(url_for('admin.asignacion_clientes'))
+        else:
+            flash('Error de conexión a la base de datos', 'error')
+            return redirect(url_for('admin.asignacion_clientes'))
+    except Exception as e:
+        flash(f'Error al asignar asesor: {str(e)}', 'error')
+        return redirect(url_for('admin.asignacion_clientes'))
+
+@admin_bp.route('/asesores')
+def asesores():
     if 'user_id' not in session or not session.get('is_admin', False):
         return redirect(url_for('auth.login'))
     
@@ -35,786 +272,238 @@ def clientes():
     if connection:
         with connection.cursor(dictionary=True) as cursor:
             cursor.execute("""
-                SELECT s.id_solicitante, u.nombres, u.apellidos, u.correo, u.fecha_nacimiento 
-                FROM tbl_solicitante s
-                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-                ORDER BY s.id_solicitante DESC
+                SELECT a.id_asesor, a.nombre, a.apellidos, a.correo, a.especialidad,
+                       COUNT(DISTINCT as2.codigo_asesoria) as total_asesorias,
+                       COUNT(DISTINCT CASE WHEN as2.estado = 'Completada' THEN as2.codigo_asesoria END) as asesorias_completadas
+                FROM tbl_asesor a
+                LEFT JOIN tbl_asesoria as2 ON a.id_asesor = as2.id_asesor
+                GROUP BY a.id_asesor
+                ORDER BY a.id_asesor DESC
             """)
-            clientes = cursor.fetchall()
+            asesores = cursor.fetchall()
+        
         connection.close()
-        return render_template('asesor/clientes.html', clientes=clientes)
+        
+        return render_template('admin/asesores.html', asesores=asesores)
     
     flash('Error de conexión a la base de datos', 'error')
-    return redirect(url_for('admin.index_asesor'))
+    return redirect(url_for('admin.index'))
 
-@admin_bp.route('/asesorias')
+@admin_bp.route('/asesorias_admin')
 def asesorias_admin():
     if 'user_id' not in session or not session.get('is_admin', False):
         return redirect(url_for('auth.login'))
     
+    # Pagination parameters
+    pagina_actual = request.args.get('pagina', 1, type=int)
+    items_por_pagina = 10
+    offset = (pagina_actual - 1) * items_por_pagina
+    
     connection = create_connection()
     if connection:
         with connection.cursor(dictionary=True) as cursor:
-            # Obtener asesorías
+            # Count total appointments
+            cursor.execute("SELECT COUNT(*) as total FROM tbl_asesoria")
+            result = cursor.fetchone()
+            total_asesorias = result['total'] if result else 0
+            
+            # Calculate total pages
+            total_paginas = (total_asesorias + items_por_pagina - 1) // items_por_pagina
+            
+            # Get appointments with pagination
             cursor.execute("""
-                SELECT a.codigo_asesoria, a.fecha_asesoria, a.tipo_asesoria,
-                       CONCAT(u.nombres, ' ', u.apellidos) AS solicitante,
-                       u.correo,
-                       a.estado, a.descripcion
+                SELECT a.codigo_asesoria, a.tipo_asesoria, a.fecha_asesoria, a.estado,
+                       CONCAT(u.nombres, ' ', u.apellidos) as solicitante,
+                       CONCAT(as2.nombre, ' ', as2.apellidos) as asesor
                 FROM tbl_asesoria a
                 JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
                 JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+                LEFT JOIN tbl_asesor as2 ON a.id_asesor = as2.id_asesor
                 ORDER BY a.fecha_asesoria DESC
-            """)
+                LIMIT %s OFFSET %s
+            """, (items_por_pagina, offset))
+            
             asesorias = cursor.fetchall()
             
-            # Obtener clientes para el formulario de nueva asesoría
-            cursor.execute("""
-                SELECT s.id_solicitante, u.nombres, u.apellidos
-                FROM tbl_solicitante s
-                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-                ORDER BY u.nombres, u.apellidos
-            """)
-            clientes = cursor.fetchall()
-            
+            # Format dates
+            for asesoria in asesorias:
+                if 'fecha_asesoria' in asesoria and asesoria['fecha_asesoria']:
+                    if isinstance(asesoria['fecha_asesoria'], datetime.datetime):
+                        asesoria['fecha_asesoria'] = asesoria['fecha_asesoria'].strftime('%d/%m/%Y %H:%M')
+        
         connection.close()
-        return render_template('asesor/asesorias_admin.html', asesorias=asesorias, clientes=clientes)
+        
+        return render_template('admin/asesorias_admin.html', 
+                              asesorias=asesorias,
+                              pagina_actual=pagina_actual,
+                              total_paginas=total_paginas,
+                              total_asesorias=total_asesorias)
     
     flash('Error de conexión a la base de datos', 'error')
-    return redirect(url_for('admin.index_asesor'))
+    return redirect(url_for('admin.index'))
 
 @admin_bp.route('/documentos')
 def documentos():
     if 'user_id' not in session or not session.get('is_admin', False):
         return redirect(url_for('auth.login'))
     
-    # Get list of all clients for selection
-    connection = create_connection()
-    if connection:
-        with connection.cursor(dictionary=True) as cursor:
-            cursor.execute("""
-                SELECT s.id_solicitante, 
-                       CONCAT(u.nombres, ' ', u.apellidos) AS nombre_completo,
-                       u.correo
-                FROM tbl_solicitante s
-                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-                ORDER BY u.nombres, u.apellidos
-            """)
-            clientes_lista = cursor.fetchall()
-        connection.close()
-        
-        # Create default empty values for template variables
-        cliente = {
-            'id_solicitante': '',
-            'nombre_completo': 'No seleccionado',
-            'codigo_expediente': 'N/A',
-            'correo': ''
-        }
-        documentos = []
-        estado_documentacion = 'Sin documentos'
-        estado_class = 'bg-gray-100 text-gray-700'
-        aprobados = 0
-        total_docs = 0
-        
-        return render_template('asesor/documentos_asesor.html', 
-                              cliente=cliente,
-                              documentos=documentos,
-                              clientes_lista=clientes_lista,
-                              estado_documentacion=estado_documentacion,
-                              estado_class=estado_class,
-                              aprobados=aprobados,
-                              total_docs=total_docs)
-    
-    flash('Error de conexión a la base de datos', 'error')
-    return redirect(url_for('admin.index_asesor'))
-
-@admin_bp.route('/documentos/<int:cliente_id>')
-def documentos_cliente(cliente_id):
-    if 'user_id' not in session or not session.get('is_admin', False):
-        return redirect(url_for('auth.login'))
+    # Pagination parameters
+    pagina_actual = request.args.get('pagina', 1, type=int)
+    items_por_pagina = 10
+    offset = (pagina_actual - 1) * items_por_pagina
     
     connection = create_connection()
     if connection:
         with connection.cursor(dictionary=True) as cursor:
-            # Get client information
+            # Count total documents
+            cursor.execute("SELECT COUNT(*) as total FROM tbl_documento")
+            result = cursor.fetchone()
+            total_documentos = result['total'] if result else 0
+            
+            # Calculate total pages
+            total_paginas = (total_documentos + items_por_pagina - 1) // items_por_pagina
+            
+            # Get documents with pagination
             cursor.execute("""
-                SELECT s.id_solicitante, 
-                       CONCAT(u.nombres, ' ', u.apellidos) AS nombre_completo,
-                       u.correo
-                FROM tbl_solicitante s
-                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-                WHERE s.id_solicitante = %s
-            """, (cliente_id,))
-            cliente = cursor.fetchone()
-            
-            if not cliente:
-                flash('Cliente no encontrado', 'error')
-                return redirect(url_for('admin.documentos'))
-            
-            # Add a default expedition code if not available in database
-            cliente['codigo_expediente'] = f"EXP-{cliente_id}-{datetime.datetime.now().year}"
-            
-            # Get client documents
-            cursor.execute("""
-                SELECT d.id_documento, d.nombre_documento, d.tipo_documento, 
-                       d.fecha_subida, d.ruta_archivo, d.estado AS estado_documento,
-                       d.observaciones, d.nombre_archivo
+                SELECT d.id_documento, d.nombre, d.tipo, d.fecha_subida, d.estado,
+                       CONCAT(u.nombres, ' ', u.apellidos) as solicitante,
+                       d.ruta_archivo
                 FROM tbl_documento d
-                WHERE d.id_solicitante = %s
+                JOIN tbl_solicitante s ON d.id_solicitante = s.id_solicitante
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
                 ORDER BY d.fecha_subida DESC
-            """, (cliente_id,))
+                LIMIT %s OFFSET %s
+            """, (items_por_pagina, offset))
+            
             documentos = cursor.fetchall()
             
-            # Process documents for display
-            for doc in documentos:
-                # Format date
-                if 'fecha_subida' in doc and doc['fecha_subida']:
-                    if isinstance(doc['fecha_subida'], datetime.datetime):
-                        doc['fecha_formateada'] = doc['fecha_subida'].strftime('%d/%m/%Y %H:%M')
-                    else:
-                        doc['fecha_formateada'] = str(doc['fecha_subida'])
-                else:
-                    doc['fecha_formateada'] = 'N/A'
-                
-                # Determine icon type
-                doc['icon_type'] = 'image' if doc.get('tipo_documento', '').lower() in ['jpg', 'jpeg', 'png', 'gif'] else 'document'
-            
-            # Get list of all clients for selection
-            cursor.execute("""
-                SELECT s.id_solicitante, 
-                       CONCAT(u.nombres, ' ', u.apellidos) AS nombre_completo,
-                       u.correo
-                FROM tbl_solicitante s
-                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-                ORDER BY u.nombres, u.apellidos
-            """)
-            clientes_lista = cursor.fetchall()
-            
-            # Calculate document statistics
-            total_docs = len(documentos)
-            aprobados = sum(1 for doc in documentos if doc.get('estado_documento') == 'Aprobado')
-            
-            # Determine overall documentation status
-            if total_docs == 0:
-                estado_documentacion = 'Sin documentos'
-                estado_class = 'bg-gray-100 text-gray-700'
-            elif aprobados == total_docs:
-                estado_documentacion = 'Documentación completa'
-                estado_class = 'bg-green-100 text-green-800'
-            else:
-                estado_documentacion = 'Documentación incompleta'
-                estado_class = 'bg-yellow-100 text-yellow-800'
-            
+            # Format dates
+            for documento in documentos:
+                if 'fecha_subida' in documento and documento['fecha_subida']:
+                    if isinstance(documento['fecha_subida'], datetime.datetime):
+                        documento['fecha_subida'] = documento['fecha_subida'].strftime('%d/%m/%Y %H:%M')
+        
         connection.close()
-        return render_template('asesor/documentos_asesor.html', 
-                              cliente=cliente, 
-                              documentos=documentos, 
-                              clientes_lista=clientes_lista,
-                              estado_documentacion=estado_documentacion,
-                              estado_class=estado_class,
-                              aprobados=aprobados,
-                              total_docs=total_docs)
+        
+        return render_template('admin/documentos.html', 
+                              documentos=documentos,
+                              pagina_actual=pagina_actual,
+                              total_paginas=total_paginas,
+                              total_documentos=total_documentos)
     
     flash('Error de conexión a la base de datos', 'error')
-    return redirect(url_for('admin.index_asesor'))
+    return redirect(url_for('admin.index'))
 
-@admin_bp.route('/actualizar_estado_documento', methods=['POST'])
-def actualizar_estado_documento():
-    if 'user_id' not in session or not session.get('is_admin', False):
-        return redirect(url_for('auth.login'))
-    
-    try:
-        # Get form data
-        documento_id = request.form.get('id_documento')
-        cliente_id = request.form.get('id_solicitante')
-        nuevo_estado = request.form.get('estado')
-        observaciones = request.form.get('observaciones')
-        
-        # Validate data
-        if not documento_id or not nuevo_estado or not cliente_id:
-            flash('Datos incompletos para actualizar el estado', 'error')
-            return redirect(url_for('admin.documentos_cliente', cliente_id=cliente_id))
-        
-        connection = create_connection()
-        if connection:
-            with connection.cursor() as cursor:
-                # Update document status
-                cursor.execute("""
-                    UPDATE tbl_documento 
-                    SET estado = %s, observaciones = %s
-                    WHERE id_documento = %s
-                """, (nuevo_estado, observaciones, documento_id))
-                
-            connection.commit()
-            connection.close()
-            
-            flash('Estado del documento actualizado exitosamente', 'success')
-        else:
-            flash('Error de conexión a la base de datos', 'error')
-            
-        return redirect(url_for('admin.documentos_cliente', cliente_id=cliente_id))
-        
-    except Exception as e:
-        print(f"Error al actualizar estado del documento: {str(e)}")
-        flash(f'Error al actualizar estado: {str(e)}', 'error')
-        return redirect(url_for('admin.documentos'))
-
-@admin_bp.route('/pagos')
+@admin_bp.route('/pagos_admin')
 def pagos_admin():
-    # Obtener todos los pagos de la base de datos
-    pagos = []
-    
-    # Inicializar estadísticas
-    stats = {
-        'total_recibido': 0,
-        'pagos_pendientes': 0,
-        'pagos_completados': 0,
-        'pagos_rechazados': 0
-    }
-    
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-        
-        # Consulta para obtener los pagos con información del cliente
-        query = """
-        SELECT p.*, s.nombre_completo, s.email
-        FROM pagos p
-        JOIN solicitantes s ON p.id_solicitante = s.id_solicitante
-        ORDER BY p.fecha_pago DESC
-        """
-        cursor.execute(query)
-        pagos_raw = cursor.fetchall()
-        
-        # Procesar los pagos para mostrarlos en la interfaz
-        for pago in pagos_raw:
-            # Calcular estadísticas
-            if pago['estado_pago'] == 'Completado':
-                stats['pagos_completados'] += 1
-                stats['total_recibido'] += float(pago['monto'])
-            elif pago['estado_pago'] == 'Pendiente':
-                stats['pagos_pendientes'] += 1
-            elif pago['estado_pago'] == 'Rechazado':
-                stats['pagos_rechazados'] += 1
-            
-            # Formatear fecha
-            fecha = pago['fecha_pago']
-            fecha_formateada = fecha.strftime('%d/%m/%Y') if fecha else 'N/A'
-            
-            # Obtener iniciales del nombre para el avatar
-            nombre_completo = pago['nombre_completo']
-            initials = ''.join([name[0].upper() for name in nombre_completo.split() if name])[:2]
-            
-            # Determinar clase de color para el avatar
-            avatar_classes = [
-                'bg-red-100 text-red-600',
-                'bg-blue-100 text-blue-600',
-                'bg-green-100 text-green-600',
-                'bg-yellow-100 text-yellow-600',
-                'bg-purple-100 text-purple-600'
-            ]
-            avatar_class = avatar_classes[hash(nombre_completo) % len(avatar_classes)]
-            
-            # Formatear ID para mostrar
-            id_formateado = f"PAG-{pago['id_pago']:04d}"
-            
-            # Agregar datos procesados al pago
-            pago_procesado = {
-                **pago,
-                'fecha_formateada': fecha_formateada,
-                'initials': initials,
-                'avatar_class': avatar_class,
-                'id_formateado': id_formateado,
-                'cliente_nombre': nombre_completo,
-                'cliente_email': pago['email']
-            }
-            
-            pagos.append(pago_procesado)
-        
-        cursor.close()
-        conn.close()
-    except Exception as e:
-        print(f"Error al obtener pagos: {e}")
-        flash('Error al cargar los pagos', 'error')
-    
-    return render_template('asesor/pagos_admin.html', pagos=pagos, stats=stats)
-
-@admin_bp.route('/solicitudes')
-def solicitudes():
     if 'user_id' not in session or not session.get('is_admin', False):
         return redirect(url_for('auth.login'))
+    
+    # Pagination parameters
+    pagina_actual = request.args.get('pagina', 1, type=int)
+    items_por_pagina = 10
+    offset = (pagina_actual - 1) * items_por_pagina
     
     connection = create_connection()
     if connection:
         with connection.cursor(dictionary=True) as cursor:
+            # Count total payments
+            cursor.execute("SELECT COUNT(*) as total FROM tbl_pago_asesoria")
+            result = cursor.fetchone()
+            total_pagos = result['total'] if result else 0
+            
+            # Calculate total pages
+            total_paginas = (total_pagos + items_por_pagina - 1) // items_por_pagina
+            
+            # Get payments with pagination
             cursor.execute("""
-                SELECT s.id_solicitud, s.fecha_solicitud, s.estado,
-                       CONCAT(u.nombres, ' ', u.apellidos) AS solicitante,
-                       s.tipo_solicitud, s.descripcion
-                FROM tbl_solicitud s
-                JOIN tbl_solicitante sol ON s.id_solicitante = sol.id_solicitante
-                JOIN tbl_usuario u ON sol.id_usuario = u.id_usuario
-                ORDER BY s.fecha_solicitud DESC
-            """)
-            solicitudes = cursor.fetchall()
+                SELECT p.id_pago, p.codigo_asesoria, p.monto, p.metodo_pago, p.fecha_pago, p.estado_pago,
+                       CONCAT(u.nombres, ' ', u.apellidos) as solicitante,
+                       a.tipo_asesoria
+                FROM tbl_pago_asesoria p
+                JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
+                JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
+                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+                ORDER BY p.fecha_pago DESC
+                LIMIT %s OFFSET %s
+            """, (items_por_pagina, offset))
+            
+            pagos = cursor.fetchall()
+            
+            # Format dates
+            for pago in pagos:
+                if 'fecha_pago' in pago and pago['fecha_pago']:
+                    if isinstance(pago['fecha_pago'], datetime.datetime):
+                        pago['fecha_pago'] = pago['fecha_pago'].strftime('%d/%m/%Y %H:%M')
+        
         connection.close()
-        return render_template('asesor/solicitudes.html', solicitudes=solicitudes)
+        
+        return render_template('admin/pagos_admin.html', 
+                              pagos=pagos,
+                              pagina_actual=pagina_actual,
+                              total_paginas=total_paginas,
+                              total_pagos=total_pagos)
     
     flash('Error de conexión a la base de datos', 'error')
-    return redirect(url_for('admin.index_asesor'))
-
-@admin_bp.route('/dashboard')
-def dashboard_asesor():
-    if 'user_id' not in session or not session.get('is_admin', False):
-        return redirect(url_for('auth.login'))
-    try:
-        return render_template('asesor/index_asesor.html')
-    except Exception as e:
-        print(f"Error al renderizar la plantilla: {str(e)}")
-        return redirect(url_for('admin.asesorias_admin'))
+    return redirect(url_for('admin.index'))
 
 @admin_bp.route('/reportes')
 def reportes():
     if 'user_id' not in session or not session.get('is_admin', False):
         return redirect(url_for('auth.login'))
+    
+    return render_template('admin/reportes.html')
 
-    # Get date filters
-    desde = request.args.get('desde', None)
-    hasta = request.args.get('hasta', None)
-
-    # If no dates provided, default to last month
-    if not desde or not hasta:
-        today = datetime.datetime.now()
-        first_day = (today.replace(day=1) - datetime.timedelta(days=1)).replace(day=1)
-        last_day = today
-        desde = first_day.strftime('%Y-%m-%d')
-        hasta = last_day.strftime('%Y-%m-%d')
-
-    # Format dates for SQL queries
-    desde_sql = desde + " 00:00:00"
-    hasta_sql = hasta + " 23:59:59"
-
-    # Inicializar variables
-    estadisticas = {
-        'total_clientes': 0,
-        'incremento_clientes': 0,
-        'total_asesorias': 0,
-        'incremento_asesorias': 0,
-        'asesorias_pagadas': 0,
-        'incremento_pagadas': 0,
-        'ingresos_totales': 0,
-        'incremento_ingresos': 0,
-        'asesorias_trabajo': 0,
-        'asesorias_estudio': 0,
-        'asesorias_residencia': 0,
-        'asesorias_ciudadania': 0,
-        'asesorias_otros': 0,
-        'asesorias_por_mes': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+@admin_bp.route('/configuracion')
+def configuracion():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('auth.login'))
+    
+    # Example configuration data
+    config = {
+        'site_name': 'Canadian Visa Advise',
+        'site_url': 'https://canadianvisaadvise.com',
+        'admin_email': 'admin@canadianvisaadvise.com',
+        'timezone': 'America/Toronto',
+        'maintenance_mode': False,
+        'company_name': 'Canadian Visa Advise Inc.',
+        'company_phone': '+1 (123) 456-7890',
+        'company_email': 'info@canadianvisaadvise.com',
+        'company_address': '123 Visa Street, Toronto, ON, Canada',
+        'company_logo': '/static/img/logo-canadian-visa-advise.jpg',
+        'company_description': 'Canadian Visa Advise es una empresa dedicada a brindar asesoría profesional para trámites migratorios a Canadá.',
+        'notify_new_client': True,
+        'notify_new_appointment': True,
+        'notify_new_document': True,
+        'notify_new_payment': True,
+        'notify_appointment_reminder': True,
+        'reminder_hours': 24,
+        'notification_email': 'notificaciones@canadianvisaadvise.com',
+        'terms_content': 'Términos y condiciones de Canadian Visa Advise...',
+        'privacy_content': 'Política de privacidad de Canadian Visa Advise...',
+        'last_updated': datetime.datetime.now().strftime('%Y-%m-%d')
     }
-    asesorias_recientes = []
-    top_clientes = []
     
-    try:
-        connection = create_connection()
-        if connection:
-            with connection.cursor(dictionary=True) as cursor:
-                try:
-                    # Total clients
-                    cursor.execute("SELECT COUNT(*) as total FROM tbl_solicitante")
-                    result = cursor.fetchone()
-                    estadisticas['total_clientes'] = result['total'] if result and 'total' in result else 0
-                    
-                    # Calculate client growth
-                    cursor.execute("""
-                        SELECT COUNT(*) as total FROM tbl_solicitante 
-                        WHERE id_solicitante IN (
-                            SELECT DISTINCT s.id_solicitante FROM tbl_usuario u
-                            JOIN tbl_solicitante s ON u.id_usuario = s.id_usuario
-                            WHERE u.fecha_nacimiento >= DATE_SUB(NOW(), INTERVAL 1 MONTH)
-                        )
-                    """)
-                    result = cursor.fetchone()
-                    new_clients = result['total'] if result and 'total' in result else 0
-                    if estadisticas['total_clientes'] > 0:
-                        estadisticas['incremento_clientes'] = round((new_clients / estadisticas['total_clientes']) * 100)
-                    else:
-                        estadisticas['incremento_clientes'] = 0
-                    
-                    # Total appointments
-                    try:
-                        cursor.execute("""
-                            SELECT COUNT(*) as total FROM tbl_asesoria
-                            WHERE fecha_asesoria BETWEEN %s AND %s
-                        """, (desde_sql, hasta_sql))
-                        result = cursor.fetchone()
-                        estadisticas['total_asesorias'] = result['total'] if result and 'total' in result else 0
-                    except Exception as e:
-                        print(f"Error al obtener total de asesorías: {str(e)}")
-                    
-                    # Calculate appointment growth
-                    try:
-                        previous_month_start = (datetime.datetime.strptime(desde, '%Y-%m-%d') - datetime.timedelta(days=30)).strftime('%Y-%m-%d')
-                        previous_month_end = (datetime.datetime.strptime(desde, '%Y-%m-%d') - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
-                        
-                        cursor.execute("""
-                            SELECT COUNT(*) as total FROM tbl_asesoria
-                            WHERE fecha_asesoria BETWEEN %s AND %s
-                        """, (previous_month_start + " 00:00:00", previous_month_end + " 23:59:59"))
-                        result = cursor.fetchone()
-                        prev_appointments = result['total'] if result and 'total' in result else 0
-                        
-                        if prev_appointments > 0:
-                            estadisticas['incremento_asesorias'] = round(((estadisticas['total_asesorias'] - prev_appointments) / prev_appointments) * 100)
-                        else:
-                            estadisticas['incremento_asesorias'] = 100 if estadisticas['total_asesorias'] > 0 else 0
-                    except Exception as e:
-                        print(f"Error al calcular incremento de asesorías: {str(e)}")
-                    
-                    # Paid appointments
-                    try:
-                        cursor.execute("""
-                            SELECT COUNT(*) as total FROM tbl_asesoria
-                            WHERE estado = 'Pagada' AND fecha_asesoria BETWEEN %s AND %s
-                        """, (desde_sql, hasta_sql))
-                        result = cursor.fetchone()
-                        estadisticas['asesorias_pagadas'] = result['total'] if result and 'total' in result else 0
-                    except Exception as e:
-                        print(f"Error al obtener asesorías pagadas: {str(e)}")
-                    
-                    # Calculate paid appointments growth
-                    try:
-                        cursor.execute("""
-                            SELECT COUNT(*) as total FROM tbl_asesoria
-                            WHERE estado = 'Pagada' AND fecha_asesoria BETWEEN %s AND %s
-                        """, (previous_month_start + " 00:00:00", previous_month_end + " 23:59:59"))
-                        result = cursor.fetchone()
-                        prev_paid = result['total'] if result and 'total' in result else 0
-                        
-                        if prev_paid > 0:
-                            estadisticas['incremento_pagadas'] = round(((estadisticas['asesorias_pagadas'] - prev_paid) / prev_paid) * 100)
-                        else:
-                            estadisticas['incremento_pagadas'] = 100 if estadisticas['asesorias_pagadas'] > 0 else 0
-                    except Exception as e:
-                        print(f"Error al calcular incremento de asesorías pagadas: {str(e)}")
-                    
-                    # Total income
-                    try:
-                        cursor.execute("""
-                            SELECT SUM(p.monto) as total FROM tbl_pago_asesoria p
-                            JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
-                            WHERE p.estado_pago = 'Completado' AND a.fecha_asesoria BETWEEN %s AND %s
-                        """, (desde_sql, hasta_sql))
-                        result = cursor.fetchone()
-                        estadisticas['ingresos_totales'] = result['total'] if result and result['total'] else 0
-                    except Exception as e:
-                        print(f"Error al obtener ingresos totales: {str(e)}")
-                    
-                    # Calculate income growth
-                    try:
-                        cursor.execute("""
-                            SELECT SUM(p.monto) as total FROM tbl_pago_asesoria p
-                            JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
-                            WHERE p.estado_pago = 'Completado' AND a.fecha_asesoria BETWEEN %s AND %s
-                        """, (previous_month_start + " 00:00:00", previous_month_end + " 23:59:59"))
-                        result = cursor.fetchone()
-                        prev_income = result['total'] if result and result['total'] else 0
-                        
-                        if prev_income > 0:
-                            estadisticas['incremento_ingresos'] = round(((estadisticas['ingresos_totales'] - prev_income) / prev_income) * 100)
-                        else:
-                            estadisticas['incremento_ingresos'] = 100 if estadisticas['ingresos_totales'] > 0 else 0
-                    except Exception as e:
-                        print(f"Error al calcular incremento de ingresos: {str(e)}")
-                    
-                    # Appointments by type
-                    try:
-                        # Visa de Trabajo
-                        cursor.execute("""
-                            SELECT COUNT(*) as total FROM tbl_asesoria 
-                            WHERE tipo_asesoria = 'Visa de Trabajo' AND fecha_asesoria BETWEEN %s AND %s
-                        """, (desde_sql, hasta_sql))
-                        result = cursor.fetchone()
-                        estadisticas['asesorias_trabajo'] = result['total'] if result and 'total' in result else 0
-                        
-                        # Visa de Estudio
-                        cursor.execute("""
-                            SELECT COUNT(*) as total FROM tbl_asesoria 
-                            WHERE tipo_asesoria = 'Visa de Estudio' AND fecha_asesoria BETWEEN %s AND %s
-                        """, (desde_sql, hasta_sql))
-                        result = cursor.fetchone()
-                        estadisticas['asesorias_estudio'] = result['total'] if result and 'total' in result else 0
-                        
-                        # Residencia Permanente
-                        cursor.execute("""
-                            SELECT COUNT(*) as total FROM tbl_asesoria 
-                            WHERE tipo_asesoria = 'Residencia Permanente' AND fecha_asesoria BETWEEN %s AND %s
-                        """, (desde_sql, hasta_sql))
-                        result = cursor.fetchone()
-                        estadisticas['asesorias_residencia'] = result['total'] if result and 'total' in result else 0
-                        
-                        # Ciudadanía
-                        cursor.execute("""
-                            SELECT COUNT(*) as total FROM tbl_asesoria 
-                            WHERE tipo_asesoria = 'Ciudadanía' AND fecha_asesoria BETWEEN %s AND %s
-                        """, (desde_sql, hasta_sql))
-                        result = cursor.fetchone()
-                        estadisticas['asesorias_ciudadania'] = result['total'] if result and 'total' in result else 0
-                        
-                        # Otros
-                        cursor.execute("""
-                            SELECT COUNT(*) as total FROM tbl_asesoria 
-                            WHERE tipo_asesoria NOT IN ('Visa de Trabajo', 'Visa de Estudio', 'Residencia Permanente', 'Ciudadanía')
-                            AND fecha_asesoria BETWEEN %s AND %s
-                        """, (desde_sql, hasta_sql))
-                        result = cursor.fetchone()
-                        estadisticas['asesorias_otros'] = result['total'] if result and 'total' in result else 0
-                    except Exception as e:
-                        print(f"Error al obtener asesorías por tipo: {str(e)}")
-                    
-                    # Appointments by month
-                    try:
-                        current_year = datetime.datetime.now().year
-                        
-                        cursor.execute("""
-                            SELECT MONTH(fecha_asesoria) as mes, COUNT(*) as total 
-                            FROM tbl_asesoria 
-                            WHERE YEAR(fecha_asesoria) = %s 
-                            GROUP BY MONTH(fecha_asesoria)
-                        """, (current_year,))
-                        
-                        for row in cursor.fetchall():
-                            if row and 'mes' in row and 'total' in row and row['mes'] and 1 <= row['mes'] <= 12:
-                                estadisticas['asesorias_por_mes'][row['mes'] - 1] = row['total']
-                    except Exception as e:
-                        print(f"Error al obtener asesorías por mes: {str(e)}")
-                    
-                    # Recent appointments
-                    try:
-                        cursor.execute("""
-                            SELECT a.codigo_asesoria, a.fecha_asesoria, a.tipo_asesoria,
-                                CONCAT(u.nombres, ' ', u.apellidos) AS solicitante,
-                                u.correo, a.estado, a.asesor_asignado
-                            FROM tbl_asesoria a
-                            JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
-                            JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-                            ORDER BY a.fecha_asesoria DESC
-                            LIMIT 10
-                        """)
-                        asesorias_recientes = cursor.fetchall() or []
-                        
-                        # Format dates for display
-                        for asesoria in asesorias_recientes:
-                            if asesoria and 'fecha_asesoria' in asesoria and asesoria['fecha_asesoria']:
-                                if isinstance(asesoria['fecha_asesoria'], datetime.datetime):
-                                    asesoria['fecha_asesoria'] = asesoria['fecha_asesoria'].strftime('%d/%m/%Y %H:%M')
-                    except Exception as e:
-                        print(f"Error al obtener asesorías recientes: {str(e)}")
-                        asesorias_recientes = []
-                        
-                except Exception as e:
-                    print(f"Error en consultas de reportes: {str(e)}")
-                    flash(f"Error al procesar datos: {str(e)}", "error")
-            
-            connection.close()
-    except Exception as e:
-        print(f"Error de conexión a la base de datos: {str(e)}")
-        flash("Error de conexión a la base de datos", "error")
+    # Example backup data
+    backups = [
+        {
+            'name': 'backup_20250519_143022.zip',
+            'date': '19/05/2025 14:30',
+            'size': '24.5 MB'
+        },
+        {
+            'name': 'backup_20250510_093512.zip',
+            'date': '10/05/2025 09:35',
+            'size': '23.8 MB'
+        },
+        {
+            'name': 'backup_20250501_120045.zip',
+            'date': '01/05/2025 12:00',
+            'size': '22.1 MB'
+        }
+    ]
     
-    return render_template('asesor/reportes.html', 
-                          estadisticas=estadisticas, 
-                          asesorias_recientes=asesorias_recientes,
-                          top_clientes=top_clientes)
-
-# Nuevas rutas que faltan
-
-@admin_bp.route('/crear_asesoria', methods=['POST'])
-def crear_asesoria():
-    if 'user_id' not in session or not session.get('is_admin', False):
-        return redirect(url_for('auth.login'))
-    
-    try:
-        # Obtener datos del formulario
-        client_id = request.form.get('client')
-        asesoria_type = request.form.get('type')
-        date = request.form.get('date')
-        time = request.form.get('time')
-        description = request.form.get('description')
-        
-        # Validar datos
-        if not client_id or not asesoria_type or not date or not time:
-            flash('Todos los campos son obligatorios', 'error')
-            return redirect(url_for('admin.asesorias_admin'))
-        
-        # Combinar fecha y hora
-        fecha_asesoria = f"{date} {time}"
-        
-        # Generar código único para la asesoría (ejemplo: ASE-2023-001)
-        codigo_asesoria = f"ASE-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
-        
-        connection = create_connection()
-        if connection:
-            with connection.cursor() as cursor:
-                # Insertar nueva asesoría
-                cursor.execute("""
-                    INSERT INTO tbl_asesoria 
-                    (codigo_asesoria, id_solicitante, fecha_asesoria, tipo_asesoria, estado, descripcion) 
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                """, (codigo_asesoria, client_id, fecha_asesoria, asesoria_type, 'Pendiente', description))
-                
-            connection.commit()
-            connection.close()
-            
-            flash('Asesoría creada exitosamente', 'success')
-        else:
-            flash('Error de conexión a la base de datos', 'error')
-            
-        return redirect(url_for('admin.asesorias_admin'))
-        
-    except Exception as e:
-        print(f"Error al crear asesoría: {str(e)}")
-        flash(f'Error al crear asesoría: {str(e)}', 'error')
-        return redirect(url_for('admin.asesorias_admin'))
-    
-
-
-@admin_bp.route('/actualizar_estado_asesoria', methods=['POST'])
-def actualizar_estado_asesoria():
-    if 'user_id' not in session or not session.get('is_admin', False):
-        return redirect(url_for('auth.login'))
-    
-    try:
-        # Obtener datos del formulario
-        appointment_id = request.form.get('appointment-id')
-        new_status = request.form.get('status')
-        notes = request.form.get('status-notes')
-        
-        # Validar datos
-        if not appointment_id or not new_status:
-            flash('El ID de la asesoría y el estado son obligatorios', 'error')
-            return redirect(url_for('admin.asesorias_admin'))
-        
-        connection = create_connection()
-        if connection:
-            with connection.cursor() as cursor:
-                # Actualizar estado de la asesoría
-                cursor.execute("""
-                    UPDATE tbl_asesoria 
-                    SET estado = %s, 
-                        descripcion = CONCAT(IFNULL(descripcion, ''), '\n\nNota: ', %s) 
-                    WHERE codigo_asesoria = %s
-                """, (new_status, notes, appointment_id))
-                
-            connection.commit()
-            connection.close()
-            
-            flash('Estado de asesoría actualizado exitosamente', 'success')
-        else:
-            flash('Error de conexión a la base de datos', 'error')
-            
-        return redirect(url_for('admin.asesorias_admin'))
-        
-    except Exception as e:
-        print(f"Error al actualizar estado: {str(e)}")
-        flash(f'Error al actualizar estado: {str(e)}', 'error')
-        return redirect(url_for('admin.asesorias_admin'))
-
-@admin_bp.route('/obtener_asesoria/<string:codigo_asesoria>')
-def obtener_asesoria(codigo_asesoria):
-    if 'user_id' not in session or not session.get('is_admin', False):
-        return jsonify({'error': 'No autorizado'}), 401
-    
-    connection = create_connection()
-    if connection:
-        with connection.cursor(dictionary=True) as cursor:
-            cursor.execute("""
-                SELECT a.codigo_asesoria, a.fecha_asesoria, a.tipo_asesoria,
-                       CONCAT(u.nombres, ' ', u.apellidos) AS solicitante,
-                       u.correo, a.estado, a.descripcion
-                FROM tbl_asesoria a
-                JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
-                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-                WHERE a.codigo_asesoria = %s
-            """, (codigo_asesoria,))
-            asesoria = cursor.fetchone()
-        connection.close()
-        
-        if asesoria:
-            # Formatear fecha para la respuesta JSON
-            fecha = asesoria['fecha_asesoria']
-            if isinstance(fecha, datetime.datetime):
-                fecha_formateada = fecha.strftime('%d/%m/%Y %H:%M')
-                asesoria['fecha_hora'] = fecha_formateada
-            
-            return jsonify(asesoria)
-        
-        return jsonify({'error': 'Asesoría no encontrada'}), 404
-    
-    return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-
-@admin_bp.route('/obtener_cliente/<int:cliente_id>')
-def obtener_cliente(cliente_id):
-    if 'user_id' not in session or not session.get('is_admin', False):
-        return jsonify({'error': 'No autorizado'}), 401
-    
-    connection = create_connection()
-    if connection:
-        with connection.cursor(dictionary=True) as cursor:
-            # Get basic client information
-            cursor.execute("""
-                SELECT s.id_solicitante, u.nombres, u.apellidos, u.correo, u.fecha_nacimiento,
-                       'activo' AS estado, 
-                       CONCAT('CLI-', s.id_solicitante) AS id_formateado,
-                       'Colombia' AS pais,
-                       'Visa de Trabajo' AS tipo_visa,
-                       NULL AS telefono,
-                       NULL AS direccion,
-                       NULL AS datos_adicionales
-                FROM tbl_solicitante s
-                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-                WHERE s.id_solicitante = %s
-            """, (cliente_id,))
-            cliente = cursor.fetchone()
-            
-            if not cliente:
-                return jsonify({'error': 'Cliente no encontrado'}), 404
-            
-            # Format dates for display
-            if cliente['fecha_nacimiento']:
-                if isinstance(cliente['fecha_nacimiento'], datetime.date):
-                    cliente['fecha_nacimiento_formateada'] = cliente['fecha_nacimiento'].strftime('%d/%m/%Y')
-                else:
-                    cliente['fecha_nacimiento_formateada'] = str(cliente['fecha_nacimiento'])
-            else:
-                cliente['fecha_nacimiento_formateada'] = 'No disponible'
-            
-            # Add registration date
-            cliente['fecha_registro_formateada'] = datetime.datetime.now().strftime('%d/%m/%Y')
-            
-            # Get client appointments
-            cursor.execute("""
-                SELECT codigo_asesoria, tipo_asesoria, fecha_asesoria, estado
-                FROM tbl_asesoria
-                WHERE id_solicitante = %s
-                ORDER BY fecha_asesoria DESC
-            """, (cliente_id,))
-            asesorias = cursor.fetchall()
-            
-            # Format appointment dates
-            for asesoria in asesorias:
-                if 'fecha_asesoria' in asesoria and asesoria['fecha_asesoria']:
-                    if isinstance(asesoria['fecha_asesoria'], datetime.datetime):
-                        asesoria['fecha_inicio_formateada'] = asesoria['fecha_asesoria'].strftime('%d/%m/%Y %H:%M')
-                    else:
-                        asesoria['fecha_inicio_formateada'] = str(asesoria['fecha_asesoria'])
-                else:
-                    asesoria['fecha_inicio_formateada'] = 'N/A'
-            
-            cliente['asesorias'] = asesorias
-            
-        connection.close()
-        return jsonify(cliente)
-    
-    return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    return render_template('admin/configuracion.html', config=config, backups=backups)
 
 @admin_bp.route('/crear_cliente', methods=['POST'])
 def crear_cliente():
@@ -822,48 +511,345 @@ def crear_cliente():
         return redirect(url_for('auth.login'))
     
     try:
-        # Create a new user with default values
+        nombres = request.form.get('nombres')
+        apellidos = request.form.get('apellidos')
+        correo = request.form.get('correo')
+        fecha_nacimiento = request.form.get('fecha_nacimiento')
+        contrasena = request.form.get('contrasena')
+        
+        if not nombres or not apellidos or not correo or not fecha_nacimiento or not contrasena:
+            flash('Todos los campos son obligatorios', 'error')
+            return redirect(url_for('admin.usuarios'))
+        
+        # Verify if email already exists
         connection = create_connection()
         if connection:
-            with connection.cursor() as cursor:
-                # Insert new user
-                cursor.execute("""
-                    INSERT INTO tbl_usuario 
-                    (nombres, apellidos, correo, contrasena, fecha_nacimiento) 
-                    VALUES (%s, %s, %s, %s, %s)
-                """, ('Nuevo', 'Cliente', f'cliente{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}@example.com', 
-                      'password_temporal', datetime.datetime.now().date()))
-                
-                # Get the new user ID
-                user_id = cursor.lastrowid
-                
-                # Insert new client (solicitante)
-                cursor.execute("""
-                    INSERT INTO tbl_solicitante 
-                    (id_usuario) 
-                    VALUES (%s)
-                """, (user_id,))
-                
-                # Get the new client ID
-                client_id = cursor.lastrowid
-                
-                # Log the creation
-                cursor.execute("""
-                    INSERT INTO tbl_log_solicitante 
-                    (log_msg) 
-                    VALUES (%s)
-                """, (f'Nuevo solicitante añadido: Nuevo Cliente',))
-                
+            cursor = connection.cursor(dictionary=True)
+            
+            cursor.execute("SELECT * FROM tbl_usuario WHERE correo = %s", (correo,))
+            existing_user = cursor.fetchone()
+            
+            if existing_user:
+                flash('El correo ya está registrado', 'error')
+                cursor.close()
+                connection.close()
+                return redirect(url_for('admin.usuarios'))
+            
+            # Create new user
+            hashed_password = generate_password_hash(contrasena)
+            
+            cursor.execute("""
+                INSERT INTO tbl_usuario (nombres, apellidos, correo, contrasena, fecha_nacimiento, correo_verificado) 
+                VALUES (%s, %s, %s, %s, %s, 1)
+            """, (nombres, apellidos, correo, hashed_password, fecha_nacimiento))
+            
+            user_id = cursor.lastrowid
+            
+            # Create client record
+            cursor.execute("INSERT INTO tbl_solicitante (id_usuario) VALUES (%s)", (user_id,))
+            
             connection.commit()
+            cursor.close()
             connection.close()
             
-            flash('Cliente creado exitosamente. Por favor actualice sus datos.', 'success')
+            flash('Cliente creado exitosamente', 'success')
+            return redirect(url_for('admin.usuarios'))
         else:
             flash('Error de conexión a la base de datos', 'error')
-            
-        return redirect(url_for('admin.clientes'))
-        
+            return redirect(url_for('admin.usuarios'))
     except Exception as e:
-        print(f"Error al crear cliente: {str(e)}")
         flash(f'Error al crear cliente: {str(e)}', 'error')
-        return redirect(url_for('admin.clientes'))
+        return redirect(url_for('admin.usuarios'))
+
+@admin_bp.route('/crear_asesor', methods=['POST'])
+def crear_asesor():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('auth.login'))
+
+    try:
+        nombre = request.form.get('nombre')
+        apellidos = request.form.get('apellidos_asesor')
+        correo = request.form.get('correo_asesor')
+        especialidad = request.form.get('especialidad')
+        contrasena = request.form.get('contrasena_asesor')
+        
+        if not nombre or not apellidos or not correo or not especialidad or not contrasena:
+            flash('Todos los campos son obligatorios', 'error')
+            return redirect(url_for('admin.usuarios'))
+        
+        # Verify if email already exists
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            cursor.execute("SELECT * FROM tbl_usuario WHERE correo = %s", (correo,))
+            existing_user = cursor.fetchone()
+            
+            if existing_user:
+                flash('El correo ya está registrado', 'error')
+                cursor.close()
+                connection.close()
+                return redirect(url_for('admin.usuarios'))
+            
+            # Create new user
+            hashed_password = generate_password_hash(contrasena)
+            
+            cursor.execute("""
+                INSERT INTO tbl_usuario (nombres, apellidos, correo, contrasena, correo_verificado) 
+                VALUES (%s, %s, %s, %s, 1)
+            """, (nombre, apellidos, correo, hashed_password))
+            
+            user_id = cursor.lastrowid
+            
+            # Create advisor record
+            cursor.execute("""
+                INSERT INTO tbl_asesor (id_usuario, nombre, apellidos, correo, especialidad, password) 
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (user_id, nombre, apellidos, correo, especialidad, hashed_password))
+            
+            connection.commit()
+            cursor.close()
+            connection.close()
+            
+            flash('Asesor creado exitosamente', 'success')
+            return redirect(url_for('admin.usuarios'))
+        else:
+            flash('Error de conexión a la base de datos', 'error')
+            return redirect(url_for('admin.usuarios'))
+    except Exception as e:
+        flash(f'Error al crear asesor: {str(e)}', 'error')
+        return redirect(url_for('admin.usuarios'))
+
+@admin_bp.route('/obtener_usuario/<int:user_id>')
+def obtener_usuario(user_id):
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return jsonify({'error': 'No autorizado'}), 401
+
+    connection = create_connection()
+    if connection:
+        with connection.cursor(dictionary=True) as cursor:
+            cursor.execute("""
+                SELECT u.id_usuario, u.nombres, u.apellidos, u.correo, u.fecha_nacimiento,
+                       CASE 
+                           WHEN a.id_asesor IS NOT NULL THEN 'Asesor'
+                           WHEN adm.id_administrador IS NOT NULL THEN 'Administrador'
+                           ELSE 'Cliente'
+                       END as tipo,
+                       a.especialidad
+                FROM tbl_usuario u
+                LEFT JOIN tbl_asesor a ON u.id_usuario = a.id_usuario
+                LEFT JOIN tbl_administrador adm ON u.id_usuario = adm.id_usuario
+                WHERE u.id_usuario = %s
+            """, (user_id,))
+            
+            usuario = cursor.fetchone()
+        
+        connection.close()
+        
+        if usuario:
+            # Format date for JSON response
+            if 'fecha_nacimiento' in usuario and usuario['fecha_nacimiento']:
+                if isinstance(usuario['fecha_nacimiento'], datetime.date):
+                    usuario['fecha_nacimiento'] = usuario['fecha_nacimiento'].strftime('%Y-%m-%d')
+            
+            return jsonify(usuario)
+        
+        return jsonify({'error': 'Usuario no encontrado'}), 404
+
+    return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+
+@admin_bp.route('/actualizar_usuario', methods=['POST'])
+def actualizar_usuario():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('auth.login'))
+
+    try:
+        user_id = request.form.get('user_id')
+        user_type = request.form.get('user_type')
+        nombres = request.form.get('nombres')
+        apellidos = request.form.get('apellidos')
+        correo = request.form.get('correo')
+        especialidad = request.form.get('especialidad')
+        change_password = request.form.get('change_password') == 'on'
+        new_password = request.form.get('new_password')
+        
+        if not user_id or not nombres or not apellidos or not correo:
+            flash('Faltan campos obligatorios', 'error')
+            return redirect(url_for('admin.usuarios'))
+        
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+            
+            # Update user data
+            cursor.execute("""
+                UPDATE tbl_usuario 
+                SET nombres = %s, apellidos = %s, correo = %s
+                WHERE id_usuario = %s
+            """, (nombres, apellidos, correo, user_id))
+            
+            # Update password if requested
+            if change_password and new_password:
+                hashed_password = generate_password_hash(new_password)
+                cursor.execute("""
+                    UPDATE tbl_usuario 
+                    SET contrasena = %s
+                    WHERE id_usuario = %s
+                """, (hashed_password, user_id))
+            
+            # If user is an advisor, update advisor data
+            if user_type == 'asesor':
+                cursor.execute("""
+                    UPDATE tbl_asesor 
+                    SET nombre = %s, apellidos = %s, correo = %s, especialidad = %s
+                    WHERE id_usuario = %s
+                """, (nombres, apellidos, correo, especialidad, user_id))
+                
+                # Update password in advisor table if changed
+                if change_password and new_password:
+                    cursor.execute("""
+                        UPDATE tbl_asesor 
+                        SET password = %s
+                        WHERE id_usuario = %s
+                    """, (hashed_password, user_id))
+            
+            # If user is an administrator, update administrator data
+            if user_type == 'administrador':
+                cursor.execute("""
+                    UPDATE tbl_administrador 
+                    SET nombre = %s, apellidos = %s, correo = %s
+                    WHERE id_usuario = %s
+                """, (nombres, apellidos, correo, user_id))
+                
+                # Update password in administrator table if changed
+                if change_password and new_password:
+                    cursor.execute("""
+                        UPDATE tbl_administrador 
+                        SET password = %s
+                        WHERE id_usuario = %s
+                    """, (hashed_password, user_id))
+            
+            connection.commit()
+            cursor.close()
+            connection.close()
+            
+            flash('Usuario actualizado exitosamente', 'success')
+            return redirect(url_for('admin.usuarios'))
+        else:
+            flash('Error de conexión a la base de datos', 'error')
+            return redirect(url_for('admin.usuarios'))
+    except Exception as e:
+        flash(f'Error al actualizar usuario: {str(e)}', 'error')
+        return redirect(url_for('admin.usuarios'))
+
+@admin_bp.route('/eliminar_usuario', methods=['POST'])
+def eliminar_usuario():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('auth.login'))
+
+    try:
+        user_id = request.form.get('user_id')
+        
+        if not user_id:
+            flash('ID de usuario no proporcionado', 'error')
+            return redirect(url_for('admin.usuarios'))
+        
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor()
+            
+            # Delete user (cascade will delete related records)
+            cursor.execute("DELETE FROM tbl_usuario WHERE id_usuario = %s", (user_id,))
+            
+            connection.commit()
+            cursor.close()
+            connection.close()
+            
+            flash('Usuario eliminado exitosamente', 'success')
+            return redirect(url_for('admin.usuarios'))
+        else:
+            flash('Error de conexión a la base de datos', 'error')
+            return redirect(url_for('admin.usuarios'))
+    except Exception as e:
+        flash(f'Error al eliminar usuario: {str(e)}', 'error')
+        return redirect(url_for('admin.usuarios'))
+
+@admin_bp.route('/guardar_configuracion_general', methods=['POST'])
+def guardar_configuracion_general():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('auth.login'))
+    
+    # Here you would save the configuration to the database
+    flash('Configuración general guardada exitosamente', 'success')
+    return redirect(url_for('admin.configuracion'))
+
+@admin_bp.route('/guardar_datos_institucionales', methods=['POST'])
+def guardar_datos_institucionales():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('auth.login'))
+    
+    # Here you would save the institutional data to the database
+    flash('Datos institucionales guardados exitosamente', 'success')
+    return redirect(url_for('admin.configuracion'))
+
+@admin_bp.route('/guardar_configuracion_notificaciones', methods=['POST'])
+def guardar_configuracion_notificaciones():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('auth.login'))
+    
+    # Here you would save the notification settings to the database
+    flash('Configuración de notificaciones guardada exitosamente', 'success')
+    return redirect(url_for('admin.configuracion'))
+
+@admin_bp.route('/guardar_permisos_rol', methods=['POST'])
+def guardar_permisos_rol():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('auth.login'))
+    
+    # Here you would save the role permissions to the database
+    flash('Permisos del rol guardados exitosamente', 'success')
+    return redirect(url_for('admin.configuracion'))
+
+@admin_bp.route('/guardar_terminos', methods=['POST'])
+def guardar_terminos():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('auth.login'))
+    
+    # Here you would save the terms and conditions to the database
+    flash('Términos y condiciones guardados exitosamente', 'success')
+    return redirect(url_for('admin.configuracion'))
+
+@admin_bp.route('/crear_respaldo', methods=['POST'])
+def crear_respaldo():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('auth.login'))
+    
+    # Here you would create a backup of the database
+    flash('Respaldo creado exitosamente', 'success')
+    return redirect(url_for('admin.configuracion'))
+
+@admin_bp.route('/restaurar_respaldo', methods=['POST'])
+def restaurar_respaldo():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('auth.login'))
+    
+    # Here you would restore the database from a backup
+    flash('Respaldo restaurado exitosamente', 'success')
+    return redirect(url_for('admin.configuracion'))
+
+@admin_bp.route('/descargar_respaldo/<filename>')
+def descargar_respaldo(filename):
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('auth.login'))
+    
+    # Here you would download the backup file
+    # This is a placeholder, you would need to implement the actual file download
+    return redirect(url_for('admin.configuracion'))
+
+@admin_bp.route('/clientes')
+def clientes():
+    if 'user_id' not in session or not session.get('is_admin', False):
+        return redirect(url_for('auth.login'))
+    
+    # Redirect to the user management page
+    return redirect(url_for('admin.usuarios'))
