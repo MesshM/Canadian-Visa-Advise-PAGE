@@ -10,6 +10,7 @@ import cloudinary.api
 import random, string
 import pyotp
 import time
+import re
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -245,6 +246,10 @@ def registro():
         edad = hoy.year - fecha_nac.year - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
         if edad < 18:
             flash('Debes tener al menos 18 años para registrarte.', 'error')
+            return redirect(url_for('auth.registro'))
+        # Validar solo letras y espacios, mínimo 2 caracteres
+        if not re.match(r'^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{2,}$', nombres) or not re.match(r'^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{2,}$', apellidos):
+            flash('Nombre y apellido solo pueden contener letras y espacios, mínimo 2 caracteres.', 'error')
             return redirect(url_for('auth.registro'))
         connection = create_connection()
         if connection:
