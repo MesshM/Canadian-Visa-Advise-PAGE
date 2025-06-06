@@ -51,7 +51,7 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm text-gray-500">Total Solicitudes</p>
-                        <h3 class="text-2xl font-bold text-gray-900 mt-1">125</h3>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ total_solicitudes }}</h3>
                     </div>
                     <div class="p-2 bg-blue-100 rounded-lg">
                         <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -75,7 +75,7 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm text-gray-500">Asesorías Pendientes</p>
-                        <h3 class="text-2xl font-bold text-gray-900 mt-1">42</h3>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ asesorias_pendientes }}</h3>
                     </div>
                     <div class="p-2 bg-yellow-100 rounded-lg">
                         <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -99,7 +99,7 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm text-gray-500">Formularios Completados</p>
-                        <h3 class="text-2xl font-bold text-gray-900 mt-1">87</h3>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ formularios_completados }}</h3>
                     </div>
                     <div class="p-2 bg-green-100 rounded-lg">
                         <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -123,7 +123,7 @@
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm text-gray-500">Visas Aprobadas</p>
-                        <h3 class="text-2xl font-bold text-gray-900 mt-1">32</h3>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ visas_aprobadas }}</h3>
                     </div>
                     <div class="p-2 bg-purple-100 rounded-lg">
                         <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -174,75 +174,35 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
+                            {% for s in solicitudes_recientes %}
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center">
                                         <div class="h-10 w-10 flex-shrink-0 bg-gray-200 rounded-full text-gray-500 flex items-center justify-center">
-                                            JD
+                                            {{ s.nombres[0] }}{{ s.apellidos[0] }}
                                         </div>
                                         <div class="ml-4">
-                                            <div class="text-sm font-medium text-gray-900">Juan Pérez</div>
-                                            <div class="text-sm text-gray-500">juan.perez@example.com</div>
+                                            <div class="text-sm font-medium text-gray-900">{{ s.nombres }} {{ s.apellidos }}</div>
+                                            <div class="text-sm text-gray-500">{{ s.correo }}</div>
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Visa de Trabajo</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">15 Mar, 2025</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ s.tipo_solicitud }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ s.fecha_solicitud.strftime('%d %b, %Y') if s.fecha_solicitud else '' }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                        Aprobada
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                        {% if s.estado == 'Aprobada' %}bg-green-100 text-green-800
+                                        {% elif s.estado == 'En Proceso' %}bg-yellow-100 text-yellow-800
+                                        {% elif s.estado == 'Rechazada' %}bg-red-100 text-red-800
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ s.estado }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <a href="#" class="text-primary-600 hover:text-primary-900">Ver detalles</a>
                                 </td>
                             </tr>
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center">
-                                        <div class="h-10 w-10 flex-shrink-0 bg-gray-200 rounded-full text-gray-500 flex items-center justify-center">
-                                            MR
-                                        </div>
-                                        <div class="ml-4">
-                                            <div class="text-sm font-medium text-gray-900">María Rodríguez</div>
-                                            <div class="text-sm text-gray-500">maria.rodriguez@example.com</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Visa de Estudiante</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">14 Mar, 2025</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                        En Proceso
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <a href="#" class="text-primary-600 hover:text-primary-900">Ver detalles</a>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center">
-                                        <div class="h-10 w-10 flex-shrink-0 bg-gray-200 rounded-full text-gray-500 flex items-center justify-center">
-                                            CS
-                                        </div>
-                                        <div class="ml-4">
-                                            <div class="text-sm font-medium text-gray-900">Carlos Sánchez</div>
-                                            <div class="text-sm text-gray-500">carlos.sanchez@example.com</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Express Entry</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">12 Mar, 2025</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                        Rechazada
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <a href="#" class="text-primary-600 hover:text-primary-900">Ver detalles</a>
-                                </td>
-                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
