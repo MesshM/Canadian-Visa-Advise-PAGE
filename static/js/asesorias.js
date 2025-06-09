@@ -14,11 +14,11 @@ let reservationId = null
 
 // Definir precios por tipo de visa (para usar en el frontend)
 const PRECIOS_VISA = {
-  "Visa de Trabajo": 150.0,
-  "Visa de Estudio": 100.0,
-  "Residencia Permanente": 200.0,
-  Ciudadanía: 250.0,
-  Otro: 150.0,
+  "Visa de Trabajo": 150,
+  "Visa de Estudio": 100,
+  "Residencia Permanente": 200,
+  "Ciudadanía": 250,
+  "Otro": 150,
 }
 
 // Función para formatear fechas en un formato legible
@@ -621,7 +621,7 @@ function toggleDetails(asesoriaId) {
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                         <div class="flex items-center">
-                          <p class="text-sm text-gray-700"><span class="font-medium">Precio:</span> $${asesoria.precio || PRECIOS_VISA[asesoria.tipo_asesoria] || "150.00"} USD</p>
+                          <p class="text-sm text-gray-700"><span class="font-medium">Precio:</span> $${asesoria.precio || PRECIOS_VISA[asesoria.tipo_asesoria] || "150"} USD</p>
                           ${
                             asesoria.estado === "Pagada"
                               ? `
@@ -1182,16 +1182,60 @@ function reiniciarPasarelaPago() {
       const options = {
         clientSecret: clientSecret,
         appearance: {
-          theme: "stripe",
+          theme: "flat",
           variables: {
-            colorPrimary: "#4f46e5",
-            colorBackground: "#ffffff",
-            colorText: "#1f2937",
-            colorDanger: "#ef4444",
+            colorPrimary: "#dc2626",         // Rojo principal (Tailwind red-600)
+            colorBackground: "#ffffff",      // Fondo blanco
+            colorText: "#1f2937",            // Gris oscuro para texto
+            colorDanger: "#b91c1c",          // Rojo oscuro para errores (Tailwind red-700)
+            colorSuccess: "#16a34a",         // Verde para éxito (opcional)
+            colorWarning: "#f59e42",         // Naranja para advertencias (opcional)
             fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
             spacingUnit: "4px",
-            borderRadius: "8px",
+            borderRadius: "4px",
+            tabSpacing: "4px",
           },
+          rules: {
+            ".Tab": {
+              border: "1px solid #dc2626",
+              backgroundColor: "#fff",
+              color: "#dc2626",
+              fontWeight: "bold",
+              borderRadius: "4px",
+            },
+            ".Tab--selected": {
+              backgroundColor: "#dc2626",
+              color: "#fff",
+            },
+            ".Input": {
+              border: "1px solid #dc2626",
+              backgroundColor: "#fff",
+              color: "#1f2937",
+              fontSize: "16px",
+              padding: "16px 12px",
+              borderRadius: "12px",
+            },
+            ".Input:focus": {
+              borderColor: "#b91c1c",
+              border: "none",
+              boxShadow: "0 0 0 2px #dc262633",
+            },
+            ".Label": {
+              color: "#dc2626",
+              fontWeight: "500",
+            },
+            ".Error": {
+              color: "#b91c1c",
+            },
+            ".Block": {
+              backgroundColor: "#fff",
+              borderRadius: "12px",
+            },
+          },
+          labels: "floating", // Opcional: etiquetas flotantes
+        },
+        layout: {
+          type: "tabs", // Mostrar tabs para métodos de pago
         },
       }
 
@@ -1199,8 +1243,9 @@ function reiniciarPasarelaPago() {
       elements = stripe.elements(options)
 
       // Crear y montar el elemento de pago
-      paymentElement = elements.create("payment")
+      paymentElement = elements.create("payment", { layout: "tabs" })
       paymentElement.mount("#payment-element")
+// ...existing code...
 
       // Configurar el formulario de pago
       const form = document.getElementById("payment-form")
@@ -1301,13 +1346,6 @@ function closeNewAdvisoryModal() {
     modal.classList.add("hidden")
     modalContent.classList.remove("opacity-0", "scale-95")
 
-    // Reiniciar variables
-    selectedAsesorId = null
-    selectedAsesorName = null
-    selectedAsesorEspecialidad = null
-    selectedDate = null
-    selectedTime = null
-    reservationId = null
   }, 300)
 }
 
