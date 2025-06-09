@@ -14,76 +14,78 @@
   <div id="alert" class="p-4 rounded-xl border animate-fade-in shadow-md"></div>
 </div>
 
-<!-- Navegación de pestañas - Diseño mejorado -->
-<div class="max-w-7x2 mx-auto px-4 mb-6 z-10">
-  <div class="bg-white rounded-xl shadow-md p-2 border border-gray-100 ">
-    <nav class="flex space-x-1 md:space-x-2 scrollbar-hide">
-      <button
-        class="tab-button whitespace-nowrap py-3 px-4 rounded-lg font-medium text-sm bg-primary-50 text-primary-700 border border-primary-100 shadow-sm transition-all duration-200"
-        data-tab="personal-info">
-        <div class="flex items-center space-x-2">
-          <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-          </svg>
+<!-- Navegación de pestañas - Diseño consistente con el resto de la página -->
+<div class="max-w-7xl mx-auto px-4 mb-8">
+  <div class="bg-white rounded-xl shadow-md border border-gray-100 transition-all duration-300">
+
+    <!-- Navegación de pestañas -->
+    <div class="px-8 py-4">
+      <nav class="flex flex-wrap gap-2">
+        <!-- Información Personal -->
+        <button class="tab-button group flex items-center px-4 py-3 rounded-lg text-sm font-medium font-inter transition-all duration-300 bg-primary-50 text-primary-700 border border-primary-200 shadow-sm active-tab"
+                data-tab="personal-info">
+          <div class="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center mr-3 group-hover:bg-primary-200 transition-colors duration-300">
+            <svg class="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+          </div>
           <span>Información Personal</span>
-        </div>
-      </button>
-      <button
-        class="tab-button whitespace-nowrap py-3 px-4 rounded-lg font-medium text-sm bg-primary-50 text-primary-700 border border-primary-100 shadow-sm transition-all duration-200"
-        data-tab="security">
-        <div class="flex items-center space-x-2">
-          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
-            </path>
-          </svg>
+          <div class="ml-2 w-1.5 h-1.5 bg-primary-500 rounded-full opacity-100"></div>
+        </button>
+
+        <!-- Seguridad -->
+        <button class="tab-button group flex items-center px-4 py-3 rounded-lg text-sm font-medium font-inter transition-all duration-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-transparent hover:border-gray-200"
+                data-tab="security">
+          <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center mr-3 group-hover:bg-gray-200 transition-colors duration-300">
+            <svg class="w-4 h-4 text-gray-500 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+            </svg>
+          </div>
           <span>Seguridad</span>
-        </div>
-      </button>
-      <button
-        class="tab-button whitespace-nowrap py-3 px-4 rounded-lg font-medium text-sm bg-primary-50 text-primary-700 border border-primary-100 shadow-sm transition-all duration-200"
-        data-tab="visa-history">
-        <div class="flex items-center space-x-2">
-          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
-            </path>
-          </svg>
-          <span>Historial de Asesorías</span>
-        </div>
-      </button>
-      <!-- Nueva pestaña de Preferencias -->
-      <button
-        class="tab-button whitespace-nowrap py-3 px-4 rounded-lg font-medium text-sm bg-primary-50 text-primary-700 border border-primary-100 shadow-sm transition-all duration-200"
-        data-tab="preferences">
-        <div class="flex items-center space-x-2">
-          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-          </svg>
+          <div class="ml-2 w-1.5 h-1.5 bg-gray-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </button>
+
+        <!-- Historial de Asesorías -->
+        <button class="tab-button group flex items-center px-4 py-3 rounded-lg text-sm font-medium font-inter transition-all duration-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-transparent hover:border-gray-200"
+                data-tab="visa-history">
+          <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center mr-3 group-hover:bg-gray-200 transition-colors duration-300">
+            <svg class="w-4 h-4 text-gray-500 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+          </div>
+          <span class="hidden sm:inline">Historial de Asesorías</span>
+          <span class="sm:hidden">Historial</span>
+          <div class="ml-2 w-1.5 h-1.5 bg-gray-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </button>
+
+        <!-- Preferencias -->
+        <button class="tab-button group flex items-center px-4 py-3 rounded-lg text-sm font-medium font-inter transition-all duration-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-transparent hover:border-gray-200"
+                data-tab="preferences">
+          <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center mr-3 group-hover:bg-gray-200 transition-colors duration-300">
+            <svg class="w-4 h-4 text-gray-500 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+          </div>
           <span>Preferencias</span>
-        </div>
-      </button>
-      <button
-        class="tab-button whitespace-nowrap py-3 px-4 rounded-lg font-medium text-sm bg-primary-50 text-primary-700 border border-primary-100 shadow-sm transition-all duration-200"
-        data-tab="account">
-        <div class="flex items-center space-x-2">
-          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z">
-            </path>
-          </svg>
+          <div class="ml-2 w-1.5 h-1.5 bg-gray-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </button>
+
+        <!-- Cuenta -->
+        <button class="tab-button group flex items-center px-4 py-3 rounded-lg text-sm font-medium font-inter transition-all duration-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-transparent hover:border-gray-200"
+                data-tab="account">
+          <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center mr-3 group-hover:bg-gray-200 transition-colors duration-300">
+            <svg class="w-4 h-4 text-gray-500 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
           <span>Cuenta</span>
-        </div>
-      </button>
-    </nav>
+          <div class="ml-2 w-1.5 h-1.5 bg-gray-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </button>
+      </nav>
+    </div>
+
+    
   </div>
 </div>
 
@@ -170,10 +172,6 @@
         </div>
         <input type="file" id="profile-image-upload" accept="image/*" class="hidden">
 
-        <!-- En la sección de Foto de Perfil, modificar el div que muestra el nombre y correo -->
-        <!-- Buscar y reemplazar: -->
-
-        <!-- Con: -->
         <div
           class="bg-white rounded-lg p-4 border border-gray-200 transition-all duration-300 hover:border-primary-200 hover:shadow-sm">
           <div class="flex items-center">
@@ -192,9 +190,7 @@
           </div>
         </div>
 
-        <div class="w-full space-y-4">
-
-
+        <div class="w-full space-y-4 mt-4">
           <div
             class="bg-primary-50 rounded-lg p-4 text-sm text-primary-700 border border-primary-100 w-full text-center transition-all duration-300 hover:bg-primary-100 hover:border-primary-200">
             <p class="font-medium">Formatos permitidos: JPG, PNG</p>
@@ -262,10 +258,6 @@
             </div>
           </div>
 
-          <!-- En la sección de Datos Personales, agregar el campo de número de celular después del correo -->
-          <!-- Buscar: -->
-
-          <!-- Agregar después: -->
           <div>
             <label for="correo" class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
             <div class="relative">
@@ -411,7 +403,6 @@
       </div>
     </div>
   </div>
-
 
   <div class="tab-content hidden" id="security-content">
     <!-- Seguridad -->
@@ -573,7 +564,7 @@
           </div>
         </form>
       </div>
-      <!-- Sección de Verificación en Dos Pasos - Agregar después del div de cambio de contraseña en la pestaña de seguridad -->
+      <!-- Sección de Verificación en Dos Pasos -->
       <div
         class="bg-white rounded-xl shadow-md p-8 animate-fade-in border border-gray-100 transition-all duration-300 hover:shadow-lg hover:border-primary-200 w-full max-w-md">
         <div class="flex items-center mb-6">
@@ -643,7 +634,6 @@
       </div>
     </div>
   </div>
-
 
   <div class="tab-content hidden" id="visa-history-content">
     <!-- Historial de Asesorías -->
@@ -756,7 +746,7 @@
       </div>
     </div>
   </div>
-    <!-- Agregar el contenido de la pestaña de Preferencias -->
+
   <div class="tab-content hidden" id="preferences-content">
     <!-- Preferencias -->
     <div class="flex flex-col md:flex-row justify-center md:space-x-8 space-y-8 md:space-y-0">
@@ -1040,7 +1030,6 @@
               poca luz.</p>
           </div>
 
-          <!-- Modificar la sección de Idioma y Tema para añadir una nota sobre funcionalidades en desarrollo -->
           <div class="pt-4 border-t border-gray-200">
             <div class="bg-yellow-50 rounded-lg p-4 border border-yellow-100">
               <div class="flex items-start">
@@ -1075,7 +1064,6 @@
     </div>
   </div>
 
-  <!-- Modificar la sección de Cuenta para que coincida con el diseño de Información Personal -->
   <div class="tab-content hidden" id="account-content">
     <!-- Cuenta -->
     <div
@@ -1172,7 +1160,6 @@
     </div>
   </div>
 </div>
-
 <!-- Modal para verificación de contraseña -->
 <div id="password-verification-modal"
   class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">

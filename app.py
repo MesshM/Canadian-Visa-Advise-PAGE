@@ -31,8 +31,10 @@ app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(asesorias_bp, url_prefix='/asesorias')
 app.register_blueprint(pagos_bp, url_prefix='/pagos')
 app.register_blueprint(perfil_bp, url_prefix='/perfil')
-app.register_blueprint(admin_bp, url_prefix='/admin')
 app.register_blueprint(formulario_bp, url_prefix='/formularios')
+app.register_blueprint(auth_bp, url_prefix='/auth')
+app.register_blueprint(admin_bp, url_prefix='/admin')
+app.register_blueprint(asesor_bp, url_prefix='/asesor')
 
 
 # Rutas de redirección para mantener compatibilidad con URLs antiguas
@@ -178,5 +180,18 @@ def inject_urls():
 def index():
     return render_template('index.html')
 
+
+    if session.get('user_role') == 'Administrador':
+        return redirect(url_for('admin.index'))
+    elif session.get('user_role') == 'Asesor':
+        return redirect(url_for('asesor.index'))
+    else:
+        # Para usuarios regulares, mostrar página principal
+        return render_template('index.html')   
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    if not os.path.exists('static/uploads'):
+        os.makedirs('static/uploads')
+    app.run(debug=True, host="0.0.0.0", port=os.getenv('PORT', default=5000))
+
+

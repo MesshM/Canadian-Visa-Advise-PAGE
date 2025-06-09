@@ -9,9 +9,23 @@ admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 @admin_bp.route('/')
 def index():
-    if 'user_id' not in session or not session.get('is_admin', False):
+    """Ruta principal de administración - funciona para ambos admin y asesor"""
+    if 'user_id' not in session:
         return redirect(url_for('auth.login'))
     
+    # Verificar si es administrador o asesor
+    user_role = session.get('user_role', '')
+    
+    if user_role == 'Administrador':
+        return admin_dashboard()
+    elif user_role == 'Asesor':
+        return asesor_dashboard()
+    else:
+        flash('No tienes permisos para acceder a esta área', 'error')
+        return redirect(url_for('auth.login'))
+
+def admin_dashboard():
+    """Dashboard específico para administradores"""
     try:
         # Initialize statistics
         estadisticas = {
@@ -93,14 +107,40 @@ def index():
                                   estadisticas=estadisticas,
                                   actividades_recientes=actividades_recientes)
     except Exception as e:
-        print(f"Error en index: {str(e)}")
+        print(f"Error en admin dashboard: {str(e)}")
         flash(f"Error al cargar el panel de administración: {str(e)}", "error")
-        return redirect(url_for('index'))
+        return redirect(url_for('auth.login'))
+
+def asesor_dashboard():
+    """Dashboard específico para asesores"""
+    try:
+        return render_template('asesor/index_asesor.html')
+    except Exception as e:
+        print(f"Error en asesor dashboard: {str(e)}")
+        flash(f"Error al cargar el panel de asesor: {str(e)}", "error")
+        return redirect(url_for('auth.login'))
+
+@admin_bp.route('/index_admin')
+def index_admin():
+    """Ruta específica para administradores - redirige a la principal"""
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
+        return redirect(url_for('auth.login'))
+    
+    return redirect(url_for('admin.index'))
+
+@admin_bp.route('/index_asesor')
+def index_asesor():
+    """Ruta específica para asesores - redirige a la principal"""
+    if 'user_id' not in session or session.get('user_role') != 'Asesor':
+        return redirect(url_for('auth.login'))
+    
+    return redirect(url_for('admin.index'))
 
 @admin_bp.route('/usuarios')
 def usuarios():
-    if 'user_id' not in session or not session.get('is_admin', False):
-        return redirect(url_for('auth.login'))
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
+        flash('No tienes permisos para acceder a esta sección', 'error')
+        return redirect(url_for('admin.index'))
     
     # Pagination parameters
     pagina_actual = request.args.get('pagina', 1, type=int)
@@ -157,10 +197,43 @@ def usuarios():
     flash('Error de conexión a la base de datos', 'error')
     return redirect(url_for('admin.index'))
 
+@admin_bp.route('/clientes')
+def clientes():
+    """Ruta para gestión de clientes - disponible para admin y asesor"""
+    if 'user_id' not in session:
+        return redirect(url_for('auth.login'))
+    
+    user_role = session.get('user_role', '')
+    
+    if user_role == 'Administrador':
+        # Redirigir a usuarios para administradores
+        return redirect(url_for('admin.usuarios'))
+    elif user_role == 'Asesor':
+        # Mostrar clientes para asesores
+        connection = create_connection()
+        if connection:
+            with connection.cursor(dictionary=True) as cursor:
+                cursor.execute("""
+                    SELECT s.id_solicitante, u.nombres, u.apellidos, u.correo, u.fecha_nacimiento 
+                    FROM tbl_solicitante s
+                    JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+                    ORDER BY s.id_solicitante DESC
+                """)
+                clientes = cursor.fetchall()
+            connection.close()
+            return render_template('asesor/clientes.html', clientes=clientes)
+        
+        flash('Error de conexión a la base de datos', 'error')
+        return redirect(url_for('admin.index'))
+    else:
+        flash('No tienes permisos para acceder a esta sección', 'error')
+        return redirect(url_for('auth.login'))
+
 @admin_bp.route('/asignacion_clientes')
 def asignacion_clientes():
-    if 'user_id' not in session or not session.get('is_admin', False):
-        return redirect(url_for('auth.login'))
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
+        flash('No tienes permisos para acceder a esta sección', 'error')
+        return redirect(url_for('admin.index'))
     
     # Pagination parameters
     pagina_actual = request.args.get('pagina', 1, type=int)
@@ -216,7 +289,7 @@ def asignacion_clientes():
 
 @admin_bp.route('/asignar_asesor', methods=['POST'])
 def asignar_asesor():
-    if 'user_id' not in session or not session.get('is_admin', False):
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
         return redirect(url_for('auth.login'))
     
     try:
@@ -265,8 +338,9 @@ def asignar_asesor():
 
 @admin_bp.route('/asesores')
 def asesores():
-    if 'user_id' not in session or not session.get('is_admin', False):
-        return redirect(url_for('auth.login'))
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
+        flash('No tienes permisos para acceder a esta sección', 'error')
+        return redirect(url_for('admin.index'))
     
     connection = create_connection()
     if connection:
@@ -291,7 +365,7 @@ def asesores():
 
 @admin_bp.route('/asesorias_admin')
 def asesorias_admin():
-    if 'user_id' not in session or not session.get('is_admin', False):
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
         return redirect(url_for('auth.login'))
     
     # Pagination parameters
@@ -344,8 +418,9 @@ def asesorias_admin():
 
 @admin_bp.route('/documentos')
 def documentos():
-    if 'user_id' not in session or not session.get('is_admin', False):
-        return redirect(url_for('auth.login'))
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
+        flash('No tienes permisos para acceder a esta sección', 'error')
+        return redirect(url_for('admin.index'))
     
     # Pagination parameters
     pagina_actual = request.args.get('pagina', 1, type=int)
@@ -396,7 +471,7 @@ def documentos():
 
 @admin_bp.route('/pagos_admin')
 def pagos_admin():
-    if 'user_id' not in session or not session.get('is_admin', False):
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
         return redirect(url_for('auth.login'))
     
     # Pagination parameters
@@ -449,15 +524,17 @@ def pagos_admin():
 
 @admin_bp.route('/reportes')
 def reportes():
-    if 'user_id' not in session or not session.get('is_admin', False):
-        return redirect(url_for('auth.login'))
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
+        flash('No tienes permisos para acceder a esta sección', 'error')
+        return redirect(url_for('admin.index'))
     
     return render_template('admin/reportes.html')
 
 @admin_bp.route('/configuracion')
 def configuracion():
-    if 'user_id' not in session or not session.get('is_admin', False):
-        return redirect(url_for('auth.login'))
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
+        flash('No tienes permisos para acceder a esta sección', 'error')
+        return redirect(url_for('admin.index'))
     
     # Example configuration data
     config = {
@@ -507,7 +584,7 @@ def configuracion():
 
 @admin_bp.route('/crear_cliente', methods=['POST'])
 def crear_cliente():
-    if 'user_id' not in session or not session.get('is_admin', False):
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
         return redirect(url_for('auth.login'))
     
     try:
@@ -538,10 +615,7 @@ def crear_cliente():
             # Create new user
             hashed_password = generate_password_hash(contrasena)
             
-            cursor.execute("""
-                INSERT INTO tbl_usuario (nombres, apellidos, correo, contrasena, fecha_nacimiento, correo_verificado) 
-                VALUES (%s, %s, %s, %s, %s, 1)
-            """, (nombres, apellidos, correo, hashed_password, fecha_nacimiento))
+            cursor.execute("""INSERT INTO tbl_usuario (nombres, apellidos, correo, contrasena, fecha_nacimiento, correo_verificado) VALUES (%s, %s, %s, %s, %s, 1)""", (nombres, apellidos, correo, hashed_password, fecha_nacimiento))
             
             user_id = cursor.lastrowid
             
@@ -563,7 +637,7 @@ def crear_cliente():
 
 @admin_bp.route('/crear_asesor', methods=['POST'])
 def crear_asesor():
-    if 'user_id' not in session or not session.get('is_admin', False):
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
         return redirect(url_for('auth.login'))
 
     try:
@@ -594,18 +668,12 @@ def crear_asesor():
             # Create new user
             hashed_password = generate_password_hash(contrasena)
             
-            cursor.execute("""
-                INSERT INTO tbl_usuario (nombres, apellidos, correo, contrasena, correo_verificado) 
-                VALUES (%s, %s, %s, %s, 1)
-            """, (nombre, apellidos, correo, hashed_password))
+            cursor.execute("""INSERT INTO tbl_usuario (nombres, apellidos, correo, contrasena, correo_verificado) VALUES (%s, %s, %s, %s, 1)""", (nombre, apellidos, correo, hashed_password))
             
             user_id = cursor.lastrowid
             
             # Create advisor record
-            cursor.execute("""
-                INSERT INTO tbl_asesor (id_usuario, nombre, apellidos, correo, especialidad, password) 
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (user_id, nombre, apellidos, correo, especialidad, hashed_password))
+            cursor.execute("""INSERT INTO tbl_asesor (id_usuario, nombre, apellidos, correo, especialidad, password) VALUES (%s, %s, %s, %s, %s, %s)""", (user_id, nombre, apellidos, correo, especialidad, hashed_password))
             
             connection.commit()
             cursor.close()
@@ -622,7 +690,7 @@ def crear_asesor():
 
 @admin_bp.route('/obtener_usuario/<int:user_id>')
 def obtener_usuario(user_id):
-    if 'user_id' not in session or not session.get('is_admin', False):
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
         return jsonify({'error': 'No autorizado'}), 401
 
     connection = create_connection()
@@ -660,7 +728,7 @@ def obtener_usuario(user_id):
 
 @admin_bp.route('/actualizar_usuario', methods=['POST'])
 def actualizar_usuario():
-    if 'user_id' not in session or not session.get('is_admin', False):
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
         return redirect(url_for('auth.login'))
 
     try:
@@ -682,52 +750,28 @@ def actualizar_usuario():
             cursor = connection.cursor(dictionary=True)
             
             # Update user data
-            cursor.execute("""
-                UPDATE tbl_usuario 
-                SET nombres = %s, apellidos = %s, correo = %s
-                WHERE id_usuario = %s
-            """, (nombres, apellidos, correo, user_id))
+            cursor.execute("""UPDATE tbl_usuario SET nombres = %s, apellidos = %s, correo = %s WHERE id_usuario = %s""", (nombres, apellidos, correo, user_id))
             
             # Update password if requested
             if change_password and new_password:
                 hashed_password = generate_password_hash(new_password)
-                cursor.execute("""
-                    UPDATE tbl_usuario 
-                    SET contrasena = %s
-                    WHERE id_usuario = %s
-                """, (hashed_password, user_id))
+                cursor.execute("""UPDATE tbl_usuario SET contrasena = %s WHERE id_usuario = %s""", (hashed_password, user_id))
             
             # If user is an advisor, update advisor data
             if user_type == 'asesor':
-                cursor.execute("""
-                    UPDATE tbl_asesor 
-                    SET nombre = %s, apellidos = %s, correo = %s, especialidad = %s
-                    WHERE id_usuario = %s
-                """, (nombres, apellidos, correo, especialidad, user_id))
+                cursor.execute("""UPDATE tbl_asesor SET nombre = %s, apellidos = %s, correo = %s, especialidad = %s WHERE id_usuario = %s""", (nombres, apellidos, correo, especialidad, user_id))
                 
                 # Update password in advisor table if changed
                 if change_password and new_password:
-                    cursor.execute("""
-                        UPDATE tbl_asesor 
-                        SET password = %s
-                        WHERE id_usuario = %s
-                    """, (hashed_password, user_id))
+                    cursor.execute("""UPDATE tbl_asesor SET password = %s WHERE id_usuario = %s""", (hashed_password, user_id))
             
             # If user is an administrator, update administrator data
             if user_type == 'administrador':
-                cursor.execute("""
-                    UPDATE tbl_administrador 
-                    SET nombre = %s, apellidos = %s, correo = %s
-                    WHERE id_usuario = %s
-                """, (nombres, apellidos, correo, user_id))
+                cursor.execute("""UPDATE tbl_administrador SET nombre = %s, apellidos = %s, correo = %s WHERE id_usuario = %s""", (nombres, apellidos, correo, user_id))
                 
                 # Update password in administrator table if changed
                 if change_password and new_password:
-                    cursor.execute("""
-                        UPDATE tbl_administrador 
-                        SET password = %s
-                        WHERE id_usuario = %s
-                    """, (hashed_password, user_id))
+                    cursor.execute("""UPDATE tbl_administrador SET password = %s WHERE id_usuario = %s""", (hashed_password, user_id))
             
             connection.commit()
             cursor.close()
@@ -744,7 +788,7 @@ def actualizar_usuario():
 
 @admin_bp.route('/eliminar_usuario', methods=['POST'])
 def eliminar_usuario():
-    if 'user_id' not in session or not session.get('is_admin', False):
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
         return redirect(url_for('auth.login'))
 
     try:
@@ -776,7 +820,7 @@ def eliminar_usuario():
 
 @admin_bp.route('/guardar_configuracion_general', methods=['POST'])
 def guardar_configuracion_general():
-    if 'user_id' not in session or not session.get('is_admin', False):
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
         return redirect(url_for('auth.login'))
     
     # Here you would save the configuration to the database
@@ -785,7 +829,7 @@ def guardar_configuracion_general():
 
 @admin_bp.route('/guardar_datos_institucionales', methods=['POST'])
 def guardar_datos_institucionales():
-    if 'user_id' not in session or not session.get('is_admin', False):
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
         return redirect(url_for('auth.login'))
     
     # Here you would save the institutional data to the database
@@ -794,7 +838,7 @@ def guardar_datos_institucionales():
 
 @admin_bp.route('/guardar_configuracion_notificaciones', methods=['POST'])
 def guardar_configuracion_notificaciones():
-    if 'user_id' not in session or not session.get('is_admin', False):
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
         return redirect(url_for('auth.login'))
     
     # Here you would save the notification settings to the database
@@ -803,7 +847,7 @@ def guardar_configuracion_notificaciones():
 
 @admin_bp.route('/guardar_permisos_rol', methods=['POST'])
 def guardar_permisos_rol():
-    if 'user_id' not in session or not session.get('is_admin', False):
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
         return redirect(url_for('auth.login'))
     
     # Here you would save the role permissions to the database
@@ -812,7 +856,7 @@ def guardar_permisos_rol():
 
 @admin_bp.route('/guardar_terminos', methods=['POST'])
 def guardar_terminos():
-    if 'user_id' not in session or not session.get('is_admin', False):
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
         return redirect(url_for('auth.login'))
     
     # Here you would save the terms and conditions to the database
@@ -821,7 +865,7 @@ def guardar_terminos():
 
 @admin_bp.route('/crear_respaldo', methods=['POST'])
 def crear_respaldo():
-    if 'user_id' not in session or not session.get('is_admin', False):
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
         return redirect(url_for('auth.login'))
     
     # Here you would create a backup of the database
@@ -830,7 +874,7 @@ def crear_respaldo():
 
 @admin_bp.route('/restaurar_respaldo', methods=['POST'])
 def restaurar_respaldo():
-    if 'user_id' not in session or not session.get('is_admin', False):
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
         return redirect(url_for('auth.login'))
     
     # Here you would restore the database from a backup
@@ -839,17 +883,9 @@ def restaurar_respaldo():
 
 @admin_bp.route('/descargar_respaldo/<filename>')
 def descargar_respaldo(filename):
-    if 'user_id' not in session or not session.get('is_admin', False):
+    if 'user_id' not in session or session.get('user_role') != 'Administrador':
         return redirect(url_for('auth.login'))
     
     # Here you would download the backup file
     # This is a placeholder, you would need to implement the actual file download
     return redirect(url_for('admin.configuracion'))
-
-@admin_bp.route('/clientes')
-def clientes():
-    if 'user_id' not in session or not session.get('is_admin', False):
-        return redirect(url_for('auth.login'))
-    
-    # Redirect to the user management page
-    return redirect(url_for('admin.usuarios'))

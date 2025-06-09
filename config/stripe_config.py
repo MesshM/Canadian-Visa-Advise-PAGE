@@ -13,11 +13,11 @@ STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLIC_KEY')
 
 # Diccionario de precios según tipo de visa
 PRECIOS_VISA = {
-    'Visa de Trabajo': 150.00,
-    'Visa de Estudio': 100.00,
-    'Residencia Permanente': 200.00,
-    'Ciudadanía': 250.00,
-    'Otro': 150.00
+    'Visa de Trabajo': 150,
+    'Visa de Estudio': 100,
+    'Residencia Permanente': 200,
+    'Ciudadanía': 250,
+    'Otro': 150
 }
 
 # Función para inyectar la clave pública a las plantillas (Flask context processor)

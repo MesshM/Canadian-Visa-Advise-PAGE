@@ -10,9 +10,10 @@ import cloudinary.api
 import random, string
 import pyotp
 import time
+import re
 import logging
 
-# Configurar logging para depuración
+# Configurar logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -89,232 +90,110 @@ def login():
         email = request.form['email']
         password = request.form['password']
         remember_me = request.form.get('remember_me')
-        
-        logger.debug(f"=== INICIO LOGIN ===")
-        logger.debug(f"Email: {email}")
-        logger.debug(f"Password length: {len(password)}")
-        
-        connection = create_connection()
-        if not connection:
-            logger.error("No se pudo conectar a la base de datos")
-            flash('Error de conexión a la base de datos', 'error')
-            return render_template('login.html')
-        
-        cursor = connection.cursor(dictionary=True)
-        user = None
-        user_role = None
-        role_id = None
-        
-        try:
-            # Determinar tipo de usuario por el dominio del correo
-            if email.endswith('@admincva.com'):
-                logger.debug("=== PROCESANDO ADMINISTRADOR ===")
-                # ADMINISTRADOR
-                cursor.execute("""
-                    SELECT a.*, u.id_usuario, u.nombres as user_nombres, u.apellidos as user_apellidos
-                    FROM tbl_administrador a
-                    LEFT JOIN tbl_usuario u ON a.id_usuario = u.id_usuario
-                    WHERE a.correo = %s
-                """, (email,))
-                admin_data = cursor.fetchone()
-                
-                logger.debug(f"Admin data encontrada: {admin_data is not None}")
-                
-                if admin_data:
-                    logger.debug(f"Password en BD: {admin_data['password']}")
-                    if verificar_password(password, admin_data['password']):
-                        logger.debug("Contraseña de administrador verificada correctamente")
-                        
-                        # Crear usuario si no existe
-                        if not admin_data['id_usuario']:
-                            logger.debug("Creando usuario para administrador")
-                            cursor.execute("""
-                                INSERT INTO tbl_usuario (nombres, apellidos, correo, contrasena, correo_verificado) 
-                                VALUES (%s, %s, %s, %s, 1)
-                            """, (admin_data['nombre'], admin_data['apellidos'], email, generate_password_hash(password)))
-                            
-                            user_id = cursor.lastrowid
-                            
-                            cursor.execute("""
-                                UPDATE tbl_administrador SET id_usuario = %s WHERE id_administrador = %s
-                            """, (user_id, admin_data['id_administrador']))
-                            
-                            connection.commit()
-                            admin_data['id_usuario'] = user_id
-                        
-                        user = {
-                            'id_usuario': admin_data['id_usuario'],
-                            'nombres': admin_data['nombre'],
-                            'apellidos': admin_data['apellidos'],
-                            'correo': email
-                        }
-                        user_role = 'Administrador'
-                        role_id = admin_data['id_administrador']
-                        
-                        # Hashear contraseña si está en texto plano
-                        if len(admin_data['password']) <= 50:
-                            logger.debug("Hasheando contraseña de administrador")
-                            hashed_password = generate_password_hash(password)
-                            cursor.execute("""
-                                UPDATE tbl_administrador SET password = %s WHERE id_administrador = %s
-                            """, (hashed_password, admin_data['id_administrador']))
-                            connection.commit()
-                    else:
-                        logger.debug("Contraseña de administrador incorrecta")
+
+        # Manejar login de administradores
+        if email.endswith('@admincva.com'):
+            connection = create_connection()
+            if connection:
+                cursor = connection.cursor(dictionary=True)
+                cursor.execute("SELECT * FROM tbl_administrador WHERE correo = %s", (email,))
+                admin = cursor.fetchone()
+                if admin and verificar_password(password, admin['password']):
+                    session['user_id'] = admin['id_usuario']  # Usar id_usuario
+                    session['user_name'] = f"{admin['nombre']} {admin['apellidos']}"
+                    session['user_role'] = 'Administrador'
+                    session['is_admin'] = True
+                    session['admin_id'] = admin['id_administrador']
+                    session.permanent = True if remember_me else False
+                    cursor.close()
+                    connection.close()
+                    flash('Bienvenido, Administrador', 'success')
+                    return redirect(url_for('admin.index'))
                 else:
-                    logger.debug("No se encontró administrador con ese correo")
-                
-            elif email.endswith('@asesorcva.com') or email.endswith('@cva.com'):
-                logger.debug("=== PROCESANDO ASESOR ===")
-                # ASESOR - Buscar en ambos dominios
-                cursor.execute("""
-                    SELECT a.*, u.id_usuario, u.nombres as user_nombres, u.apellidos as user_apellidos
-                    FROM tbl_asesor a
-                    LEFT JOIN tbl_usuario u ON a.id_usuario = u.id_usuario
-                    WHERE a.correo = %s
-                """, (email,))
-                asesor_data = cursor.fetchone()
-                
-                logger.debug(f"Asesor data encontrada: {asesor_data is not None}")
-                
-                if asesor_data:
-                    logger.debug(f"Password en BD: {asesor_data['password']}")
-                    if verificar_password(password, asesor_data['password']):
-                        logger.debug("Contraseña de asesor verificada correctamente")
-                        
-                        # Crear usuario si no existe
-                        if not asesor_data['id_usuario']:
-                            logger.debug("Creando usuario para asesor")
-                            cursor.execute("""
-                                INSERT INTO tbl_usuario (nombres, apellidos, correo, contrasena, correo_verificado) 
-                                VALUES (%s, %s, %s, %s, 1)
-                            """, (asesor_data['nombre'], asesor_data['apellidos'], email, generate_password_hash(password)))
-                            
-                            user_id = cursor.lastrowid
-                            
-                            cursor.execute("""
-                                UPDATE tbl_asesor SET id_usuario = %s WHERE id_asesor = %s
-                            """, (user_id, asesor_data['id_asesor']))
-                            
-                            connection.commit()
-                            asesor_data['id_usuario'] = user_id
-                        
-                        user = {
-                            'id_usuario': asesor_data['id_usuario'],
-                            'nombres': asesor_data['nombre'],
-                            'apellidos': asesor_data['apellidos'],
-                            'correo': email
-                        }
-                        user_role = 'Asesor'
-                        role_id = asesor_data['id_asesor']
-                        
-                        # Hashear contraseña si está en texto plano
-                        if len(asesor_data['password']) <= 50:
-                            logger.debug("Hasheando contraseña de asesor")
-                            hashed_password = generate_password_hash(password)
-                            cursor.execute("""
-                                UPDATE tbl_asesor SET password = %s WHERE id_asesor = %s
-                            """, (hashed_password, asesor_data['id_asesor']))
-                            connection.commit()
-                    else:
-                        logger.debug("Contraseña de asesor incorrecta")
-                else:
-                    logger.debug("No se encontró asesor con ese correo")
-                
-            else:
-                logger.debug("=== PROCESANDO CLIENTE REGULAR ===")
-                # CLIENTE REGULAR
-                cursor.execute("SELECT * FROM tbl_usuario WHERE correo = %s", (email,))
-                user_data = cursor.fetchone()
-                
-                if user_data and check_password_hash(user_data['contrasena'], password):
-                    user = user_data
-                    user_role = 'Cliente'
-                    
-                    # Verificar si existe en tbl_solicitante
-                    cursor.execute("SELECT id_solicitante FROM tbl_solicitante WHERE id_usuario = %s", (user_data['id_usuario'],))
-                    client = cursor.fetchone()
-                    
-                    if client:
-                        role_id = client['id_solicitante']
-                    else:
-                        # Crear registro de cliente
-                        cursor.execute("INSERT INTO tbl_solicitante (id_usuario) VALUES (%s)", (user_data['id_usuario'],))
-                        role_id = cursor.lastrowid
-                        connection.commit()
-            
-            # Si no se encontró usuario válido
-            if not user:
-                logger.debug("=== LOGIN FALLIDO ===")
-                flash('Correo o contraseña incorrectos', 'error')
-                return render_template('login.html')
-            
-            logger.debug(f"=== LOGIN EXITOSO ===")
-            logger.debug(f"Usuario: {user['id_usuario']}, Rol: {user_role}")
-            
-            # Verificar 2FA
-            cursor.execute("SELECT * FROM tbl_2fa WHERE id_usuario = %s AND activo = 1", (user['id_usuario'],))
-            has_2fa = cursor.fetchone()
-            
-            if has_2fa:
-                logger.debug("Usuario tiene 2FA activado")
-                # Guardar datos temporales para 2FA
-                session['temp_user_id'] = user['id_usuario']
-                session['temp_user_name'] = f"{user['nombres']} {user['apellidos']}"
-                session['temp_remember_me'] = True if remember_me else False
-                session['temp_email'] = email
-                session['temp_user_role'] = user_role
-                session['temp_role_id'] = role_id
-                session['needs_2fa'] = True
-                session['2fa_secret'] = has_2fa['secret_key']
-                
+                    flash('Correo o contraseña incorrectos', 'error')
                 cursor.close()
                 connection.close()
-                return render_template('login.html', needs_2fa=True)
-            
-            # Login exitoso - establecer sesión
-            session['user_id'] = user['id_usuario']
-            session['user_name'] = f"{user['nombres']} {user['apellidos']}"
-            session['user_role'] = user_role
-            
-            if user_role == 'Administrador':
-                session['is_admin'] = True
-                session['admin_id'] = role_id
-            elif user_role == 'Asesor':
-                session['is_advisor'] = True
-                session['advisor_id'] = role_id
             else:
-                session['is_client'] = True
-                session['client_id'] = role_id
-            
-            if remember_me:
-                session.permanent = True
-            
-            # Cargar imagen de perfil
-            cargar_imagen_perfil_en_sesion(user['id_usuario'])
-            
-            cursor.close()
-            connection.close()
-            
-            # Redirigir según el rol
-            # Redirigir según el rol
-            if user_role == 'Administrador':
-                logger.debug("Redirigiendo a dashboard admin")
-                return render_template('base_admin.html')  # Cambiado redirect por render_template
-            elif user_role == 'Asesor':
-                logger.debug("Redirigiendo a dashboard asesor")
-                return render_template('base_asesor.html')  # Cambiado redirect por render_template
-            else:
-                logger.debug("Redirigiendo a dashboard cliente")
-                return render_template('base.html')  # Asumo que base.html es para clientes
-                
-        except Exception as e:
-            logger.error(f"Error en el proceso de login: {str(e)}")
-            flash('Error en el proceso de inicio de sesión', 'error')
-        finally:
-            if cursor:
+                flash('Error de conexión a la base de datos', 'error')
+            return render_template('login.html', needs_2fa=False)
+
+        # Manejar login de asesores
+        elif email.endswith('@cva.com') or email.endswith('@asesorcva.com'):
+            connection = create_connection()
+            if connection:
+                cursor = connection.cursor(dictionary=True)
+                cursor.execute("SELECT * FROM tbl_asesor WHERE correo = %s", (email,))
+                asesor = cursor.fetchone()
+                if asesor and verificar_password(password, asesor['password']):
+                    session['user_id'] = asesor['id_usuario']  # Usar id_usuario
+                    session['user_name'] = f"{asesor['nombre']} {asesor['apellidos']}"
+                    session['user_role'] = 'Asesor'
+                    session['is_admin'] = True
+                    session['advisor_id'] = asesor['id_asesor']
+                    session.permanent = True if remember_me else False
+                    cursor.close()
+                    connection.close()
+                    flash('Bienvenido, Asesor', 'success')
+                    return redirect(url_for('asesor.index'))  # Cambiar a asesor.index
+                else:
+                    flash('Correo o contraseña incorrectos', 'error')
                 cursor.close()
-            connection.close()
+                connection.close()
+            else:
+                flash('Error de conexión a la base de datos', 'error')
+            return render_template('login.html', needs_2fa=False)
+
+        # Manejar login de usuarios regulares
+        else:
+            connection = create_connection()
+            if connection:
+                cursor = connection.cursor(dictionary=True)
+                cursor.execute("SELECT * FROM tbl_usuario WHERE correo = %s", (email,))
+                user = cursor.fetchone()
+                
+                if user and verificar_password(password, user['contrasena']):
+                    # Verificar si el usuario tiene 2FA activado
+                    cursor.execute("SELECT * FROM tbl_2fa WHERE id_usuario = %s AND activo = 1", (user['id_usuario'],))
+                    has_2fa = cursor.fetchone()
+                    
+                    if has_2fa:
+                        # Si tiene 2FA, guardar datos temporales en la sesión y mostrar pantalla de verificación
+                        session['temp_user_id'] = user['id_usuario']
+                        session['temp_user_name'] = f"{user['nombres']} {user['apellidos']}"
+                        session['temp_remember_me'] = True if remember_me else False
+                        session['temp_email'] = email
+                        session['needs_2fa'] = True
+                        session['2fa_secret'] = has_2fa['secret_key']
+                        session['temp_user_role'] = 'Usuario'
+                        
+                        cursor.close()
+                        connection.close()
+                        return render_template('login.html', needs_2fa=True)
+                    
+                    # Si no tiene 2FA, continuar con el login normal
+                    session['user_id'] = user['id_usuario']
+                    session['user_name'] = f"{user['nombres']} {user['apellidos']}"
+                    session['user_role'] = 'Usuario'
+                    session['is_admin'] = False
+                    
+                    if remember_me:
+                        session.permanent = True
+                    else:
+                        session.permanent = False
+                    
+                    # Cargar la imagen de perfil en la sesión
+                    cargar_imagen_perfil_en_sesion(user['id_usuario'])
+                    
+                    cursor.close()
+                    connection.close()
+                    flash('Bienvenido', 'success')
+                    return redirect(url_for('index'))
+                else:
+                    flash('Correo o contraseña incorrectos', 'error')
+                    cursor.close()
+                    connection.close()
+            else:
+                flash('Error de conexión a la base de datos', 'error')
     
     return render_template('login.html')
 
@@ -343,16 +222,7 @@ def verify_2fa():
         session['user_id'] = session['temp_user_id']
         session['user_name'] = session['temp_user_name']
         session['user_role'] = session['temp_user_role']
-        
-        if session['temp_user_role'] == 'Administrador':
-            session['is_admin'] = True
-            session['admin_id'] = session['temp_role_id']
-        elif session['temp_user_role'] == 'Asesor':
-            session['is_advisor'] = True
-            session['advisor_id'] = session['temp_role_id']
-        else:
-            session['is_client'] = True
-            session['client_id'] = session['temp_role_id']
+        session['is_admin'] = False
         
         if session.get('temp_remember_me'):
             session.permanent = True
@@ -361,16 +231,11 @@ def verify_2fa():
         
         # Limpiar variables temporales
         for key in ['temp_user_id', 'temp_user_name', 'temp_remember_me', 'temp_email', 
-                   'temp_user_role', 'temp_role_id', 'needs_2fa', '2fa_secret']:
+                   'temp_user_role', 'needs_2fa', '2fa_secret']:
             session.pop(key, None)
         
-        # Redirigir según el rol
-        if session['user_role'] == 'Administrador':
-            return redirect(url_for('admin.dashboard_admin'))
-        elif session['user_role'] == 'Asesor':
-            return redirect(url_for('asesor.dashboard_asesor'))
-        else:
-            return redirect(url_for('cliente.dashboard_cliente'))
+        flash('Autenticación exitosa', 'success')
+        return redirect(url_for('index'))
     else:
         flash('Código de verificación incorrecto', 'error')
         return render_template('login.html', needs_2fa=True)
@@ -382,26 +247,20 @@ def registro():
         apellidos = request.form['apellidos']
         correo = request.form['correo']
         contrasena = request.form['contrasena']
-        confirm_password = request.form.get('confirm_password')
-        fecha_nacimiento = request.form.get('fecha_nacimiento')
+        fecha_nacimiento = request.form['fecha_nacimiento']
         
-        # Validaciones
-        if not nombres or not apellidos or not correo or not contrasena:
-            flash('Por favor complete todos los campos', 'error')
-            return render_template('registro.html')
+        # Verificar si la persona tiene al menos 18 años
+        fecha_nac = datetime.strptime(fecha_nacimiento, '%Y-%m-%d').date()
+        hoy = date.today()
+        edad = hoy.year - fecha_nac.year - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
+        if edad < 18:
+            flash('Debes tener al menos 18 años para registrarte.', 'error')
+            return redirect(url_for('auth.registro'))
         
-        if 'confirm_password' in request.form and contrasena != confirm_password:
-            flash('Las contraseñas no coinciden', 'error')
-            return render_template('registro.html')
-        
-        # Validar edad
-        if fecha_nacimiento:
-            fecha_nac = datetime.strptime(fecha_nacimiento, '%Y-%m-%d').date()
-            hoy = date.today()
-            edad = hoy.year - fecha_nac.year - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
-            if edad < 18:
-                flash('Debes tener al menos 18 años para registrarte.', 'error')
-                return redirect(url_for('auth.registro'))
+        # Validar solo letras y espacios, mínimo 2 caracteres
+        if not re.match(r'^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{2,}$', nombres) or not re.match(r'^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{2,}$', apellidos):
+            flash('Nombre y apellido solo pueden contener letras y espacios, mínimo 2 caracteres.', 'error')
+            return redirect(url_for('auth.registro'))
         
         connection = create_connection()
         if connection:
