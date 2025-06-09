@@ -1,8 +1,8 @@
 {% extends 'asesor/base_asesor.html' %}
 
-{% block title %}Asesorías - Canadian Visa Advise{% endblock %}
+{% block title %}CVA | Asesor | Asesorías{% endblock %}
 
-{% block mainAsesor %}
+{% block main_asesor %}
     <div class="mb-8 flex justify-between items-center">
         <div>
             <h1 class="text-3xl font-bold text-gray-900 m-0 mb-2">Asesorías</h1>
@@ -169,7 +169,7 @@
                 </div>
             </div>
             <div class="p-6">
-                <form id="appointment-form" action="{{ url_for('admin.crear_asesoria') }}" method="post">
+                <form id="appointment-form" action="{{ url_for('asesor.crear_asesoria_asesor') }}" method="post">
                     <div class="space-y-4">
                         <!-- Solicitante -->
                         <div>
@@ -297,7 +297,7 @@
                 </div>
             </div>
             <div class="p-6">
-                <form id="status-form" action="{{ url_for('admin.actualizar_estado_asesoria') }}" method="post">
+                <form id="status-form" action="{{ url_for('asesor.actualizar_estado_asesoria_asesor') }}" method="post">
                     <input type="hidden" id="appointment-id" name="appointment-id" value="">
                     
                     <div class="mb-4">
@@ -328,6 +328,7 @@
     </div>
 
     <!-- JavaScript para la funcionalidad -->
+<<<<<<< HEAD:templates/asesor/asesorias_admin.html
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Filtros
@@ -482,3 +483,7 @@
         });
     </script>
 {% endblock %}
+=======
+    <script src="{{ url_for('static', filename='js/asesor/asesorias_asesor.js') }}"></script>
+{% endblock %}
+>>>>>>> 9640e1e49e2215a464c9e5a42f112539c54e5812:templates/asesor/asesorias_asesor.html

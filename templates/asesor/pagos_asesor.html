@@ -1,26 +1,9 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pagos - Canadian Visa Advise</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        .animate-fadeIn {
-            animation: fadeIn 0.5s ease;
-        }
-    </style>
-</head>
-<body class="font-['Inter'] bg-gray-50 text-gray-700 overflow-x-hidden m-0 p-0">
-       <!-- Sidebar -->
-       {% include 'includes/_sidebar_asesor.html' %}
-    <!-- Main Content -->
-    <main class="ml-[calc(240px+40px)] p-8 min-h-screen">
+{% extends 'asesor/base_asesor.html' %}
+
+{% block title %}CVA | Asesor | Pagos{% endblock %}
+
+{% block main_asesor %}
+
         <div class="mb-8 flex justify-between items-center">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900 m-0 mb-2">Pagos</h1>
@@ -306,7 +289,7 @@
                 </div>
             </div>
             <div class="p-6">
-                <form id="payment-form" action="/registrar_pago" method="post">
+                <form id="payment-form" action="/asesor/registrar_pago" method="post">
                     <div class="space-y-4">
                         <!-- Cliente -->
                         <div>
@@ -456,7 +439,7 @@
                 </div>
             </div>
             <div class="p-6">
-                <form id="status-form" action="/actualizar_estado_pago" method="post">
+                <form id="status-form" action="/asesor/actualizar_estado_pago" method="post">
                     <input type="hidden" id="payment-id" name="payment-id" value="">
                     
                     <div class="mb-4">
@@ -544,7 +527,7 @@
             newPaymentBtn.addEventListener('click', function() {
                 newPaymentModal.classList.remove('hidden');
                 // Cargar clientes desde la base de datos
-                fetch('/obtener_clientes')
+                fetch('/asesor/obtener_clientes')
                     .then(response => response.json())
                     .then(data => {
                         const clientSelect = document.getElementById('client');
@@ -574,7 +557,7 @@
                 button.addEventListener('click', function() {
                     const id = this.getAttribute('data-id');
                     // Cargar datos del pago desde la base de datos
-                    fetch(`/obtener_pago/${id}`)
+                    fetch(`/asesor/obtener_pago/${id}`)
                         .then(response => response.json())
                         .then(data => {
                             document.getElementById('view-id').textContent = data.id_formateado;
@@ -652,5 +635,4 @@
             });
         });
     </script>
-</body>
-</html>
+{% endblock %}

@@ -96,6 +96,7 @@ def login():
             connection = create_connection()
             if connection:
                 cursor = connection.cursor(dictionary=True)
+<<<<<<< HEAD
                 cursor.execute("SELECT * FROM tbl_administrador WHERE correo = %s", (email,))
                 admin = cursor.fetchone()
                 if admin and verificar_password(password, admin['password']):
@@ -104,11 +105,24 @@ def login():
                     session['user_role'] = 'Administrador'
                     session['is_admin'] = True
                     session['admin_id'] = admin['id_administrador']
+=======
+                cursor.execute("SELECT * FROM tbl_asesor WHERE correo = %s", (email,))
+                asesor = cursor.fetchone()
+                if asesor and check_password_hash(asesor['password'], password):
+                    # Iniciar sesión solo con datos de tbl_asesor
+                    session['user_id'] = asesor['id_asesor']
+                    session['user_name'] = f"{asesor['nombre']} {asesor['apellidos']}"
+                    session['user_role'] = 'Asesor'
+>>>>>>> 9640e1e49e2215a464c9e5a42f112539c54e5812
                     session.permanent = True if remember_me else False
                     cursor.close()
                     connection.close()
+<<<<<<< HEAD
                     flash('Bienvenido, Administrador', 'success')
                     return redirect(url_for('admin.index'))
+=======
+                    return redirect(url_for('panel_asesor.index_asesor'))
+>>>>>>> 9640e1e49e2215a464c9e5a42f112539c54e5812
                 else:
                     flash('Correo o contraseña incorrectos', 'error')
                 cursor.close()
@@ -184,10 +198,18 @@ def login():
                     # Cargar la imagen de perfil en la sesión
                     cargar_imagen_perfil_en_sesion(user['id_usuario'])
                     
+<<<<<<< HEAD
                     cursor.close()
                     connection.close()
                     flash('Bienvenido', 'success')
                     return redirect(url_for('index'))
+=======
+                    # Redirigir según el rol
+                    if email.endswith('@cva.com'):
+                        return redirect(url_for('asesor.index_asesor'))
+                    else:
+                        return redirect(url_for('index'))
+>>>>>>> 9640e1e49e2215a464c9e5a42f112539c54e5812
                 else:
                     flash('Correo o contraseña incorrectos', 'error')
                     cursor.close()
@@ -234,8 +256,16 @@ def verify_2fa():
                    'temp_user_role', 'needs_2fa', '2fa_secret']:
             session.pop(key, None)
         
+<<<<<<< HEAD
         flash('Autenticación exitosa', 'success')
         return redirect(url_for('index'))
+=======
+        # Redirigir según el rol
+        if session.get('user_role') == 'Asesor':
+            return redirect(url_for('asesor.index_asesor'))
+        else:
+            return redirect(url_for('index'))
+>>>>>>> 9640e1e49e2215a464c9e5a42f112539c54e5812
     else:
         flash('Código de verificación incorrecto', 'error')
         return render_template('login.html', needs_2fa=True)
