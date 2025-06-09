@@ -240,15 +240,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function setupFileInputs() {
     for (const [id, elements] of Object.entries(fileInputs)) {
-      if (!elements.input || !elements.preview || !elements.name || !elements.remove || !elements.summaryItem) continue
+      if (!elements.input || !elements.name) continue
 
       elements.input.addEventListener("change", (e) => {
         const file = e.target.files[0]
+        const card = elements.input.closest('.bg-primary-50')
         if (file) {
           // Validar tamaño del archivo (4MB máximo)
           if (file.size > 4 * 1024 * 1024) {
             showAlert("El archivo es demasiado grande. El tamaño máximo permitido es 4MB.", "error")
             e.target.value = ""
+            if (card) card.classList.add('ring-2', 'ring-red-400')
             return
           }
 
@@ -262,21 +264,39 @@ document.addEventListener("DOMContentLoaded", () => {
           ) {
             showAlert("Tipo de archivo no permitido. Se permiten: PDF, JPG, JPEG, PNG.", "error")
             e.target.value = ""
+            if (card) card.classList.add('ring-2', 'ring-red-400')
             return
           }
 
-          // Mostrar vista previa
+          // Mostrar nombre del archivo
           elements.name.textContent = file.name
-          elements.preview.classList.remove("hidden")
-          elements.summaryItem.classList.remove("hidden")
+          if (card) {
+            card.classList.remove('ring-red-400')
+            card.classList.add('ring-2', 'ring-green-400', 'shadow-lg', 'scale-105')
+            setTimeout(() => {
+              card.classList.remove('ring-green-400', 'shadow-lg', 'scale-105')
+            }, 1200)
+          }
+        } else {
+          if (card) card.classList.remove('ring-green-400', 'ring-2', 'shadow-lg', 'scale-105', 'ring-red-400')
+          elements.name.textContent = ''
         }
+        checkAllFilesAttached()
       })
+    }
+  }
 
-      elements.remove.addEventListener("click", () => {
-        elements.input.value = ""
-        elements.preview.classList.add("hidden")
-        elements.summaryItem.classList.add("hidden")
-      })
+  function checkAllFilesAttached() {
+    const requiredFiles = [
+      fileInputs.doc_historial_viajes.input,
+      fileInputs.doc_recursos_financieros.input,
+      fileInputs.doc_relaciones_familiares.input,
+      fileInputs.doc_hoja_vida.input
+    ]
+    const allAttached = requiredFiles.every(input => input && input.files && input.files.length > 0)
+    const next3Btn = document.getElementById("next-3")
+    if (next3Btn) {
+      next3Btn.disabled = !allAttached
     }
   }
 
@@ -389,6 +409,42 @@ document.addEventListener("DOMContentLoaded", () => {
     if (pagoOnlineChecked && document.getElementById("summary-pago")) {
       document.getElementById("summary-pago").textContent = pagoOnlineChecked.value === "si" ? "Sí" : "No"
     }
+
+    // Documentos cargados
+    const docHistorial = document.getElementById('doc_historial_viajes')
+    const docRecursos = document.getElementById('doc_recursos_financieros')
+    const docRelaciones = document.getElementById('doc_relaciones_familiares')
+    const docHoja = document.getElementById('doc_hoja_vida')
+
+    // Mostrar nombre de archivo en el resumen si existe
+    if (docHistorial && docHistorial.files && docHistorial.files.length > 0) {
+      document.getElementById('doc-historial-item').classList.remove('hidden')
+      document.getElementById('doc-historial-nombre').textContent = docHistorial.files[0].name
+    } else {
+      document.getElementById('doc-historial-item').classList.add('hidden')
+      document.getElementById('doc-historial-nombre').textContent = ''
+    }
+    if (docRecursos && docRecursos.files && docRecursos.files.length > 0) {
+      document.getElementById('doc-recursos-item').classList.remove('hidden')
+      document.getElementById('doc-recursos-nombre').textContent = docRecursos.files[0].name
+    } else {
+      document.getElementById('doc-recursos-item').classList.add('hidden')
+      document.getElementById('doc-recursos-nombre').textContent = ''
+    }
+    if (docRelaciones && docRelaciones.files && docRelaciones.files.length > 0) {
+      document.getElementById('doc-relaciones-item').classList.remove('hidden')
+      document.getElementById('doc-relaciones-nombre').textContent = docRelaciones.files[0].name
+    } else {
+      document.getElementById('doc-relaciones-item').classList.add('hidden')
+      document.getElementById('doc-relaciones-nombre').textContent = ''
+    }
+    if (docHoja && docHoja.files && docHoja.files.length > 0) {
+      document.getElementById('doc-hoja-item').classList.remove('hidden')
+      document.getElementById('doc-hoja-nombre').textContent = docHoja.files[0].name
+    } else {
+      document.getElementById('doc-hoja-item').classList.add('hidden')
+      document.getElementById('doc-hoja-nombre').textContent = ''
+    }
   }
 
   function formatDate(dateString) {
@@ -489,6 +545,9 @@ document.addEventListener("DOMContentLoaded", () => {
   setupConditionalFields()
   setupFileInputs()
   setupFormValidation()
+
+  // Llamar a checkAllFilesAttached al inicio para el caso de recarga
+  checkAllFilesAttached()
 
   // Configurar navegación entre secciones
   if (next1Button) {
@@ -706,4 +765,14 @@ document.addEventListener("DOMContentLoaded", () => {
   } else {
     console.error("Botón de vista previa no encontrado")
   }
+
+  // Mejora visual: animación de hover en las tarjetas de carga de archivos
+  document.querySelectorAll('.bg-primary-50').forEach(card => {
+    card.addEventListener('mouseenter', () => {
+      card.classList.add('shadow-lg', 'scale-105', 'border-primary-300')
+    })
+    card.addEventListener('mouseleave', () => {
+      card.classList.remove('shadow-lg', 'scale-105', 'border-primary-300')
+    })
+  })
 })
