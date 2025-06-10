@@ -324,51 +324,61 @@ def get_unread_notifications_count(user_id):
 def check_incomplete_forms(user_id):
     """
     Verifica si el usuario tiene formularios incompletos y crea notificaciones si es necesario.
-    
-    Args:
-        user_id (int): ID del usuario
-    
-    Returns:
-        bool: True si se verificó correctamente, False en caso contrario
     """
     try:
         connection = create_connection()
         if connection:
             cursor = connection.cursor(dictionary=True)
-            
             # Obtener el id_solicitante del usuario
             cursor.execute("""
                 SELECT id_solicitante FROM tbl_solicitante WHERE id_usuario = %s
             """, (user_id,))
-            
             solicitante = cursor.fetchone()
-            
             if not solicitante:
-                # El usuario no tiene un registro de solicitante, no hay formularios para verificar
                 cursor.close()
                 connection.close()
                 return True
-            
             id_solicitante = solicitante['id_solicitante']
-            
-            # Verificar si hay formularios de elegibilidad incompletos
+            # Buscar formularios con completado = 0
             cursor.execute("""
                 SELECT id_formElegibilidad FROM tbl_form_eligibilidadCVA 
-                WHERE id_solicitante = %s AND (
-                    codigo_pasaporte IS NULL OR 
-                    pais_residencia IS NULL OR 
-                    estado_civil IS NULL OR 
-                    provincia_destino IS NULL
-                )
+                WHERE id_solicitante = %s AND completado = 0
             """, (id_solicitante,))
-            
             incomplete_forms = cursor.fetchall()
-            
-            # Si hay formularios incompletos, crear notificaciones
             if incomplete_forms:
                 for form in incomplete_forms:
                     notify_form_incomplete(user_id, form['id_formElegibilidad'])
-            
+            cursor.close()
+            connection.close()
+            return True
+        else:
+            print("Error de conexión a la base de datos")
+            return False
+    except Exception as e:
+        print(f"Error al verificar formularios incompletos: {str(e)}")
+        return False
+
+def marcar_notificaciones_incompletas_leidas(user_id, id_form_elegibilidad):
+    """
+    Marca como leídas las notificaciones de formularios incompletos para el usuario especificado.
+    
+    Args:
+        user_id (int): ID del usuario
+        id_form_elegibilidad (int): ID del formulario de elegibilidad
+    
+    Returns:
+        bool: True si las notificaciones se marcaron como leídas correctamente, False en caso contrario
+    """
+    try:
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor()
+            cursor.execute("""
+                UPDATE tbl_notificaciones
+                SET leida = 1
+                WHERE id_usuario = %s AND tipo = 'document_reminder' AND enlace LIKE %s
+            """, (user_id, f"%form_id={id_form_elegibilidad}%"))
+            connection.commit()
             cursor.close()
             connection.close()
             
@@ -377,5 +387,5 @@ def check_incomplete_forms(user_id):
             print("Error de conexión a la base de datos")
             return False
     except Exception as e:
-        print(f"Error al verificar formularios incompletos: {str(e)}")
+        print(f"Error al marcar notificaciones como leídas: {str(e)}")
         return False

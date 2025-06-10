@@ -1,0 +1,602 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}Gestión de Usuarios - Canadian Visa Advise{% endblock %}
+
+{% block mainAdmin %}
+    <div class="mb-8 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 m-0 mb-2">Gestión de Usuarios</h1>
+            <p class="text-gray-500 text-sm">Administra todos los usuarios del sistema</p>
+        </div>
+        <div class="flex space-x-3">
+            <button id="new-client-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-300 hover:translate-y-[-2px] active:translate-y-0">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                </svg>
+                Nuevo Cliente
+            </button>
+            <button id="new-advisor-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center shadow-lg shadow-purple-500/20 hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-300 hover:translate-y-[-2px] active:translate-y-0">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                </svg>
+                Nuevo Asesor
+            </button>
+        </div>
+    </div>
+    
+    <!-- Filtros y búsqueda -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 animate-[fadeIn_0.5s_ease] transition-all duration-300 hover:shadow-xl">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <!-- Filtros de tipo de usuario -->
+            <div class="flex flex-wrap gap-2">
+                <button class="filter-btn active px-4 py-2 rounded-lg text-sm font-medium bg-red-50 text-red-600 border border-red-200" data-filter="all">
+                    Todos
+                </button>
+                <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-50 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200" data-filter="cliente">
+                    Clientes
+                </button>
+                <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-50 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200" data-filter="asesor">
+                    Asesores
+                </button>
+                <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-50 text-gray-600 border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200" data-filter="admin">
+                    Administradores
+                </button>
+            </div>
+            
+            <!-- Búsqueda -->
+            <div class="relative">
+                <input type="text" id="search-input" placeholder="Buscar usuario..." class="w-full md:w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
+        </div>
+        
+        <!-- Tabla de usuarios -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                <thead class="bg-gray-50 text-gray-600 text-sm">
+                    <tr>
+                        <th class="py-3 px-4 text-left font-medium">ID</th>
+                        <th class="py-3 px-4 text-left font-medium">Nombre</th>
+                        <th class="py-3 px-4 text-left font-medium">Correo</th>
+                        <th class="py-3 px-4 text-left font-medium">Tipo</th>
+                        <th class="py-3 px-4 text-left font-medium">Estado</th>
+                        <th class="py-3 px-4 text-right font-medium">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% if usuarios %}
+                        {% for usuario in usuarios %}
+                            <tr class="hover:bg-gray-50 transition-colors user-row" data-type="{{ usuario.tipo|lower }}">
+                                <td class="py-3 px-4 text-sm">{{ usuario.id_usuario }}</td>
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center">
+                                        <div class="h-10 w-10 flex-shrink-0 
+                                            {% if usuario.tipo == 'Cliente' %}
+                                                bg-blue-100 text-blue-600
+                                            {% elif usuario.tipo == 'Asesor' %}
+                                                bg-purple-100 text-purple-600
+                                            {% else %}
+                                                bg-red-100 text-red-600
+                                            {% endif %}
+                                            rounded-full flex items-center justify-center font-medium">
+                                            {{ usuario.nombres|first }}{{ usuario.apellidos|first }}
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-gray-900">{{ usuario.nombres }} {{ usuario.apellidos }}</p>
+                                            <p class="text-xs text-gray-500">{{ usuario.fecha_nacimiento|default('No disponible') }}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4 text-sm">{{ usuario.correo }}</td>
+                                <td class="py-3 px-4 text-sm">
+                                    {% if usuario.tipo == 'Cliente' %}
+                                        <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">Cliente</span>
+                                    {% elif usuario.tipo == 'Asesor' %}
+                                        <span class="px-2 py-1 bg-purple-50 text-purple-700 rounded-full text-xs">Asesor</span>
+                                    {% else %}
+                                        <span class="px-2 py-1 bg-red-50 text-red-700 rounded-full text-xs">Administrador</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 px-4 text-sm">
+                                    {% if usuario.activo %}
+                                        <span class="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs">Activo</span>
+                                    {% else %}
+                                        <span class="px-2 py-1 bg-gray-50 text-gray-700 rounded-full text-xs">Inactivo</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 px-4 text-right">
+                                    <div class="flex justify-end space-x-2">
+                                        <button class="view-btn p-1 text-gray-500 hover:text-red-600 transition-colors" data-id="{{ usuario.id_usuario }}">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                            </svg>
+                                        </button>
+                                        <button class="edit-btn p-1 text-gray-500 hover:text-blue-600 transition-colors" data-id="{{ usuario.id_usuario }}">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                            </svg>
+                                        </button>
+                                        <button class="status-btn p-1 text-gray-500 hover:text-{{ usuario.activo ? 'red' : 'green' }}-600 transition-colors" data-id="{{ usuario.id_usuario }}" data-status="{{ usuario.activo ? 'active' : 'inactive' }}">
+                                            {% if usuario.activo %}
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                                                </svg>
+                                            {% else %}
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                            {% endif %}
+                                        </button>
+                                        <button class="delete-btn p-1 text-gray-500 hover:text-red-600 transition-colors" data-id="{{ usuario.id_usuario }}">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="py-6 text-center text-gray-500">
+                                No se encontraron usuarios
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación -->
+        <div class="flex justify-between items-center mt-6">
+            <div class="text-sm text-gray-500">
+                Mostrando <span class="font-medium">{{ usuarios|length }}</span> de <span class="font-medium">{{ total_usuarios|default(usuarios|length) }}</span> usuarios
+            </div>
+            {% if total_paginas and total_paginas > 1 %}
+            <div class="flex space-x-1">
+                <a href="{{ url_for('admin.usuarios', pagina=pagina_actual-1) if pagina_actual > 1 else '#' }}" class="px-3 py-1 rounded-md {{ 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600' if pagina_actual > 1 else 'bg-gray-50 text-gray-400 cursor-not-allowed' }} transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </a>
+                
+                {% for i in range(1, total_paginas + 1) %}
+                    {% if i == pagina_actual %}
+                        <a href="{{ url_for('admin.usuarios', pagina=i) }}" class="px-3 py-1 rounded-md bg-red-50 text-red-600 font-medium">{{ i }}</a>
+                    {% else %}
+                        <a href="{{ url_for('admin.usuarios', pagina=i) }}" class="px-3 py-1 rounded-md bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors">{{ i }}</a>
+                    {% endif %}
+                {% endfor %}
+                
+                <a href="{{ url_for('admin.usuarios', pagina=pagina_actual+1) if pagina_actual < total_paginas else '#' }}" class="px-3 py-1 rounded-md {{ 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600' if pagina_actual < total_paginas else 'bg-gray-50 text-gray-400 cursor-not-allowed' }} transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Modal para nuevo cliente -->
+    <div id="new-client-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden animate-[fadeInUp_0.3s_ease]">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-900">Nuevo Cliente</h3>
+                    <button id="close-client-modal" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <form id="client-form" action="{{ url_for('admin.crear_cliente') }}" method="post">
+                    <div class="space-y-4">
+                        <!-- Nombre -->
+                        <div>
+                            <label for="nombres" class="block text-sm font-medium text-gray-700 mb-1">Nombres</label>
+                            <input type="text" id="nombres" name="nombres" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+                        
+                        <!-- Apellidos -->
+                        <div>
+                            <label for="apellidos" class="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
+                            <input type="text" id="apellidos" name="apellidos" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+                        
+                        <!-- Correo -->
+                        <div>
+                            <label for="correo" class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+                            <input type="email" id="correo" name="correo" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+                        
+                        <!-- Fecha de nacimiento -->
+                        <div>
+                            <label for="fecha_nacimiento" class="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
+                            <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+                        
+                        <!-- Contraseña -->
+                        <div>
+                            <label for="contrasena" class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                            <input type="password" id="contrasena" name="contrasena" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" id="cancel-client-btn" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30">
+                            Guardar Cliente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para nuevo asesor -->
+    <div id="new-advisor-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden animate-[fadeInUp_0.3s_ease]">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-900">Nuevo Asesor</h3>
+                    <button id="close-advisor-modal" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <form id="advisor-form" action="{{ url_for('admin.crear_asesor') }}" method="post">
+                    <div class="space-y-4">
+                        <!-- Nombre -->
+                        <div>
+                            <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                            <input type="text" id="nombre" name="nombre" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+                        
+                        <!-- Apellidos -->
+                        <div>
+                            <label for="apellidos_asesor" class="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
+                            <input type="text" id="apellidos_asesor" name="apellidos_asesor" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+                        
+                        <!-- Correo -->
+                        <div>
+                            <label for="correo_asesor" class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+                            <input type="email" id="correo_asesor" name="correo_asesor" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                            <p class="text-xs text-gray-500 mt-1">Debe terminar en @cva.com</p>
+                        </div>
+                        
+                        <!-- Especialidad -->
+                        <div>
+                            <label for="especialidad" class="block text-sm font-medium text-gray-700 mb-1">Especialidad</label>
+                            <select id="especialidad" name="especialidad" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                                <option value="" disabled selected>Seleccionar especialidad</option>
+                                <option value="Especialista en Visas de Trabajo">Especialista en Visas de Trabajo</option>
+                                <option value="Especialista en Visas de Estudio">Especialista en Visas de Estudio</option>
+                                <option value="Especialista en Residencia Permanente">Especialista en Residencia Permanente</option>
+                                <option value="Especialista en Ciudadanía">Especialista en Ciudadanía</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Contraseña -->
+                        <div>
+                            <label for="contrasena_asesor" class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                            <input type="password" id="contrasena_asesor" name="contrasena_asesor" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" id="cancel-advisor-btn" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-lg shadow-purple-500/20 hover:shadow-xl hover:shadow-purple-500/30">
+                            Guardar Asesor
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal para editar usuario -->
+    <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden animate-[fadeInUp_0.3s_ease]">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-900">Editar Usuario</h3>
+                    <button id="close-edit-modal" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <form id="edit-user-form" action="{{ url_for('admin.actualizar_usuario') }}" method="post">
+                    <input type="hidden" id="edit-user-id" name="user_id">
+                    <input type="hidden" id="edit-user-type" name="user_type">
+                    
+                    <div class="space-y-4">
+                        <!-- Nombre -->
+                        <div>
+                            <label for="edit-nombres" class="block text-sm font-medium text-gray-700 mb-1">Nombres</label>
+                            <input type="text" id="edit-nombres" name="nombres" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+                        
+                        <!-- Apellidos -->
+                        <div>
+                            <label for="edit-apellidos" class="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
+                            <input type="text" id="edit-apellidos" name="apellidos" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+                        
+                        <!-- Correo -->
+                        <div>
+                            <label for="edit-correo" class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+                            <input type="email" id="edit-correo" name="correo" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                        </div>
+                        
+                        <!-- Especialidad (solo para asesores) -->
+                        <div id="especialidad-container" class="hidden">
+                            <label for="edit-especialidad" class="block text-sm font-medium text-gray-700 mb-1">Especialidad</label>
+                            <select id="edit-especialidad" name="especialidad" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                                <option value="Especialista en Visas de Trabajo">Especialista en Visas de Trabajo</option>
+                                <option value="Especialista en Visas de Estudio">Especialista en Visas de Estudio</option>
+                                <option value="Especialista en Residencia Permanente">Especialista en Residencia Permanente</option>
+                                <option value="Especialista en Ciudadanía">Especialista en Ciudadanía</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Cambiar contraseña -->
+                        <div class="flex items-center">
+                            <input type="checkbox" id="change-password" name="change_password" class="rounded border-gray-300 text-red-600 focus:ring-red-500">
+                            <label for="change-password" class="ml-2 block text-sm text-gray-700">Cambiar contraseña</label>
+                        </div>
+                        
+                        <!-- Nueva contraseña -->
+                        <div id="new-password-container" class="hidden">
+                            <label for="new-password" class="block text-sm font-medium text-gray-700 mb-1">Nueva Contraseña</label>
+                            <input type="password" id="new-password" name="new_password" class="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" id="cancel-edit-btn" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30">
+                            Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de confirmación para eliminar usuario -->
+    <div id="delete-user-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden animate-[fadeInUp_0.3s_ease]">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-900">Confirmar Eliminación</h3>
+                    <button id="close-delete-modal" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <p class="text-gray-700 mb-6">¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.</p>
+                
+                <form id="delete-user-form" action="{{ url_for('admin.eliminar_usuario') }}" method="post">
+                    <input type="hidden" id="delete-user-id" name="user_id">
+                    
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancel-delete-btn" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-lg shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/30">
+                            Eliminar Usuario
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript para la funcionalidad -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Filtros
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const userRows = document.querySelectorAll('.user-row');
+            
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remover clase activa de todos los botones
+                    filterButtons.forEach(btn => {
+                        btn.classList.remove('active', 'bg-red-50', 'text-red-600', 'border-red-200');
+                        btn.classList.add('bg-gray-50', 'text-gray-600', 'border-gray-200');
+                    });
+                    
+                    // Agregar clase activa al botón clickeado
+                    this.classList.add('active', 'bg-red-50', 'text-red-600', 'border-red-200');
+                    this.classList.remove('bg-gray-50', 'text-gray-600', 'border-gray-200');
+                    
+                    const filter = this.getAttribute('data-filter');
+                    
+                    // Filtrar filas
+                    userRows.forEach(row => {
+                        if (filter === 'all' || row.getAttribute('data-type') === filter) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                });
+            });
+            
+            // Búsqueda
+            const searchInput = document.getElementById('search-input');
+            
+            searchInput.addEventListener('keyup', function() {
+                const searchTerm = this.value.toLowerCase();
+                
+                userRows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+            
+            // Modal de nuevo cliente
+            const newClientBtn = document.getElementById('new-client-btn');
+            const newClientModal = document.getElementById('new-client-modal');
+            const closeClientModalBtn = document.getElementById('close-client-modal');
+            const cancelClientBtn = document.getElementById('cancel-client-btn');
+            
+            newClientBtn.addEventListener('click', function() {
+                newClientModal.classList.remove('hidden');
+            });
+            
+            closeClientModalBtn.addEventListener('click', function() {
+                newClientModal.classList.add('hidden');
+            });
+            
+            cancelClientBtn.addEventListener('click', function() {
+                newClientModal.classList.add('hidden');
+            });
+            
+            // Modal de nuevo asesor
+            const newAdvisorBtn = document.getElementById('new-advisor-btn');
+            const newAdvisorModal = document.getElementById('new-advisor-modal');
+            const closeAdvisorModalBtn = document.getElementById('close-advisor-modal');
+            const cancelAdvisorBtn = document.getElementById('cancel-advisor-btn');
+            
+            newAdvisorBtn.addEventListener('click', function() {
+                newAdvisorModal.classList.remove('hidden');
+            });
+            
+            closeAdvisorModalBtn.addEventListener('click', function() {
+                newAdvisorModal.classList.add('hidden');
+            });
+            
+            cancelAdvisorBtn.addEventListener('click', function() {
+                newAdvisorModal.classList.add('hidden');
+            });
+            
+            // Modal de editar usuario
+            const editButtons = document.querySelectorAll('.edit-btn');
+            const editModal = document.getElementById('edit-user-modal');
+            const closeEditModalBtn = document.getElementById('close-edit-modal');
+            const cancelEditBtn = document.getElementById('cancel-edit-btn');
+            const changePasswordCheckbox = document.getElementById('change-password');
+            const newPasswordContainer = document.getElementById('new-password-container');
+            
+            editButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-id');
+                    
+                    // Cargar datos del usuario mediante AJAX
+                    fetch(`/admin/obtener_usuario/${userId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            document.getElementById('edit-user-id').value = data.id_usuario;
+                            document.getElementById('edit-user-type').value = data.tipo.toLowerCase();
+                            document.getElementById('edit-nombres').value = data.nombres;
+                            document.getElementById('edit-apellidos').value = data.apellidos;
+                            document.getElementById('edit-correo').value = data.correo;
+                            
+                            // Mostrar/ocultar campo de especialidad según el tipo de usuario
+                            const especialidadContainer = document.getElementById('especialidad-container');
+                            if (data.tipo === 'Asesor') {
+                                especialidadContainer.classList.remove('hidden');
+                                document.getElementById('edit-especialidad').value = data.especialidad || 'Especialista en Visas de Trabajo';
+                            } else {
+                                especialidadContainer.classList.add('hidden');
+                            }
+                            
+                            // Resetear checkbox de cambio de contraseña
+                            changePasswordCheckbox.checked = false;
+                            newPasswordContainer.classList.add('hidden');
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Error al cargar los datos del usuario');
+                        });
+                    
+                    editModal.classList.remove('hidden');
+                });
+            });
+            
+            closeEditModalBtn.addEventListener('click', function() {
+                editModal.classList.add('hidden');
+            });
+            
+            cancelEditBtn.addEventListener('click', function() {
+                editModal.classList.add('hidden');
+            });
+            
+            // Mostrar/ocultar campo de nueva contraseña
+            changePasswordCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    newPasswordContainer.classList.remove('hidden');
+                } else {
+                    newPasswordContainer.classList.add('hidden');
+                }
+            });
+            
+            // Modal de eliminar usuario
+            const deleteButtons = document.querySelectorAll('.delete-btn');
+            const deleteModal = document.getElementById('delete-user-modal');
+            const closeDeleteModalBtn = document.getElementById('close-delete-modal');
+            const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+            
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-id');
+                    document.getElementById('delete-user-id').value = userId;
+                    
+                    deleteModal.classList.remove('hidden');
+                });
+            });
+            
+            closeDeleteModalBtn.addEventListener('click', function() {
+                deleteModal.classList.add('hidden');
+            });
+            
+            cancelDeleteBtn.addEventListener('click', function() {
+                deleteModal.classList.add('hidden');
+            });
+            
+            // Cerrar modales al hacer clic fuera de ellos
+            window.addEventListener('click', function(e) {
+                if (e.target === newClientModal) {
+                    newClientModal.classList.add('hidden');
+                }
+                if (e.target === newAdvisorModal) {
+                    newAdvisorModal.classList.add('hidden');
+                }
+                if (e.target === editModal) {
+                    editModal.classList.add('hidden');
+                }
+                if (e.target === deleteModal) {
+                    deleteModal.classList.add('hidden');
+                }
+            });
+        });
+    </script>
+{% endblock %}
