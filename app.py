@@ -48,13 +48,10 @@ app.register_blueprint(recursos_asesor_bp)
 app.register_blueprint(perfil_asesor_bp)
 
 # Rutas de redirección para mantener compatibilidad con URLs antiguas
-@app.route('/formulario_solicitud')
-def formulario_solicitud_redirect():
-    return redirect(url_for('formularios.solicitud'))
 
 @app.route('/formularios')
 def formularios_redirect():
-    return redirect(url_for('user.formularios'))
+    return redirect(url_for('formularios.formularios'))
 
 @app.route('/asesorias')
 def asesorias_redirect():
@@ -133,12 +130,11 @@ def inject_urls():
 
         # Rutas de usuario
         'url_for_solicitantes': lambda: url_for('user.solicitantes'),
-        'url_for_formularios': lambda: url_for('user.formularios'),
+        'url_for_formularios': lambda: url_for('formularios.formularios'),
         'url_for_asesorias': lambda: url_for('asesorias.asesorias'),
         'url_for_pagos': lambda: url_for('user.pagos'),
         'url_for_chat': lambda: url_for('user.chat'),
         'url_for_perfil': lambda: url_for('perfil.perfil'),
-        'url_for_formulario_solicitud': lambda: url_for('formularios.solicitud'),
 
         # Rutas de asesor (antes admin)
         'url_for_asesor_clientes': lambda: url_for('clientes_asesor.clientes_asesor'),
