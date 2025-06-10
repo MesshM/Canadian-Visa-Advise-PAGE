@@ -3,42 +3,30 @@
 {% block title %} CVA | Solicitud Enviada {% endblock %}
 
 {% block main %}
-
-<div class="max-w-3xl mx-auto py-8">
+<div class="max-w-3xl mx-auto py-8 animate-fade-in">
    <!-- Encabezado -->
-   <div class="flex justify-between items-center mb-8 ">
-       <h1 class="text-3xl font-bold text-gray-900 font-roboto animate-fade-in">Solicitud Enviada</h1>
+   <div class="flex justify-between items-center mb-8">
+       <h1 class="text-3xl font-bold text-gray-900 font-roboto">Solicitud Enviada</h1>
        {% include 'includes/_notification.html' %}
    </div>
 
    <!-- Tarjeta de éxito -->
-   <div class="bg-white rounded-xl shadow-sm p-8 mb-8">
+   <div class="bg-white rounded-xl shadow-md border border-gray-100 p-8 mb-8">
        <div class="flex flex-col items-center text-center">
            <!-- Icono de éxito -->
-           <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+           <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 animate-fade-in">
                <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                </svg>
            </div>
-           
            <h2 class="text-2xl font-bold text-gray-800 mb-4">¡Formulario Registrado Correctamente!</h2>
-           
            <p class="text-gray-600 mb-6 max-w-lg">
                Su formulario de elegibilidad ha sido registrado exitosamente. Nuestros asesores revisarán su caso para evaluar su situación y brindarle la mejor asistencia posible para su proceso de visa canadiense.
            </p>
-           
            <p class="text-gray-600 mb-8 max-w-lg">
-               Para obtener una asesoría personalizada y resolver todas sus dudas, le recomendamos agendar una sesión con uno de nuestros asesores especializados.
+               Ya ha solicitado una asesoría. En breve, uno de nuestros asesores se pondrá en contacto con usted para continuar con el proceso. Puede volver al inicio si lo desea.
            </p>
-           
            <div class="flex flex-col sm:flex-row gap-4">
-               <a href="{{ url_for('asesorias.asesorias') }}" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
-                   <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                   </svg>
-                   Agendar Asesoría
-               </a>
-               
                <a href="/" class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
@@ -48,11 +36,9 @@
            </div>
        </div>
    </div>
-   
    <!-- Información adicional -->
-   <div class="bg-white rounded-xl shadow-sm p-6">
+   <div class="bg-white rounded-xl shadow-md border border-gray-100 p-6">
        <h3 class="text-lg font-semibold text-gray-800 mb-4">¿Qué sigue?</h3>
-       
        <div class="space-y-4">
            <div class="flex items-start">
                <div class="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-primary-100 text-primary-600 mr-3">
@@ -63,17 +49,15 @@
                    <p class="text-sm text-gray-600">Nuestros asesores revisarán su formulario y documentos para evaluar su elegibilidad.</p>
                </div>
            </div>
-           
            <div class="flex items-start">
                <div class="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-primary-100 text-primary-600 mr-3">
                    <span class="text-sm font-medium">2</span>
                </div>
                <div>
-                   <h4 class="text-base font-medium text-gray-800">Asesoría personalizada</h4>
-                   <p class="text-sm text-gray-600">Agende una sesión con nuestros asesores para recibir orientación específica para su caso.</p>
+                   <h4 class="text-base font-medium text-gray-800">Contacto con el asesor</h4>
+                   <p class="text-sm text-gray-600">Uno de nuestros asesores se pondrá en contacto con usted para continuar el proceso.</p>
                </div>
            </div>
-           
            <div class="flex items-start">
                <div class="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-primary-100 text-primary-600 mr-3">
                    <span class="text-sm font-medium">3</span>
@@ -83,7 +67,6 @@
                    <p class="text-sm text-gray-600">Le ayudaremos a preparar todos los documentos necesarios para su solicitud de visa.</p>
                </div>
            </div>
-           
            <div class="flex items-start">
                <div class="flex-shrink-0 h-6 w-6 flex items-center justify-center rounded-full bg-primary-100 text-primary-600 mr-3">
                    <span class="text-sm font-medium">4</span>

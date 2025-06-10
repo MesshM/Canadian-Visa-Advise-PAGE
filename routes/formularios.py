@@ -370,3 +370,4 @@ def validar_datos_formulario(datos):
             errores.append(f'El campo {campo.replace("_", " ")} debe ser "Si" o "No"')
     
     return errores
+
