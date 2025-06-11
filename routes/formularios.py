@@ -43,12 +43,15 @@ def obtener_asesorias_pagadas():
             u.apellidos,
             u.correo,
             s.id_solicitante,
-            COALESCE(fe.completado, 0) as completado
+            COALESCE(MAX(fe.completado), 0) as completado
         FROM tbl_asesoria a
         INNER JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
         INNER JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-        LEFT JOIN tbl_form_eligibilidadCVA fe ON a.id_formElegibilidad = fe.id_formElegibilidad
+        LEFT JOIN tbl_form_eligibilidadCVA fe ON a.codigo_asesoria = fe.codigo_asesoria
         WHERE a.estado = 'Pagada'
+        GROUP BY a.codigo_asesoria, a.fecha_asesoria, a.tipo_asesoria, a.descripcion, a.lugar, 
+                 a.estado, a.nombre_asesor, a.especialidad, a.id_formElegibilidad, 
+                 u.nombres, u.apellidos, u.correo, s.id_solicitante
         ORDER BY a.fecha_asesoria DESC
         """
         
@@ -108,11 +111,10 @@ def procesar_formulario_elegibilidad():
         
         # Verificar que la asesoría existe y está pagada
         cursor.execute("""
-            SELECT id_solicitante, id_formElegibilidad, 
-                   COALESCE((SELECT completado FROM tbl_form_eligibilidadCVA WHERE codigo_asesoria = %s), 0) as completado
+            SELECT id_solicitante, id_formElegibilidad
             FROM tbl_asesoria 
             WHERE codigo_asesoria = %s AND estado = 'Pagada'
-        """, (codigo_asesoria, codigo_asesoria))
+        """, (codigo_asesoria,))
         
         asesoria = cursor.fetchone()
         if not asesoria:
@@ -124,7 +126,14 @@ def procesar_formulario_elegibilidad():
             }), 404
 
         # Verificar si ya existe un formulario completado para esta asesoría
-        if asesoria[2] == 1:  # completado
+        cursor.execute("""
+            SELECT COUNT(*) as count, MAX(completado) as completado
+            FROM tbl_form_eligibilidadCVA 
+            WHERE codigo_asesoria = %s AND completado = 1
+        """, (codigo_asesoria,))
+        
+        formulario_existente = cursor.fetchone()
+        if formulario_existente and formulario_existente[0] > 0:  # count > 0
             cursor.close()
             connection.close()
             return jsonify({
@@ -370,4 +379,3 @@ def validar_datos_formulario(datos):
             errores.append(f'El campo {campo.replace("_", " ")} debe ser "Si" o "No"')
     
     return errores
-
