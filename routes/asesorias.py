@@ -8,11 +8,12 @@ import threading
 import time
 from mysql.connector import Error
 from utils.notification import notify_appointment_created,  notify_payment_pending
-    
+from utils.auth_helpers import role_required
 
 asesorias_bp = Blueprint('asesorias', __name__)
 
 @asesorias_bp.route('/asesorias')
+@role_required('Usuario')
 def asesorias():
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
@@ -303,6 +304,7 @@ def cancelar_reserva_temporal():
         return jsonify({'error': str(e)}), 500
 
 @asesorias_bp.route('/nueva_asesoria', methods=['POST'])
+@role_required('Usuario')
 def nueva_asesoria():
     if 'user_id' not in session:
         if request.is_json:
@@ -563,6 +565,7 @@ def obtener_horarios_disponibles():
         return jsonify({'error': str(e)}), 500
 
 @asesorias_bp.route('/cancelar_asesoria', methods=['POST'])
+@role_required('Usuario')
 def cancelar_asesoria_route():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -640,6 +643,7 @@ def cancelar_asesoria_route():
         return jsonify({'error': str(e)}), 500
 
 @asesorias_bp.route('/obtener_detalles_asesoria/<int:codigo_asesoria>')
+@role_required('Usuario')
 def obtener_detalles_asesoria(codigo_asesoria):
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401

@@ -37,3 +37,23 @@ def login_required(f):
             return redirect(url_for('auth.login'))  # Cambia 'auth.login' si tu login tiene otro endpoint
         return f(*args, **kwargs)
     return decorated_function
+
+def role_required(roles):
+    if isinstance(roles, str):
+        roles = [roles]
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            user_role = session.get('user_role')
+            if user_role not in roles:
+                flash('No tienes permiso para acceder a esta página.', 'error')
+                # Redirección personalizada por rol
+                if user_role == 'Asesor':
+                    return redirect(url_for('panel_asesor.index_asesor'))
+                # elif user_role == 'Admin':
+                    #return redirect(url_for('admin.dashboard'))  # Cambia según tu panel de admin
+                else:
+                    return redirect(url_for('auth.login'))
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator

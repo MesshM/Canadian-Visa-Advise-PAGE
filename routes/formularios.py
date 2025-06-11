@@ -3,17 +3,20 @@ from config.database import create_connection
 from utils.auth_helpers import login_required
 from utils.notification import notify_form_submitted
 from datetime import datetime
+from utils.auth_helpers import role_required
 
 # Crear el blueprint
 formulario_bp = Blueprint('formularios', __name__)
 
 @formulario_bp.route('/formularios')
+@role_required('Usuario')
 def formularios():
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
     return render_template('formulario_solicitud.html')  # Usa la plantilla que corresponda
 
 @formulario_bp.route('/asesorias_pagadas')
+@role_required('Usuario')
 @login_required
 def obtener_asesorias_pagadas():
     """Obtener todas las asesorías con estado 'Pagada'"""
@@ -79,6 +82,7 @@ def obtener_asesorias_pagadas():
         }), 500
 
 @formulario_bp.route('/procesar_elegibilidad', methods=['POST'])
+@role_required('Usuario')
 @login_required
 def procesar_formulario_elegibilidad():
     """Procesar y guardar el formulario de elegibilidad CVA"""
@@ -253,6 +257,7 @@ def procesar_formulario_elegibilidad():
             connection.close()
 
 @formulario_bp.route('/formulario/<int:id_formulario>')
+@role_required('Usuario')
 @login_required
 def ver_formulario_elegibilidad(id_formulario):
     """Ver un formulario de elegibilidad específico"""
@@ -299,6 +304,7 @@ def ver_formulario_elegibilidad(id_formulario):
         return redirect(url_for('formularios.formularios'))
 
 @formulario_bp.route('/lista_formularios')
+@role_required('Usuario')
 @login_required
 def lista_formularios_elegibilidad():
     """Listar todos los formularios de elegibilidad"""
