@@ -50,7 +50,8 @@ def asesorias():
                 END) as precio,
                 'Virtual (Zoom)' as lugar,
                 a.descripcion, a.estado,
-                pa.metodo_pago as metodo_pago_stripe
+                pa.metodo_pago as metodo_pago_stripe,
+                a.estado_proceso
             FROM tbl_asesoria a
             JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
             JOIN tbl_usuario u ON s.id_usuario = u.id_usuario

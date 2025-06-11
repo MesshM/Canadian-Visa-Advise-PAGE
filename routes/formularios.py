@@ -31,6 +31,7 @@ def obtener_asesorias_pagadas():
         cursor = connection.cursor(dictionary=True)
         
         # Consulta para obtener asesorías pagadas con información del solicitante
+        user_id = session.get('user_id')
         query = """
         SELECT 
             a.codigo_asesoria,
@@ -51,14 +52,14 @@ def obtener_asesorias_pagadas():
         INNER JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
         INNER JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
         LEFT JOIN tbl_form_eligibilidadCVA fe ON a.codigo_asesoria = fe.codigo_asesoria
-        WHERE a.estado = 'Pagada'
+        WHERE a.estado = 'Pagada' AND u.id_usuario = %s
         GROUP BY a.codigo_asesoria, a.fecha_asesoria, a.tipo_asesoria, a.descripcion, a.lugar, 
                  a.estado, a.nombre_asesor, a.especialidad, a.id_formElegibilidad, 
                  u.nombres, u.apellidos, u.correo, s.id_solicitante
         ORDER BY a.fecha_asesoria DESC
         """
         
-        cursor.execute(query)
+        cursor.execute(query, (user_id,))
         asesorias = cursor.fetchall()
         
         # Convertir datetime a string para JSON
@@ -213,6 +214,13 @@ def procesar_formulario_elegibilidad():
                 SET id_formElegibilidad = %s 
                 WHERE codigo_asesoria = %s
             """, (id_form_elegibilidad, codigo_asesoria))
+            
+            # Actualizar el estado_proceso de la asesoría a "Proceso activo"
+            cursor.execute("""
+                UPDATE tbl_asesoria
+                SET estado_proceso = %s
+                WHERE codigo_asesoria = %s
+            """, ("Proceso activo", codigo_asesoria))
             
             # Confirmar transacción
             connection.commit()

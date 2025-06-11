@@ -5,7 +5,7 @@
 {% block main %}
 <!-- Encabezado -->
 <div class="flex justify-between items-center mb-8">
-    <h1 class="text-3xl font-bold text-gray-900 font-roboto animate-fade-in">Asesorías Pagadas</h1>
+    <h1 class="text-3xl font-bold text-gray-900 font-roboto animate-fade-in">Formularios de Solicitud</h1>
     {% include 'includes/_notification.html' %}
 </div>
 
@@ -17,7 +17,7 @@
 <!-- Loading Spinner -->
 <div id="loadingSpinner" class="flex justify-center items-center py-8 animate-fade-in delay-200">
     <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-t-2 border-primary-600"></div>
-    <p class="ml-3 text-primary-600 text-sm">Cargando asesorías...</p>
+    <p class="ml-3 text-primary-600 text-sm">Cargando formularios...</p>
 </div>
 
 <!-- Modal del Formulario de Elegibilidad -->
@@ -61,10 +61,10 @@
                             <select id="tipoDocumento" name="tipo_documento" required 
                                     class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
                                 <option value="">Seleccione una opción</option>
-                                <option value="C.C">Cédula de Ciudadanía</option>
-                                <option value="C.E">Cédula de Extranjería</option>
+                                <option value="C.C">C.C</option>
+                                <option value="C.E">C.E</option>
+                                <option value="T.I">T.I</option>
                                 <option value="Pasaporte">Pasaporte</option>
-                                <option value="T.I">Tarjeta de Identidad</option>
                             </select>
                         </div>
 
@@ -97,6 +97,7 @@
                                 <option value="Divorciado">Divorciado/a</option>
                                 <option value="Viudo">Viudo/a</option>
                                 <option value="Union Libre">Unión Libre</option>
+                                <option value="No aplicá">No aplicá</option>
                             </select>
                         </div>
                     </div>
@@ -144,7 +145,7 @@
 
                         <div>
                             <label for="proposito" class="block text-sm font-medium text-gray-700 mb-2">
-                                Propósito Detallado
+                                Propósito Detallado *
                             </label>
                             <textarea id="proposito" name="proposito" rows="3"
                                       class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
@@ -152,12 +153,28 @@
                         </div>
 
                         <div>
-                            <label for="tiempoEstadia" class="block text-sm font-medium text-gray-700 mb-2">
-                                Tiempo de Estadía
-                            </label>
-                            <input type="text" id="tiempoEstadia" name="tiempo_estadia"
-                                   class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
-                                   placeholder="Ej: 2 semanas, 1 mes, 6 meses">
+                            <div class="flex gap-3 items-end">
+                                <div class="flex-1">
+                                    <label for="tiempoEstadiaCantidad" class="block text-sm font-medium text-gray-700 mb-2">
+                                        Tiempo de Estadía *
+                                    </label>
+                                    <input type="number" min="1" id="tiempoEstadiaCantidad" name="tiempo_estadia_cantidad" required
+                                           class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
+                                           placeholder="Cantidad">
+                                </div>
+                                <div class="w-40">
+                                    <label for="tiempoEstadiaUnidad" class="block text-sm font-medium text-gray-700 mb-2 invisible">
+                                        Unidad
+                                    </label>
+                                    <select id="tiempoEstadiaUnidad" name="tiempo_estadia_unidad" required
+                                            class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
+                                        <option value="Días">Días</option>
+                                        <option value="Semanas">Semanas</option>
+                                        <option value="Meses">Meses</option>
+                                        <option value="Años">Años</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
 
                         <div>

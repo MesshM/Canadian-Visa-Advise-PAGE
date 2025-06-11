@@ -164,8 +164,17 @@ document.addEventListener("DOMContentLoaded", () => {
       return
     }
 
-    asesorias.forEach((asesoria, index) => {
-      const card = crearCardAsesoria(asesoria, index)
+    // Ordenar por codigo_asesoria de menor a mayor (la más vieja primero)
+    asesorias.sort((a, b) => a.codigo_asesoria - b.codigo_asesoria)
+
+    // Asignar número secuencial: la más vieja es 1, la más nueva es asesorias.length
+    asesorias.forEach((asesoria, idx) => {
+      asesoria.numero_secuencial = idx + 1
+    })
+
+    // Invertir el array para mostrar la más nueva arriba y la más vieja (#1) abajo
+    asesorias.slice().reverse().forEach((asesoria, idx) => {
+      const card = crearCardAsesoria(asesoria, idx)
       asesoriasContainer.appendChild(card)
     })
   }
@@ -174,36 +183,36 @@ document.addEventListener("DOMContentLoaded", () => {
    * Crear una card para una asesoría con el nuevo diseño
    */
   function crearCardAsesoria(asesoria, index) {
-    const card = document.createElement("div")
-    card.className = `bg-white rounded-2xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] animate-fade-in`
-    card.style.animationDelay = `${index * 100}ms`
+  const card = document.createElement("div")
+  card.className = `bg-white rounded-2xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] animate-fade-in`
+  card.style.animationDelay = `${index * 100}ms`
 
-    const fechaFormateada = new Date(asesoria.fecha_asesoria).toLocaleDateString("es-ES", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
+  const fechaFormateada = new Date(asesoria.fecha_asesoria).toLocaleDateString("es-ES", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
 
-    const tieneFormulario = asesoria.completado === 1
-    const estadoFormulario = tieneFormulario ? "Completado" : "Pendiente"
-    const colorEstado = tieneFormulario ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+  const tieneFormulario = asesoria.completado === 1
+  const estadoFormulario = tieneFormulario ? "Completado" : "Pendiente"
+  const colorEstado = tieneFormulario ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
 
-    card.innerHTML = `
-      <div class="p-6">
-          <!-- Header de la card -->
-          <div class="flex justify-between items-start mb-6">
-              <div>
-                  <h3 class="text-xl font-bold text-gray-900 font-roboto">
-                      Asesoría #${asesoria.codigo_asesoria}
-                  </h3>
-                  <p class="text-sm text-primary-600 font-medium">${asesoria.tipo_asesoria}</p>
-              </div>
-              <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                  ${asesoria.estado}
-              </span>
-          </div>
+  card.innerHTML = `
+    <div class="p-6">
+        <!-- Header de la card -->
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h3 class="text-xl font-bold text-gray-900 font-roboto">
+                    Formulario #${asesoria.numero_secuencial}
+                </h3>
+                <p class="text-sm text-primary-600 font-medium">${asesoria.tipo_asesoria}</p>
+            </div>
+            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                ${asesoria.estado}
+            </span>
+        </div>
 
           <!-- Información de la asesoría -->
           <div class="space-y-4 mb-6">
