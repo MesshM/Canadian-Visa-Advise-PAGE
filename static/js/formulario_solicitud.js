@@ -49,17 +49,91 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Manejar cambio en empleo origen
+    // Empleo en país de origen
     if (e.target.name === "empleo_origen") {
       const trabajoActualDiv = document.getElementById("trabajoActualDiv")
       const trabajoActualInput = document.getElementById("trabajoActual")
+      const empleoExtranjeroDiv = document.getElementById("empleoExtranjeroDiv")
+      const trabajoActualExtranjeroDiv = document.getElementById("trabajoActualExtranjeroDiv")
+      const trabajoActualExtranjeroInput = document.getElementById("trabajoActualExtranjero")
+      const motivoNoTrabajoDiv = document.getElementById("motivoNoTrabajoDiv")
+      const motivoNoTrabajoInput = document.getElementById("motivoNoTrabajo")
+
       if (e.target.value === "Si") {
         trabajoActualDiv.style.display = ""
         trabajoActualInput.setAttribute("required", "required")
+        empleoExtranjeroDiv.style.display = "none"
+        trabajoActualExtranjeroDiv.style.display = "none"
+        trabajoActualExtranjeroInput.removeAttribute("required")
+        trabajoActualExtranjeroInput.value = ""
+        motivoNoTrabajoDiv.style.display = "none"
+        motivoNoTrabajoInput.removeAttribute("required")
+        motivoNoTrabajoInput.value = ""
       } else {
         trabajoActualDiv.style.display = "none"
         trabajoActualInput.removeAttribute("required")
         trabajoActualInput.value = ""
+        empleoExtranjeroDiv.style.display = ""
+        // Limpiar campos dependientes
+        trabajoActualExtranjeroDiv.style.display = "none"
+        trabajoActualExtranjeroInput.removeAttribute("required")
+        trabajoActualExtranjeroInput.value = ""
+        motivoNoTrabajoDiv.style.display = "none"
+        motivoNoTrabajoInput.removeAttribute("required")
+        motivoNoTrabajoInput.value = ""
+      }
+    }
+
+    // Empleo en el extranjero
+    if (e.target.name === "empleo_extranjero") {
+      const trabajoActualExtranjeroDiv = document.getElementById("trabajoActualExtranjeroDiv")
+      const trabajoActualExtranjeroInput = document.getElementById("trabajoActualExtranjero")
+      const motivoNoTrabajoDiv = document.getElementById("motivoNoTrabajoDiv")
+      const motivoNoTrabajoInput = document.getElementById("motivoNoTrabajo")
+
+      if (e.target.value === "Si") {
+        trabajoActualExtranjeroDiv.style.display = ""
+        trabajoActualExtranjeroInput.setAttribute("required", "required")
+        motivoNoTrabajoDiv.style.display = "none"
+        motivoNoTrabajoInput.removeAttribute("required")
+        motivoNoTrabajoInput.value = ""
+      } else if (e.target.value === "No") {
+        trabajoActualExtranjeroDiv.style.display = "none"
+        trabajoActualExtranjeroInput.removeAttribute("required")
+        trabajoActualExtranjeroInput.value = ""
+        motivoNoTrabajoDiv.style.display = ""
+        motivoNoTrabajoInput.setAttribute("required", "required")
+      }
+    }
+
+    // Pregunta de pasaporte
+    if (e.target.name === "tiene_pasaporte") {
+      const numeroPasaporteDiv = document.getElementById("numeroPasaporteDiv")
+      const numeroPasaporteInput = document.getElementById("numeroPasaporte")
+      const advertenciaPasaporte = document.getElementById("advertenciaPasaporte")
+
+      if (e.target.value === "Si") {
+        numeroPasaporteDiv.style.display = ""
+        numeroPasaporteInput.setAttribute("required", "required")
+        advertenciaPasaporte.classList.add("hidden")
+        numeroPasaporteInput.value = ""
+      } else {
+        numeroPasaporteDiv.style.display = "none"
+        numeroPasaporteInput.removeAttribute("required")
+        numeroPasaporteInput.value = ""
+        advertenciaPasaporte.classList.remove("hidden")
+      }
+    }
+
+    // Empleo en país de origen
+    if (e.target.name === "empleo_origen") {
+      const empleoExtranjeroRadios = document.getElementsByName("empleo_extranjero");
+      if (e.target.value === "No") {
+        empleoExtranjeroRadios.forEach(radio => radio.setAttribute("required", "required"));
+      } else {
+        empleoExtranjeroRadios.forEach(radio => radio.removeAttribute("required"));
+        // Limpiar selección si cambia a "Sí"
+        empleoExtranjeroRadios.forEach(radio => radio.checked = false);
       }
     }
   })
@@ -503,7 +577,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /**
-   * Validar el paso actual
+   * Validar el paso currentStep
    */
   function validateCurrentStep() {
     const currentContent = document.querySelectorAll(".stepper-content")[currentStep]
@@ -721,6 +795,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     tiempoEstadiaCantidadInput.addEventListener("input", function (e) {
       this.value = this.value.replace(/\D/g, "")
+    })
+  }
+
+  const nombreCompletoInput = document.getElementById("nombreCompleto")
+  if (nombreCompletoInput) {
+    nombreCompletoInput.addEventListener("input", function (e) {
+      this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s]/g, "")
     })
   }
 

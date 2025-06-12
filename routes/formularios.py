@@ -153,6 +153,7 @@ def procesar_formulario_elegibilidad():
             'motivo_viaje': datos.get('motivo_viaje'),
             'numero_documento': datos.get('numero_documento'),
             'tipo_documento': datos.get('tipo_documento'),
+            'nombre_completo': datos.get('nombre_completo'),  # <--- Agrega esto
             'pais_residencia': datos.get('pais_residencia'),
             'familiares_canada': datos.get('familiares_canada'),
             'relacion_familiares_can': datos.get('relacion_familiares_can'),
@@ -186,7 +187,12 @@ def procesar_formulario_elegibilidad():
             'privacidad': 1 if datos.get('privacidad') == 1 or datos.get('privacidad') == 'on' or datos.get('privacidad') == True else 0,
             'id_solicitante': id_solicitante,
             'codigo_asesoria': codigo_asesoria,
-            'completado': 1  # Marcar como completado al enviar
+            'completado': 1,  # Marcar como completado al enviar
+            'empleo_extranjero': datos.get('empleo_extranjero'),
+            'trabajo_actual_extranjero': datos.get('trabajo_actual_extranjero'),
+            'motivo_no_trabajo': datos.get('motivo_no_trabajo'),
+            'tiene_pasaporte': datos.get('tiene_pasaporte'),
+            'numero_pasaporte': datos.get('numero_pasaporte'),
         }
         
         # Imprimir los datos para depuración
@@ -362,12 +368,14 @@ def lista_formularios_elegibilidad():
 def validar_datos_formulario(datos):
     """Validar que los datos del formulario sean correctos"""
     campos_requeridos = [
-        'motivo_viaje', 'numero_documento', 'tipo_documento', 'pais_residencia', 
+        'motivo_viaje', 'numero_documento', 'tipo_documento','nombre_completo', 'pais_residencia', 
         'provincia_destino', 'estado_civil', 'familiares_canada', 'co_deudor', 
         'viajes_recientes', 'acompanante_conocido', 'antecedente_judiciales', 
         'examenes_medicos', 'aplicacion_familiares', 'acceso_aplicacion', 
         'biometricos_canada', 'pago_tasas', 'fecha_nacimiento', 'proposito_principal',
-        'empleo_origen', 'dependencia_economica', 'terminos', 'privacidad'
+        'empleo_origen', 'dependencia_economica', 'terminos', 'privacidad',
+        'tiene_pasaporte',
+        # Quita los campos dependientes de aquí
     ]
     
     errores = []
@@ -381,6 +389,20 @@ def validar_datos_formulario(datos):
         if not datos.get('relacion_familiares_can') or str(datos.get('relacion_familiares_can')).strip() == '':
             errores.append('Debe especificar la relación con familiares en Canadá')
     
+    # Validar lógica de empleo y trabajo
+    if datos.get('empleo_origen') == 'Si':
+        if not datos.get('trabajo_actual') or str(datos.get('trabajo_actual')).strip() == '':
+            errores.append('Debe especificar su trabajo actual en el país de origen')
+    elif datos.get('empleo_origen') == 'No':
+        if not datos.get('empleo_extranjero') or str(datos.get('empleo_extranjero')).strip() == '':
+            errores.append('Debe indicar si tiene empleo en el extranjero')
+        elif datos.get('empleo_extranjero') == 'Si':
+            if not datos.get('trabajo_actual_extranjero') or str(datos.get('trabajo_actual_extranjero')).strip() == '':
+                errores.append('Debe especificar su trabajo actual en el extranjero')
+        elif datos.get('empleo_extranjero') == 'No':
+            if not datos.get('motivo_no_trabajo') or str(datos.get('motivo_no_trabajo')).strip() == '':
+                errores.append('Debe indicar el motivo por el que no tiene trabajo')
+
     # Validar opciones de sí/no
     opciones_si_no = ['familiares_canada', 'co_deudor', 'viajes_recientes', 'acompanante_conocido', 
                       'antecedente_judiciales', 'examenes_medicos', 'aplicacion_familiares', 
@@ -391,5 +413,10 @@ def validar_datos_formulario(datos):
         valor = datos.get(campo)
         if valor and valor not in ['Si', 'No']:
             errores.append(f'El campo {campo.replace("_", " ")} debe ser "Si" o "No"')
+    
+    # Validar número de pasaporte si tiene pasaporte
+    if datos.get('tiene_pasaporte') == 'Si':
+        if not datos.get('numero_pasaporte') or str(datos.get('numero_pasaporte')).strip() == '':
+            errores.append('Debe ingresar el número de pasaporte')
     
     return errores

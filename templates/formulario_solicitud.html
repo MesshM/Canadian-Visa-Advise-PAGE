@@ -24,26 +24,28 @@
 <div id="formularioModal" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
     <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-6xl animate-scale-in max-h-[90vh] overflow-y-auto">
         <!-- Header del Modal -->
-        <div class="flex justify-between items-center pb-4 border-b border-gray-200">
-            <div>
-                <h3 class="text-xl font-bold text-gray-900 font-roboto">Formulario de Elegibilidad CVA</h3>
-                <p class="text-sm text-gray-600 mt-1">Complete todos los campos para evaluar su elegibilidad</p>
-            </div>
-            <button id="cerrarModal" class="text-gray-400 hover:text-gray-600 transition-colors duration-300 text-2xl font-bold cursor-pointer">
-                &times;
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-gray-900 font-roboto">Formulario de Elegibilidad CVA</h2>
+            <button id="cerrarModal" class="text-gray-500 hover:text-gray-700 cursor-pointer transition-colors duration-300">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
             </button>
         </div>
-
         <!-- Contenedor principal con grid para stepper y contenido -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
             <!-- Stepper vertical en el lado izquierdo -->
             <div class="md:col-span-1 bg-gray-50 p-4 rounded-xl">
                 <div class="stepper-container">
-                    <div class="stepper-steps flex flex-col space-y-6">
+                    <div class="stepper-steps flex flex-col space-y-8">
                         <!-- Paso 1 -->
                         <div class="stepper-step active flex items-center transition-all duration-300">
-                            <div class="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white transition-all duration-300 shadow-sm">
-                                <span>1</span>
+                            <div class="w-11 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white transition-all duration-300 shadow-sm">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
                             </div>
                             <div class="ml-3">
                                 <span class="text-xs text-gray-500 uppercase tracking-wider">PASO 1</span>
@@ -55,7 +57,7 @@
 
                         <!-- Paso 2 -->
                         <div class="stepper-step flex items-center transition-all duration-300">
-                            <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 transition-all duration-300">
+                            <div class="w-11 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 transition-all duration-300">
                                 <span>2</span>
                             </div>
                             <div class="ml-3">
@@ -106,43 +108,43 @@
 
             <!-- Contenido del stepper en el lado derecho -->
             <div class="md:col-span-3 overflow-hidden">
-                <form id="formularioElegibilidad" class="stepper-content-container">
+                <form id="formularioElegibilidad" class="stepper-content-container space-y-6">
                     <input type="hidden" id="codigoAsesoria" name="codigo_asesoria">
-                    
                     <!-- Paso 1: Información Personal Básica y del Viaje -->
                     <div class="stepper-content">
                         <div class="bg-gradient-to-r from-primary-50 to-white p-4 rounded-xl border-l-4 border-primary-500 mb-5 animate-fade-in">
-                            <h3 class="text-base font-medium text-primary-800 flex items-center">
+                            <h3 class="text-base font-medium  text-primary-800 flex items-center">
                                 <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                 </svg>
                                 Información Personal y del Viaje
                             </h3>
                             <p class="text-sm text-gray-600">Datos básicos de identificación y detalles de su viaje</p>
-                        </div>
-
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        </div>  
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <!-- Información Personal Básica -->
-                            <div class="bg-gradient-to-r from-primary-50 to-white p-6 rounded-2xl border border-primary-100 shadow-sm">
-                                <div class="flex items-center mb-4">
-                                    <div class="w-10 h-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center mr-3">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-lg font-semibold text-primary-800">Información Personal Básica</h4>
-                                        <p class="text-sm text-gray-600">Datos de identificación y personales</p>
-                                    </div>
-                                </div>
-                                
+                            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+                                <h4 class="text-sm font-medium text-gray-800 mb-4 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                    </svg>
+                                    Información Personal Básica
+                                </h4>
                                 <div class="grid grid-cols-1 gap-4">
                                     <div>
+                                        <label for="nombreCompleto" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Nombre Completo <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="text" id="nombreCompleto" name="nombre_completo" required
+                                               class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
+                                               placeholder="Ingrese su nombre completo">
+                                    </div>
+                                    <div>
                                         <label for="tipoDocumento" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Tipo de Documento *
+                                            Tipo de Documento <span class="text-red-500">*</span>
                                         </label>
                                         <select id="tipoDocumento" name="tipo_documento" required 
-                                                class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
+                                                class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text">
                                             <option value="">Seleccione una opción</option>
                                             <option value="C.C">C.C</option>
                                             <option value="C.E">C.E</option>
@@ -150,30 +152,60 @@
                                             <option value="Pasaporte">Pasaporte</option>
                                         </select>
                                     </div>
-
+                        
                                     <div>
                                         <label for="numeroDocumento" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Número de Documento *
+                                            Número de Documento <span class="text-red-500">*</span>
                                         </label>
                                         <input type="number" id="numeroDocumento" name="numero_documento" required step="1" inputmode="numeric"
                                                class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
                                                placeholder="Ingrese el número de su documento">
                                     </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-3">
+                                            ¿Cuenta con pasaporte? <span class="text-red-500">*</span>
+                                        </label>
+                                        <div class="flex space-x-6">
+                                            <label class="flex items-center cursor-pointer">
+                                                <input type="radio" name="tiene_pasaporte" value="Si" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                                <span class="text-sm text-gray-700">Sí</span>
+                                            </label>
+                                            <label class="flex items-center cursor-pointer">
+                                                <input type="radio" name="tiene_pasaporte" value="No" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                                <span class="text-sm text-gray-700">No</span>
+                                            </label>
+                                        </div>
+                                    </div>
 
+                                    <!-- Campo para número de pasaporte -->
+                                    <div id="numeroPasaporteDiv" style="display:none;">
+                                        <label for="numeroPasaporte" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Número de Pasaporte <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="text" id="numeroPasaporte" name="numero_pasaporte"
+                                               maxlength="20"
+                                               class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm uppercase"
+                                               placeholder="Ingrese el número de su pasaporte">
+                                    </div>
+
+                                    <!-- Mensaje de advertencia si no tiene pasaporte -->
+                                    <div id="advertenciaPasaporte" class="hidden mt-2 p-3 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-xl text-sm">
+                                        Es necesario un pasaporte vigente y en buen estado para solicitar una visa
+                                    </div>
                                     <div>
                                         <label for="fechaNacimiento" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Fecha de Nacimiento *
+                                            Fecha de Nacimiento <span class="text-red-500">*</span>
                                         </label>
                                         <input type="date" id="fechaNacimiento" name="fecha_nacimiento" required
                                                class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text">
                                     </div>
-
+                        
                                     <div>
                                         <label for="estadoCivil" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Estado Civil *
+                                            Estado Civil <span class="text-red-500">*</span>
                                         </label>
                                         <select id="estadoCivil" name="estado_civil" required
-                                                class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
+                                                class="w-full py-3 px-4 border border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer bg-white">
                                             <option value="">Seleccione una opción</option>
                                             <option value="Soltero">Soltero/a</option>
                                             <option value="Casado">Casado/a</option>
@@ -185,25 +217,18 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Información del Viaje -->
-                            <div class="bg-gradient-to-r from-primary-50 to-white p-6 rounded-2xl border border-primary-100 shadow-sm">
-                                <div class="flex items-center mb-4">
-                                    <div class="w-10 h-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center mr-3">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-lg font-semibold text-primary-800">Información del Viaje</h4>
-                                        <p class="text-sm text-gray-600">Detalles sobre su viaje a Canadá</p>
-                                    </div>
-                                </div>
-                                
+                        <!-- Información del Viaje -->
+                            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+                                <h4 class="text-sm font-medium text-gray-800 mb-4 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path>
+                                    </svg>
+                                Información del Viaje
+                                </h4>                       
                                 <div class="grid grid-cols-1 gap-4">
                                     <div>
                                         <label for="motivoViaje" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Motivo del Viaje *
+                                            Motivo del Viaje <span class="text-red-500">*</span>
                                         </label>
                                         <select id="motivoViaje" name="motivo_viaje" required 
                                                 class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
@@ -219,7 +244,7 @@
 
                                     <div>
                                         <label for="propositoPrincipal" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Propósito Principal *
+                                            Propósito Principal <span class="text-red-500">*</span>
                                         </label>
                                         <input type="text" id="propositoPrincipal" name="proposito_principal" required
                                         pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s.,;:¡!¿?()\"'-]+$"
@@ -230,7 +255,7 @@
 
                                     <div>
                                         <label for="propositoDetallado" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Propósito Detallado *
+                                            Propósito Detallado <span class="text-red-500">*</span>
                                         </label>
                                         <textarea id="propositoDetallado" name="proposito_detallado" rows="3" required
                                             class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
@@ -241,7 +266,7 @@
                                         <div class="flex gap-3 items-end">
                                             <div class="flex-1">
                                                 <label for="tiempoEstadiaCantidad" class="block text-sm font-medium text-gray-700 mb-2">
-                                                    Tiempo de Estadía *
+                                                    Tiempo de Estadía <span class="text-red-500">*</span>
                                                 </label>
                                                 <input type="number" min="1" id="tiempoEstadiaCantidad" name="tiempo_estadia_cantidad" required
                                                        class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
@@ -261,7 +286,7 @@
 
                                     <div>
                                         <label for="paisResidencia" class="block text-sm font-medium text-gray-700 mb-2">
-                                            País de Residencia *
+                                            País de Residencia <span class="text-red-500">*</span>
                                         </label>
                                         <input type="text" id="paisResidencia" name="pais_residencia" value="Colombia" readonly
                                                class="w-full py-3 px-4 border border-gray-200 bg-gray-100 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-not-allowed">
@@ -269,7 +294,7 @@
 
                                     <div>
                                         <label for="provinciaDestino" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Provincia de Destino en Canadá *
+                                            Provincia de Destino en Canadá <span class="text-red-500">*</span>
                                         </label>
                                         <select id="provinciaDestino" name="provincia_destino" required
                                                 class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
@@ -293,7 +318,6 @@
                             </div>
                         </div>
                     </div>
-
                     <!-- Paso 2: Información Laboral y Familiar -->
                     <div class="stepper-content hidden">
                         <div class="bg-gradient-to-r from-primary-50 to-white p-4 rounded-xl border-l-4 border-primary-500 mb-5 animate-fade-in">
@@ -306,45 +330,77 @@
                             <p class="text-sm text-gray-600">Situación laboral, económica y relaciones familiares</p>
                         </div>
 
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <!-- Información Laboral y Económica -->
-                            <div class="bg-gradient-to-r from-primary-50 to-white p-6 rounded-2xl border border-primary-100 shadow-sm">
-                                <div class="flex items-center mb-4">
-                                    <div class="w-10 h-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center mr-3">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                                        </svg>
-                                    </div>
+                            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+                                <h4 class="text-sm font-medium text-gray-800 mb-4 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                    </svg>
+                                    Información Laboral y Económica
+                                </h4>
+                                <div class="grid grid-cols-1 gap-4">
                                     <div>
-                                        <h4 class="text-lg font-semibold text-primary-800">Información Laboral y Económica</h4>
-                                        <p class="text-sm text-gray-600">Situación laboral y económica actual</p>
-                                    </div>
-                                </div>
-
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-3">
-                                            ¿Tiene empleo en su país de origen? *
+                                      <label class="block text-sm font-medium text-gray-700 mb-3">
+                                        ¿Tiene empleo en su país de origen? <span class="text-red-500">*</span>
+                                      </label>
+                                      <div class="flex space-x-6">
+                                        <label class="flex items-center cursor-pointer">
+                                          <input type="radio" name="empleo_origen" value="Si" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                          <span class="text-sm text-gray-700">Sí</span>
                                         </label>
-                                        <div class="flex space-x-6">
-                                            <label class="flex items-center cursor-pointer">
-                                                <input type="radio" name="empleo_origen" value="Si" required class="mr-2 text-primary-600 focus:ring-primary-500">
-                                                <span class="text-sm text-gray-700">Sí</span>
-                                            </label>
-                                            <label class="flex items-center cursor-pointer">
-                                                <input type="radio" name="empleo_origen" value="No" required class="mr-2 text-primary-600 focus:ring-primary-500">
-                                                <span class="text-sm text-gray-700">No</span>
-                                            </label>
-                                        </div>
+                                        <label class="flex items-center cursor-pointer">
+                                          <input type="radio" name="empleo_origen" value="No" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                          <span class="text-sm text-gray-700">No</span>
+                                        </label>
+                                      </div>
                                     </div>
-
+                                    
+                                    <!-- Trabajo Actual en país de origen -->
                                     <div id="trabajoActualDiv" style="display:none;">
-                                        <label for="trabajoActual" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Trabajo Actual *
+                                      <label for="trabajoActual" class="block text-sm font-medium text-gray-700 mb-2">
+                                        Trabajo Actual *
+                                      </label>
+                                      <input type="text" id="trabajoActual" name="trabajo_actual"
+                                             class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
+                                             placeholder="Descripción de su trabajo actual">
+                                    </div>
+                                    
+                                    <!-- Si NO tiene empleo en país de origen, preguntar por empleo en el extranjero -->
+                                    <div id="empleoExtranjeroDiv" style="display:none;">
+                                      <label class="block text-sm font-medium text-gray-700 mb-3">
+                                        ¿Tiene empleo en el extranjero? <span class="text-red-500">*</span>
+                                      </label>
+                                      <div class="flex space-x-6">
+                                        <label class="flex items-center cursor-pointer">
+                                          <input type="radio" name="empleo_extranjero" value="Si" class="mr-2 text-primary-600 focus:ring-primary-500">
+                                          <span class="text-sm text-gray-700">Sí</span>
                                         </label>
-                                        <input type="text" id="trabajoActual" name="trabajo_actual"
-                                               class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
-                                               placeholder="Descripción de su trabajo actual">
+                                        <label class="flex items-center cursor-pointer">
+                                          <input type="radio" name="empleo_extranjero" value="No" class="mr-2 text-primary-600 focus:ring-primary-500">
+                                          <span class="text-sm text-gray-700">No</span>
+                                        </label>
+                                      </div>
+                                    </div>
+                                    
+                                    <!-- Trabajo Actual en el extranjero -->
+                                    <div id="trabajoActualExtranjeroDiv" style="display:none;">
+                                      <label for="trabajoActualExtranjero" class="block text-sm font-medium text-gray-700 mb-2">
+                                        Trabajo Actual (Extranjero) <span class="text-red-500">*</span>
+                                      </label>
+                                      <input type="text" id="trabajoActualExtranjero" name="trabajo_actual_extranjero"
+                                             class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
+                                             placeholder="Descripción de su trabajo actual en el extranjero">
+                                    </div>
+                                    
+                                    <!-- Motivo por el que no tiene trabajo -->
+                                    <div id="motivoNoTrabajoDiv" style="display:none;">
+                                      <label for="motivoNoTrabajo" class="block text-sm font-medium text-gray-700 mb-2">
+                                        ¿Por qué no tiene trabajo? <span class="text-red-500">*</span>
+                                      </label>
+                                      <textarea id="motivoNoTrabajo" name="motivo_no_trabajo" rows="3"
+                                        class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
+                                        placeholder="Explique el motivo"></textarea>
                                     </div>
 
                                     <div>
@@ -375,18 +431,13 @@
                             </div>
 
                             <!-- Información Familiar -->
-                            <div class="bg-gradient-to-r from-primary-50 to-white p-6 rounded-2xl border border-primary-100 shadow-sm">
-                                <div class="flex items-center mb-4">
-                                    <div class="w-10 h-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center mr-3">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-lg font-semibold text-primary-800">Información Familiar</h4>
-                                        <p class="text-sm text-gray-600">Relaciones familiares en Canadá</p>
-                                    </div>
-                                </div>
+                            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+                                <h4 class="text-sm font-medium text-gray-800 mb-4 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                    </svg>
+                                    Información Familiar
+                                </h4>
                                 
                                 <div class="space-y-4">
                                     <div>
@@ -487,8 +538,8 @@
                             <p class="text-sm text-gray-600">Información adicional para evaluar su caso</p>
                         </div>
 
-                        <div class="bg-gradient-to-r from-primary-50 to-white p-6 rounded-2xl border border-primary-100 shadow-sm">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-3">
                                         ¿Tiene co-deudor? *
@@ -648,21 +699,15 @@
                             <p class="text-sm text-gray-600">Documentos disponibles y aceptación de términos</p>
                         </div>
 
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <!-- Documentos Disponibles -->
-                            <div class="bg-gradient-to-r from-primary-50 to-white p-6 rounded-2xl border border-primary-100 shadow-sm">
-                                <div class="flex items-center mb-4">
-                                    <div class="w-10 h-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center mr-3">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-lg font-semibold text-primary-800">Documentos Disponibles</h4>
-                                        <p class="text-sm text-gray-600">Indique si cuenta con los siguientes documentos</p>
-                                    </div>
-                                </div>
-                                
+                            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+                                <h4 class="text-sm font-medium text-gray-800 mb-4 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    Documentos Disponibles
+                                </h4>
                                 <div class="grid grid-cols-1 gap-4">
                                     <div>
                                         <label for="docHistorialViajes" class="block text-sm font-medium text-gray-700 mb-2">
@@ -719,19 +764,13 @@
                             </div>
 
                             <!-- Términos y Condiciones -->
-                            <div class="bg-gradient-to-r from-primary-50 to-white p-6 rounded-2xl border border-primary-100 shadow-sm">
-                                <div class="flex items-center mb-4">
-                                    <div class="w-10 h-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center mr-3">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.414-4.414a2 2 0 010 2.828L10.414 21a2 2 0 01-2.828 0L3.172 16.586a2 2 0 010-2.828L7.586 9.172a2 2 0 012.828 0L14 12.586a2 2 0 002.828 0l2.586-2.586a2 2 0 000-2.828z"></path>
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-lg font-semibold text-primary-800">Términos y Condiciones</h4>
-                                        <p class="text-sm text-gray-600">Aceptación de políticas y términos</p>
-                                    </div>
-                                </div>
-                                
+                            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+                                <h4 class="text-sm font-medium text-gray-800 mb-4 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.414-4.414a2 2 0 010 2.828L10.414 21a2 2 0 01-2.828 0L3.172 16.586a2 2 0 010-2.828L7.586 9.172a2 2 0 012.828 0L14 12.586a2 2 0 002.828 0l2.586-2.586a2 2 0 000-2.828z"></path>
+                                    </svg>
+                                    Términos y Condiciones
+                                </h4>
                                 <div class="space-y-4">
                                     <div class="flex items-start p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
                                         <input type="checkbox" id="terminos" name="terminos" required class="mt-1 mr-3 text-primary-600 focus:ring-primary-500 rounded">
