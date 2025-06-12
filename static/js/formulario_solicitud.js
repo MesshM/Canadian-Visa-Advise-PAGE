@@ -1,6 +1,6 @@
 /**
- * Formulario de Solicitud - JavaScript
- * Diseño actualizado con el estilo de asesorías
+ * Formulario de Solicitud con Stepper - JavaScript
+ * Basado en el diseño del modal de asesorías
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -10,15 +10,29 @@ document.addEventListener("DOMContentLoaded", () => {
   const formularioModal = document.getElementById("formularioModal")
   const formularioElegibilidad = document.getElementById("formularioElegibilidad")
   const cerrarModal = document.getElementById("cerrarModal")
-  const cancelarFormulario = document.getElementById("cancelarFormulario")
+
+  // Elementos del stepper
+  const stepperPrevBtn = document.getElementById("stepper-prev-btn")
+  const stepperNextBtn = document.getElementById("stepper-next-btn")
+  const stepperSubmitBtn = document.getElementById("stepper-submit-btn")
+  const progressBar = document.getElementById("progress-bar")
+  const currentStepSpan = document.getElementById("current-step")
+
+  // Variables del stepper
+  let currentStep = 0
+  const totalSteps = 4
 
   // Cargar asesorías pagadas al iniciar
   cargarAsesoriasPagadas()
 
-  // Event listeners
+  // Event listeners principales
   cerrarModal.addEventListener("click", cerrarModalFormulario)
-  cancelarFormulario.addEventListener("click", cerrarModalFormulario)
   formularioElegibilidad.addEventListener("submit", enviarFormulario)
+
+  // Event listeners del stepper
+  if (stepperPrevBtn) stepperPrevBtn.addEventListener("click", prevStep)
+  if (stepperNextBtn) stepperNextBtn.addEventListener("click", nextStep)
+  if (stepperSubmitBtn) stepperSubmitBtn.addEventListener("click", submitFormulario)
 
   // Manejar cambio en familiares en Canadá
   document.addEventListener("change", (e) => {
@@ -34,6 +48,20 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("relacionFamiliares").value = ""
       }
     }
+
+    // Manejar cambio en empleo origen
+    if (e.target.name === "empleo_origen") {
+      const trabajoActualDiv = document.getElementById("trabajoActualDiv")
+      const trabajoActualInput = document.getElementById("trabajoActual")
+      if (e.target.value === "Si") {
+        trabajoActualDiv.style.display = ""
+        trabajoActualInput.setAttribute("required", "required")
+      } else {
+        trabajoActualDiv.style.display = "none"
+        trabajoActualInput.removeAttribute("required")
+        trabajoActualInput.value = ""
+      }
+    }
   })
 
   // Cerrar modal al hacer clic fuera de él
@@ -47,11 +75,9 @@ document.addEventListener("DOMContentLoaded", () => {
    * Función para mostrar notificaciones con el estilo de asesorías
    */
   function showNotification(message, type = "success") {
-    // Crear el elemento de notificación
     const notification = document.createElement("div")
     notification.className = `fixed top-4 right-4 p-4 rounded-xl shadow-lg z-50 transform transition-all duration-500 translate-x-full max-w-md`
 
-    // Aplicar estilos según el tipo
     if (type === "success") {
       notification.classList.add("bg-green-100", "text-green-800", "border-l-4", "border-green-500")
     } else if (type === "error") {
@@ -62,7 +88,6 @@ document.addEventListener("DOMContentLoaded", () => {
       notification.classList.add("bg-blue-100", "text-blue-800", "border-l-4", "border-blue-500")
     }
 
-    // Agregar el mensaje
     notification.innerHTML = `
       <div class="flex items-center">
           <div class="flex-shrink-0">
@@ -88,35 +113,23 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `
 
-    // Agregar al DOM
     document.body.appendChild(notification)
 
-    // Animar la entrada
     setTimeout(() => {
       notification.classList.remove("translate-x-full")
       notification.classList.add("translate-x-0")
     }, 100)
 
-    // Configurar la eliminación automática
     setTimeout(() => {
       notification.classList.remove("translate-x-0")
       notification.classList.add("translate-x-full")
-
-      // Eliminar del DOM después de la animación
-      setTimeout(() => {
-        notification.remove()
-      }, 500)
+      setTimeout(() => notification.remove(), 500)
     }, 5000)
 
-    // Agregar evento para cerrar manualmente
     notification.querySelector("button").addEventListener("click", () => {
       notification.classList.remove("translate-x-0")
       notification.classList.add("translate-x-full")
-
-      // Eliminar del DOM después de la animación
-      setTimeout(() => {
-        notification.remove()
-      }, 500)
+      setTimeout(() => notification.remove(), 500)
     })
   }
 
@@ -164,57 +177,54 @@ document.addEventListener("DOMContentLoaded", () => {
       return
     }
 
-    // Ordenar por codigo_asesoria de menor a mayor (la más vieja primero)
     asesorias.sort((a, b) => a.codigo_asesoria - b.codigo_asesoria)
-
-    // Asignar número secuencial: la más vieja es 1, la más nueva es asesorias.length
     asesorias.forEach((asesoria, idx) => {
       asesoria.numero_secuencial = idx + 1
     })
 
-    // Invertir el array para mostrar la más nueva arriba y la más vieja (#1) abajo
-    asesorias.slice().reverse().forEach((asesoria, idx) => {
-      const card = crearCardAsesoria(asesoria, idx)
-      asesoriasContainer.appendChild(card)
-    })
+    asesorias
+      .slice()
+      .reverse()
+      .forEach((asesoria, idx) => {
+        const card = crearCardAsesoria(asesoria, idx)
+        asesoriasContainer.appendChild(card)
+      })
   }
 
   /**
-   * Crear una card para una asesoría con el nuevo diseño
+   * Crear una card para una asesoría
    */
   function crearCardAsesoria(asesoria, index) {
-  const card = document.createElement("div")
-  card.className = `bg-white rounded-2xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] animate-fade-in`
-  card.style.animationDelay = `${index * 100}ms`
+    const card = document.createElement("div")
+    card.className = `bg-white rounded-2xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] animate-fade-in`
+    card.style.animationDelay = `${index * 100}ms`
 
-  const fechaFormateada = new Date(asesoria.fecha_asesoria).toLocaleDateString("es-ES", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
+    const fechaFormateada = new Date(asesoria.fecha_asesoria).toLocaleDateString("es-ES", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
 
-  const tieneFormulario = asesoria.completado === 1
-  const estadoFormulario = tieneFormulario ? "Completado" : "Pendiente"
-  const colorEstado = tieneFormulario ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+    const tieneFormulario = asesoria.completado === 1
+    const estadoFormulario = tieneFormulario ? "Completado" : "Pendiente"
+    const colorEstado = tieneFormulario ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
 
-  card.innerHTML = `
-    <div class="p-6">
-        <!-- Header de la card -->
-        <div class="flex justify-between items-start mb-6">
-            <div>
-                <h3 class="text-xl font-bold text-gray-900 font-roboto">
-                    Formulario #${asesoria.numero_secuencial}
-                </h3>
-                <p class="text-sm text-primary-600 font-medium">${asesoria.tipo_asesoria}</p>
-            </div>
-            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                ${asesoria.estado}
-            </span>
-        </div>
+    card.innerHTML = `
+      <div class="p-6">
+          <div class="flex justify-between items-start mb-6">
+              <div>
+                  <h3 class="text-xl font-bold text-gray-900 font-roboto">
+                      Formulario #${asesoria.numero_secuencial}
+                  </h3>
+                  <p class="text-sm text-primary-600 font-medium">${asesoria.tipo_asesoria}</p>
+              </div>
+              <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                  ${asesoria.estado}
+              </span>
+          </div>
 
-          <!-- Información de la asesoría -->
           <div class="space-y-4 mb-6">
               <div class="flex items-center text-sm text-gray-600">
                   <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center mr-3">
@@ -254,7 +264,6 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
           </div>
 
-          <!-- Estado del formulario -->
           <div class="mb-6">
               <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                   <div class="flex items-center">
@@ -269,7 +278,6 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
           </div>
 
-          <!-- Descripción -->
           ${
             asesoria.descripcion
               ? `
@@ -280,7 +288,6 @@ document.addEventListener("DOMContentLoaded", () => {
               : ""
           }
 
-          <!-- Botón de acción -->
           <div class="pt-4 border-t border-gray-200">
               ${
                 tieneFormulario
@@ -313,15 +320,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /**
-   * Abrir modal del formulario de elegibilidad con animación
+   * Abrir modal del formulario de elegibilidad
    */
   window.abrirFormularioElegibilidad = (codigoAsesoria) => {
     document.getElementById("codigoAsesoria").value = codigoAsesoria
+    resetStepper()
     formularioModal.classList.remove("hidden")
     formularioModal.classList.add("flex")
     document.body.style.overflow = "hidden"
 
-    // Animar la entrada del modal
     const modalContent = formularioModal.querySelector(".bg-white")
     if (modalContent) {
       modalContent.classList.add("animate-scale-in")
@@ -329,12 +336,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /**
-   * Cerrar modal del formulario con animación
+   * Cerrar modal del formulario
    */
   function cerrarModalFormulario() {
     const modalContent = formularioModal.querySelector(".bg-white")
 
-    // Animar la salida
     if (modalContent) {
       modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
     }
@@ -344,27 +350,219 @@ document.addEventListener("DOMContentLoaded", () => {
       formularioModal.classList.add("hidden")
       document.body.style.overflow = "auto"
       formularioElegibilidad.reset()
+      resetStepper()
 
-      // Ocultar campo de relación familiar
       document.getElementById("relacionFamiliaresDiv").classList.add("hidden")
       document.getElementById("relacionFamiliares").required = false
+      document.getElementById("trabajoActualDiv").style.display = "none"
+      document.getElementById("trabajoActual").removeAttribute("required")
 
-      // Restaurar el modal para la próxima vez
       if (modalContent) {
         modalContent.classList.remove("opacity-0", "scale-95", "transition-all", "duration-300")
       }
     }, 300)
   }
 
-  // Modificar la función enviarFormulario para depurar el error 500
+  /**
+   * Resetear el stepper al estado inicial
+   */
+  function resetStepper() {
+    currentStep = 0
+    updateStepperUI()
+    showStep(0)
+  }
+
+  /**
+   * Ir al paso anterior
+   */
+  function prevStep() {
+    if (currentStep > 0) {
+      currentStep--
+      updateStepperUI()
+      showStep(currentStep)
+    }
+  }
+
+  /**
+   * Ir al siguiente paso
+   */
+  function nextStep() {
+    if (validateCurrentStep() && currentStep < totalSteps - 1) {
+      currentStep++
+      updateStepperUI()
+      showStep(currentStep)
+    }
+  }
+
+  /**
+   * Enviar formulario (último paso)
+   */
+  function submitFormulario() {
+    if (validateCurrentStep()) {
+      enviarFormulario(new Event("submit"))
+    }
+  }
+
+  /**
+   * Mostrar el paso específico
+   */
+  function showStep(stepIndex) {
+    const contents = document.querySelectorAll(".stepper-content")
+
+    contents.forEach((content, index) => {
+      if (index === stepIndex) {
+        content.classList.remove("hidden")
+        content.classList.add("animate-fade-in")
+      } else {
+        content.classList.add("hidden")
+        content.classList.remove("animate-fade-in")
+      }
+    })
+  }
+
+  /**
+   * Actualizar la UI del stepper
+   */
+  function updateStepperUI() {
+    const steps = document.querySelectorAll(".stepper-step")
+    const connectors = document.querySelectorAll(".stepper-connector")
+
+    // Actualizar pasos
+    steps.forEach((step, index) => {
+      const circle = step.querySelector("div:first-child")
+
+      if (index < currentStep) {
+        // Paso completado
+        step.classList.add("completed")
+        step.classList.remove("active")
+        if (circle) {
+          circle.classList.remove("bg-gray-200", "text-gray-500")
+          circle.classList.add("bg-primary-600", "text-white")
+          circle.innerHTML =
+            '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
+        }
+      } else if (index === currentStep) {
+        // Paso activo
+        step.classList.add("active")
+        step.classList.remove("completed")
+        if (circle) {
+          circle.classList.remove("bg-gray-200", "text-gray-500")
+          circle.classList.add("bg-primary-600", "text-white")
+          circle.innerHTML = `<span>${index + 1}</span>`
+        }
+      } else {
+        // Paso pendiente
+        step.classList.remove("active", "completed")
+        if (circle) {
+          circle.classList.remove("bg-primary-600", "text-white")
+          circle.classList.add("bg-gray-200", "text-gray-500")
+          circle.innerHTML = `<span>${index + 1}</span>`
+        }
+      }
+    })
+
+    // Actualizar conectores
+    connectors.forEach((connector, index) => {
+      if (index < currentStep) {
+        connector.classList.remove("bg-gray-200")
+        connector.classList.add("bg-primary-600")
+      } else {
+        connector.classList.remove("bg-primary-600")
+        connector.classList.add("bg-gray-200")
+      }
+    })
+
+    // Actualizar botones
+    if (stepperPrevBtn) {
+      if (currentStep === 0) {
+        stepperPrevBtn.classList.add("hidden")
+      } else {
+        stepperPrevBtn.classList.remove("hidden")
+      }
+    }
+
+    if (stepperNextBtn && stepperSubmitBtn) {
+      if (currentStep === totalSteps - 1) {
+        stepperNextBtn.classList.add("hidden")
+        stepperSubmitBtn.classList.remove("hidden")
+      } else {
+        stepperNextBtn.classList.remove("hidden")
+        stepperSubmitBtn.classList.add("hidden")
+      }
+    }
+
+    // Actualizar barra de progreso
+    if (progressBar) {
+      const progress = ((currentStep + 1) / totalSteps) * 100
+      progressBar.style.width = `${progress}%`
+    }
+
+    if (currentStepSpan) {
+      currentStepSpan.textContent = currentStep + 1
+    }
+  }
+
+  /**
+   * Validar el paso actual
+   */
+  function validateCurrentStep() {
+    const currentContent = document.querySelectorAll(".stepper-content")[currentStep]
+    if (!currentContent) return false
+
+    const requiredFields = currentContent.querySelectorAll("[required]")
+
+    for (const field of requiredFields) {
+      if (field.type === "radio") {
+        const radioGroup = currentContent.querySelectorAll(`[name="${field.name}"]`)
+        const isChecked = Array.from(radioGroup).some((radio) => radio.checked)
+        if (!isChecked) {
+          showNotification(`Por favor, seleccione una opción para: ${field.name.replace(/_/g, " ")}`, "error")
+          return false
+        }
+      } else if (field.type === "checkbox") {
+        if (!field.checked) {
+          showNotification("Debe aceptar los términos y condiciones", "error")
+          return false
+        }
+      } else if (!field.value.trim()) {
+        showNotification(`Por favor, complete el campo: ${field.name.replace(/_/g, " ")}`, "error")
+        return false
+      }
+    }
+
+    // Validaciones específicas por paso
+    if (currentStep === 0) {
+      const fechaNac = document.getElementById("fechaNacimiento").value
+      if (fechaNac) {
+        const fechaNacimiento = new Date(fechaNac)
+        const hoy = new Date()
+        const edad = hoy.getFullYear() - fechaNacimiento.getFullYear()
+
+        if (edad < 18) {
+          showNotification("Debe ser mayor de 18 años para aplicar", "error")
+          return false
+        }
+
+        if (edad > 100) {
+          showNotification("Por favor verifique la fecha de nacimiento", "error")
+          return false
+        }
+      }
+    }
+
+    return true
+  }
+
+  /**
+   * Enviar formulario al servidor
+   */
   async function enviarFormulario(e) {
     e.preventDefault()
 
-    const submitButton = document.getElementById("enviarFormulario")
+    const submitButton = stepperSubmitBtn
     const originalContent = submitButton.innerHTML
 
     try {
-      // Mostrar indicador de carga
       submitButton.disabled = true
       submitButton.innerHTML = `
         <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
@@ -374,27 +572,22 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       `
 
-      // Recopilar datos del formulario
       const formData = new FormData(formularioElegibilidad)
       const datos = Object.fromEntries(formData.entries())
 
-      // Validar campos requeridos
-      if (!validarFormulario(datos)) {
-        submitButton.disabled = false
-        submitButton.innerHTML = originalContent
-        return
-      }
-
-      // Convertir checkboxes a valores numéricos para la base de datos
       if (datos.terminos === "on") datos.terminos = 1
       if (datos.privacidad === "on") datos.privacidad = 1
 
-      // Asegurar que el código de asesoría sea un número
       datos.codigo_asesoria = Number.parseInt(datos.codigo_asesoria)
+
+      if (datos.tiempo_estadia_cantidad && datos.tiempo_estadia_unidad) {
+        datos.tiempo_estadia = `${datos.tiempo_estadia_cantidad} ${datos.tiempo_estadia_unidad}`
+        delete datos.tiempo_estadia_cantidad
+        delete datos.tiempo_estadia_unidad
+      }
 
       console.log("Enviando datos:", datos)
 
-      // Enviar datos al servidor
       const response = await fetch("/formularios/procesar_elegibilidad", {
         method: "POST",
         headers: {
@@ -403,7 +596,6 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify(datos),
       })
 
-      // Verificar si la respuesta es un error
       if (!response.ok) {
         const errorText = await response.text()
         console.error("Error del servidor:", response.status, errorText)
@@ -413,13 +605,25 @@ document.addEventListener("DOMContentLoaded", () => {
       const result = await response.json()
 
       if (result.success) {
-        showNotification("¡Formulario enviado exitosamente! Su información ha sido procesada correctamente.", "success")
-        cerrarModalFormulario()
+        // Mostrar mensaje de éxito y pasar al paso final
+        showStep(4) // Mostrar mensaje de formulario completado
 
-        // Recargar asesorías para actualizar el estado
+        // Ocultar todos los botones del stepper
+        if (stepperPrevBtn) stepperPrevBtn.classList.add("hidden")
+        if (stepperNextBtn) stepperNextBtn.classList.add("hidden")
+        if (stepperSubmitBtn) stepperSubmitBtn.classList.add("hidden")
+
+        showNotification("¡Formulario enviado exitosamente! Su información ha sido procesada correctamente.", "success")
+
+        // Recargar asesorías después de un tiempo
         setTimeout(() => {
           cargarAsesoriasPagadas()
-        }, 1000)
+        }, 3000)
+
+        // Cerrar modal después de mostrar el mensaje
+        setTimeout(() => {
+          cerrarModalFormulario()
+        }, 5000)
       } else {
         showNotification("Error al enviar el formulario: " + result.message, "error")
       }
@@ -427,85 +631,9 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error detallado:", error)
       showNotification(`Error al enviar el formulario: ${error.message}`, "error")
     } finally {
-      // Restaurar botón
       submitButton.disabled = false
       submitButton.innerHTML = originalContent
     }
-  }
-
-  /**
-   * Validar formulario antes del envío
-   */
-  function validarFormulario(datos) {
-    const camposRequeridos = [
-      "motivo_viaje",
-      "numero_documento",
-      "tipo_documento",
-      "pais_residencia",
-      "provincia_destino",
-      "estado_civil",
-      "familiares_canada",
-      "co_deudor",
-      "viajes_recientes",
-      "acompanante_conocido",
-      "antecedente_judiciales",
-      "examenes_medicos",
-      "aplicacion_familiares",
-      "acceso_aplicacion",
-      "biometricos_canada",
-      "pago_tasas",
-      "fecha_nacimiento",
-      "proposito_principal",
-      "empleo_origen",
-      "dependencia_economica",
-      "acompana_familiar",
-    ]
-
-    for (const campo of camposRequeridos) {
-      if (!datos[campo] || datos[campo].trim() === "") {
-        showNotification(`El campo ${campo.replace("_", " ")} es requerido`, "error")
-        return false
-      }
-    }
-
-    // Validar que se aceptaron términos y privacidad
-    if (!datos.terminos) {
-      showNotification("Debe aceptar los términos y condiciones", "error")
-      return false
-    }
-
-    if (!datos.privacidad) {
-      showNotification("Debe aceptar la política de privacidad", "error")
-      return false
-    }
-
-    // Validar relación familiar si tiene familiares en Canadá
-    if (
-      datos.familiares_canada === "Si" &&
-      (!datos.relacion_familiares_can || datos.relacion_familiares_can.trim() === "")
-    ) {
-      showNotification("Debe especificar la relación con familiares en Canadá", "error")
-      return false
-    }
-
-    // Validar fecha de nacimiento
-    if (datos.fecha_nacimiento) {
-      const fechaNac = new Date(datos.fecha_nacimiento)
-      const hoy = new Date()
-      const edad = hoy.getFullYear() - fechaNac.getFullYear()
-
-      if (edad < 18) {
-        showNotification("Debe ser mayor de 18 años para aplicar", "error")
-        return false
-      }
-
-      if (edad > 100) {
-        showNotification("Por favor verifique la fecha de nacimiento", "error")
-        return false
-      }
-    }
-
-    return true
   }
 
   /**
@@ -521,62 +649,81 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Agregar animaciones CSS personalizadas
-  const style = document.createElement("style")
-  style.textContent = `
-    @keyframes fade-in {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
+  // Validaciones de entrada para campos específicos
+  const numeroDocumentoInput = document.getElementById("numeroDocumento")
+  if (numeroDocumentoInput) {
+    numeroDocumentoInput.addEventListener("keydown", (e) => {
+      if (
+        [46, 8, 9, 27, 13].includes(e.keyCode) ||
+        (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) ||
+        (e.keyCode >= 35 && e.keyCode <= 39)
+      ) {
+        return
       }
-      to {
-        opacity: 1;
-        transform: translateY(0);
+      if (["e", "E", "+", "-", "."].includes(e.key)) {
+        e.preventDefault()
       }
-    }
-
-    @keyframes scale-in {
-      from {
-        opacity: 0;
-        transform: scale(0.95);
+      if ((e.shiftKey || e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
+        e.preventDefault()
       }
-      to {
-        opacity: 1;
-        transform: scale(1);
+    })
+
+    numeroDocumentoInput.addEventListener("paste", (e) => {
+      const paste = (e.clipboardData || window.clipboardData).getData("text")
+      if (!/^\d+$/.test(paste)) {
+        e.preventDefault()
       }
-    }
+    })
 
-    .animate-fade-in {
-      animation: fade-in 0.6s ease-out forwards;
-    }
+    numeroDocumentoInput.addEventListener("input", function (e) {
+      this.value = this.value.replace(/\D/g, "")
+    })
+  }
 
-    .animate-scale-in {
-      animation: scale-in 0.3s ease-out forwards;
-    }
+  const propositoPrincipalInput = document.getElementById("propositoPrincipal")
+  if (propositoPrincipalInput) {
+    propositoPrincipalInput.addEventListener("input", function (e) {
+      this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s.,;:¡!¿?()"''-]/g, "")
+    })
+  }
 
-    .delay-100 {
-      animation-delay: 100ms;
-    }
+  const propositoDetalladoInput = document.getElementById("propositoDetallado")
+  if (propositoDetalladoInput) {
+    propositoDetalladoInput.addEventListener("input", function (e) {
+      this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s.,;:¡!¿?()"''-]/g, "")
+    })
+  }
 
-    .delay-200 {
-      animation-delay: 200ms;
-    }
+  const tiempoEstadiaCantidadInput = document.getElementById("tiempoEstadiaCantidad")
+  if (tiempoEstadiaCantidadInput) {
+    tiempoEstadiaCantidadInput.addEventListener("keydown", (e) => {
+      if (
+        [8, 9, 13, 27, 46].includes(e.keyCode) ||
+        (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) ||
+        (e.keyCode >= 35 && e.keyCode <= 39)
+      ) {
+        return
+      }
+      if (["e", "E", "+", "-", "."].includes(e.key)) {
+        e.preventDefault()
+      }
+      if ((e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
+        e.preventDefault()
+      }
+    })
 
-    .delay-300 {
-      animation-delay: 300ms;
-    }
+    tiempoEstadiaCantidadInput.addEventListener("paste", (e) => {
+      const paste = (e.clipboardData || window.clipboardData).getData("text")
+      if (!/^\d+$/.test(paste)) {
+        e.preventDefault()
+      }
+    })
 
-    .delay-400 {
-      animation-delay: 400ms;
-    }
+    tiempoEstadiaCantidadInput.addEventListener("input", function (e) {
+      this.value = this.value.replace(/\D/g, "")
+    })
+  }
 
-    .delay-500 {
-      animation-delay: 500ms;
-    }
-
-    .delay-600 {
-      animation-delay: 600ms;
-    }
-  `
-  document.head.appendChild(style)
+  // Inicializar el stepper
+  resetStepper()
 })
