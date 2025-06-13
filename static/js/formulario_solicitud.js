@@ -136,6 +136,20 @@ document.addEventListener("DOMContentLoaded", () => {
         empleoExtranjeroRadios.forEach(radio => radio.checked = false);
       }
     }
+
+    // Negocios actuales
+    if (e.target.name === "tiene_negocios_actuales") {
+      const descripcionNegociosDiv = document.getElementById("descripcionNegociosDiv")
+      const descripcionNegociosInput = document.getElementById("descripcionNegociosActuales")
+      if (e.target.value === "Si") {
+        descripcionNegociosDiv.style.display = ""
+        descripcionNegociosInput.setAttribute("required", "required")
+      } else {
+        descripcionNegociosDiv.style.display = "none"
+        descripcionNegociosInput.removeAttribute("required")
+        descripcionNegociosInput.value = ""
+      }
+    }
   })
 
   // Cerrar modal al hacer clic fuera de él
@@ -803,6 +817,39 @@ document.addEventListener("DOMContentLoaded", () => {
     nombreCompletoInput.addEventListener("input", function (e) {
       this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s]/g, "")
     })
+  }
+
+  const ingresosMensualesInput = document.getElementById("ingresosMensuales");
+  if (ingresosMensualesInput) {
+    ingresosMensualesInput.addEventListener("input", function (e) {
+      // Eliminar todo lo que no sea número
+      let valor = this.value.replace(/\D/g, "");
+      // Formatear con separador de miles
+      valor = valor.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+      this.value = valor;
+    });
+
+    ingresosMensualesInput.addEventListener("keydown", function (e) {
+      // Permitir: backspace, delete, tab, escape, enter, arrows
+      if (
+        [8, 9, 13, 27, 46].includes(e.keyCode) ||
+        (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) ||
+        (e.keyCode >= 35 && e.keyCode <= 39)
+      ) {
+        return;
+      }
+      // Bloquear todo lo que no sea número
+      if ((e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
+        e.preventDefault();
+      }
+    });
+
+    ingresosMensualesInput.addEventListener("paste", function (e) {
+      const paste = (e.clipboardData || window.clipboardData).getData("text");
+      if (!/^\d+$/.test(paste.replace(/\./g, ""))) {
+        e.preventDefault();
+      }
+    });
   }
 
   // Inicializar el stepper

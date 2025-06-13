@@ -193,6 +193,10 @@ def procesar_formulario_elegibilidad():
             'motivo_no_trabajo': datos.get('motivo_no_trabajo'),
             'tiene_pasaporte': datos.get('tiene_pasaporte'),
             'numero_pasaporte': datos.get('numero_pasaporte'),
+            'tiene_negocios_actuales': datos.get('tiene_negocios_actuales'),
+            'descripcion_negocios_actuales': datos.get('descripcion_negocios_actuales'),
+            'ingresos_mensuales_moneda': datos.get('ingresos_mensuales_moneda'),
+            'ingresos_mensuales': datos.get('ingresos_mensuales').replace('.', '') if datos.get('ingresos_mensuales') else None,
         }
         
         # Imprimir los datos para depuración
@@ -418,5 +422,14 @@ def validar_datos_formulario(datos):
     if datos.get('tiene_pasaporte') == 'Si':
         if not datos.get('numero_pasaporte') or str(datos.get('numero_pasaporte')).strip() == '':
             errores.append('Debe ingresar el número de pasaporte')
+    
+    # Validar negocios actuales
+    if datos.get('tiene_negocios_actuales') == 'Si':
+        if not datos.get('descripcion_negocios_actuales') or str(datos.get('descripcion_negocios_actuales')).strip() == '':
+            errores.append('Debe describir sus negocios actuales')
+    
+    # Validar ingresos mensuales y moneda
+    if not datos.get('ingresos_mensuales_moneda') or not datos.get('ingresos_mensuales'):
+        errores.append('Debe ingresar sus ingresos mensuales y la moneda')
     
     return errores

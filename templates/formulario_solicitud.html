@@ -53,7 +53,7 @@
                             </div>
                         </div>
 
-                        <div class="stepper-connector ml-5 w-1.5 h-8 bg-gray-200 rounded-full"></div>
+                        <div class="stepper-connector ml-5 w-1.5 h-12 bg-gray-200 rounded-full"></div>
 
                         <!-- Paso 2 -->
                         <div class="stepper-step flex items-center transition-all duration-300">
@@ -66,7 +66,7 @@
                             </div>
                         </div>
 
-                        <div class="stepper-connector ml-5 w-1.5 h-8 bg-gray-200 rounded-full"></div>
+                        <div class="stepper-connector ml-5 w-1.5 h-12 bg-gray-200 rounded-full"></div>
 
                         <!-- Paso 3 -->
                         <div class="stepper-step flex items-center transition-all duration-300">
@@ -79,7 +79,7 @@
                             </div>
                         </div>
 
-                        <div class="stepper-connector ml-5 w-1.5 h-8 bg-gray-200 rounded-full"></div>
+                        <div class="stepper-connector ml-5 w-1.5 h-12 bg-gray-200 rounded-full"></div>
 
                         <!-- Paso 4 -->
                         <div class="stepper-step flex items-center transition-all duration-300">
@@ -404,17 +404,34 @@
                                     </div>
 
                                     <div>
-                                        <label for="negociosActuales" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Negocios Actuales
+                                       <label class="block text-sm font-medium text-gray-700 mb-3">
+                                            ¿Tiene negocios actuales? <span class="text-red-500">*</span>
                                         </label>
-                                        <input type="text" id="negociosActuales" name="negocios_actuales"
+                                        <div class="flex space-x-6">
+                                            <label class="flex items-center cursor-pointer">
+                                                <input type="radio" name="tiene_negocios_actuales" value="Si" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                                <span class="text-sm text-gray-700">Sí</span>
+                                            </label>
+                                            <label class="flex items-center cursor-pointer">
+                                                <input type="radio" name="tiene_negocios_actuales" value="No" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                                <span class="text-sm text-gray-700">No</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Descripción de negocios actuales -->
+                                    <div id="descripcionNegociosDiv" style="display:none;">
+                                        <label for="descripcionNegociosActuales" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Describa sus negocios actuales <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="text" id="descripcionNegociosActuales" name="descripcion_negocios_actuales"
                                                class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
                                                placeholder="Descripción de sus negocios">
                                     </div>
 
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-3">
-                                            ¿Tiene dependencia económica? *
+                                            ¿Tiene dependencia económica? <span class="text-red-500">*</span>
                                         </label>
                                         <div class="flex space-x-6">
                                             <label class="flex items-center cursor-pointer">
@@ -427,6 +444,24 @@
                                             </label>
                                         </div>
                                     </div>
+                                    <div>
+                                        <label for="ingresosMensuales" class="block text-sm font-medium text-gray-700 mb-2">
+                                            ¿Cuáles son sus ingresos mensuales? <span class="text-red-500">*</span>
+                                        </label>
+                                        <div class="flex items-center space-x-2">
+                                            <select id="ingresosMensualesMoneda" name="ingresos_mensuales_moneda" required
+                                                class="py-3 px-2 border border-gray-200 bg-white rounded-l-xl text-sm focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm">
+                                                <option value="COP">COP</option>
+                                                <option value="USD">USD</option>
+                                                <option value="EUR">EUR</option>
+                                                <option value="CAD">CAD</option>
+                                                <option value="GBP">GBP</option>
+                                            </select>
+                                            <input type="text" id="ingresosMensuales" name="ingresos_mensuales" required
+                                                class="flex-1 py-3 px-4 border-t border-b border-r border-l border-gray-200 bg-white rounded-r-xl text-sm focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm text-right"
+                                                placeholder="0">
+                                        </div>
+                                    </div>                                        
                                 </div>
                             </div>
 
