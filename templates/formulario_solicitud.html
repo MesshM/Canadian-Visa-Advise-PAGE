@@ -109,7 +109,8 @@
             <!-- Contenido del stepper en el lado derecho -->
             <div class="md:col-span-3 overflow-hidden">
                 <form id="formularioElegibilidad" class="stepper-content-container space-y-6">
-                    <input type="hidden" id="codigoAsesoria" name="codigo_asesoria">
+                    <input type="hidden" name="codigo_asesoria" id="codigoAsesoria" data-id_solicitante="{{ id_solicitante }}">
+                    <input type="hidden" name="id_solicitante" id="idSolicitante" value="{{ id_solicitante }}">
                     <!-- Paso 1: Información Personal Básica y del Viaje -->
                     <div class="stepper-content">
                         <div class="bg-gradient-to-r from-primary-50 to-white p-4 rounded-xl border-l-4 border-primary-500 mb-5 animate-fade-in">

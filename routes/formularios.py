@@ -13,7 +13,22 @@ formulario_bp = Blueprint('formularios', __name__)
 def formularios():
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
-    return render_template('formulario_solicitud.html')  # Usa la plantilla que corresponda
+    # Obtén el id_solicitante del usuario actual (ajusta según tu lógica)
+    connection = create_connection()
+    cursor = connection.cursor(dictionary=True)
+    user_id = session.get('user_id')
+    cursor.execute("""
+        SELECT s.id_solicitante
+        FROM tbl_solicitante s
+        INNER JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+        WHERE u.id_usuario = %s
+        ORDER BY s.id_solicitante DESC LIMIT 1
+    """, (user_id,))
+    row = cursor.fetchone()
+    id_solicitante = row['id_solicitante'] if row else None
+    cursor.close()
+    connection.close()
+    return render_template('formulario_solicitud.html', id_solicitante=id_solicitante)
 
 @formulario_bp.route('/asesorias_pagadas')
 @role_required('Usuario')

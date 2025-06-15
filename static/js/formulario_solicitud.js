@@ -668,6 +668,26 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    // Validación de documentos en el paso de documentos
+    if (currentStep === 3) {
+      const tipoVisa = document.getElementById("motivoViaje").value;
+      const docs = documentosPorVisa[tipoVisa] || [];
+      for (const doc of docs) {
+        const estado = document.getElementById(`${doc.name}_estado`).value;
+        if (!estado) {
+          showNotification(`Debe seleccionar una opción para: ${doc.label}`, "error");
+          return false;
+        }
+        if (estado === "Disponible") {
+          const urlInput = document.getElementById(doc.name);
+          if (!urlInput || !urlInput.value) {
+            showNotification(`Debe subir el archivo para: ${doc.label}`, "error");
+            return false;
+          }
+        }
+      }
+    }
+
     return true
   }
   /**
@@ -1060,62 +1080,61 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Función mejorada para subir a Cloudinary
   window.subirDocumentoCloudinary = async (docId) => {
-    const fileInput = document.getElementById(`${docId}_file`)
-    const uploadedSpan = document.getElementById(`${docId}_uploaded`)
+    const fileInput = document.getElementById(`${docId}_file`);
+    const uploadedSpan = document.getElementById(`${docId}_uploaded`);
+    const form = document.getElementById("formularioElegibilidad");
+    const idSolicitante = form.querySelector('[name="codigo_asesoria"]').dataset.id_solicitante; // Debes pasar este dato al form
+    const idAsesoria = form.querySelector('[name="codigo_asesoria"]').value;
 
     if (!fileInput.files.length) {
-      showNotification("Seleccione un archivo para subir.", "error")
-      return
+      showNotification("Seleccione un archivo para subir.", "error");
+      return;
     }
 
-    const file = fileInput.files[0]
-
-    // Validar tamaño del archivo (10MB máximo)
+    const file = fileInput.files[0];
     if (file.size > 10 * 1024 * 1024) {
-      showNotification("El archivo es demasiado grande. Máximo 10MB permitido.", "error")
-      return
+      showNotification("El archivo es demasiado grande. Máximo 10MB permitido.", "error");
+      return;
     }
 
-    const formData = new FormData()
-    formData.append("file", file)
-    formData.append("upload_preset", "YOUR_CLOUDINARY_UPLOAD_PRESET") // Cambia por tu preset
+    // Construir nombre personalizado
+    const ext = file.name.split('.').pop();
+    const nombreCloud = `${docId}_${idSolicitante}_${idAsesoria}.${ext}`;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "ml_default");
+    formData.append("public_id", nombreCloud);
 
     try {
-      uploadedSpan.innerHTML = `
-        <div class="flex items-center justify-center text-blue-600">
-          <svg class="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          Subiendo archivo...
-        </div>
-      `
-
-      const res = await fetch("https://api.cloudinary.com/v1_1/YOUR_CLOUDINARY_CLOUD_NAME/auto/upload", {
+      uploadedSpan.innerHTML = `<div class="flex items-center justify-center text-blue-600">Subiendo archivo...</div>`;
+      const res = await fetch("https://api.cloudinary.com/v1_1/de7443iby/auto/upload", {
         method: "POST",
         body: formData,
-      })
-
-      const data = await res.json()
+      });
+      const data = await res.json();
 
       if (data.secure_url) {
-        uploadedSpan.innerHTML = `
-          <div class="flex items-center justify-center text-green-600">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-            ¡Documento subido exitosamente!
-          </div>
-        `
-        uploadedSpan.dataset.url = data.secure_url
-        showNotification("Documento subido correctamente.", "success")
+        uploadedSpan.innerHTML = `<div class="flex items-center justify-center text-green-600">¡Documento subido exitosamente!</div>`;
+        uploadedSpan.dataset.url = data.secure_url;
+        // Guardar la URL en un input oculto para el backend
+        let urlInput = document.getElementById(docId);
+        if (!urlInput) {
+          urlInput = document.createElement("input");
+          urlInput.type = "hidden";
+          urlInput.name = docId;
+          urlInput.id = docId;
+          form.appendChild(urlInput);
+        }
+        urlInput.value = data.secure_url;
+        showNotification("Documento subido correctamente.", "success");
       } else {
-        uploadedSpan.innerHTML = ""
-        showNotification("Error al subir el documento.", "error")
+        uploadedSpan.innerHTML = "";
+        showNotification("Error al subir el documento.", "error");
       }
     } catch (err) {
-      uploadedSpan.innerHTML = ""
-      showNotification("Error de conexión al subir el documento.", "error")
+      uploadedSpan.innerHTML = "";
+      showNotification("Error de conexión al subir el documento.", "error");
     }
   }
 
