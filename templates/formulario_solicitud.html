@@ -238,7 +238,6 @@
                                             <option value="Estudio">Estudio</option>
                                             <option value="Negocios">Negocios</option>
                                             <option value="Visita Familiar">Visita Familiar</option>
-                                            <option value="Otro">Otro</option>
                                         </select>
                                     </div>
 
@@ -359,7 +358,7 @@
                                     <!-- Trabajo Actual en país de origen -->
                                     <div id="trabajoActualDiv" style="display:none;">
                                       <label for="trabajoActual" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Trabajo Actual *
+                                        Trabajo Actual <span class="text-red-500">*</span>
                                       </label>
                                       <input type="text" id="trabajoActual" name="trabajo_actual"
                                              class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
@@ -477,7 +476,7 @@
                                 <div class="space-y-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-3">
-                                            ¿Tiene familiares en Canadá? *
+                                            ¿Tiene familiar/es en Canadá? <span class="text-red-500">*</span>
                                         </label>
                                         <div class="flex space-x-6">
                                             <label class="flex items-center cursor-pointer">
@@ -493,57 +492,31 @@
 
                                     <div id="relacionFamiliaresDiv" class="hidden">
                                         <label for="relacionFamiliares" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Relación con familiares en Canadá
+                                            Relación con familiar/es en Canadá <span class="text-red-500">*</span>
                                         </label>
                                         <input type="text" id="relacionFamiliares" name="relacion_familiares_can"
                                                class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
                                                placeholder="Especifique la relación">
                                     </div>
-
-                                    <div>
+                                    <!-- Pregunta: ¿Puede comprobar su relación? -->
+                                    <div id="puedeComprobarRelacionDiv" class="hidden">
                                         <label class="block text-sm font-medium text-gray-700 mb-3">
-                                            ¿Algún familiar vive en Canadá?
+                                            ¿Puede comprobar su relación? <span class="text-red-500">*</span>
                                         </label>
                                         <div class="flex space-x-6">
                                             <label class="flex items-center cursor-pointer">
-                                                <input type="radio" name="familiar_canada" value="Si" class="mr-2 text-primary-600 focus:ring-primary-500">
+                                                <input type="radio" name="puede_comprobar_relacion" value="Si" class="mr-2 text-primary-600 focus:ring-primary-500">
                                                 <span class="text-sm text-gray-700">Sí</span>
                                             </label>
                                             <label class="flex items-center cursor-pointer">
-                                                <input type="radio" name="familiar_canada" value="No" class="mr-2 text-primary-600 focus:ring-primary-500">
+                                                <input type="radio" name="puede_comprobar_relacion" value="No" class="mr-2 text-primary-600 focus:ring-primary-500">
                                                 <span class="text-sm text-gray-700">No</span>
                                             </label>
                                         </div>
                                     </div>
-
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-3">
-                                            ¿Algún familiar es residente permanente de Canadá?
-                                        </label>
-                                        <div class="flex space-x-6">
-                                            <label class="flex items-center cursor-pointer">
-                                                <input type="radio" name="residente_permanente" value="Si" class="mr-2 text-primary-600 focus:ring-primary-500">
-                                                <span class="text-sm text-gray-700">Sí</span>
-                                            </label>
-                                            <label class="flex items-center cursor-pointer">
-                                                <input type="radio" name="residente_permanente" value="No" class="mr-2 text-primary-600 focus:ring-primary-500">
-                                                <span class="text-sm text-gray-700">No</span>
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label for="relacionFamiliar" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Relación Familiar Específica
-                                        </label>
-                                        <input type="text" id="relacionFamiliar" name="relacion_familiar"
-                                               class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
-                                               placeholder="Ej: Hermano, Primo, Tío">
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-3">
-                                            ¿Viajará acompañado de algún familiar? *
+                                            ¿Viajará acompañado de algún familiar/es? <span class="text-red-500">*</span>
                                         </label>
                                         <div class="flex space-x-6">
                                             <label class="flex items-center cursor-pointer">
@@ -552,6 +525,29 @@
                                             </label>
                                             <label class="flex items-center cursor-pointer">
                                                 <input type="radio" name="acompana_familiar" value="No" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                                <span class="text-sm text-gray-700">No</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div id="relacionAcompanaFamiliarDiv" class="hidden">
+                                        <label for="relacionAcompanaFamiliar" class="block text-sm font-medium text-gray-700 mb-2">
+                                            ¿Relación con familiar/es? <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="text" id="relacionAcompanaFamiliar" name="relacion_acompana_familiar"
+                                               class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text"
+                                               placeholder="Especifique la relación">
+                                    </div>
+                                    <div>
+                                       <label class="block text-sm font-medium text-gray-700 mb-3">
+                                            ¿Viajara con algún conocido/s? <span class="text-red-500">*</span>
+                                        </label>
+                                        <div class="flex space-x-6">
+                                            <label class="flex items-center cursor-pointer">
+                                                <input type="radio" name="viaja_conocido" value="Si" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                                <span class="text-sm text-gray-700">Sí</span>
+                                            </label>
+                                            <label class="flex items-center cursor-pointer">
+                                                <input type="radio" name="viaja_conocido" value="No" required class="mr-2 text-primary-600 focus:ring-primary-500">
                                                 <span class="text-sm text-gray-700">No</span>
                                             </label>
                                         </div>
@@ -577,7 +573,7 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-3">
-                                        ¿Tiene co-deudor? *
+                                        ¿Tiene respaldo económico de un familiar o patrocinador? <span class="text-red-500">*</span>
                                     </label>
                                     <div class="flex space-x-6">
                                         <label class="flex items-center cursor-pointer">
@@ -593,7 +589,7 @@
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-3">
-                                        ¿Ha realizado viajes recientes? *
+                                        ¿Ha realizado viajes recientes? <span class="text-red-500">*</span>
                                     </label>
                                     <div class="flex space-x-6">
                                         <label class="flex items-center cursor-pointer">
@@ -609,23 +605,7 @@
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-3">
-                                        ¿Viajará con acompañante conocido? *
-                                    </label>
-                                    <div class="flex space-x-6">
-                                        <label class="flex items-center cursor-pointer">
-                                            <input type="radio" name="acompanante_conocido" value="Si" required class="mr-2 text-primary-600 focus:ring-primary-500">
-                                            <span class="text-sm text-gray-700">Sí</span>
-                                        </label>
-                                        <label class="flex items-center cursor-pointer">
-                                            <input type="radio" name="acompanante_conocido" value="No" required class="mr-2 text-primary-600 focus:ring-primary-500">
-                                            <span class="text-sm text-gray-700">No</span>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-3">
-                                        ¿Tiene antecedentes judiciales? *
+                                        ¿Ha sido arrestado, acusado o condenado judicialmente? <span class="text-red-500">*</span>
                                     </label>
                                     <div class="flex space-x-6">
                                         <label class="flex items-center cursor-pointer">
@@ -641,7 +621,7 @@
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-3">
-                                        ¿Ha realizado exámenes médicos? *
+                                        ¿Ha realizado exámenes médicos? <span class="text-red-500">*</span>
                                     </label>
                                     <div class="flex space-x-6">
                                         <label class="flex items-center cursor-pointer">
@@ -657,7 +637,7 @@
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-3">
-                                        ¿Algún familiar ha aplicado anteriormente? *
+                                        ¿Algún familiar ha aplicado anteriormente? <span class="text-red-500">*</span>
                                     </label>
                                     <div class="flex space-x-6">
                                         <label class="flex items-center cursor-pointer">
@@ -673,23 +653,7 @@
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-3">
-                                        ¿Tiene acceso a la aplicación online? *
-                                    </label>
-                                    <div class="flex space-x-6">
-                                        <label class="flex items-center cursor-pointer">
-                                            <input type="radio" name="acceso_aplicacion" value="Si" required class="mr-2 text-primary-600 focus:ring-primary-500">
-                                            <span class="text-sm text-gray-700">Sí</span>
-                                        </label>
-                                        <label class="flex items-center cursor-pointer">
-                                            <input type="radio" name="acceso_aplicacion" value="No" required class="mr-2 text-primary-600 focus:ring-primary-500">
-                                            <span class="text-sm text-gray-700">No</span>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-3">
-                                        ¿Ha proporcionado biométricos para Canadá? *
+                                        ¿Ha proporcionado biométricos para Canadá? <span class="text-red-500">*</span>
                                     </label>
                                     <div class="flex space-x-6">
                                         <label class="flex items-center cursor-pointer">
@@ -705,7 +669,7 @@
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-3">
-                                        ¿Está dispuesto a pagar las tasas gubernamentales? *
+                                        ¿Está dispuesto a pagar las tasas gubernamentales? <span class="text-red-500">*</span>
                                     </label>
                                     <div class="flex space-x-6">
                                         <label class="flex items-center cursor-pointer">
@@ -718,11 +682,112 @@
                                         </label>
                                     </div>
                                 </div>
+                                <!-- ¿Posee ahorros o ingresos suficientes...? -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                                        ¿Posee ahorros o ingresos suficientes para cubrir el costo de su estadía en Canadá? <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="flex space-x-6">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="posee_ahorros" value="Si" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                            <span class="text-sm text-gray-700">Sí</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="posee_ahorros" value="No" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                            <span class="text-sm text-gray-700">No</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- ¿Tiene estudios actualmente en curso o planificados en Colombia? -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                                        ¿Tiene estudios actualmente en curso o planificados en Colombia? <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="flex space-x-6">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="estudios_en_curso" value="Si" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                            <span class="text-sm text-gray-700">Sí</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="estudios_en_curso" value="No" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                            <span class="text-sm text-gray-700">No</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- ¿Ha sido rechazado o declarado inadmisible para entrar a Canadá anteriormente? -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                                        ¿Ha sido rechazado o declarado inadmisible para entrar a Canadá anteriormente? <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="flex space-x-6">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="rechazado_canada" value="Si" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                            <span class="text-sm text-gray-700">Sí</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="rechazado_canada" value="No" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                            <span class="text-sm text-gray-700">No</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- ¿Habla inglés o francés (aunque sea a nivel básico)? -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                                        ¿Habla inglés o francés (aunque sea a nivel básico)? <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="flex space-x-6">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="habla_idioma_oficial" value="Si" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                            <span class="text-sm text-gray-700">Sí</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="habla_idioma_oficial" value="No" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                            <span class="text-sm text-gray-700">No</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- ¿Ha aplicado antes a algún programa migratorio canadiense...? -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                                        ¿Ha aplicado antes a algún programa migratorio canadiense (Express Entry, PNP, super visa, etc.)? <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="flex space-x-6">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="aplicado_programa_migratorio" value="Si" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                            <span class="text-sm text-gray-700">Sí</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="aplicado_programa_migratorio" value="No" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                            <span class="text-sm text-gray-700">No</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- ¿Tiene intención de extender su estadía, cambiar estatus migratorio o buscar residencia permanente eventualmente? -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                                        ¿Tiene intención de extender su estadía, cambiar estatus migratorio o buscar residencia permanente eventualmente? <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="flex space-x-6">
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="intencion_extender_estadia" value="Si" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                            <span class="text-sm text-gray-700">Sí</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer">
+                                            <input type="radio" name="intencion_extender_estadia" value="No" required class="mr-2 text-primary-600 focus:ring-primary-500">
+                                            <span class="text-sm text-gray-700">No</span>
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Paso 4: Documentos y Términos -->
+                    <!-- Paso 4: Documentos y Términos - REORGANIZADO -->
                     <div class="stepper-content hidden">
                         <div class="bg-gradient-to-r from-primary-50 to-white p-4 rounded-xl border-l-4 border-primary-500 mb-5 animate-fade-in">
                             <h3 class="text-base font-medium text-primary-800 flex items-center">
@@ -731,93 +796,57 @@
                                 </svg>
                                 Documentos y Términos
                             </h3>
-                            <p class="text-sm text-gray-600">Documentos disponibles y aceptación de términos</p>
+                            <p class="text-sm text-gray-600">Adjunte los documentos requeridos según el tipo de visa seleccionada</p>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <!-- Documentos Disponibles -->
-                            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-                                <h4 class="text-sm font-medium text-gray-800 mb-4 flex items-center">
-                                    <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                    Documentos Disponibles
-                                </h4>
-                                <div class="grid grid-cols-1 gap-4">
-                                    <div>
-                                        <label for="docHistorialViajes" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Historial de Viajes
-                                        </label>
-                                        <select id="docHistorialViajes" name="doc_historial_viajes"
-                                                class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
-                                            <option value="">Seleccione</option>
-                                            <option value="Disponible">Disponible</option>
-                                            <option value="No disponible">No disponible</option>
-                                            <option value="En proceso">En proceso</option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label for="docRecursosFinancieros" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Recursos Financieros
-                                        </label>
-                                        <select id="docRecursosFinancieros" name="doc_recursos_financieros"
-                                                class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
-                                            <option value="">Seleccione</option>
-                                            <option value="Disponible">Disponible</option>
-                                            <option value="No disponible">No disponible</option>
-                                            <option value="En proceso">En proceso</option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label for="docRelacionesFamiliares" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Relaciones Familiares
-                                        </label>
-                                        <select id="docRelacionesFamiliares" name="doc_relaciones_familiares"
-                                                class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
-                                            <option value="">Seleccione</option>
-                                            <option value="Disponible">Disponible</option>
-                                            <option value="No disponible">No disponible</option>
-                                            <option value="En proceso">En proceso</option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label for="docHojaVida" class="block text-sm font-medium text-gray-700 mb-2">
-                                            Hoja de Vida
-                                        </label>
-                                        <select id="docHojaVida" name="doc_hoja_vida"
-                                                class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
-                                            <option value="">Seleccione</option>
-                                            <option value="Disponible">Disponible</option>
-                                            <option value="No disponible">No disponible</option>
-                                            <option value="En proceso">En proceso</option>
-                                        </select>
+                        <div class="space-y-6">
+                            <!-- Card de Documentos Disponibles - MEJORADA CON GRID DE 2 COLUMNAS -->
+                            <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+                                <div class="p-5 border-b border-gray-100">
+                                    <h4 class="text-sm font-medium text-gray-800 mb-2 flex items-center">
+                                        <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        Documentos Disponibles
+                                    </h4>
+                                    <p class="text-xs text-gray-500">Los documentos requeridos se mostrarán según el tipo de visa seleccionado</p>
+                                </div>
+                                <div class="p-5">
+                                    <!-- Contenedor con grid de 2 columnas para documentos -->
+                                    <div id="documentosDinamicos" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                        <!-- Los documentos se cargarán dinámicamente aquí -->
+                                        <div class="col-span-full text-center py-8 text-gray-500">
+                                            <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                            <p class="text-sm">Seleccione un motivo de viaje en el Paso 1 para ver los documentos requeridos</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Términos y Condiciones -->
-                            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-                                <h4 class="text-sm font-medium text-gray-800 mb-4 flex items-center">
-                                    <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.414-4.414a2 2 0 010 2.828L10.414 21a2 2 0 01-2.828 0L3.172 16.586a2 2 0 010-2.828L7.586 9.172a2 2 0 012.828 0L14 12.586a2 2 0 002.828 0l2.586-2.586a2 2 0 000-2.828z"></path>
-                                    </svg>
-                                    Términos y Condiciones
-                                </h4>
-                                <div class="space-y-4">
-                                    <div class="flex items-start p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                            <!-- Card de Términos y Condiciones - SEPARADA ABAJO -->
+                            <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+                                <div class="p-5 border-b border-gray-100">
+                                    <h4 class="text-sm font-medium text-gray-800 mb-2 flex items-center">
+                                        <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.414-4.414a2 2 0 010 2.828L10.414 21a2 2 0 01-2.828 0L3.172 16.586a2 2 0 010-2.828L7.586 9.172a2 2 0 012.828 0L14 12.586a2 2 0 002.828 0l2.586-2.586a2 2 0 000-2.828z"></path>
+                                        </svg>
+                                        Términos y Condiciones
+                                    </h4>
+                                    <p class="text-xs text-gray-500">Aceptación de términos requerida para continuar</p>
+                                </div>
+                                <div class="p-5 space-y-4">
+                                    <div class="flex items-start p-4 bg-gray-50 rounded-xl border border-gray-200">
                                         <input type="checkbox" id="terminos" name="terminos" required class="mt-1 mr-3 text-primary-600 focus:ring-primary-500 rounded">
                                         <label for="terminos" class="text-sm text-gray-700 cursor-pointer">
-                                            <span class="font-medium text-gray-900">Acepto los términos y condiciones</span> del servicio de asesoría CVA. He leído y entiendo que la información proporcionada será utilizada para evaluar mi elegibilidad para visa canadiense. *
+                                            <span class="font-medium text-gray-900">Acepto los términos y condiciones</span> del servicio de asesoría CVA. He leído y entiendo que la información proporcionada será utilizada para evaluar mi elegibilidad para visa canadiense. <span class="text-red-500">*</span>
                                         </label>
                                     </div>
-
-                                    <div class="flex items-start p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                                    <div class="flex items-start p-4 bg-gray-50 rounded-xl border border-gray-200">
                                         <input type="checkbox" id="privacidad" name="privacidad" required class="mt-1 mr-3 text-primary-600 focus:ring-primary-500 rounded">
                                         <label for="privacidad" class="text-sm text-gray-700 cursor-pointer">
-                                            <span class="font-medium text-gray-900">Acepto la política de privacidad</span> y autorizo el tratamiento de mis datos personales conforme a la ley de protección de datos vigente. *
+                                            <span class="font-medium text-gray-900">Acepto la política de privacidad</span> y autorizo el tratamiento de mis datos personales conforme a la ley de protección de datos vigente. <span class="text-red-500">*</span>
                                         </label>
                                     </div>
                                 </div>

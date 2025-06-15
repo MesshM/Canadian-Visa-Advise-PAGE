@@ -49,6 +49,22 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    // Mostrar "¿Puede comprobar su relación?" solo si tiene familiares en Canadá
+    if (e.target.name === "familiares_canada") {
+      const comprobarDiv = document.getElementById("puedeComprobarRelacionDiv")
+      const comprobarRadios = document.getElementsByName("puede_comprobar_relacion")
+      if (e.target.value === "Si") {
+        comprobarDiv.classList.remove("hidden")
+        comprobarRadios.forEach((radio) => radio.setAttribute("required", "required"))
+      } else {
+        comprobarDiv.classList.add("hidden")
+        comprobarRadios.forEach((radio) => {
+          radio.removeAttribute("required")
+          radio.checked = false
+        })
+      }
+    }
+
     // Empleo en país de origen
     if (e.target.name === "empleo_origen") {
       const trabajoActualDiv = document.getElementById("trabajoActualDiv")
@@ -127,13 +143,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Empleo en país de origen
     if (e.target.name === "empleo_origen") {
-      const empleoExtranjeroRadios = document.getElementsByName("empleo_extranjero");
+      const empleoExtranjeroRadios = document.getElementsByName("empleo_extranjero")
       if (e.target.value === "No") {
-        empleoExtranjeroRadios.forEach(radio => radio.setAttribute("required", "required"));
+        empleoExtranjeroRadios.forEach((radio) => radio.setAttribute("required", "required"))
       } else {
-        empleoExtranjeroRadios.forEach(radio => radio.removeAttribute("required"));
+        empleoExtranjeroRadios.forEach((radio) => radio.removeAttribute("required"))
         // Limpiar selección si cambia a "Sí"
-        empleoExtranjeroRadios.forEach(radio => radio.checked = false);
+        empleoExtranjeroRadios.forEach((radio) => (radio.checked = false))
       }
     }
 
@@ -148,6 +164,20 @@ document.addEventListener("DOMContentLoaded", () => {
         descripcionNegociosDiv.style.display = "none"
         descripcionNegociosInput.removeAttribute("required")
         descripcionNegociosInput.value = ""
+      }
+    }
+
+    // Mostrar campo de relación solo si acompaña familiar
+    if (e.target.name === "acompana_familiar") {
+      const relacionDiv = document.getElementById("relacionAcompanaFamiliarDiv")
+      const relacionInput = document.getElementById("relacionAcompanaFamiliar")
+      if (e.target.value === "Si") {
+        relacionDiv.classList.remove("hidden")
+        relacionInput.setAttribute("required", "required")
+      } else {
+        relacionDiv.classList.add("hidden")
+        relacionInput.removeAttribute("required")
+        relacionInput.value = ""
       }
     }
   })
@@ -640,6 +670,454 @@ document.addEventListener("DOMContentLoaded", () => {
 
     return true
   }
+  /**
+   * Mostrar/ocultar spinner de carga
+   */
+  function mostrarSpinner(mostrar) {
+    if (mostrar) {
+      loadingSpinner.classList.remove("hidden")
+      asesoriasContainer.classList.add("hidden")
+    } else {
+      loadingSpinner.classList.add("hidden")
+      asesoriasContainer.classList.remove("hidden")
+    }
+  }
+
+  // Validaciones de entrada para campos específicos
+  const numeroDocumentoInput = document.getElementById("numeroDocumento")
+  if (numeroDocumentoInput) {
+    numeroDocumentoInput.addEventListener("keydown", (e) => {
+      if (
+        [46, 8, 9, 27, 13].includes(e.keyCode) ||
+        (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) ||
+        (e.keyCode >= 35 && e.keyCode <= 39)
+      ) {
+        return
+      }
+      if (["e", "E", "+", "-", "."].includes(e.key)) {
+        e.preventDefault()
+      }
+      if ((e.shiftKey || e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
+        e.preventDefault()
+      }
+    })
+
+    numeroDocumentoInput.addEventListener("paste", (e) => {
+      const paste = (e.clipboardData || window.clipboardData).getData("text")
+      if (!/^\d+$/.test(paste)) {
+        e.preventDefault()
+      }
+    })
+
+    numeroDocumentoInput.addEventListener("input", function (e) {
+      this.value = this.value.replace(/\D/g, "")
+    })
+  }
+
+  const propositoPrincipalInput = document.getElementById("propositoPrincipal")
+  if (propositoPrincipalInput) {
+    propositoPrincipalInput.addEventListener("input", function (e) {
+      this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s.,;:¡!¿?()"''-]/g, "")
+    })
+  }
+
+  const propositoDetalladoInput = document.getElementById("propositoDetallado")
+  if (propositoDetalladoInput) {
+    propositoDetalladoInput.addEventListener("input", function (e) {
+      this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s.,;:¡!¿?()"''-]/g, "")
+    })
+  }
+
+  const relacionFamiliaresInput = document.getElementById("relacionFamiliares")
+  if (relacionFamiliaresInput) {
+    relacionFamiliaresInput.addEventListener("input", function (e) {
+      this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s.,;:¡!¿?()"''-]/g, "")
+    })
+  }
+
+  const tiempoEstadiaCantidadInput = document.getElementById("tiempoEstadiaCantidad")
+  if (tiempoEstadiaCantidadInput) {
+    tiempoEstadiaCantidadInput.addEventListener("keydown", (e) => {
+      if (
+        [8, 9, 13, 27, 46].includes(e.keyCode) ||
+        (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) ||
+        (e.keyCode >= 35 && e.keyCode <= 39)
+      ) {
+        return
+      }
+      if (["e", "E", "+", "-", "."].includes(e.key)) {
+        e.preventDefault()
+      }
+      if ((e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
+        e.preventDefault()
+      }
+    })
+
+    tiempoEstadiaCantidadInput.addEventListener("paste", (e) => {
+      const paste = (e.clipboardData || window.clipboardData).getData("text")
+      if (!/^\d+$/.test(paste)) {
+        e.preventDefault()
+      }
+    })
+
+    tiempoEstadiaCantidadInput.addEventListener("input", function (e) {
+      this.value = this.value.replace(/\D/g, "")
+    })
+  }
+
+  const nombreCompletoInput = document.getElementById("nombreCompleto")
+  if (nombreCompletoInput) {
+    nombreCompletoInput.addEventListener("input", function (e) {
+      this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s]/g, "")
+    })
+  }
+
+  const ingresosMensualesInput = document.getElementById("ingresosMensuales")
+  if (ingresosMensualesInput) {
+    ingresosMensualesInput.addEventListener("input", function (e) {
+      // Eliminar todo lo que no sea número
+      let valor = this.value.replace(/\D/g, "")
+      // Formatear con separador de miles
+      valor = valor.replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+      this.value = valor
+    })
+
+    ingresosMensualesInput.addEventListener("keydown", (e) => {
+      // Permitir: backspace, delete, tab, escape, enter, arrows
+      if (
+        [8, 9, 13, 27, 46].includes(e.keyCode) ||
+        (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) ||
+        (e.keyCode >= 35 && e.keyCode <= 39)
+      ) {
+        return
+      }
+      // Bloquear todo lo que no sea número
+      if ((e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
+        e.preventDefault()
+      }
+    })
+
+    ingresosMensualesInput.addEventListener("paste", (e) => {
+      const paste = (e.clipboardData || window.clipboardData).getData("text")
+      if (!/^\d+$/.test(paste.replace(/\./g, ""))) {
+        e.preventDefault()
+      }
+    })
+  }
+
+  // Inicializar el stepper
+  resetStepper()
+
+  // Validación solo letras y signos de puntuación
+  const relacionAcompanaFamiliarInput = document.getElementById("relacionAcompanaFamiliar")
+  if (relacionAcompanaFamiliarInput) {
+    relacionAcompanaFamiliarInput.addEventListener("input", function () {
+      this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s.,;:¡!¿?()"'-]/g, "")
+    })
+  }
+  // Validación solo letras y signos de puntuación
+  const descripcionNegociosActualesInput = document.getElementById("descripcionNegociosActuales")
+  if (descripcionNegociosActualesInput) {
+    descripcionNegociosActualesInput.addEventListener("input", function () {
+      this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s.,;:¡!¿?()"'-]/g, "")
+    })
+  }
+
+  // Definición de documentos por tipo de visa - MEJORADA PARA GRID DE 2 COLUMNAS
+  const documentosPorVisa = {
+    Turismo: [
+      { label: "Itinerario de viaje", name: "doc_itinerario_viaje", required: true },
+      { label: "Carta de motivación o carta de intención", name: "doc_carta_motivacion", required: true },
+      { label: "Carta laboral o de estudio", name: "doc_carta_laboral", required: true },
+      { label: "Certificados de propiedad", name: "doc_certificados_propiedad", required: false },
+      { label: "Declaraciones de renta o extractos bancarios", name: "doc_extractos_bancarios", required: true },
+      { label: "Carta de invitación (si aplica)", name: "doc_carta_invitacion", required: false },
+    ],
+    Trabajo: [
+      { label: "Oferta laboral firmada (Job Offer Letter)", name: "doc_oferta_laboral", required: true },
+      { label: "LMIA o exención", name: "doc_lmia", required: true },
+      { label: "Contrato laboral", name: "doc_contrato_laboral", required: true },
+      { label: "Certificados de experiencia laboral previa", name: "doc_certificados_experiencia", required: true },
+      { label: "Hoja de vida actualizada", name: "doc_hoja_vida", required: true },
+      { label: "Diplomas o certificados relacionados al cargo", name: "doc_diplomas", required: true },
+      { label: "Examen médico (si aplica)", name: "doc_examen_medico", required: false },
+      { label: "Carta de motivación", name: "doc_carta_motivacion_trabajo", required: false },
+    ],
+    Estudio: [
+      {
+        label: "Carta de aceptación de una institución educativa canadiense (DLI)",
+        name: "doc_carta_aceptacion",
+        required: true,
+      },
+      { label: "Comprobante de pago de matrícula", name: "doc_pago_matricula", required: true },
+      { label: "Pruebas de fondos para cubrir matrícula y manutención", name: "doc_pruebas_fondos", required: true },
+      { label: "Carta de motivación/Estudio", name: "doc_carta_motivacion_estudio", required: true },
+      { label: "Historial académico (diplomas, certificados, notas)", name: "doc_historial_academico", required: true },
+      { label: "Examen médico (si aplica)", name: "doc_examen_medico_estudio", required: false },
+      { label: "Formulario custodia (si es menor de edad)", name: "doc_formulario_custodia", required: false },
+    ],
+    Negocios: [
+      { label: "Carta de invitación de la empresa canadiense", name: "doc_carta_invitacion_negocios", required: true },
+      {
+        label: "Registro de Cámara de Comercio de la empresa solicitante",
+        name: "doc_registro_camara",
+        required: true,
+      },
+      {
+        label: "Certificados bancarios y financieros de la empresa",
+        name: "doc_certificados_bancarios_empresa",
+        required: true,
+      },
+      { label: "Itinerario de negocios", name: "doc_itinerario_negocios", required: true },
+      { label: "Carta del empleador (si aplica)", name: "doc_carta_empleador", required: false },
+      { label: "Contratos comerciales previos (si existen)", name: "doc_contratos_comerciales", required: false },
+      { label: "Documentación que demuestre vínculo comercial", name: "doc_vinculo_comercial", required: true },
+    ],
+    "Visita Familiar": [
+      { label: "Carta de invitación del familiar en Canadá", name: "doc_carta_invitacion_familiar", required: true },
+      { label: "Prueba de parentesco", name: "doc_prueba_parentesco", required: true },
+      {
+        label: "Documentos financieros del familiar (si cubrirá gastos)",
+        name: "doc_finanzas_familiar",
+        required: false,
+      },
+      { label: "Contrato laboral", name: "doc_contrato_laboral_familiar", required: true },
+      { label: "Certificados de estudio", name: "doc_certificados_estudio_familiar", required: false },
+      { label: "Propiedades a tu nombre", name: "doc_propiedades_nombre", required: false },
+      { label: "Carta de motivación", name: "doc_carta_motivacion_familiar", required: true },
+    ],
+  }
+
+  // Función mejorada para renderizar documentos en grid de 2 columnas
+  function renderDocumentosPorVisa(tipoVisa) {
+    const contenedor = document.getElementById("documentosDinamicos")
+    contenedor.innerHTML = ""
+
+    if (!tipoVisa || !documentosPorVisa[tipoVisa]) {
+      contenedor.innerHTML = `
+        <div class="col-span-full text-center py-8 text-gray-500">
+          <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          <p class="text-sm">Seleccione un motivo de viaje en el Paso 1 para ver los documentos requeridos</p>
+        </div>
+      `
+      return
+    }
+
+    // Dividir documentos en dos columnas (máximo 5 por columna)
+    const documentos = documentosPorVisa[tipoVisa]
+    const mitad = Math.ceil(documentos.length / 2)
+    const columnaIzquierda = documentos.slice(0, Math.min(mitad, 5))
+    const columnaDerecha = documentos.slice(mitad, Math.min(documentos.length, mitad + 5))
+
+    // Crear contenedor para columna izquierda
+    const columnaIzq = document.createElement("div")
+    columnaIzq.className = "space-y-4"
+
+    // Crear contenedor para columna derecha
+    const columnaDer = document.createElement("div")
+    columnaDer.className = "space-y-4"
+
+    // Renderizar documentos de la columna izquierda
+    columnaIzquierda.forEach((doc, index) => {
+      const docElement = crearElementoDocumento(doc, index)
+      columnaIzq.appendChild(docElement)
+    })
+
+    // Renderizar documentos de la columna derecha
+    columnaDerecha.forEach((doc, index) => {
+      const docElement = crearElementoDocumento(doc, index + columnaIzquierda.length)
+      columnaDer.appendChild(docElement)
+    })
+
+    // Agregar las columnas al contenedor principal
+    contenedor.appendChild(columnaIzq)
+    contenedor.appendChild(columnaDer)
+  }
+
+  // Función para crear elemento de documento individual
+  function crearElementoDocumento(doc, index) {
+    const docId = doc.name
+    const isRequired = doc.required
+    const requiredMark = isRequired
+      ? '<span class="text-red-500 ml-1">*</span>'
+      : '<span class="text-gray-400 ml-1">(opcional)</span>'
+
+    const bloque = document.createElement("div")
+    bloque.className =
+      "p-4 bg-gray-50 rounded-xl border border-gray-200 hover:border-gray-300 transition-colors duration-200"
+
+    bloque.innerHTML = `
+      <div class="space-y-3">
+        <div class="flex items-start justify-between">
+          <label class="block text-sm font-medium text-gray-800 flex-1">
+            <span class="flex items-center">
+              <span class="w-6 h-6 rounded-full bg-primary-100 text-primary-600 text-xs font-bold flex items-center justify-center mr-2 flex-shrink-0">
+                ${index + 1}
+              </span>
+              ${doc.label}${requiredMark}
+            </span>
+          </label>
+        </div>
+        
+        <div class="ml-8">
+          <select name="${docId}_estado" id="${docId}_estado" 
+                  class="w-full py-2.5 px-3 border border-gray-300 bg-white rounded-lg text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all duration-200">
+            <option value="">Seleccione el estado del documento</option>
+            <option value="Disponible">✅ Disponible - Tengo el documento</option>
+            <option value="En proceso">⏳ En proceso - Lo estoy tramitando</option>
+            <option value="No disponible">❌ No disponible - No lo tengo</option>
+          </select>
+          
+          <!-- Área de carga de archivo -->
+          <div id="${docId}_upload" class="hidden mt-3 p-3 bg-white rounded-lg border border-dashed border-gray-300">
+            <div class="text-center">
+              <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3 3m0 0l-3-3m3 3V8"></path>
+              </svg>
+              <input type="file" name="${docId}_file" id="${docId}_file" 
+                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" 
+                     class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 cursor-pointer"/>
+              <p class="text-xs text-gray-500 mt-1">PDF, JPG, PNG, DOC (máx. 10MB)</p>
+            </div>
+            <div class="mt-3 flex justify-center">
+              <button type="button" 
+                      class="px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 transition-colors duration-200 flex items-center"
+                      onclick="subirDocumentoCloudinary('${docId}')">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3 3m0 0l-3-3m3 3V8"></path>
+                </svg>
+                Subir documento
+              </button>
+            </div>
+            <div id="${docId}_uploaded" class="mt-2 text-center text-sm font-medium"></div>
+          </div>
+          
+          <!-- Advertencia para documentos no disponibles -->
+          <div id="${docId}_advertencia" class="hidden mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div class="flex items-start">
+              <svg class="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+              </svg>
+              <div>
+                <p class="text-sm font-medium text-yellow-800">Documento requerido</p>
+                <p class="text-xs text-yellow-700 mt-1">Debe obtener este documento para completar su solicitud de visa.</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Información para documentos en proceso -->
+          <div id="${docId}_proceso" class="hidden mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="flex items-start">
+              <svg class="w-5 h-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <div>
+                <p class="text-sm font-medium text-blue-800">Documento en trámite</p>
+                <p class="text-xs text-blue-700 mt-1">Asegúrese de tener este documento antes de la cita consular.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+
+    // Lógica para mostrar/ocultar secciones según el estado
+    const select = bloque.querySelector(`#${docId}_estado`)
+    select.addEventListener("change", function () {
+      const uploadDiv = bloque.querySelector(`#${docId}_upload`)
+      const advertenciaDiv = bloque.querySelector(`#${docId}_advertencia`)
+      const procesoDiv = bloque.querySelector(`#${docId}_proceso`)
+
+      // Ocultar todas las secciones primero
+      uploadDiv.classList.add("hidden")
+      advertenciaDiv.classList.add("hidden")
+      procesoDiv.classList.add("hidden")
+
+      // Mostrar la sección apropiada según la selección
+      if (this.value === "Disponible") {
+        uploadDiv.classList.remove("hidden")
+      } else if (this.value === "No disponible") {
+        advertenciaDiv.classList.remove("hidden")
+      } else if (this.value === "En proceso") {
+        procesoDiv.classList.remove("hidden")
+      }
+    })
+
+    return bloque
+  }
+
+  // Detectar el tipo de visa seleccionado y renderizar documentos
+  const motivoViajeSelect = document.getElementById("motivoViaje")
+  if (motivoViajeSelect) {
+    motivoViajeSelect.addEventListener("change", function () {
+      renderDocumentosPorVisa(this.value)
+    })
+    // Render inicial si ya hay valor seleccionado
+    if (motivoViajeSelect.value) renderDocumentosPorVisa(motivoViajeSelect.value)
+  }
+
+  // Función mejorada para subir a Cloudinary
+  window.subirDocumentoCloudinary = async (docId) => {
+    const fileInput = document.getElementById(`${docId}_file`)
+    const uploadedSpan = document.getElementById(`${docId}_uploaded`)
+
+    if (!fileInput.files.length) {
+      showNotification("Seleccione un archivo para subir.", "error")
+      return
+    }
+
+    const file = fileInput.files[0]
+
+    // Validar tamaño del archivo (10MB máximo)
+    if (file.size > 10 * 1024 * 1024) {
+      showNotification("El archivo es demasiado grande. Máximo 10MB permitido.", "error")
+      return
+    }
+
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("upload_preset", "YOUR_CLOUDINARY_UPLOAD_PRESET") // Cambia por tu preset
+
+    try {
+      uploadedSpan.innerHTML = `
+        <div class="flex items-center justify-center text-blue-600">
+          <svg class="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Subiendo archivo...
+        </div>
+      `
+
+      const res = await fetch("https://api.cloudinary.com/v1_1/YOUR_CLOUDINARY_CLOUD_NAME/auto/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      const data = await res.json()
+
+      if (data.secure_url) {
+        uploadedSpan.innerHTML = `
+          <div class="flex items-center justify-center text-green-600">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            ¡Documento subido exitosamente!
+          </div>
+        `
+        uploadedSpan.dataset.url = data.secure_url
+        showNotification("Documento subido correctamente.", "success")
+      } else {
+        uploadedSpan.innerHTML = ""
+        showNotification("Error al subir el documento.", "error")
+      }
+    } catch (err) {
+      uploadedSpan.innerHTML = ""
+      showNotification("Error de conexión al subir el documento.", "error")
+    }
+  }
 
   /**
    * Enviar formulario al servidor
@@ -723,135 +1201,4 @@ document.addEventListener("DOMContentLoaded", () => {
       submitButton.innerHTML = originalContent
     }
   }
-
-  /**
-   * Mostrar/ocultar spinner de carga
-   */
-  function mostrarSpinner(mostrar) {
-    if (mostrar) {
-      loadingSpinner.classList.remove("hidden")
-      asesoriasContainer.classList.add("hidden")
-    } else {
-      loadingSpinner.classList.add("hidden")
-      asesoriasContainer.classList.remove("hidden")
-    }
-  }
-
-  // Validaciones de entrada para campos específicos
-  const numeroDocumentoInput = document.getElementById("numeroDocumento")
-  if (numeroDocumentoInput) {
-    numeroDocumentoInput.addEventListener("keydown", (e) => {
-      if (
-        [46, 8, 9, 27, 13].includes(e.keyCode) ||
-        (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) ||
-        (e.keyCode >= 35 && e.keyCode <= 39)
-      ) {
-        return
-      }
-      if (["e", "E", "+", "-", "."].includes(e.key)) {
-        e.preventDefault()
-      }
-      if ((e.shiftKey || e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
-        e.preventDefault()
-      }
-    })
-
-    numeroDocumentoInput.addEventListener("paste", (e) => {
-      const paste = (e.clipboardData || window.clipboardData).getData("text")
-      if (!/^\d+$/.test(paste)) {
-        e.preventDefault()
-      }
-    })
-
-    numeroDocumentoInput.addEventListener("input", function (e) {
-      this.value = this.value.replace(/\D/g, "")
-    })
-  }
-
-  const propositoPrincipalInput = document.getElementById("propositoPrincipal")
-  if (propositoPrincipalInput) {
-    propositoPrincipalInput.addEventListener("input", function (e) {
-      this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s.,;:¡!¿?()"''-]/g, "")
-    })
-  }
-
-  const propositoDetalladoInput = document.getElementById("propositoDetallado")
-  if (propositoDetalladoInput) {
-    propositoDetalladoInput.addEventListener("input", function (e) {
-      this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s.,;:¡!¿?()"''-]/g, "")
-    })
-  }
-
-  const tiempoEstadiaCantidadInput = document.getElementById("tiempoEstadiaCantidad")
-  if (tiempoEstadiaCantidadInput) {
-    tiempoEstadiaCantidadInput.addEventListener("keydown", (e) => {
-      if (
-        [8, 9, 13, 27, 46].includes(e.keyCode) ||
-        (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) ||
-        (e.keyCode >= 35 && e.keyCode <= 39)
-      ) {
-        return
-      }
-      if (["e", "E", "+", "-", "."].includes(e.key)) {
-        e.preventDefault()
-      }
-      if ((e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
-        e.preventDefault()
-      }
-    })
-
-    tiempoEstadiaCantidadInput.addEventListener("paste", (e) => {
-      const paste = (e.clipboardData || window.clipboardData).getData("text")
-      if (!/^\d+$/.test(paste)) {
-        e.preventDefault()
-      }
-    })
-
-    tiempoEstadiaCantidadInput.addEventListener("input", function (e) {
-      this.value = this.value.replace(/\D/g, "")
-    })
-  }
-
-  const nombreCompletoInput = document.getElementById("nombreCompleto")
-  if (nombreCompletoInput) {
-    nombreCompletoInput.addEventListener("input", function (e) {
-      this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñüÜ\s]/g, "")
-    })
-  }
-
-  const ingresosMensualesInput = document.getElementById("ingresosMensuales");
-  if (ingresosMensualesInput) {
-    ingresosMensualesInput.addEventListener("input", function (e) {
-      // Eliminar todo lo que no sea número
-      let valor = this.value.replace(/\D/g, "");
-      // Formatear con separador de miles
-      valor = valor.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-      this.value = valor;
-    });
-
-    ingresosMensualesInput.addEventListener("keydown", function (e) {
-      // Permitir: backspace, delete, tab, escape, enter, arrows
-      if (
-        [8, 9, 13, 27, 46].includes(e.keyCode) ||
-        (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) ||
-        (e.keyCode >= 35 && e.keyCode <= 39)
-      ) {
-        return;
-      }
-      // Bloquear todo lo que no sea número
-      if ((e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
-        e.preventDefault();
-      }
-    });
-
-    ingresosMensualesInput.addEventListener("paste", function (e) {
-      const paste = (e.clipboardData || window.clipboardData).getData("text");
-      if (!/^\d+$/.test(paste.replace(/\./g, ""))) {
-        e.preventDefault();
-      }
-    });
-  }
-
-  // Inicializar el stepper
-  resetStepper()
 })

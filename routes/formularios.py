@@ -160,29 +160,19 @@ def procesar_formulario_elegibilidad():
             'estado_civil': datos.get('estado_civil'),
             'provincia_destino': datos.get('provincia_destino'),
             'trabajo_actual': datos.get('trabajo_actual'),
-            'negocios_actuales': datos.get('negocios_actuales'),
             'co_deudor': datos.get('co_deudor'),
             'viajes_recientes': datos.get('viajes_recientes'),
-            'acompanante_conocido': datos.get('acompanante_conocido'),
             'antecedente_judiciales': datos.get('antecedente_judiciales'),
             'examenes_medicos': datos.get('examenes_medicos'),
             'aplicacion_familiares': datos.get('aplicacion_familiares'),
-            'acceso_aplicacion': datos.get('acceso_aplicacion'),
             'biometricos_canada': datos.get('biometricos_canada'),
             'pago_tasas': datos.get('pago_tasas'),
             'tiempo_estadia': datos.get('tiempo_estadia'),
             'fecha_nacimiento': datos.get('fecha_nacimiento'),
-            'familiar_canada': datos.get('familiar_canada'),
-            'relacion_familiar': datos.get('relacion_familiar'),
-            'residente_permanente': datos.get('residente_permanente'),
             'proposito_principal': datos.get('proposito_principal'),
             'empleo_origen': datos.get('empleo_origen'),
             'dependencia_economica': datos.get('dependencia_economica'),
             'acompana_familiar': datos.get('acompana_familiar'),
-            'doc_historial_viajes': datos.get('doc_historial_viajes'),
-            'doc_recursos_financieros': datos.get('doc_recursos_financieros'),
-            'doc_relaciones_familiares': datos.get('doc_relaciones_familiares'),
-            'doc_hoja_vida': datos.get('doc_hoja_vida'),
             'terminos': 1 if datos.get('terminos') == 1 or datos.get('terminos') == 'on' or datos.get('terminos') == True else 0,
             'privacidad': 1 if datos.get('privacidad') == 1 or datos.get('privacidad') == 'on' or datos.get('privacidad') == True else 0,
             'id_solicitante': id_solicitante,
@@ -197,6 +187,60 @@ def procesar_formulario_elegibilidad():
             'descripcion_negocios_actuales': datos.get('descripcion_negocios_actuales'),
             'ingresos_mensuales_moneda': datos.get('ingresos_mensuales_moneda'),
             'ingresos_mensuales': datos.get('ingresos_mensuales').replace('.', '') if datos.get('ingresos_mensuales') else None,
+            'puede_comprobar_relacion': datos.get('puede_comprobar_relacion'),
+            'relacion_acompana_familiar': datos.get('relacion_acompana_familiar'),
+            'viaja_conocido': datos.get('viaja_conocido'),
+            'posee_ahorros': datos.get('posee_ahorros'),
+            'estudios_en_curso': datos.get('estudios_en_curso'),
+            'rechazado_canada': datos.get('rechazado_canada'),
+            'habla_idioma_oficial': datos.get('habla_idioma_oficial'),
+            'aplicado_programa_migratorio': datos.get('aplicado_programa_migratorio'),
+            'intencion_extender_estadia': datos.get('intencion_extender_estadia'),
+            # Ejemplo para turismo:
+            'doc_itinerario_viaje': datos.get('doc_itinerario_viaje'),
+            'doc_carta_motivacion': datos.get('doc_carta_motivacion'),
+            'doc_carta_laboral': datos.get('doc_carta_laboral'),
+            'doc_certificados_propiedad': datos.get('doc_certificados_propiedad'),
+            'doc_extractos_bancarios': datos.get('doc_extractos_bancarios'),
+            'doc_carta_invitacion': datos.get('doc_carta_invitacion'),
+
+            # Documentos Visa de Trabajo
+            'doc_oferta_laboral': datos.get('doc_oferta_laboral'),
+            'doc_lmia': datos.get('doc_lmia'),
+            'doc_contrato_laboral': datos.get('doc_contrato_laboral'),
+            'doc_certificados_experiencia': datos.get('doc_certificados_experiencia'),
+            'doc_hoja_vida': datos.get('doc_hoja_vida'),
+            'doc_diplomas': datos.get('doc_diplomas'),
+            'doc_examen_medico': datos.get('doc_examen_medico'),
+            'doc_carta_motivacion_trabajo': datos.get('doc_carta_motivacion_trabajo'),
+
+            # Documentos Visa de Estudio
+            'doc_carta_aceptacion': datos.get('doc_carta_aceptacion'),
+            'doc_pago_matricula': datos.get('doc_pago_matricula'),
+            'doc_pruebas_fondos': datos.get('doc_pruebas_fondos'),
+            'doc_carta_motivacion_estudio': datos.get('doc_carta_motivacion_estudio'),
+            'doc_historial_academico': datos.get('doc_historial_academico'),
+            'doc_examen_medico_estudio': datos.get('doc_examen_medico_estudio'),
+            'doc_formulario_custodia': datos.get('doc_formulario_custodia'),
+
+            # Documentos Visa de Negocios
+            'doc_carta_invitacion_negocios': datos.get('doc_carta_invitacion_negocios'),
+            'doc_registro_camara': datos.get('doc_registro_camara'),
+            'doc_certificados_bancarios_empresa': datos.get('doc_certificados_bancarios_empresa'),
+            'doc_itinerario_negocios': datos.get('doc_itinerario_negocios'),
+            'doc_carta_empleador': datos.get('doc_carta_empleador'),
+            'doc_contratos_comerciales': datos.get('doc_contratos_comerciales'),
+            'doc_vinculo_comercial': datos.get('doc_vinculo_comercial'),
+
+            # Documentos Visa de Visita Familiar
+            'doc_carta_invitacion_familiar': datos.get('doc_carta_invitacion_familiar'),
+            'doc_prueba_parentesco': datos.get('doc_prueba_parentesco'),
+            'doc_finanzas_familiar': datos.get('doc_finanzas_familiar'),
+            'doc_contrato_laboral_familiar': datos.get('doc_contrato_laboral_familiar'),
+            'doc_certificados_estudio_familiar': datos.get('doc_certificados_estudio_familiar'),
+            'doc_propiedades_nombre': datos.get('doc_propiedades_nombre'),
+            'doc_carta_motivacion_familiar': datos.get('doc_carta_motivacion_familiar'),
+            # ...y así para cada tipo de visa y documento...
         }
         
         # Imprimir los datos para depuración
@@ -373,12 +417,11 @@ def validar_datos_formulario(datos):
     """Validar que los datos del formulario sean correctos"""
     campos_requeridos = [
         'motivo_viaje', 'numero_documento', 'tipo_documento','nombre_completo', 'pais_residencia', 
-        'provincia_destino', 'estado_civil', 'familiares_canada', 'co_deudor', 
-        'viajes_recientes', 'acompanante_conocido', 'antecedente_judiciales', 
-        'examenes_medicos', 'aplicacion_familiares', 'acceso_aplicacion', 
-        'biometricos_canada', 'pago_tasas', 'fecha_nacimiento', 'proposito_principal',
+        'provincia_destino', 'estado_civil', 'familiares_canada','viaja_conocido', 'co_deudor', 
+        'viajes_recientes', 'antecedente_judiciales', 
+        'examenes_medicos', 'aplicacion_familiares', 'biometricos_canada', 'pago_tasas', 'fecha_nacimiento', 'proposito_principal',
         'empleo_origen', 'dependencia_economica', 'terminos', 'privacidad',
-        'tiene_pasaporte',
+        'tiene_pasaporte','posee_ahorros','estudios_en_curso','rechazado_canada','habla_idioma_oficial','aplicado_programa_migratorio','intencion_extender_estadia',
         # Quita los campos dependientes de aquí
     ]
     
@@ -392,7 +435,12 @@ def validar_datos_formulario(datos):
     if datos.get('familiares_canada') == 'Si':
         if not datos.get('relacion_familiares_can') or str(datos.get('relacion_familiares_can')).strip() == '':
             errores.append('Debe especificar la relación con familiares en Canadá')
-    
+        if not datos.get('puede_comprobar_relacion') or str(datos.get('puede_comprobar_relacion')).strip() == '':
+            errores.append('Debe indicar si puede comprobar su relación con el familiar en Canadá')
+    # Validar relación familiar si tiene acompañante
+    if datos.get('acompana_familiar') == 'Si':
+        if not datos.get('relacion_acompana_familiar') or str(datos.get('relacion_acompana_familiar')).strip() == '':
+            errores.append('Debe especificar la relación con el familiar que lo acompaña')
     # Validar lógica de empleo y trabajo
     if datos.get('empleo_origen') == 'Si':
         if not datos.get('trabajo_actual') or str(datos.get('trabajo_actual')).strip() == '':
@@ -408,11 +456,12 @@ def validar_datos_formulario(datos):
                 errores.append('Debe indicar el motivo por el que no tiene trabajo')
 
     # Validar opciones de sí/no
-    opciones_si_no = ['familiares_canada', 'co_deudor', 'viajes_recientes', 'acompanante_conocido', 
+    opciones_si_no = ['familiares_canada','viaja_conocido', 'co_deudor', 'viajes_recientes',
                       'antecedente_judiciales', 'examenes_medicos', 'aplicacion_familiares', 
-                      'acceso_aplicacion', 'biometricos_canada', 'pago_tasas', 'familiar_canada',
-                      'residente_permanente', 'empleo_origen', 'dependencia_economica', 'acompana_familiar']
-    
+                      'biometricos_canada', 'pago_tasas', 'empleo_origen', 'dependencia_economica', 'acompana_familiar',
+                      'posee_ahorros', 'estudios_en_curso', 'rechazado_canada', 'habla_idioma_oficial',
+                      'aplicado_programa_migratorio', 'intencion_extender_estadia']
+
     for campo in opciones_si_no:
         valor = datos.get(campo)
         if valor and valor not in ['Si', 'No']:
