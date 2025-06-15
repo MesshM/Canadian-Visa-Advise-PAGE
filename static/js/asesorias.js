@@ -14,11 +14,11 @@ let reservationId = null
 
 // Definir precios por tipo de visa (para usar en el frontend)
 const PRECIOS_VISA = {
-  "Visa de Trabajo": 150.0,
-  "Visa de Estudio": 100.0,
-  "Residencia Permanente": 200.0,
-  Ciudadanía: 250.0,
-  Otro: 150.0,
+  "Visa de Trabajo": 150,
+  "Visa de Estudio": 100,
+  "Residencia Permanente": 200,
+  "Ciudadanía": 250,
+  "Otro": 150,
 }
 
 // Función para formatear fechas en un formato legible
@@ -268,6 +268,23 @@ function formatTimeRemaining(milliseconds) {
 
 // Inicializar los botones de consejos útiles cuando se carga la página
 document.addEventListener("DOMContentLoaded", () => {
+  // Añadir eventos para cerrar modales al hacer clic fuera del contenido
+  const modals = [
+    { id: "pagoModal", closeFunction: closePagoModal },
+    { id: "cancelarAsesoriaModal", closeFunction: closeCancelarAsesoriaModal },
+    { id: "newAdvisoryModal", closeFunction: closeNewAdvisoryModal },
+  ]
+
+  modals.forEach((modal) => {
+    const modalElement = document.getElementById(modal.id)
+    if (modalElement) {
+      modalElement.addEventListener("click", (e) => {
+        if (e.target === modalElement) {
+          modal.closeFunction()
+        }
+      })
+    }
+  })
   // Inicializar el resto de funcionalidades
   ordenarYNumerarAsesorias()
 
@@ -317,6 +334,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const mainTipsBtn = document.getElementById("show-tips-btn-main")
   if (mainTipsBtn) {
     mainTipsBtn.addEventListener("click", showTipsTooltip)
+  }
+
+  // Verificar si venimos de un pago exitoso
+  if (localStorage.getItem("payment_processing") === "true") {
+    // Limpiar el flag
+    localStorage.removeItem("payment_processing")
+
+    // Mostrar la notificación de pago exitoso con el nuevo mensaje
+    showNotification("Pago procesado exitosamente, dirigirte a Formulario de elegibilidad", "success")
+
+    // Opcional: redirigir al formulario de elegibilidad después de un breve retraso
+    setTimeout(() => {
+      window.location.href = "/formularios/solicitud"
+    }, 3000) // Redirigir después de 3 segundos
   }
 })
 
@@ -452,6 +483,12 @@ function toggleDetails(asesoriaId) {
     // Mostrar detalles con animación
     detailsRow.classList.remove("hidden")
 
+    // Añadir animación de entrada
+    const detailsContent = detailsRow.querySelector("div")
+    if (detailsContent) {
+      detailsContent.classList.add("animate-fade-in")
+    }
+
     // Obtener datos de la asesoría para mostrar detalles más completos
     const mainRow = document.querySelector(`tr[data-asesoria-id="${asesoriaId}"]`)
     if (mainRow) {
@@ -538,21 +575,12 @@ function toggleDetails(asesoriaId) {
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                         </svg>
                         <div>
-                          <p class="text-sm text-gray-700"><span class="font-medium">Contacto:</span> asesor@cva.com</p>
+                          <p class="text-sm text-gray-700"><span class="font-medium">Contacto:</span> ${asesoria.correo || "No disponible"} </p>
                         </div>
                       </div>
                     </div>
                     
-                    <button onclick="verHistorialChat(${asesoriaId})"
-                      class="mt-4 relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white text-xs font-medium py-2 px-4 rounded-xl shadow-md hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer w-full">
-                      <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
-                      <div class="relative flex items-center justify-center">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                        </svg>
-                        <span>Ver registro de chat</span>
-                      </div>
-                    </button>
+                    
                   </div>
 
                   <!-- Tarjeta de Detalles de la Asesoría -->
@@ -593,7 +621,7 @@ function toggleDetails(asesoriaId) {
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                         <div class="flex items-center">
-                          <p class="text-sm text-gray-700"><span class="font-medium">Precio:</span> $${asesoria.precio || PRECIOS_VISA[asesoria.tipo_asesoria] || "150.00"} USD</p>
+                          <p class="text-sm text-gray-700"><span class="font-medium">Precio:</span> $${asesoria.precio || PRECIOS_VISA[asesoria.tipo_asesoria] || "150"} USD</p>
                           ${
                             asesoria.estado === "Pagada"
                               ? `
@@ -719,110 +747,18 @@ function toggleDetails(asesoriaId) {
       }
     }
   } else {
-    // Ocultar detalles
-    detailsRow.classList.add("hidden")
+    // Ocultar detalles con animación
+    const detailsContent = detailsRow.querySelector("div")
+    if (detailsContent) {
+      detailsContent.classList.add("opacity-0", "transition-opacity", "duration-300")
+      setTimeout(() => {
+        detailsRow.classList.add("hidden")
+        detailsContent.classList.remove("opacity-0")
+      }, 300)
+    } else {
+      detailsRow.classList.add("hidden")
+    }
   }
-}
-
-// Función para ver historial de chat
-function verHistorialChat(asesoriaId) {
-  const modal = document.getElementById("chatHistorialModal")
-  if (!modal) return
-
-  // Actualizar el ID de la asesoría en el modal
-  const chatAsesoriaId = document.getElementById("chat-asesoria-id")
-  if (chatAsesoriaId) chatAsesoriaId.textContent = asesoriaId
-
-  // Limpiar mensajes anteriores
-  const chatMessages = document.getElementById("chat-messages")
-  if (chatMessages) {
-    chatMessages.innerHTML = `
-    <div class="flex justify-center py-4">
-      <p class="text-gray-500">No hay mensajes en esta conversación</p>
-    </div>
-  `
-  }
-
-  // Mostrar el modal
-  modal.classList.remove("hidden")
-  modal.classList.add("flex")
-
-  // En una implementación real, aquí cargaríamos los mensajes del chat desde el servidor
-  // fetch(`/obtener_mensajes_chat?codigo_asesoria=${asesoriaId}`)
-  //   .then(response => response.json())
-  //   .then(data => {
-  //     // Mostrar mensajes
-  //   });
-}
-
-// Función para cerrar el modal de historial de chat
-function closeChatHistorialModal() {
-  const modal = document.getElementById("chatHistorialModal")
-  if (!modal) return
-
-  modal.classList.remove("flex")
-  modal.classList.add("hidden")
-}
-
-// Función para enviar mensaje en el chat
-function enviarMensaje() {
-  const chatInput = document.getElementById("chat-input")
-  const chatMessages = document.getElementById("chat-messages")
-  const chatAsesoriaId = document.getElementById("chat-asesoria-id")
-
-  if (!chatInput || !chatMessages || !chatAsesoriaId) return
-
-  const mensaje = chatInput.value.trim()
-  if (!mensaje) return
-
-  // Obtener el ID de la asesoría
-  const asesoriaId = chatAsesoriaId.textContent
-
-  // Crear elemento de mensaje
-  const messageElement = document.createElement("div")
-  messageElement.className = "flex flex-col items-end"
-  messageElement.innerHTML = `
-  <div class="bg-primary-100 text-primary-800 p-3 rounded-xl max-w-xs">
-    <p class="text-sm">${mensaje}</p>
-  </div>
-  <span class="text-xs text-gray-500 mt-1">Ahora</span>
-`
-
-  // Agregar mensaje al chat
-  chatMessages.appendChild(messageElement)
-
-  // Limpiar input
-  chatInput.value = ""
-
-  // Hacer scroll al final del chat
-  chatMessages.scrollTop = chatMessages.scrollHeight
-
-  // En una implementación real, aquí enviaríamos el mensaje al servidor
-  // fetch('/enviar_mensaje_chat', {
-  //   method: 'POST',
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  //   body: JSON.stringify({
-  //     codigo_asesoria: asesoriaId,
-  //     mensaje: mensaje
-  //   })
-  // });
-
-  // Simular respuesta del asesor después de 1 segundo
-  setTimeout(() => {
-    const responseElement = document.createElement("div")
-    responseElement.className = "flex flex-col items-start animate-fade-in"
-    responseElement.innerHTML = `
-    <div class="bg-gray-100 text-gray-800 p-3 rounded-xl max-w-xs">
-      <p class="text-sm">Gracias por tu mensaje. Un asesor te responderá pronto.</p>
-    </div>
-    <span class="text-xs text-gray-500 mt-1">Ahora</span>
-  `
-
-    chatMessages.appendChild(responseElement)
-    chatMessages.scrollTop = chatMessages.scrollHeight
-  }, 1000)
 }
 
 // Función para actualizar el resumen con un diseño mejorado
@@ -1092,8 +1028,14 @@ function closePagoModal() {
   const modal = document.getElementById("pagoModal")
   if (!modal) return
 
-  modal.classList.remove("flex")
-  modal.classList.add("hidden")
+  // Añadir animación de cierre
+  const modalContent = modal.querySelector(".bg-white")
+  modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+  setTimeout(() => {
+    modal.classList.remove("flex")
+    modal.classList.add("hidden")
+    modalContent.classList.remove("opacity-0", "scale-95")
+  }, 300)
 }
 
 // Función para cancelar una asesoría
@@ -1168,8 +1110,14 @@ function closeCancelarAsesoriaModal() {
   const modal = document.getElementById("cancelarAsesoriaModal")
   if (!modal) return
 
-  modal.classList.remove("flex")
-  modal.classList.add("hidden")
+  // Añadir animación de cierre
+  const modalContent = modal.querySelector(".bg-white")
+  modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+  setTimeout(() => {
+    modal.classList.remove("flex")
+    modal.classList.add("hidden")
+    modalContent.classList.remove("opacity-0", "scale-95")
+  }, 300)
 }
 
 // Función para reiniciar la pasarela de pago con Stripe
@@ -1215,20 +1163,79 @@ function reiniciarPasarelaPago() {
     .then((data) => {
       clientSecret = data.clientSecret
 
+      // Configurar un listener para detectar cuando el pago se completa exitosamente
+      const paymentForm = document.getElementById("payment-form")
+      if (paymentForm) {
+        // Verificar si ya existe un listener para evitar duplicados
+        if (!paymentForm.hasAttribute("data-payment-listener")) {
+          paymentForm.setAttribute("data-payment-listener", "true")
+
+          // Escuchar el evento de envío del formulario
+          paymentForm.addEventListener("submit", (e) => {
+            // Almacenar en localStorage que estamos procesando un pago
+            localStorage.setItem("payment_processing", "true")
+          })
+        }
+      }
+
       // Configurar Stripe Elements
       const options = {
         clientSecret: clientSecret,
         appearance: {
-          theme: "stripe",
+          theme: "flat",
           variables: {
-            colorPrimary: "#4f46e5",
-            colorBackground: "#ffffff",
-            colorText: "#1f2937",
-            colorDanger: "#ef4444",
+            colorPrimary: "#dc2626",         // Rojo principal (Tailwind red-600)
+            colorBackground: "#ffffff",      // Fondo blanco
+            colorText: "#1f2937",            // Gris oscuro para texto
+            colorDanger: "#b91c1c",          // Rojo oscuro para errores (Tailwind red-700)
+            colorSuccess: "#16a34a",         // Verde para éxito (opcional)
+            colorWarning: "#f59e42",         // Naranja para advertencias (opcional)
             fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
             spacingUnit: "4px",
-            borderRadius: "8px",
+            borderRadius: "4px",
+            tabSpacing: "4px",
           },
+          rules: {
+            ".Tab": {
+              border: "1px solid #dc2626",
+              backgroundColor: "#fff",
+              color: "#dc2626",
+              fontWeight: "bold",
+              borderRadius: "4px",
+            },
+            ".Tab--selected": {
+              backgroundColor: "#dc2626",
+              color: "#fff",
+            },
+            ".Input": {
+              border: "1px solid #dc2626",
+              backgroundColor: "#fff",
+              color: "#1f2937",
+              fontSize: "16px",
+              padding: "16px 12px",
+              borderRadius: "12px",
+            },
+            ".Input:focus": {
+              borderColor: "#b91c1c",
+              border: "none",
+              boxShadow: "0 0 0 2px #dc262633",
+            },
+            ".Label": {
+              color: "#dc2626",
+              fontWeight: "500",
+            },
+            ".Error": {
+              color: "#b91c1c",
+            },
+            ".Block": {
+              backgroundColor: "#fff",
+              borderRadius: "12px",
+            },
+          },
+          labels: "floating", // Opcional: etiquetas flotantes
+        },
+        layout: {
+          type: "tabs", // Mostrar tabs para métodos de pago
         },
       }
 
@@ -1236,8 +1243,9 @@ function reiniciarPasarelaPago() {
       elements = stripe.elements(options)
 
       // Crear y montar el elemento de pago
-      paymentElement = elements.create("payment")
+      paymentElement = elements.create("payment", { layout: "tabs" })
       paymentElement.mount("#payment-element")
+// ...existing code...
 
       // Configurar el formulario de pago
       const form = document.getElementById("payment-form")
@@ -1305,14 +1313,21 @@ function openNewAdvisoryModal() {
   // Reiniciar el stepper
   resetStepper()
 
-  // Mostrar el modal
+  // Mostrar el modal con animación
   modal.classList.remove("hidden")
   modal.classList.add("flex")
+
+  // Animar la entrada del contenido
+  const modalContent = modal.querySelector(".bg-white")
+  if (modalContent) {
+    modalContent.classList.add("animate-scale-in")
+  }
 
   // Cargar asesores para el primer paso
   loadAsesores()
 }
 
+// Función para cerrar el modal de nueva asesoría
 function closeNewAdvisoryModal() {
   const modal = document.getElementById("newAdvisoryModal")
   if (!modal) return
@@ -1323,17 +1338,15 @@ function closeNewAdvisoryModal() {
     reservationId = null
   }
 
-  // Ocultar el modal
-  modal.classList.remove("flex")
-  modal.classList.add("hidden")
+  // Añadir animación de cierre
+  const modalContent = modal.querySelector(".bg-white")
+  modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+  setTimeout(() => {
+    modal.classList.remove("flex")
+    modal.classList.add("hidden")
+    modalContent.classList.remove("opacity-0", "scale-95")
 
-  // Reiniciar variables
-  selectedAsesorId = null
-  selectedAsesorName = null
-  selectedAsesorEspecialidad = null
-  selectedDate = null
-  selectedTime = null
-  reservationId = null
+  }, 300)
 }
 
 function initStepper() {
@@ -2075,16 +2088,6 @@ function loadAvailableTimes(date) {
               )
             })
 
-            // Seleccionar este horario con animación
-            timeButton.classList.add(
-              "selected",
-              "bg-primary-100",
-              "text-primary-800",
-              "border-primary-500",
-              "shadow-md",
-              "scale-105",
-            )
-
             // Guardar el horario seleccionado
             selectedTime = hora
 
@@ -2291,66 +2294,6 @@ function submitAsesoria() {
     })
 }
 
-// Función para iniciar un temporizador para una nueva asesoría
-function startNewAppointmentTimer(asesoriaId, tiempoLimite) {
-  // Crear elemento para el temporizador si no existe
-  let timerElement = document.querySelector(`.countdown-timer[data-asesoria-id="${asesoriaId}"]`)
-
-  if (!timerElement) {
-    // Si estamos en la página de pago y no en la lista de asesorías
-    const paymentMessage = document.getElementById("payment-message")
-    if (paymentMessage) {
-      paymentMessage.classList.remove("hidden")
-      paymentMessage.classList.add("bg-yellow-100", "text-yellow-700")
-      paymentMessage.innerHTML = `
-        <div class="flex items-center">
-          <svg class="w-5 h-5 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <span>Tiempo restante para completar el pago: <span id="payment-timer">5:00</span></span>
-        </div>
-      `
-
-      timerElement = document.getElementById("payment-timer")
-
-      // Iniciar cuenta regresiva
-      let timeRemaining = tiempoLimite * 1000 // Convertir a milisegundos
-
-      const timerId = setInterval(() => {
-        timeRemaining -= 1000
-
-        if (timeRemaining <= 0) {
-          clearInterval(timerId)
-          paymentMessage.innerHTML = `
-            <div class="flex items-center">
-              <svg class="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-              <span>El tiempo para realizar el pago ha expirado. La reserva ha sido cancelada.</span>
-            </div>
-          `
-
-          // Deshabilitar el botón de pago
-          const submitButton = document.getElementById("submit-button")
-          if (submitButton) {
-            submitButton.disabled = true
-            submitButton.classList.add("opacity-50", "cursor-not-allowed")
-          }
-
-          // Cerrar el modal después de 3 segundos
-          setTimeout(() => {
-            closePagoModal()
-            // Recargar la página para actualizar la lista de asesorías
-            window.location.reload()
-          }, 3000)
-        } else {
-          timerElement.textContent = formatTimeRemaining(timeRemaining)
-        }
-      }, 1000)
-    }
-  }
-}
-
 // Exportar funciones para uso global
 window.formatDate = formatDate
 window.isAsesoriaVigente = isAsesoriaVigente
@@ -2359,9 +2302,6 @@ window.generateAvatar = generateAvatar
 window.showNotification = showNotification
 window.toggleDetails = toggleDetails
 window.resetFilters = resetFilters
-window.verHistorialChat = verHistorialChat
-window.closeChatHistorialModal = closeChatHistorialModal
-window.enviarMensaje = enviarMensaje
 window.pagarAsesoria = pagarAsesoria
 window.closePagoModal = closePagoModal
 window.cancelarAsesoria = cancelarAsesoria
@@ -2369,5 +2309,3 @@ window.closeCancelarAsesoriaModal = closeCancelarAsesoriaModal
 window.openNewAdvisoryModal = openNewAdvisoryModal
 window.closeNewAdvisoryModal = closeNewAdvisoryModal
 window.showTipsTooltip = showTipsTooltip
-window.startNewAppointmentTimer = startNewAppointmentTimer
-

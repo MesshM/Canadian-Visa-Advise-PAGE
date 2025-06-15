@@ -1,19 +1,11 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clientes - Canadian Visa Advise</title>
-    <link href="/static/css/output.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="font-['Inter'] bg-gray-50 text-gray-700 overflow-x-hidden m-0 p-0">
-    <!-- Sidebar -->
-    {% include 'includes/_sidebar_asesor.html' %}
+{% extends 'asesor/base_asesor.html' %}
+
+{% block title %}CVA | Asesor | Clientes{% endblock %}
+
+{% block main_asesor %}
 
     <!-- Main Content -->
-    <main class="ml-[calc(240px+40px)] p-8 min-h-screen">
+
         <div class="mb-8 flex justify-between items-center">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900 m-0 mb-2">Clientes</h1>
@@ -253,7 +245,7 @@
                 </div>
             </div>
             <div class="p-6">
-                <form id="status-form" action="/cambiar_estado_cliente" method="post">
+                <form id="status-form" action="{{ url_for('asesor.crear_cliente_asesor') }}" method="post">
                     <input type="hidden" id="client-id" name="id_solicitante" value="">
                     
                     <div class="mb-4">
@@ -317,12 +309,16 @@
                 });
             });
 
-            // Función para abrir el modal de nuevo cliente
+            // Función para crear nuevo cliente
             document.getElementById('new-client-btn').addEventListener('click', function() {
-                // Redirigir a la página de registro de cliente
-                window.location.href = '/registrar_cliente';
+                // Create a form to submit the POST request
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = "{{ url_for('asesor.crear_cliente_asesor') }}";
+                document.body.appendChild(form);
+                form.submit();
             });
-
+        
             // Modal de ver detalles
             const viewButtons = document.querySelectorAll('.view-btn');
             const viewModal = document.getElementById('view-client-modal');
@@ -333,7 +329,7 @@
                 button.addEventListener('click', function() {
                     const id = this.getAttribute('data-id');
                     // Cargar datos del cliente desde la base de datos
-                    fetch(`/obtener_cliente/${id}`)
+                    fetch(`/asesor/obtener_cliente_asesor/${id}`)
                         .then(response => response.json())
                         .then(data => {
                             document.getElementById('view-id').textContent = data.id_formateado;
@@ -392,70 +388,70 @@
                             }
                         })
                         .catch(error => console.error('Error:', error));
-                    
-                    viewModal.classList.remove('hidden');
-                });
-            });
-            
-            closeViewModalBtn.addEventListener('click', function() {
-                viewModal.classList.add('hidden');
-            });
-            
-            closeViewBtn.addEventListener('click', function() {
-                viewModal.classList.add('hidden');
-            });
-            
-            // Modal de cambiar estado
-            const statusButtons = document.querySelectorAll('.status-btn');
-            const statusModal = document.getElementById('status-modal');
-            const closeStatusModalBtn = document.getElementById('close-status-modal');
-            const cancelStatusBtn = document.getElementById('cancel-status-btn');
-            
-            statusButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const id = this.getAttribute('data-id');
-                    const currentStatus = this.getAttribute('data-status');
-                    
-                    document.getElementById('client-id').value = id;
-                    
-                    // Seleccionar el estado opuesto al actual
-                    const statusSelect = document.getElementById('status');
-                    if (currentStatus === 'activo') {
-                        statusSelect.value = 'inactivo';
-                    } else {
-                        statusSelect.value = 'activo';
-                    }
-                    
-                    statusModal.classList.remove('hidden');
-                });
-            });
-            
-            closeStatusModalBtn.addEventListener('click', function() {
-                statusModal.classList.add('hidden');
-            });
-            
-            cancelStatusBtn.addEventListener('click', function() {
-                statusModal.classList.add('hidden');
-            });
-            
-            // Función para editar cliente
-            document.querySelectorAll('.edit-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const clientId = this.getAttribute('data-id');
-                    window.location.href = `/editar_cliente/${clientId}`;
-                });
-            });
-            
-            // Cerrar modales al hacer clic fuera de ellos
-            window.addEventListener('click', function(e) {
-                if (e.target === viewModal) {
-                    viewModal.classList.add('hidden');
-                }
-                if (e.target === statusModal) {
-                    statusModal.classList.add('hidden');
-                }
+                
+                viewModal.classList.remove('hidden');
             });
         });
-    </script>
-</body>
-</html>
+        
+        closeViewModalBtn.addEventListener('click', function() {
+            viewModal.classList.add('hidden');
+        });
+        
+        closeViewBtn.addEventListener('click', function() {
+            viewModal.classList.add('hidden');
+        });
+        
+        // Modal de cambiar estado
+        const statusButtons = document.querySelectorAll('.status-btn');
+        const statusModal = document.getElementById('status-modal');
+        const closeStatusModalBtn = document.getElementById('close-status-modal');
+        const cancelStatusBtn = document.getElementById('cancel-status-btn');
+        
+        statusButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                const currentStatus = this.getAttribute('data-status');
+                
+                document.getElementById('client-id').value = id;
+                
+                // Seleccionar el estado opuesto al actual
+                const statusSelect = document.getElementById('status');
+                if (currentStatus === 'activo') {
+                    statusSelect.value = 'inactivo';
+                } else {
+                    statusSelect.value = 'activo';
+                }
+                
+                statusModal.classList.remove('hidden');
+            });
+        });
+        
+        closeStatusModalBtn.addEventListener('click', function() {
+            statusModal.classList.add('hidden');
+        });
+        
+        cancelStatusBtn.addEventListener('click', function() {
+            statusModal.classList.add('hidden');
+        });
+        
+        // Función para editar cliente
+        document.querySelectorAll('.edit-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const clientId = this.getAttribute('data-id');
+                // Para editar cliente
+                window.location.href = `/asesor/editar_cliente_asesor/${clientId}`;
+            });
+        });
+        
+        // Cerrar modales al hacer clic fuera de ellos
+        window.addEventListener('click', function(e) {
+            if (e.target === viewModal) {
+                viewModal.classList.add('hidden');
+            }
+            if (e.target === statusModal) {
+                statusModal.classList.add('hidden');
+            }
+        });
+    });
+</script>
+{% endblock %}

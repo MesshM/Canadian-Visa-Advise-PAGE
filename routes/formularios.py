@@ -1,221 +1,373 @@
-from flask import Blueprint, request, redirect, url_for, flash, render_template, session, jsonify, send_file, make_response
+from flask import Blueprint, request, redirect, url_for, flash, render_template, session, jsonify
 from config.database import create_connection
-from mysql.connector import Error
-from werkzeug.utils import secure_filename
+from utils.auth_helpers import login_required
+from utils.notification import notify_form_submitted
 from datetime import datetime
-import random
-import string
-import os
 
+# Crear el blueprint
+formulario_bp = Blueprint('formularios', __name__)
 
-formularios_bp = Blueprint('formularios', __name__)
-
-@formularios_bp.route('/lista')
-def lista():
+@formulario_bp.route('/formularios')
+def formularios():
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
-    
-    connection = create_connection()
-    if connection:
-        cursor = connection.cursor(dictionary=True)
-        try:
-            cursor.execute("""
-                SELECT fe.id_formElegibilidad, CONCAT(u.nombres, ' ', u.apellidos) as solicitante, 
-                    fe.motivo_viaje, fe.codigo_pasaporte, fe.pais_residencia, fe.provincia_destino
-                FROM tbl_form_eligibilidadCVA fe
-                JOIN tbl_solicitante s ON fe.id_solicitante = s.id_solicitante
-                JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-            """)
-            formularios = cursor.fetchall()
-            return render_template('formularios/lista.html', formularios=formularios)
-        except Exception as e:
-            print(f"Error en la consulta: {e}")
-            flash('Error al cargar los formularios', 'error')
-            return redirect(url_for('index'))
-        finally:
-            cursor.close()
-            connection.close()
-    else:
-        flash('Error de conexión a la base de datos', 'error')
-        return redirect(url_for('index'))
+    return render_template('formulario_solicitud.html')  # Usa la plantilla que corresponda
 
-@formularios_bp.route('/solicitud')
-def solicitud():
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-    
-    return render_template('formulario_solicitud.html')
+@formulario_bp.route('/asesorias_pagadas')
+@login_required
+def obtener_asesorias_pagadas():
+    """Obtener todas las asesorías con estado 'Pagada'"""
+    try:
+        connection = create_connection()
+        if not connection:
+            return jsonify({
+                'success': False,
+                'message': 'Error de conexión a la base de datos'
+            }), 500
 
-@formularios_bp.route('/procesar_formulario', methods=['POST'])
-def procesar_formulario():
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-    
-    # Obtener datos del formulario
-    proposito = request.form.get('proposito')
-    tiempo_estadia = request.form.get('tiempo_estadia')
-    pais_residencia = request.form.get('pais_residencia')
-    fecha_nacimiento = request.form.get('fecha_nacimiento')
-    familiar_canada = request.form.get('familiar_canada')
-    relacion_familiar = request.form.get('relacion_familiar')
-    residente_permanente = request.form.get('residente_permanente')
-    estado_civil = request.form.get('estado_civil')
-    provincia_destino = request.form.get('provincia_destino')
-    
-    proposito_principal = request.form.get('proposito_principal')
-    empleo_origen = request.form.get('empleo_origen')
-    dependencia_economica = request.form.get('dependencia_economica')
-    viajes_previos = request.form.get('viajes_previos')
-    acompana_familiar = request.form.get('acompana_familiar')
-    antecedentes_penales = request.form.get('antecedentes_penales')
-    examenes_medicos = request.form.get('examenes_medicos')
-    pago_online = request.form.get('pago_online')
-    metodo_pago = request.form.get('metodo_pago')
-    
-    # Procesar archivos
-    archivos = {}
-    for campo in ['doc_historial_viajes', 'doc_recursos_financieros', 'doc_relaciones_familiares', 'doc_hoja_vida']:
-        if campo in request.files and request.files[campo].filename:
-            archivo = request.files[campo]
-            if allowed_file(archivo.filename, ['pdf', 'jpg', 'jpeg', 'png']):
-                filename = save_file(archivo, secure_filename(f"{campo}_{session['user_id']}_{int(datetime.now().timestamp())}.{archivo.filename.rsplit('.', 1)[1].lower()}"), 'documentos_solicitud')
-                archivos[campo] = filename
-    
-    connection = create_connection()
-    if connection:
         cursor = connection.cursor(dictionary=True)
         
+        # Consulta para obtener asesorías pagadas con información del solicitante
+        query = """
+        SELECT 
+            a.codigo_asesoria,
+            a.fecha_asesoria,
+            a.tipo_asesoria,
+            a.descripcion,
+            a.lugar,
+            a.estado,
+            a.nombre_asesor,
+            a.especialidad,
+            a.id_formElegibilidad,
+            u.nombres,
+            u.apellidos,
+            u.correo,
+            s.id_solicitante,
+            COALESCE(fe.completado, 0) as completado
+        FROM tbl_asesoria a
+        INNER JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
+        INNER JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+        LEFT JOIN tbl_form_eligibilidadCVA fe ON a.id_formElegibilidad = fe.id_formElegibilidad
+        WHERE a.estado = 'Pagada'
+        ORDER BY a.fecha_asesoria DESC
+        """
+        
+        cursor.execute(query)
+        asesorias = cursor.fetchall()
+        
+        # Convertir datetime a string para JSON
+        for asesoria in asesorias:
+            if asesoria['fecha_asesoria']:
+                asesoria['fecha_asesoria'] = asesoria['fecha_asesoria'].isoformat()
+        
+        cursor.close()
+        connection.close()
+        
+        return jsonify({
+            'success': True,
+            'asesorias': asesorias
+        })
+        
+    except Exception as e:
+        print(f"Error al obtener asesorías pagadas: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Error interno del servidor'
+        }), 500
+
+@formulario_bp.route('/procesar_elegibilidad', methods=['POST'])
+@login_required
+def procesar_formulario_elegibilidad():
+    """Procesar y guardar el formulario de elegibilidad CVA"""
+    try:
+        # Obtener datos del formulario
+        datos = request.get_json()
+        
+        if not datos:
+            return jsonify({
+                'success': False,
+                'message': 'No se recibieron datos del formulario'
+            }), 400
+        
+        # Validar que se recibió el código de asesoría
+        codigo_asesoria = datos.get('codigo_asesoria')
+        if not codigo_asesoria:
+            return jsonify({
+                'success': False,
+                'message': 'Código de asesoría requerido'
+            }), 400
+        
+        connection = create_connection()
+        if not connection:
+            return jsonify({
+                'success': False,
+                'message': 'Error de conexión a la base de datos'
+            }), 500
+
+        cursor = connection.cursor()
+        
+        # Verificar que la asesoría existe y está pagada
+        cursor.execute("""
+            SELECT id_solicitante, id_formElegibilidad, 
+                   COALESCE((SELECT completado FROM tbl_form_eligibilidadCVA WHERE codigo_asesoria = %s), 0) as completado
+            FROM tbl_asesoria 
+            WHERE codigo_asesoria = %s AND estado = 'Pagada'
+        """, (codigo_asesoria, codigo_asesoria))
+        
+        asesoria = cursor.fetchone()
+        if not asesoria:
+            cursor.close()
+            connection.close()
+            return jsonify({
+                'success': False,
+                'message': 'Asesoría no encontrada o no está pagada'
+            }), 404
+
+        # Verificar si ya existe un formulario completado para esta asesoría
+        if asesoria[2] == 1:  # completado
+            cursor.close()
+            connection.close()
+            return jsonify({
+                'success': False,
+                'message': 'Ya existe un formulario completado para esta asesoría'
+            }), 400
+        
+        id_solicitante = asesoria[0]
+        
+        # Preparar datos para inserción (solo campos que existen en la tabla)
+        campos_formulario = {
+            'motivo_viaje': datos.get('motivo_viaje'),
+            'numero_documento': datos.get('numero_documento'),
+            'tipo_documento': datos.get('tipo_documento'),
+            'pais_residencia': datos.get('pais_residencia'),
+            'familiares_canada': datos.get('familiares_canada'),
+            'relacion_familiares_can': datos.get('relacion_familiares_can'),
+            'estado_civil': datos.get('estado_civil'),
+            'provincia_destino': datos.get('provincia_destino'),
+            'trabajo_actual': datos.get('trabajo_actual'),
+            'negocios_actuales': datos.get('negocios_actuales'),
+            'co_deudor': datos.get('co_deudor'),
+            'viajes_recientes': datos.get('viajes_recientes'),
+            'acompanante_conocido': datos.get('acompanante_conocido'),
+            'antecedente_judiciales': datos.get('antecedente_judiciales'),
+            'examenes_medicos': datos.get('examenes_medicos'),
+            'aplicacion_familiares': datos.get('aplicacion_familiares'),
+            'acceso_aplicacion': datos.get('acceso_aplicacion'),
+            'biometricos_canada': datos.get('biometricos_canada'),
+            'pago_tasas': datos.get('pago_tasas'),
+            'tiempo_estadia': datos.get('tiempo_estadia'),
+            'fecha_nacimiento': datos.get('fecha_nacimiento'),
+            'familiar_canada': datos.get('familiar_canada'),
+            'relacion_familiar': datos.get('relacion_familiar'),
+            'residente_permanente': datos.get('residente_permanente'),
+            'proposito_principal': datos.get('proposito_principal'),
+            'empleo_origen': datos.get('empleo_origen'),
+            'dependencia_economica': datos.get('dependencia_economica'),
+            'acompana_familiar': datos.get('acompana_familiar'),
+            'doc_historial_viajes': datos.get('doc_historial_viajes'),
+            'doc_recursos_financieros': datos.get('doc_recursos_financieros'),
+            'doc_relaciones_familiares': datos.get('doc_relaciones_familiares'),
+            'doc_hoja_vida': datos.get('doc_hoja_vida'),
+            'terminos': 1 if datos.get('terminos') == 1 or datos.get('terminos') == 'on' or datos.get('terminos') == True else 0,
+            'privacidad': 1 if datos.get('privacidad') == 1 or datos.get('privacidad') == 'on' or datos.get('privacidad') == True else 0,
+            'id_solicitante': id_solicitante,
+            'codigo_asesoria': codigo_asesoria,
+            'completado': 1  # Marcar como completado al enviar
+        }
+        
+        # Imprimir los datos para depuración
+        print("Datos a insertar:", campos_formulario)
+        
+        # Construir query de inserción
+        campos = list(campos_formulario.keys())
+        valores = list(campos_formulario.values())
+        placeholders = ', '.join(['%s'] * len(campos))
+        campos_str = ', '.join(campos)
+        
+        query_insercion = f"""
+        INSERT INTO tbl_form_eligibilidadCVA ({campos_str})
+        VALUES ({placeholders})
+        """
+        
+        # Ejecutar inserción
         try:
-            # Iniciar transacción
-            connection.start_transaction()
+            cursor.execute(query_insercion, valores)
+            id_form_elegibilidad = cursor.lastrowid
             
-            # Obtener id_solicitante
-            cursor.execute("SELECT id_solicitante FROM tbl_solicitante WHERE id_usuario = %s", (session['user_id'],))
-            solicitante = cursor.fetchone()
-            
-            if not solicitante:
-                # Crear registro de solicitante si no existe
-                cursor.execute("""
-                    INSERT INTO tbl_solicitante (id_usuario, pais_residencia, fecha_nacimiento)
-                    VALUES (%s, %s, %s)
-                """, (session['user_id'], pais_residencia, fecha_nacimiento))
-                
-                connection.commit()
-                
-                # Obtener el id_solicitante recién creado
-                cursor.execute("SELECT id_solicitante FROM tbl_solicitante WHERE id_usuario = %s", (session['user_id'],))
-                solicitante = cursor.fetchone()
-            else:
-                # Actualizar datos del solicitante
-                cursor.execute("""
-                    UPDATE tbl_solicitante
-                    SET pais_residencia = %s, fecha_nacimiento = %s
-                    WHERE id_solicitante = %s
-                """, (pais_residencia, fecha_nacimiento, solicitante['id_solicitante']))
-            
-            # Generar código único para la solicitud
-            codigo_solicitud = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-            
-            # Guardar la solicitud
+            # Actualizar la asesoría con el ID del formulario de elegibilidad
             cursor.execute("""
-                INSERT INTO tbl_solicitud_visa (
-                    codigo_solicitud, id_solicitante, proposito, tiempo_estadia, 
-                    familiar_canada, relacion_familiar, residente_permanente, 
-                    estado_civil, provincia_destino, proposito_principal, 
-                    empleo_origen, dependencia_economica, viajes_previos, 
-                    acompana_familiar, antecedentes_penales, examenes_medicos, 
-                    pago_online, metodo_pago, estado, fecha_creacion
-                ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'Pendiente', NOW()
-                )
-            """, (
-                codigo_solicitud, solicitante['id_solicitante'], proposito, tiempo_estadia,
-                familiar_canada, relacion_familiar, residente_permanente,
-                estado_civil, provincia_destino, proposito_principal,
-                empleo_origen, dependencia_economica, viajes_previos,
-                acompana_familiar, antecedentes_penales, examenes_medicos,
-                pago_online, metodo_pago
-            ))
-            
-            # Guardar documentos
-            for campo, filename in archivos.items():
-                tipo_documento = campo.replace('doc_', '')
-                cursor.execute("""
-                    INSERT INTO tbl_documento_solicitud (
-                        codigo_solicitud, tipo_documento, ruta_archivo, fecha_subida
-                    ) VALUES (%s, %s, %s, NOW())
-                """, (codigo_solicitud, tipo_documento, filename))
-            
-            # Crear notificación para el usuario
-            cursor.execute("""
-                INSERT INTO tbl_notificacion (id_usuario, tipo, mensaje, leida, fecha_creacion)
-                VALUES (%s, 'solicitud', %s, 0, NOW())
-            """, (session['user_id'], f"Tu solicitud de visa ha sido recibida. Código: {codigo_solicitud}"))
-            
-            # Crear notificación para administradores
-            cursor.execute("""
-                INSERT INTO tbl_notificacion (id_usuario, tipo, mensaje, leida, fecha_creacion)
-                SELECT id_usuario, 'admin', %s, 0, NOW()
-                FROM tbl_usuario
-                WHERE rol = 'admin'
-            """, (f"Nueva solicitud de visa recibida. Código: {codigo_solicitud}",))
+                UPDATE tbl_asesoria 
+                SET id_formElegibilidad = %s 
+                WHERE codigo_asesoria = %s
+            """, (id_form_elegibilidad, codigo_asesoria))
             
             # Confirmar transacción
             connection.commit()
             
-            flash('Solicitud enviada exitosamente. Pronto nos pondremos en contacto contigo.', 'success')
-            return redirect(url_for('formularios.solicitud'))
+            # Notificar sobre el formulario enviado
+            try:
+                notify_form_submitted(session['user_id'], id_form_elegibilidad)
+            except Exception as notify_error:
+                print(f"Error en notificación: {str(notify_error)}")
+                # Continuar aunque falle la notificación
             
-        except Error as e:
+            return jsonify({
+                'success': True,
+                'message': 'Formulario de elegibilidad guardado exitosamente',
+                'id_formulario': id_form_elegibilidad
+            })
+            
+        except Exception as db_error:
+            print(f"Error en la base de datos: {str(db_error)}")
             connection.rollback()
-            flash(f'Error al procesar la solicitud: {str(e)}', 'error')
-            return redirect(url_for('formularios.solicitud'))
-        finally:
-            cursor.close()
+            return jsonify({
+                'success': False,
+                'message': f'Error en la base de datos: {str(db_error)}'
+            }), 500
+            
+    except Exception as e:
+        print(f"Error al procesar formulario de elegibilidad: {str(e)}")
+        if 'connection' in locals() and connection:
+            connection.rollback()
+            if 'cursor' in locals() and cursor:
+                cursor.close()
             connection.close()
-    else:
-        flash('Error de conexión a la base de datos', 'error')
-        return redirect(url_for('formularios.solicitud'))
+        
+        return jsonify({
+            'success': False,
+            'message': f'Error interno del servidor al procesar el formulario: {str(e)}'
+        }), 500
+    finally:
+        if 'cursor' in locals() and cursor:
+            cursor.close()
+        if 'connection' in locals() and connection:
+            connection.close()
 
-@formularios_bp.route('/generar_reporte_pdf')
-def generar_reporte_pdf():
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-    
-    # Obtener datos del formulario desde los parámetros de la URL
-    form_data = request.args.to_dict()
-    
-    # Obtener nombres de archivos si existen
-    for field in ['doc_historial_viajes', 'doc_recursos_financieros', 'doc_relaciones_familiares', 'doc_hoja_vida']:
-        if field in request.files and request.files[field].filename:
-            form_data[f'{field}_filename'] = request.files[field].filename
-    
-    # Generar el PDF
-    pdf_buffer = generate_visa_report(form_data)
-    
-    # Enviar el archivo al cliente
-    return send_file(
-        pdf_buffer,
-        mimetype='application/pdf',
-        as_attachment=True,
-        download_name=f'reporte_visa_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
-    )
+@formulario_bp.route('/formulario/<int:id_formulario>')
+@login_required
+def ver_formulario_elegibilidad(id_formulario):
+    """Ver un formulario de elegibilidad específico"""
+    try:
+        connection = create_connection()
+        if not connection:
+            flash('Error de conexión a la base de datos', 'error')
+            return redirect(url_for('formularios.formularios'))
 
-@formularios_bp.route('/vista_previa_reporte')
-def vista_previa_reporte():
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
+        cursor = connection.cursor(dictionary=True)
+        
+        # Obtener datos del formulario con información del solicitante
+        query = """
+        SELECT 
+            fe.*,
+            u.nombres,
+            u.apellidos,
+            u.correo,
+            a.codigo_asesoria,
+            a.tipo_asesoria,
+            a.fecha_asesoria
+        FROM tbl_form_eligibilidadCVA fe
+        INNER JOIN tbl_solicitante s ON fe.id_solicitante = s.id_solicitante
+        INNER JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+        LEFT JOIN tbl_asesoria a ON fe.codigo_asesoria = a.codigo_asesoria
+        WHERE fe.id_formElegibilidad = %s
+        """
+        
+        cursor.execute(query, (id_formulario,))
+        formulario = cursor.fetchone()
+        
+        cursor.close()
+        connection.close()
+        
+        if not formulario:
+            flash('Formulario no encontrado', 'error')
+            return redirect(url_for('formularios.formularios'))
+        
+        return render_template('ver_formulario_elegibilidad.html', formulario=formulario)
+        
+    except Exception as e:
+        print(f"Error al obtener formulario: {str(e)}")
+        flash('Error al cargar el formulario', 'error')
+        return redirect(url_for('formularios.formularios'))
+
+@formulario_bp.route('/lista_formularios')
+@login_required
+def lista_formularios_elegibilidad():
+    """Listar todos los formularios de elegibilidad"""
+    try:
+        connection = create_connection()
+        if not connection:
+            flash('Error de conexión a la base de datos', 'error')
+            return redirect(url_for('formularios.formularios'))
+
+        cursor = connection.cursor(dictionary=True)
+        
+        # Obtener todos los formularios con información del solicitante
+        query = """
+        SELECT 
+            fe.id_formElegibilidad,
+            fe.motivo_viaje,
+            fe.numero_documento,
+            fe.pais_residencia,
+            fe.provincia_destino,
+            u.nombres,
+            u.apellidos,
+            u.correo,
+            a.codigo_asesoria,
+            a.tipo_asesoria,
+            a.fecha_asesoria
+        FROM tbl_form_eligibilidadCVA fe
+        INNER JOIN tbl_solicitante s ON fe.id_solicitante = s.id_solicitante
+        INNER JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+        LEFT JOIN tbl_asesoria a ON fe.codigo_asesoria = a.codigo_asesoria
+        ORDER BY fe.id_formElegibilidad DESC
+        """
+        
+        cursor.execute(query)
+        formularios = cursor.fetchall()
+        
+        cursor.close()
+        connection.close()
+        
+        return render_template('lista_formularios_elegibilidad.html', formularios=formularios)
+        
+    except Exception as e:
+        print(f"Error al obtener lista de formularios: {str(e)}")
+        flash('Error al cargar la lista de formularios', 'error')
+        return redirect(url_for('formularios.formularios'))
+
+# Función auxiliar para validar datos del formulario
+def validar_datos_formulario(datos):
+    """Validar que los datos del formulario sean correctos"""
+    campos_requeridos = [
+        'motivo_viaje', 'numero_documento', 'tipo_documento', 'pais_residencia', 
+        'provincia_destino', 'estado_civil', 'familiares_canada', 'co_deudor', 
+        'viajes_recientes', 'acompanante_conocido', 'antecedente_judiciales', 
+        'examenes_medicos', 'aplicacion_familiares', 'acceso_aplicacion', 
+        'biometricos_canada', 'pago_tasas', 'fecha_nacimiento', 'proposito_principal',
+        'empleo_origen', 'dependencia_economica', 'terminos', 'privacidad'
+    ]
     
-    # Obtener datos del formulario desde los parámetros de la URL
-    form_data = request.args.to_dict()
+    errores = []
     
-    # Generar el PDF
-    pdf_buffer = generate_visa_report(form_data)
+    for campo in campos_requeridos:
+        if not datos.get(campo) or str(datos.get(campo)).strip() == '':
+            errores.append(f'El campo {campo.replace("_", " ")} es requerido')
     
-    # Crear respuesta con el PDF incrustado
-    response = make_response(pdf_buffer.getvalue())
-    response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = 'inline; filename=vista_previa_reporte.pdf'
+    # Validar relación familiar si tiene familiares en Canadá
+    if datos.get('familiares_canada') == 'Si':
+        if not datos.get('relacion_familiares_can') or str(datos.get('relacion_familiares_can')).strip() == '':
+            errores.append('Debe especificar la relación con familiares en Canadá')
     
-    return response
+    # Validar opciones de sí/no
+    opciones_si_no = ['familiares_canada', 'co_deudor', 'viajes_recientes', 'acompanante_conocido', 
+                      'antecedente_judiciales', 'examenes_medicos', 'aplicacion_familiares', 
+                      'acceso_aplicacion', 'biometricos_canada', 'pago_tasas', 'familiar_canada',
+                      'residente_permanente', 'empleo_origen', 'dependencia_economica', 'acompana_familiar']
+    
+    for campo in opciones_si_no:
+        valor = datos.get(campo)
+        if valor and valor not in ['Si', 'No']:
+            errores.append(f'El campo {campo.replace("_", " ")} debe ser "Si" o "No"')
+    
+    return errores
 

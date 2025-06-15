@@ -5,6 +5,7 @@ import stripe
 import os
 import json
 from datetime import datetime
+from utils.notification import notify_payment_completed, notify_appointment_confirmed
 
 # Configurar Stripe
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
@@ -52,7 +53,7 @@ def procesar_pago():
                 
                 # Obtener información de la asesoría
                 cursor.execute("""
-                    SELECT fecha_asesoria, id_asesor FROM tbl_asesoria WHERE codigo_asesoria = %s
+                    SELECT fecha_asesoria, id_asesor, tipo_asesoria FROM tbl_asesoria WHERE codigo_asesoria = %s
                 """, (codigo_asesoria,))
                 
                 asesoria = cursor.fetchone()
@@ -60,6 +61,7 @@ def procesar_pago():
                 if asesoria:
                     fecha_obj = asesoria['fecha_asesoria']
                     id_asesor_db = asesoria['id_asesor']
+                    tipo_asesoria = asesoria['tipo_asesoria']
                     
                     # Si no se proporcionó fecha o id_asesor, usar los de la base de datos
                     if not fecha_asesoria:
@@ -89,13 +91,21 @@ def procesar_pago():
                         DELETE FROM tbl_reservas_temporales
                         WHERE id_asesor = %s AND DATE(fecha) = %s AND TIME(fecha) = %s
                     """, (id_asesor, fecha_obj.date(), hora))
+                    
+                    # NUEVO: Agregar notificaciones de pago completado y asesoría confirmada
+                    
+                    # Notificar que el pago se ha completado
+                    notify_payment_completed(session['user_id'], codigo_asesoria, monto, tipo_asesoria)
+                    
+                    # Notificar que la asesoría ha sido confirmada
+                    notify_appointment_confirmed(session['user_id'], codigo_asesoria, fecha_obj, tipo_asesoria)
                 
                 connection.commit()
                 
                 if request.is_json:
-                    return jsonify({'success': True, 'message': 'Pago procesado exitosamente'})
+                    return jsonify({'success': True, 'message': 'Pago procesado exitosamente, dirigirte a Formulario de elegibilidad'})
                 else:
-                    flash('Pago procesado exitosamente', 'success')
+                    # No mostrar flash message, JavaScript se encargará de la alerta
                     return redirect(url_for('asesorias.asesorias'))
                     
             except Exception as e:
@@ -186,7 +196,7 @@ def crear_payment_intent():
     except Exception as e:
         print(f"Error al crear PaymentIntent: {str(e)}")
         return jsonify({'error': str(e)}), 500
-
+    
 @pagos_bp.route('/confirmar_pago', methods=['GET'])
 def confirmar_pago():
     if 'user_id' not in session:
@@ -212,7 +222,7 @@ def confirmar_pago():
                 # Actualizar el estado de la asesoría en la base de datos
                 connection = create_connection()
                 if connection:
-                    cursor = connection.cursor()
+                    cursor = connection.cursor(dictionary=True)
                     
                     # Registrar el pago
                     cursor.execute("""
@@ -232,14 +242,16 @@ def confirmar_pago():
                     
                     # Obtener información de la asesoría
                     cursor.execute("""
-                        SELECT fecha_asesoria, id_asesor FROM tbl_asesoria WHERE codigo_asesoria = %s
+                        SELECT fecha_asesoria, id_asesor, tipo_asesoria FROM tbl_asesoria WHERE codigo_asesoria = %s
                     """, (codigo_asesoria,))
                     
                     asesoria = cursor.fetchone()
                     
                     if asesoria:
-                        fecha_obj = asesoria[0]
-                        id_asesor = asesoria[1]
+                        fecha_obj = asesoria['fecha_asesoria']
+                        id_asesor = asesoria['id_asesor']
+                        tipo_asesoria = asesoria['tipo_asesoria']
+                        monto = payment_intent.amount / 100  # Convertir de centavos a dólares
                         
                         # Registrar en tbl_calendario_asesorias
                         cursor.execute("""
@@ -263,10 +275,17 @@ def confirmar_pago():
                             DELETE FROM tbl_reservas_temporales
                             WHERE id_asesor = %s AND DATE(fecha) = %s AND TIME(fecha) = %s
                         """, (id_asesor, fecha_obj.date(), hora))
+                        
+                        # NUEVO: Agregar notificaciones de pago completado y asesoría confirmada
+                        
+                        # Notificar que el pago se ha completado
+                        notify_payment_completed(session['user_id'], codigo_asesoria, monto, tipo_asesoria)
+                        
+                        # Notificar que la asesoría ha sido confirmada
+                        notify_appointment_confirmed(session['user_id'], codigo_asesoria, fecha_obj, tipo_asesoria)
                     
                     connection.commit()
                     cursor.close()
-                    connection.close()
                     
                     # Enviar correo de confirmación
                     try:
@@ -305,7 +324,8 @@ def confirmar_pago():
                     except Exception as e:
                         print(f"Error al enviar correo de confirmación: {e}")
                     
-                    flash('Pago procesado exitosamente', 'success')
+                    connection.close()
+                    # No mostrar flash message, JavaScript se encargará de la alerta
                 else:
                     flash('Error de conexión a la base de datos', 'error')
             else:
@@ -316,4 +336,3 @@ def confirmar_pago():
         flash(f'Error al procesar el pago: {str(e)}', 'error')
     
     return redirect(url_for('asesorias.asesorias'))
-

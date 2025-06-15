@@ -1,23 +1,9 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reportes - Sistema de Inmigración Canadiense</title>
-    <link href="/static/css/output.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js para gráficos -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Font Awesome para iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body class="font-['Inter'] bg-gray-50 text-gray-700 overflow-x-hidden m-0 p-0">
-    <!-- Sidebar -->
-    {% include 'includes/_sidebar_asesor.html' %}
-    
-    <!-- Main Content -->
-    <main class="ml-[calc(240px+40px)] p-8 min-h-screen">
+{% extends 'asesor/base_asesor.html' %}
+
+{% block title %}CVA | Asesor | Reportes{% endblock %}
+
+{% block main_asesor %}
+
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900 m-0 mb-2">Reportes y Estadísticas</h1>
             <p class="text-gray-500 text-sm">Visualiza métricas sobre asesorías, clientes y documentación</p>
@@ -53,7 +39,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-500">Clientes Totales</p>
-                        <h3 class="text-3xl font-bold text-gray-900 mt-1">{{ estadisticas.total_clientes }}</h3>
+                        <h3 class="text-3xl font-bold text-gray-900 mt-1">{{ estadisticas.total_clientes|default(0) }}</h3>
                     </div>
                     <div class="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center">
                         <i class="fas fa-users text-red-500"></i>
@@ -63,7 +49,7 @@
                     <div class="flex items-center">
                         <span class="text-green-500 text-sm font-medium flex items-center">
                             <i class="fas fa-arrow-up mr-1"></i>
-                            {{ estadisticas.incremento_clientes }}%
+                            {{ estadisticas.incremento_clientes|default(0) }}%
                         </span>
                         <span class="text-gray-500 text-sm ml-2">vs mes anterior</span>
                     </div>
@@ -75,7 +61,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-500">Asesorías Realizadas</p>
-                        <h3 class="text-3xl font-bold text-gray-900 mt-1">{{ estadisticas.total_asesorias }}</h3>
+                        <h3 class="text-3xl font-bold text-gray-900 mt-1">{{ estadisticas.total_asesorias|default(0) }}</h3>
                     </div>
                     <div class="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
                         <i class="fas fa-calendar-check text-blue-500"></i>
@@ -85,7 +71,7 @@
                     <div class="flex items-center">
                         <span class="text-green-500 text-sm font-medium flex items-center">
                             <i class="fas fa-arrow-up mr-1"></i>
-                            {{ estadisticas.incremento_asesorias }}%
+                            {{ estadisticas.incremento_asesorias|default(0) }}%
                         </span>
                         <span class="text-gray-500 text-sm ml-2">vs mes anterior</span>
                     </div>
@@ -97,7 +83,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-500">Asesorías Pagadas</p>
-                        <h3 class="text-3xl font-bold text-gray-900 mt-1">{{ estadisticas.asesorias_pagadas }}</h3>
+                        <h3 class="text-3xl font-bold text-gray-900 mt-1">{{ estadisticas.asesorias_pagadas|default(0) }}</h3>
                     </div>
                     <div class="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
                         <i class="fas fa-dollar-sign text-green-500"></i>
@@ -107,7 +93,7 @@
                     <div class="flex items-center">
                         <span class="text-green-500 text-sm font-medium flex items-center">
                             <i class="fas fa-arrow-up mr-1"></i>
-                            {{ estadisticas.incremento_pagadas }}%
+                            {{ estadisticas.incremento_pagadas|default(0) }}%
                         </span>
                         <span class="text-gray-500 text-sm ml-2">vs mes anterior</span>
                     </div>
@@ -119,7 +105,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-500">Ingresos Totales</p>
-                        <h3 class="text-3xl font-bold text-gray-900 mt-1">${{ estadisticas.ingresos_totales|number_format(0, ',', '.') }}</h3>
+                        <h3 class="text-3xl font-bold text-gray-900 mt-1">${{ estadisticas.ingresos_totales|default(0)|int }}</h3>
                     </div>
                     <div class="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center">
                         <i class="fas fa-chart-line text-purple-500"></i>
@@ -129,7 +115,7 @@
                     <div class="flex items-center">
                         <span class="text-green-500 text-sm font-medium flex items-center">
                             <i class="fas fa-arrow-up mr-1"></i>
-                            {{ estadisticas.incremento_ingresos }}%
+                            {{ estadisticas.incremento_ingresos|default(0) }}%
                         </span>
                         <span class="text-gray-500 text-sm ml-2">vs mes anterior</span>
                     </div>
@@ -137,13 +123,49 @@
             </div>
         </div>
         
-        <!-- Gráficos -->
+        <!-- Gráficos simplificados -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <!-- Gráfico de asesorías por tipo -->
             <div class="bg-white rounded-2xl shadow-lg p-6 animate-[fadeIn_0.5s_ease] transition-all duration-300 hover:shadow-xl">
                 <h2 class="text-lg font-semibold text-gray-800 mb-4">Asesorías por Tipo</h2>
-                <div class="h-80">
-                    <canvas id="asesorias-por-tipo"></canvas>
+                <div class="h-80 flex flex-col">
+                    <!-- Visualización simplificada sin barras de progreso -->
+                    <div class="flex-1 flex flex-col justify-center space-y-4">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                            <span class="text-sm font-medium">Visa de Trabajo:</span>
+                            <span class="ml-auto text-sm font-bold">{{ estadisticas.asesorias_trabajo|default(0) }}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                            <span class="text-sm font-medium">Visa de Estudio:</span>
+                            <span class="ml-auto text-sm font-bold">{{ estadisticas.asesorias_estudio|default(0) }}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                            <span class="text-sm font-medium">Residencia Permanente:</span>
+                            <span class="ml-auto text-sm font-bold">{{ estadisticas.asesorias_residencia|default(0) }}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                            <span class="text-sm font-medium">Ciudadanía:</span>
+                            <span class="ml-auto text-sm font-bold">{{ estadisticas.asesorias_ciudadania|default(0) }}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
+                            <span class="text-sm font-medium">Otros:</span>
+                            <span class="ml-auto text-sm font-bold">{{ estadisticas.asesorias_otros|default(0) }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Texto informativo en lugar de barras de progreso -->
+                    <div class="mt-6 text-center text-sm text-gray-500">
+                        <p>Total de asesorías: {{ (estadisticas.asesorias_trabajo|default(0) + 
+                                                estadisticas.asesorias_estudio|default(0) + 
+                                                estadisticas.asesorias_residencia|default(0) + 
+                                                estadisticas.asesorias_ciudadania|default(0) + 
+                                                estadisticas.asesorias_otros|default(0)) }}</p>
+                    </div>
                 </div>
             </div>
             
@@ -151,7 +173,28 @@
             <div class="bg-white rounded-2xl shadow-lg p-6 animate-[fadeIn_0.5s_ease] transition-all duration-300 hover:shadow-xl">
                 <h2 class="text-lg font-semibold text-gray-800 mb-4">Asesorías por Mes</h2>
                 <div class="h-80">
-                    <canvas id="asesorias-por-mes"></canvas>
+                    <!-- Tabla simple sin barras de progreso -->
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mes</th>
+                                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asesorías</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% set meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'] %}
+                                
+                                {% for i in range(12) %}
+                                    {% set valor = estadisticas.asesorias_por_mes[i]|default(0) if estadisticas.asesorias_por_mes is defined else 0 %}
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{{ meses[i] }}</td>
+                                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{{ valor }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -160,7 +203,7 @@
         <div class="bg-white rounded-2xl shadow-lg p-6 mb-6 animate-[fadeIn_0.5s_ease] transition-all duration-300 hover:shadow-xl">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-lg font-semibold text-gray-800">Asesorías Recientes</h2>
-                <a href="/admin/asesorias" class="text-red-500 hover:text-red-700 text-sm font-medium">Ver todas</a>
+                <a href="/asesor/asesorias" class="text-red-500 hover:text-red-700 text-sm font-medium">Ver todas</a>
             </div>
             
             <div class="overflow-x-auto rounded-xl border border-gray-200">
@@ -182,19 +225,83 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
                                     <div class="h-10 w-10 flex-shrink-0 bg-gray-100 rounded-full flex items-center justify-center font-medium">
-                                        {{ asesoria.solicitante|first|upper }}
+                                        {{ asesoria.solicitante|default('?')|first|upper if asesoria.solicitante else '?' }}
                                     </div>
                                     <div class="ml-3">
-                                        <p class="text-sm font-medium text-gray-900">{{ asesoria.solicitante }}</p>
-                                        <p class="text-xs text-gray-500">{{ asesoria.correo }}</p>
+                                        <p class="text-sm font-medium text-gray-900">{{ asesoria.solicitante|default('No disponible') }}</p>
+                                        <p class="text-xs text-gray-500">{{ asesoria.correo|default('') }}</p>
                                     </div>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">{{ asesoria.tipo_asesoria }}</span>
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">{{ asesoria.tipo_asesoria|default('N/A') }}</span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ asesoria.fecha_asesoria|format_datetime }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ asesoria.asesor_asignado or 'Por asignar' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ asesoria.fecha_asesoria|default('N/A') }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ asesoria.asesor_asignado|default('Por asignar') }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 {% if asesoria.estado == 'Pagada' %}
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        Pagada
+                                    </span>
+                                {% elif asesoria.estado == 'Pendiente' %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                        Pendiente
+                                    </span>
+                                {% else %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                        {{ asesoria.estado|default('N/A') }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                        {% if not asesorias_recientes %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
+                                No hay asesorías recientes para mostrar
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Funcionalidad de filtros
+            const dateFrom = document.getElementById('date-from');
+            const dateTo = document.getElementById('date-to');
+            const applyFilter = document.getElementById('apply-filter');
+            const resetFilter = document.getElementById('reset-filter');
+            
+            // Establecer fechas por defecto
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            
+            dateFrom.value = firstDay.toISOString().split('T')[0];
+            dateTo.value = today.toISOString().split('T')[0];
+            
+            // Aplicar filtros
+            applyFilter.addEventListener('click', function() {
+                if (dateFrom.value && dateTo.value) {
+                    window.location.href = `/asesor/reportes?desde=${dateFrom.value}&hasta=${dateTo.value}`;
+                } else {
+                    alert('Por favor selecciona ambas fechas');
+                }
+            });
+            
+            // Restablecer filtros
+            resetFilter.addEventListener('click', function() {
+                dateFrom.value = firstDay.toISOString().split('T')[0];
+                dateTo.value = today.toISOString().split('T')[0];
+                window.location.href = '/asesor/reportes';
+            });
+        });
+    </script>
+{% endblock %}

@@ -76,6 +76,64 @@
                 {% endif %}
             {% endwith %}
             
+            {% if needs_2fa %}
+            <!-- Formulario de verificación 2FA -->
+            <form method="POST" action="{{ url_for('auth.verify_2fa') }}" class="space-y-5">
+                <div>
+                    <label for="totp_code_1" class="block text-red-700 text-sm font-roboto mb-2">Código de verificación</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400 group-focus-within:text-primary-500 transition-colors duration-200" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <input type="hidden" id="totp_code" name="totp_code" value="">
+                        <div class="flex justify-center space-x-2 pl-10">
+                            <input type="text" id="totp_code_1" maxlength="1" 
+                                class="totp-digit w-12 h-12 text-center text-xl border text-zinc-950 border-gray-200 rounded-xl  transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text" 
+                                inputmode="numeric" pattern="[0-9]*" autofocus>
+                            <input type="text" id="totp_code_2" maxlength="1" 
+                                class="totp-digit w-12 h-12 text-center text-xl border text-zinc-950 border-gray-200 rounded-xl  transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text" 
+                                inputmode="numeric" pattern="[0-9]*">
+                            <input type="text" id="totp_code_3" maxlength="1" 
+                                class="totp-digit w-12 h-12 text-center text-xl border text-zinc-950 border-gray-200 rounded-xl  transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text" 
+                                inputmode="numeric" pattern="[0-9]*">
+                            <input type="text" id="totp_code_4" maxlength="1" 
+                                class="totp-digit w-12 h-12 text-center text-xl border text-zinc-950 border-gray-200 rounded-xl  transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text" 
+                                inputmode="numeric" pattern="[0-9]*">
+                            <input type="text" id="totp_code_5" maxlength="1" 
+                                class="totp-digit w-12 h-12 text-center text-xl border text-zinc-950 border-gray-200 rounded-xl  transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text" 
+                                inputmode="numeric" pattern="[0-9]*">
+                            <input type="text" id="totp_code_6" maxlength="1" 
+                                class="totp-digit w-12 h-12 text-center text-xl border text-zinc-950 border-gray-200 rounded-xl  transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-text" 
+                                inputmode="numeric" pattern="[0-9]*">
+                        </div>
+                    </div>
+                    <p class="mt-2 text-sm text-zinc-500">Ingresa el código de 6 dígitos de tu aplicación de autenticación. Puedes copiar y pegar el código si lo prefieres.</p>
+                </div>
+
+                <button type="submit" id="verify-2fa-btn"
+                        class="w-full relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-4 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 mt-6">
+                    <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                    <div class="relative flex items-center justify-center">
+                        <span>Verificar</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                </button>
+
+                <div class="mt-2 flex flex-col sm:flex-row items-center justify-center ">
+                    <a href="{{ url_for('auth.login') }}" class="text-primary-400 hover:text-primary-300 font-roboto transition-colors duration-200 underline-offset-2 hover:underline flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                        </svg>
+                        Volver al inicio de sesión
+                    </a>
+                </div>
+            </form>
+            {% else %}
+            <!-- Formulario de inicio de sesión normal -->
             <form method="POST" class="space-y-5">
                 <div class="group">
                     <label for="email" class="block text-red-700 text-sm font-roboto mb-2">Correo electrónico</label>
@@ -134,7 +192,7 @@
                     </label>
                 </div>
 
-                <button type="submit" 
+                <button type="submit" id="login-btn"
                         class="w-full relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-4 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 mt-6">
                     <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
                     <div class="relative flex items-center justify-center">
@@ -145,6 +203,7 @@
                     </div>
                 </button>
             </form>
+            {% endif %}
 
             <div class="mt-8 flex flex-col sm:flex-row items-center justify-between text-sm">
                 <p class="mb-4 sm:mb-0 text-zinc-500 font-inter">

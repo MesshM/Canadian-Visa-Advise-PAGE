@@ -1,0 +1,115 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}CVA | Administrador | Crear Usuario{% endblock %}
+
+{% block main_admin %}
+    <div class="space-y-6">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 font-roboto">Crear Nuevo Usuario</h1>
+                <p class="text-gray-600 mt-1">Completa la información para crear un nuevo usuario en el sistema</p>
+            </div>
+            <a href="{{ url_for('usuarios_admin.listar_usuarios') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-300">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Volver
+            </a>
+        </div>
+
+        <!-- Form -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <form method="POST" action="{{ url_for('usuarios_admin.crear_usuario') }}">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Información Personal -->
+                    <div class="col-span-2">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Información Personal</h3>
+                    </div>
+                    
+                    <div>
+                        <label for="nombres" class="block text-sm font-medium text-gray-700 mb-2">Nombres *</label>
+                        <input type="text" id="nombres" name="nombres" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="Ingresa los nombres">
+                    </div>
+
+                    <div>
+                        <label for="apellidos" class="block text-sm font-medium text-gray-700 mb-2">Apellidos *</label>
+                        <input type="text" id="apellidos" name="apellidos" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="Ingresa los apellidos">
+                    </div>
+
+                    <div>
+                        <label for="correo" class="block text-sm font-medium text-gray-700 mb-2">Correo Electrónico *</label>
+                        <input type="email" id="correo" name="correo" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="correo@ejemplo.com">
+                    </div>
+
+                    <div>
+                        <label for="celular" class="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
+                        <input type="tel" id="celular" name="celular" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="+57 300 123 4567">
+                    </div>
+
+                    <div>
+                        <label for="fecha_nacimiento" class="block text-sm font-medium text-gray-700 mb-2">Fecha de Nacimiento</label>
+                        <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                    </div>
+
+                    <div>
+                        <label for="rol" class="block text-sm font-medium text-gray-700 mb-2">Rol del Usuario *</label>
+                        <select id="rol" name="rol" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                            <option value="">Selecciona un rol</option>
+                            <option value="Cliente">Cliente</option>
+                            <option value="Asesor">Asesor</option>
+                            <option value="Administrador">Administrador</option>
+                        </select>
+                    </div>
+
+                    <!-- Información de Acceso -->
+                    <div class="col-span-2 mt-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Información de Acceso</h3>
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Contraseña *</label>
+                        <input type="password" id="password" name="password" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="Mínimo 8 caracteres">
+                        <p class="text-xs text-gray-500 mt-1">La contraseña debe tener al menos 8 caracteres</p>
+                    </div>
+
+                    <div>
+                        <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-2">Confirmar Contraseña *</label>
+                        <input type="password" id="confirm_password" name="confirm_password" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="Repite la contraseña">
+                    </div>
+
+                    <!-- Configuraciones Adicionales -->
+                    <div class="col-span-2 mt-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Configuraciones Adicionales</h3>
+                    </div>
+
+                    <div class="col-span-2">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="correo_verificado" name="correo_verificado" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                            <label for="correo_verificado" class="ml-2 block text-sm text-gray-900">Marcar correo como verificado</label>
+                        </div>
+                    </div>
+
+                    <div class="col-span-2">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="enviar_credenciales" name="enviar_credenciales" checked class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                            <label for="enviar_credenciales" class="ml-2 block text-sm text-gray-900">Enviar credenciales de acceso por correo electrónico</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
+                    <a href="{{ url_for('usuarios_admin.listar_usuarios') }}" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-300">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-300">
+                        Crear Usuario
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/js/admin/crear_usuario.js"></script>
+{% endblock %}

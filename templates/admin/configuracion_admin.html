@@ -1,0 +1,441 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}CVA | Administrador | Configuración del Sistema{% endblock %}
+
+{% block main_admin %}
+    <div class="space-y-6">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow">
+            <h1 class="text-2xl font-bold text-gray-900 font-roboto">Configuración del Sistema</h1>
+            <button onclick="guardarConfiguracion()" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-300">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"></path>
+                </svg>
+                Guardar Cambios
+            </button>
+        </div>
+
+        <!-- Configuration Tabs -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="border-b border-gray-200">
+                <ul class="flex flex-wrap -mb-px text-sm font-medium" id="configTabs" role="tablist">
+                    <li class="mr-2" role="presentation">
+                        <button class="inline-block p-4 border-b-2 border-primary-600 text-primary-600 rounded-t-lg active font-inter" id="general-tab" data-tab="general" type="button" role="tab" aria-selected="true">
+                            Configuración General
+                        </button>
+                    </li>
+                    <li class="mr-2" role="presentation">
+                        <button class="inline-block p-4 border-b-2 border-transparent hover:text-primary-600 hover:border-primary-300 rounded-t-lg font-inter" id="notificaciones-tab" data-tab="notificaciones" type="button" role="tab" aria-selected="false">
+                            Notificaciones
+                        </button>
+                    </li>
+                    <li class="mr-2" role="presentation">
+                        <button class="inline-block p-4 border-b-2 border-transparent hover:text-primary-600 hover:border-primary-300 rounded-t-lg font-inter" id="seguridad-tab" data-tab="seguridad" type="button" role="tab" aria-selected="false">
+                            Seguridad
+                        </button>
+                    </li>
+                    <li class="mr-2" role="presentation">
+                        <button class="inline-block p-4 border-b-2 border-transparent hover:text-primary-600 hover:border-primary-300 rounded-t-lg font-inter" id="integraciones-tab" data-tab="integraciones" type="button" role="tab" aria-selected="false">
+                            Integraciones
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Tab Content: General Configuration -->
+            <div id="general-content" class="tab-content active p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Información Institucional</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="nombre_empresa" class="block text-sm font-medium text-gray-700 mb-2">Nombre de la Empresa</label>
+                        <input type="text" id="nombre_empresa" name="nombre_empresa" value="Canadian Visa Advise" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    </div>
+                    <div>
+                        <label for="correo_empresa" class="block text-sm font-medium text-gray-700 mb-2">Correo Electrónico</label>
+                        <input type="email" id="correo_empresa" name="correo_empresa" value="info@canadianvisaadvise.com" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    </div>
+                    <div>
+                        <label for="telefono_empresa" class="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
+                        <input type="tel" id="telefono_empresa" name="telefono_empresa" value="+1 (555) 123-4567" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    </div>
+                    <div>
+                        <label for="sitio_web" class="block text-sm font-medium text-gray-700 mb-2">Sitio Web</label>
+                        <input type="url" id="sitio_web" name="sitio_web" value="https://canadianvisaadvise.com" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    </div>
+                    <div class="col-span-2">
+                        <label for="direccion_empresa" class="block text-sm font-medium text-gray-700 mb-2">Dirección</label>
+                        <textarea id="direccion_empresa" name="direccion_empresa" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">123 Main Street, Toronto, ON M5V 3A8, Canada</textarea>
+                    </div>
+                </div>
+
+                <div class="mt-8">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Logo de la Empresa</h3>
+                    <div class="flex items-center space-x-6">
+                        <div class="shrink-0">
+                            <img class="h-16 w-16 object-cover rounded-lg" src="/static/img/logo-canadian-visa-advise.jpg" alt="Logo actual">
+                        </div>
+                        <div class="flex-1">
+                            <input type="file" id="logo_empresa" name="logo_empresa" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100">
+                            <p class="text-xs text-gray-500 mt-1">PNG, JPG, GIF hasta 10MB</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Configuraciones de Sistema</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="zona_horaria" class="block text-sm font-medium text-gray-700 mb-2">Zona Horaria</label>
+                            <select id="zona_horaria" name="zona_horaria" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                <option value="America/Toronto" selected>America/Toronto (EST)</option>
+                                <option value="America/Vancouver">America/Vancouver (PST)</option>
+                                <option value="America/New_York">America/New_York (EST)</option>
+                                <option value="UTC">UTC</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="idioma_sistema" class="block text-sm font-medium text-gray-700 mb-2">Idioma del Sistema</label>
+                            <select id="idioma_sistema" name="idioma_sistema" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                <option value="es" selected>Español</option>
+                                <option value="en">English</option>
+                                <option value="fr">Français</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="moneda" class="block text-sm font-medium text-gray-700 mb-2">Moneda</label>
+                            <select id="moneda" name="moneda" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                <option value="CAD" selected>CAD - Dólar Canadiense</option>
+                                <option value="USD">USD - Dólar Americano</option>
+                                <option value="EUR">EUR - Euro</option>
+                                <option value="COP">COP - Peso Colombiano</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="formato_fecha" class="block text-sm font-medium text-gray-700 mb-2">Formato de Fecha</label>
+                            <select id="formato_fecha" name="formato_fecha" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                <option value="DD/MM/YYYY" selected>DD/MM/YYYY</option>
+                                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab Content: Notifications -->
+            <div id="notificaciones-content" class="tab-content hidden p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Configuración de Notificaciones</h3>
+                
+                <div class="space-y-6">
+                    <div>
+                        <h4 class="text-md font-medium text-gray-900 mb-3">Notificaciones por Correo</h4>
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="email_nuevos_usuarios" name="email_nuevos_usuarios" checked class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                <label for="email_nuevos_usuarios" class="ml-2 block text-sm text-gray-900">Notificar cuando se registren nuevos usuarios</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="email_nuevas_asesorias" name="email_nuevas_asesorias" checked class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                <label for="email_nuevas_asesorias" class="ml-2 block text-sm text-gray-900">Notificar cuando se programen nuevas asesorías</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="email_pagos_pendientes" name="email_pagos_pendientes" checked class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                <label for="email_pagos_pendientes" class="ml-2 block text-sm text-gray-900">Notificar sobre pagos pendientes de aprobación</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="email_documentos_revision" name="email_documentos_revision" checked class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                <label for="email_documentos_revision" class="ml-2 block text-sm text-gray-900">Notificar sobre documentos pendientes de revisión</label>  class="ml-2 block text-sm text-gray-900">Notificar sobre documentos pendientes de revisión</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-md font-medium text-gray-900 mb-3">Configuración SMTP</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="smtp_servidor" class="block text-sm font-medium text-gray-700 mb-2">Servidor SMTP</label>
+                                <input type="text" id="smtp_servidor" name="smtp_servidor" value="smtp.gmail.com" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            </div>
+                            <div>
+                                <label for="smtp_puerto" class="block text-sm font-medium text-gray-700 mb-2">Puerto</label>
+                                <input type="number" id="smtp_puerto" name="smtp_puerto" value="587" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            </div>
+                            <div>
+                                <label for="smtp_usuario" class="block text-sm font-medium text-gray-700 mb-2">Usuario SMTP</label>
+                                <input type="email" id="smtp_usuario" name="smtp_usuario" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            </div>
+                            <div>
+                                <label for="smtp_password" class="block text-sm font-medium text-gray-700 mb-2">Contraseña SMTP</label>
+                                <input type="password" id="smtp_password" name="smtp_password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <button type="button" onclick="probarConexionSMTP()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-300">
+                                Probar Conexión SMTP
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-md font-medium text-gray-900 mb-3">Recordatorios Automáticos</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="recordatorio_asesorias" class="block text-sm font-medium text-gray-700 mb-2">Recordatorio de Asesorías (horas antes)</label>
+                                <select id="recordatorio_asesorias" name="recordatorio_asesorias" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                    <option value="1">1 hora</option>
+                                    <option value="2">2 horas</option>
+                                    <option value="24" selected>24 horas</option>
+                                    <option value="48">48 horas</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="recordatorio_documentos" class="block text-sm font-medium text-gray-700 mb-2">Recordatorio de Documentos (días)</label>
+                                <select id="recordatorio_documentos" name="recordatorio_documentos" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                    <option value="3">3 días</option>
+                                    <option value="7" selected>7 días</option>
+                                    <option value="14">14 días</option>
+                                    <option value="30">30 días</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab Content: Security -->
+            <div id="seguridad-content" class="tab-content hidden p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Configuración de Seguridad</h3>
+                
+                <div class="space-y-6">
+                    <div>
+                        <h4 class="text-md font-medium text-gray-900 mb-3">Políticas de Contraseñas</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="min_longitud_password" class="block text-sm font-medium text-gray-700 mb-2">Longitud mínima</label>
+                                <input type="number" id="min_longitud_password" name="min_longitud_password" value="8" min="6" max="20" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            </div>
+                            <div>
+                                <label for="expiracion_password" class="block text-sm font-medium text-gray-700 mb-2">Expiración (días)</label>
+                                <select id="expiracion_password" name="expiracion_password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                    <option value="0" selected>Nunca</option>
+                                    <option value="30">30 días</option>
+                                    <option value="60">60 días</option>
+                                    <option value="90">90 días</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-4 space-y-3">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="require_mayusculas" name="require_mayusculas" checked class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                <label for="require_mayusculas" class="ml-2 block text-sm text-gray-900">Requerir al menos una letra mayúscula</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="require_numeros" name="require_numeros" checked class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                <label for="require_numeros" class="ml-2 block text-sm text-gray-900">Requerir al menos un número</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="require_simbolos" name="require_simbolos" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                <label for="require_simbolos" class="ml-2 block text-sm text-gray-900">Requerir al menos un símbolo especial</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-md font-medium text-gray-900 mb-3">Autenticación de Dos Factores</h4>
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="enable_2fa" name="enable_2fa" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                <label for="enable_2fa" class="ml-2 block text-sm text-gray-900">Habilitar autenticación de dos factores</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="force_2fa_admin" name="force_2fa_admin" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                <label for="force_2fa_admin" class="ml-2 block text-sm text-gray-900">Obligatorio para administradores</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-md font-medium text-gray-900 mb-3">Sesiones</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="timeout_sesion" class="block text-sm font-medium text-gray-700 mb-2">Tiempo de inactividad (minutos)</label>
+                                <select id="timeout_sesion" name="timeout_sesion" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                    <option value="15">15 minutos</option>
+                                    <option value="30" selected>30 minutos</option>
+                                    <option value="60">1 hora</option>
+                                    <option value="120">2 horas</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="max_intentos_login" class="block text-sm font-medium text-gray-700 mb-2">Máximo intentos de login</label>
+                                <input type="number" id="max_intentos_login" name="max_intentos_login" value="5" min="3" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab Content: Integrations -->
+            <div id="integraciones-content" class="tab-content hidden p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Integraciones de Terceros</h3>
+                
+                <div class="space-y-6">
+                    <div>
+                        <h4 class="text-md font-medium text-gray-900 mb-3">Stripe (Pagos)</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="stripe_public_key" class="block text-sm font-medium text-gray-700 mb-2">Clave Pública</label>
+                                <input type="text" id="stripe_public_key" name="stripe_public_key" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="pk_test_...">
+                            </div>
+                            <div>
+                                <label for="stripe_secret_key" class="block text-sm font-medium text-gray-700 mb-2">Clave Secreta</label>
+                                <input type="password" id="stripe_secret_key" name="stripe_secret_key" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="sk_test_...">
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="stripe_enabled" name="stripe_enabled" checked class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                <label for="stripe_enabled" class="ml-2 block text-sm text-gray-900">Habilitar pagos con Stripe</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-md font-medium text-gray-900 mb-3">Google Analytics</h4>
+                        <div>
+                            <label for="google_analytics_id" class="block text-sm font-medium text-gray-700 mb-2">ID de Google Analytics</label>
+                            <input type="text" id="google_analytics_id" name="google_analytics_id" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="GA-XXXXXXXXX-X">
+                        </div>
+                        <div class="mt-4">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="analytics_enabled" name="analytics_enabled" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                <label for="analytics_enabled" class="ml-2 block text-sm text-gray-900">Habilitar Google Analytics</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-md font-medium text-gray-900 mb-3">Zoom (Videoconferencias)</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="zoom_api_key" class="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+                                <input type="text" id="zoom_api_key" name="zoom_api_key" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            </div>
+                            <div>
+                                <label for="zoom_api_secret" class="block text-sm font-medium text-gray-700 mb-2">API Secret</label>
+                                <input type="password" id="zoom_api_secret" name="zoom_api_secret" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="zoom_enabled" name="zoom_enabled" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                <label for="zoom_enabled" class="ml-2 block text-sm text-gray-900">Habilitar integración con Zoom</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-md font-medium text-gray-900 mb-3">Cloudinary (Almacenamiento de Archivos)</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="cloudinary_cloud_name" class="block text-sm font-medium text-gray-700 mb-2">Cloud Name</label>
+                                <input type="text" id="cloudinary_cloud_name" name="cloudinary_cloud_name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            </div>
+                            <div>
+                                <label for="cloudinary_api_key" class="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+                                <input type="text" id="cloudinary_api_key" name="cloudinary_api_key" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            </div>
+                            <div>
+                                <label for="cloudinary_api_secret" class="block text-sm font-medium text-gray-700 mb-2">API Secret</label>
+                                <input type="password" id="cloudinary_api_secret" name="cloudinary_api_secret" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="cloudinary_enabled" name="cloudinary_enabled" class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                <label for="cloudinary_enabled" class="ml-2 block text-sm text-gray-900">Habilitar Cloudinary para archivos</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Estado del Sistema</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center">
+                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 text-green-600 mb-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <p class="text-sm font-medium text-gray-900">Base de Datos</p>
+                    <p class="text-xs text-green-600">Conectada</p>
+                </div>
+                <div class="text-center">
+                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 text-green-600 mb-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <p class="text-sm font-medium text-gray-900">Servidor de Correo</p>
+                    <p class="text-xs text-green-600">Funcionando</p>
+                </div>
+                <div class="text-center">
+                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-yellow-100 text-yellow-600 mb-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                    </div>
+                    <p class="text-sm font-medium text-gray-900">Almacenamiento</p>
+                    <p class="text-xs text-yellow-600">85% Usado</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Backup and Maintenance -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Respaldo y Mantenimiento</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="text-md font-medium text-gray-900 mb-3">Respaldos Automáticos</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <label for="backup_frequency" class="block text-sm font-medium text-gray-700 mb-2">Frecuencia de Respaldo</label>
+                            <select id="backup_frequency" name="backup_frequency" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                                <option value="daily" selected>Diario</option>
+                                <option value="weekly">Semanal</option>
+                                <option value="monthly">Mensual</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="backup_enabled" name="backup_enabled" checked class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                            <label for="backup_enabled" class="ml-2 block text-sm text-gray-900">Habilitar respaldos automáticos</label>
+                        </div>
+                        <button type="button" onclick="crearRespaldoManual()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-300">
+                            Crear Respaldo Manual
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-md font-medium text-gray-900 mb-3">Mantenimiento del Sistema</h4>
+                    <div class="space-y-3">
+                        <button type="button" onclick="limpiarCache()" class="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors duration-300">
+                            Limpiar Caché del Sistema
+                        </button>
+                        <button type="button" onclick="optimizarBaseDatos()" class="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors duration-300">
+                            Optimizar Base de Datos
+                        </button>
+                        <button type="button" onclick="verificarIntegridad()" class="w-full px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors duration-300">
+                            Verificar Integridad de Archivos
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/admin/configuracion_admin.js"></script>
+{% endblock %}
