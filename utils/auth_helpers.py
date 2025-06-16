@@ -50,8 +50,8 @@ def role_required(roles):
                 # Redirección personalizada por rol
                 if user_role == 'Asesor':
                     return redirect(url_for('panel_asesor.index_asesor'))
-                # elif user_role == 'Admin':
-                    #return redirect(url_for('admin.dashboard'))  # Cambia según tu panel de admin
+                elif user_role == 'Administrador':
+                    return redirect(url_for('panel_admin.index_admin'))  # Cambia según tu panel de admin
                 else:
                     return redirect(url_for('auth.login'))
             return f(*args, **kwargs)

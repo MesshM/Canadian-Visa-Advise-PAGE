@@ -69,6 +69,31 @@ def login():
         password = request.form['password']
         remember_me = request.form.get('remember_me')
 
+        # --- VERIFICACIÓN DE ADMINISTRADOR ---
+        if email.endswith('@admincva.com'):
+            connection = create_connection()
+            if connection:
+                cursor = connection.cursor(dictionary=True)
+                cursor.execute("SELECT * FROM tbl_administrador WHERE correo = %s", (email,))
+                admin = cursor.fetchone()
+                if admin and check_password_hash(admin['password'], password):
+                    session['user_id'] = admin['id_administrador']
+                    session['user_name'] = f"{admin['nombre']} {admin['apellidos']}"
+                    session['user_role'] = 'Administrador'
+                    session['is_admin'] = True
+                    session.permanent = True if remember_me else False
+                    cursor.close()
+                    connection.close()
+                    return redirect(url_for('panel_admin.index_admin'))
+                else:
+                    flash('Correo o contraseña incorrectos', 'error')
+                cursor.close()
+                connection.close()
+            else:
+                flash('Error de conexión a la base de datos', 'error')
+            return render_template('login.html', needs_2fa=False)
+        # --- FIN VERIFICACIÓN DE ADMINISTRADOR ---
+
         if email.endswith('@cva.com'):
             # Buscar en tbl_asesor
             connection = create_connection()

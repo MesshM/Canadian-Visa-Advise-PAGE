@@ -111,6 +111,7 @@
                 <form id="formularioElegibilidad" class="stepper-content-container space-y-6">
                     <input type="hidden" name="codigo_asesoria" id="codigoAsesoria" data-id_solicitante="{{ id_solicitante }}">
                     <input type="hidden" name="id_solicitante" id="idSolicitante" value="{{ id_solicitante }}">
+                    <input type="hidden" id="id_usuario" value="{{ id_usuario }}">
                     <!-- Paso 1: Información Personal Básica y del Viaje -->
                     <div class="stepper-content">
                         <div class="bg-gradient-to-r from-primary-50 to-white p-4 rounded-xl border-l-4 border-primary-500 mb-5 animate-fade-in">
@@ -788,7 +789,7 @@
                         </div>
                     </div>
 
-                    <!-- Paso 4: Documentos y Términos - REORGANIZADO -->
+                    <!-- Paso 4: Documentos y Términos - SIMPLIFICADO -->
                     <div class="stepper-content hidden">
                         <div class="bg-gradient-to-r from-primary-50 to-white p-4 rounded-xl border-l-4 border-primary-500 mb-5 animate-fade-in">
                             <h3 class="text-base font-medium text-primary-800 flex items-center">
@@ -801,53 +802,72 @@
                         </div>
 
                         <div class="space-y-6">
-                            <!-- Card de Documentos Disponibles - MEJORADA CON GRID DE 2 COLUMNAS -->
+                            <!-- Card de Documentos Disponibles - SIMPLIFICADO -->
                             <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
                                 <div class="p-5 border-b border-gray-100">
-                                    <h4 class="text-sm font-medium text-gray-800 mb-2 flex items-center">
-                                        <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                        </svg>
-                                        Documentos Disponibles
-                                    </h4>
-                                    <p class="text-xs text-gray-500">Los documentos requeridos se mostrarán según el tipo de visa seleccionado</p>
-                                </div>
-                                <div class="p-5">
-                                    <!-- Contenedor con grid de 2 columnas para documentos -->
-                                    <div id="documentosDinamicos" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                        <!-- Los documentos se cargarán dinámicamente aquí -->
-                                        <div class="col-span-full text-center py-8 text-gray-500">
-                                            <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <svg class="w-5 h-5 mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                             </svg>
-                                            <p class="text-sm">Seleccione un motivo de viaje en el Paso 1 para ver los documentos requeridos</p>
+                                            <div>
+                                                <h4 class="text-lg text-gray-800">Documentos Requeridos</h4>
+                                                <p class="text-sm text-gray-500">Gestione sus documentos de forma organizada</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-3">
+                                            <span id="documentos-contador" class="px-3 py-1 bg-primary-100 text-primary-700 text-sm font-medium rounded-full">
+                                                0 documentos
+                                            </span>
+                                            <button type="button" id="toggle-documentos" class="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200">
+                                                <svg class="w-5 h-5 text-gray-600 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Contenedor colapsable de documentos -->
+                                <div id="documentos-contenido" class="overflow-hidden transition-all duration-300 max-h-0">
+                                    <div class="p-5">
+                                        <!-- Contenedor de documentos con scroll limitado a 4 elementos -->
+                                        <div id="documentosDinamicos" class="space-y-4 max-h-70 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100" >
+                                            <!-- Los documentos se cargarán dinámicamente aquí -->
+                                            <div class="col-span-full text-center py-12 text-gray-500">
+                                                <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                </svg>
+                                                <h3 class="text-lg font-medium text-gray-900 mb-2">Seleccione un motivo de viaje</h3>
+                                                <p class="text-sm">Vaya al Paso 1 y seleccione un motivo de viaje para ver los documentos requeridos</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Card de Términos y Condiciones - SEPARADA ABAJO -->
+                            <!-- Card de Términos y Condiciones - SEPARADA Y MEJORADA -->
                             <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
                                 <div class="p-5 border-b border-gray-100">
-                                    <h4 class="text-sm font-medium text-gray-800 mb-2 flex items-center">
-                                        <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <h4 class="text-lg text-gray-800 mb-2 flex items-center">
+                                        <svg class="w-5 h-5 mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.414-4.414a2 2 0 010 2.828L10.414 21a2 2 0 01-2.828 0L3.172 16.586a2 2 0 010-2.828L7.586 9.172a2 2 0 012.828 0L14 12.586a2 2 0 002.828 0l2.586-2.586a2 2 0 000-2.828z"></path>
                                         </svg>
                                         Términos y Condiciones
                                     </h4>
-                                    <p class="text-xs text-gray-500">Aceptación de términos requerida para continuar</p>
+                                    <p class="text-sm text-gray-500">Aceptación requerida para continuar con el proceso</p>
                                 </div>
                                 <div class="p-5 space-y-4">
-                                    <div class="flex items-start p-4 bg-gray-50 rounded-xl border border-gray-200">
-                                        <input type="checkbox" id="terminos" name="terminos" required class="mt-1 mr-3 text-primary-600 focus:ring-primary-500 rounded">
-                                        <label for="terminos" class="text-sm text-gray-700 cursor-pointer">
-                                            <span class="font-medium text-gray-900">Acepto los términos y condiciones</span> del servicio de asesoría CVA. He leído y entiendo que la información proporcionada será utilizada para evaluar mi elegibilidad para visa canadiense. <span class="text-red-500">*</span>
+                                    <div class="flex items-start p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 hover:border-gray-300 transition-colors duration-200">
+                                        <input type="checkbox" id="terminos" name="terminos" required class="mt-1 mr-4 text-primary-600 focus:ring-primary-500 rounded h-4 w-4">
+                                        <label for="terminos" class="text-sm text-gray-700 cursor-pointer leading-relaxed">
+                                            <span class=" text-gray-900">Acepto los términos y condiciones</span> del servicio de asesoría CVA. He leído y entiendo que la información proporcionada será utilizada para evaluar mi elegibilidad para visa canadiense. <span class="text-red-500 font-medium">*</span>
                                         </label>
                                     </div>
-                                    <div class="flex items-start p-4 bg-gray-50 rounded-xl border border-gray-200">
-                                        <input type="checkbox" id="privacidad" name="privacidad" required class="mt-1 mr-3 text-primary-600 focus:ring-primary-500 rounded">
-                                        <label for="privacidad" class="text-sm text-gray-700 cursor-pointer">
-                                            <span class="font-medium text-gray-900">Acepto la política de privacidad</span> y autorizo el tratamiento de mis datos personales conforme a la ley de protección de datos vigente. <span class="text-red-500">*</span>
+                                    <div class="flex items-start p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 hover:border-gray-300 transition-colors duration-200">
+                                        <input type="checkbox" id="privacidad" name="privacidad" required class="mt-1 mr-4 text-primary-600 focus:ring-primary-500 rounded h-4 w-4">
+                                        <label for="privacidad" class="text-sm text-gray-700 cursor-pointer leading-relaxed">
+                                            <span class=" text-gray-900">Acepto la política de privacidad</span> y autorizo el tratamiento de mis datos personales conforme a la ley de protección de datos vigente. <span class="text-red-500 font-medium">*</span>
                                         </label>
                                     </div>
                                 </div>
