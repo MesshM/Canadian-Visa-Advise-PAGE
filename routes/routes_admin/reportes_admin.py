@@ -1,491 +1,341 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, send_file
-from functools import wraps
+from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, send_file
 import sqlite3
-import json
 from datetime import datetime, timedelta
+import json
 import io
 import csv
 
-reportes_admin = Blueprint('reportes_admin', __name__)
+# Crear el blueprint con el nombre correcto
+reportes_admin_bp = Blueprint('reportes_admin', __name__, url_prefix='/admin/reportes')
 
-def admin_required(f):
-    """Decorador para verificar que el usuario sea administrador"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session or session.get('user_role') != 'Administrador':
-            flash('Acceso denegado. Se requieren permisos de administrador.', 'error')
-            return redirect(url_for('auth.login'))
-        return f(*args, **kwargs)
-    return decorated_function
+# Verificar si reportlab está disponible (para PDFs)
+REPORTLAB_DISPONIBLE = False
+try:
+    from reportlab.lib.pagesizes import letter
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.units import inch
+    REPORTLAB_DISPONIBLE = True
+except ImportError:
+    print("AVISO: ReportLab no está instalado. La generación de PDFs no estará disponible.")
+    print("Para habilitar PDFs, ejecute: pip install reportlab")
 
-def get_db_connection():
-    """Obtener conexión a la base de datos"""
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row
-    return conn
+def verificar_admin():
+    """Verificar si el usuario es administrador"""
+    if 'user_id' not in session:
+        return False
+    if session.get('user_role') != 'Administrador':
+        return False
+    return True
 
-@reportes_admin.route('/admin/reportes')
-@admin_required
+@reportes_admin_bp.route('/')
 def panel_reportes():
     """Panel principal de reportes"""
+    if not verificar_admin():
+        return redirect(url_for('auth.login'))
+    
     try:
-        conn = get_db_connection()
+        conn = sqlite3.connect('database.db')
+        cursor = conn.cursor()
         
-        # Obtener reportes recientes
-        reportes_recientes = conn.execute('''
-            SELECT id_reporte, nombre, tipo, fecha_generacion, generado_por, estado
-            FROM reportes 
-            ORDER BY fecha_generacion DESC 
-            LIMIT 10
-        ''').fetchall()
+        # Obtener estadísticas generales
+        cursor.execute('SELECT COUNT(*) FROM usuarios WHERE eliminado = 0')
+        total_usuarios = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM usuarios WHERE rol = "Asesor" AND eliminado = 0')
+        total_asesores = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT COUNT(*) FROM asesorias')
+        total_asesorias = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT SUM(monto) FROM pagos WHERE estado = "Completado"')
+        ingresos_totales = cursor.fetchone()[0] or 0
         
         conn.close()
         
-        return render_template('admin/reportes_admin.html',
-                             reportes_recientes=reportes_recientes)
-                             
-    except Exception as e:
-        flash(f'Error al cargar reportes: {str(e)}', 'error')
-        return render_template('admin/reportes_admin.html', reportes_recientes=[])
-
-@reportes_admin.route('/admin/reportes/generar-usuarios', methods=['POST'])
-@admin_required
-def generar_reporte_usuarios():
-    """Generar reporte de usuarios"""
-    try:
-        formato = request.json.get('formato', 'pdf')
-        fecha_inicio = request.json.get('fecha_inicio')
-        fecha_fin = request.json.get('fecha_fin')
-        
-        conn = get_db_connection()
-        
-        # Construir consulta con filtros de fecha
-        query = '''
-            SELECT id_usuario, nombres, apellidos, correo, rol, estado, 
-                   fecha_registro, ultimo_acceso
-            FROM usuarios 
-            WHERE 1=1
-        '''
-        params = []
-        
-        if fecha_inicio:
-            query += ' AND fecha_registro >= ?'
-            params.append(fecha_inicio)
-        
-        if fecha_fin:
-            query += ' AND fecha_registro <= ?'
-            params.append(fecha_fin)
-        
-        query += ' ORDER BY fecha_registro DESC'
-        
-        usuarios = conn.execute(query, params).fetchall()
-        
-        # Estadísticas adicionales
-        total_usuarios = len(usuarios)
-        usuarios_activos = len([u for u in usuarios if u['estado'] == 'Activo'])
-        usuarios_por_rol = {}
-        for usuario in usuarios:
-            rol = usuario['rol'] or 'Cliente'
-            usuarios_por_rol[rol] = usuarios_por_rol.get(rol, 0) + 1
-        
-        # Crear registro del reporte
-        reporte_id = conn.execute('''
-            INSERT INTO reportes (nombre, tipo, parametros, estado, fecha_generacion, generado_por)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (
-            f'Reporte de Usuarios - {datetime.now().strftime("%Y-%m-%d")}',
-            'usuarios',
-            json.dumps({'fecha_inicio': fecha_inicio, 'fecha_fin': fecha_fin, 'formato': formato}),
-            'Completado',
-            datetime.now(),
-            session['user_id']
-        )).lastrowid
-        
-        conn.commit()
-        conn.close()
-        
-        if formato == 'csv':
-            return generar_csv_usuarios(usuarios)
-        elif formato == 'excel':
-            return generar_excel_usuarios(usuarios)
-        else:  # PDF
-            return generar_pdf_usuarios(usuarios, total_usuarios, usuarios_activos, usuarios_por_rol)
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-def generar_csv_usuarios(usuarios):
-    """Generar CSV de usuarios"""
-    output = io.StringIO()
-    writer = csv.writer(output)
-    
-    # Escribir encabezados
-    writer.writerow(['ID', 'Nombres', 'Apellidos', 'Correo', 'Rol', 'Estado', 
-                    'Fecha Registro', 'Último Acceso'])
-    
-    # Escribir datos
-    for usuario in usuarios:
-        writer.writerow([
-            usuario['id_usuario'],
-            usuario['nombres'],
-            usuario['apellidos'],
-            usuario['correo'],
-            usuario['rol'],
-            usuario['estado'],
-            usuario['fecha_registro'],
-            usuario['ultimo_acceso']
-        ])
-    
-    output.seek(0)
-    
-    from flask import Response
-    return Response(
-        output.getvalue(),
-        mimetype='text/csv',
-        headers={'Content-Disposition': f'attachment; filename=reporte_usuarios_{datetime.now().strftime("%Y%m%d")}.csv'}
-    )
-
-def generar_pdf_usuarios(usuarios, total_usuarios, usuarios_activos, usuarios_por_rol):
-    """Generar PDF de usuarios"""
-    # TODO: Implementar generación de PDF con reportlab
-    # Por ahora retornamos los datos para generar en el frontend
-    return jsonify({
-        'success': True,
-        'tipo': 'usuarios',
-        'datos': {
-            'usuarios': [dict(u) for u in usuarios],
-            'estadisticas': {
-                'total_usuarios': total_usuarios,
-                'usuarios_activos': usuarios_activos,
-                'usuarios_por_rol': usuarios_por_rol
-            }
+        estadisticas = {
+            'total_usuarios': total_usuarios,
+            'total_asesores': total_asesores,
+            'total_asesorias': total_asesorias,
+            'ingresos_totales': ingresos_totales
         }
-    })
-
-@reportes_admin.route('/admin/reportes/generar-asesorias', methods=['POST'])
-@admin_required
-def generar_reporte_asesorias():
-    """Generar reporte de asesorías"""
-    try:
-        formato = request.json.get('formato', 'pdf')
-        fecha_inicio = request.json.get('fecha_inicio')
-        fecha_fin = request.json.get('fecha_fin')
-        estado_filtro = request.json.get('estado')
         
-        conn = get_db_connection()
-        
-        # Construir consulta
-        query = '''
-            SELECT a.codigo_asesoria, a.tipo_asesoria, a.fecha_asesoria, a.estado,
-                   a.monto, a.estado_pago,
-                   u.nombres || ' ' || u.apellidos as cliente,
-                   ase.nombre || ' ' || ase.apellidos as asesor
-            FROM asesorias a
-            LEFT JOIN usuarios u ON a.id_usuario = u.id_usuario
-            LEFT JOIN asesores ase ON a.asesor_asignado = ase.id_asesor
-            WHERE 1=1
-        '''
-        params = []
-        
-        if fecha_inicio:
-            query += ' AND a.fecha_asesoria >= ?'
-            params.append(fecha_inicio)
-        
-        if fecha_fin:
-            query += ' AND a.fecha_asesoria <= ?'
-            params.append(fecha_fin)
-        
-        if estado_filtro:
-            query += ' AND a.estado = ?'
-            params.append(estado_filtro)
-        
-        query += ' ORDER BY a.fecha_asesoria DESC'
-        
-        asesorias = conn.execute(query, params).fetchall()
-        
-        # Estadísticas
-        total_asesorias = len(asesorias)
-        asesorias_por_estado = {}
-        asesorias_por_tipo = {}
-        ingresos_total = 0
-        
-        for asesoria in asesorias:
-            # Por estado
-            estado = asesoria['estado']
-            asesorias_por_estado[estado] = asesorias_por_estado.get(estado, 0) + 1
-            
-            # Por tipo
-            tipo = asesoria['tipo_asesoria']
-            asesorias_por_tipo[tipo] = asesorias_por_tipo.get(tipo, 0) + 1
-            
-            # Ingresos
-            if asesoria['estado_pago'] == 'Completado':
-                ingresos_total += asesoria['monto'] or 0
-        
-        # Crear registro del reporte
-        reporte_id = conn.execute('''
-            INSERT INTO reportes (nombre, tipo, parametros, estado, fecha_generacion, generado_por)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (
-            f'Reporte de Asesorías - {datetime.now().strftime("%Y-%m-%d")}',
-            'asesorias',
-            json.dumps({'fecha_inicio': fecha_inicio, 'fecha_fin': fecha_fin, 'estado': estado_filtro, 'formato': formato}),
-            'Completado',
-            datetime.now(),
-            session['user_id']
-        )).lastrowid
-        
-        conn.commit()
-        conn.close()
-        
-        if formato == 'csv':
-            return generar_csv_asesorias(asesorias)
-        else:
-            return jsonify({
-                'success': True,
-                'tipo': 'asesorias',
-                'datos': {
-                    'asesorias': [dict(a) for a in asesorias],
-                    'estadisticas': {
-                        'total_asesorias': total_asesorias,
-                        'asesorias_por_estado': asesorias_por_estado,
-                        'asesorias_por_tipo': asesorias_por_tipo,
-                        'ingresos_total': ingresos_total
-                    }
-                }
-            })
-        
+        return render_template('admin/reportes_admin.html', 
+                              estadisticas=estadisticas, 
+                              pdf_disponible=REPORTLAB_DISPONIBLE)
+    
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error en panel_reportes: {e}")
+        return render_template('admin/reportes_admin.html', 
+                              estadisticas={}, 
+                              pdf_disponible=REPORTLAB_DISPONIBLE)
 
-def generar_csv_asesorias(asesorias):
-    """Generar CSV de asesorías"""
-    output = io.StringIO()
-    writer = csv.writer(output)
+@reportes_admin_bp.route('/generar')
+def generar_reporte():
+    """Generar reportes personalizados"""
+    if not verificar_admin():
+        return redirect(url_for('auth.login'))
     
-    # Escribir encabezados
-    writer.writerow(['Código', 'Tipo', 'Fecha', 'Estado', 'Monto', 'Estado Pago', 'Cliente', 'Asesor'])
+    tipo_reporte = request.args.get('tipo', 'usuarios')
+    formato = request.args.get('formato', 'html')
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
     
-    # Escribir datos
-    for asesoria in asesorias:
-        writer.writerow([
-            asesoria['codigo_asesoria'],
-            asesoria['tipo_asesoria'],
-            asesoria['fecha_asesoria'],
-            asesoria['estado'],
-            asesoria['monto'],
-            asesoria['estado_pago'],
-            asesoria['cliente'],
-            asesoria['asesor']
-        ])
+    # Verificar si se solicita PDF pero no está disponible
+    if formato == 'pdf' and not REPORTLAB_DISPONIBLE:
+        return jsonify({
+            'success': False, 
+            'error': 'La generación de PDFs no está disponible. Instale reportlab con: pip install reportlab'
+        }), 400
     
-    output.seek(0)
-    
-    from flask import Response
-    return Response(
-        output.getvalue(),
-        mimetype='text/csv',
-        headers={'Content-Disposition': f'attachment; filename=reporte_asesorias_{datetime.now().strftime("%Y%m%d")}.csv'}
-    )
-
-@reportes_admin.route('/admin/reportes/generar-financiero', methods=['POST'])
-@admin_required
-def generar_reporte_financiero():
-    """Generar reporte financiero"""
     try:
-        formato = request.json.get('formato', 'pdf')
-        fecha_inicio = request.json.get('fecha_inicio')
-        fecha_fin = request.json.get('fecha_fin')
-        
-        conn = get_db_connection()
-        
-        # Pagos en el período
-        query = '''
-            SELECT p.*, a.tipo_asesoria,
-                   u.nombres || ' ' || u.apellidos as cliente
-            FROM pagos p
-            LEFT JOIN asesorias ase ON p.codigo_asesoria = ase.codigo_asesoria
-            LEFT JOIN usuarios u ON ase.id_usuario = u.id_usuario
-            LEFT JOIN asesorias a ON p.codigo_asesoria = a.codigo_asesoria
-            WHERE 1=1
-        '''
-        params = []
-        
-        if fecha_inicio:
-            query += ' AND p.fecha_pago >= ?'
-            params.append(fecha_inicio)
-        
-        if fecha_fin:
-            query += ' AND p.fecha_pago <= ?'
-            params.append(fecha_fin)
-        
-        query += ' ORDER BY p.fecha_pago DESC'
-        
-        pagos = conn.execute(query, params).fetchall()
-        
-        # Calcular estadísticas financieras
-        ingresos_total = sum(p['monto'] for p in pagos if p['estado_pago'] == 'Completado')
-        pagos_pendientes = sum(p['monto'] for p in pagos if p['estado_pago'] == 'Pendiente')
-        reembolsos_total = sum(p['monto_reembolsado'] or 0 for p in pagos if p['estado_pago'] == 'Reembolsado')
-        
-        # Ingresos por método de pago
-        ingresos_por_metodo = {}
-        for pago in pagos:
-            if pago['estado_pago'] == 'Completado':
-                metodo = pago['metodo_pago']
-                ingresos_por_metodo[metodo] = ingresos_por_metodo.get(metodo, 0) + pago['monto']
-        
-        # Ingresos por tipo de asesoría
-        ingresos_por_tipo = {}
-        for pago in pagos:
-            if pago['estado_pago'] == 'Completado' and pago['tipo_asesoria']:
-                tipo = pago['tipo_asesoria']
-                ingresos_por_tipo[tipo] = ingresos_por_tipo.get(tipo, 0) + pago['monto']
-        
-        # Crear registro del reporte
-        reporte_id = conn.execute('''
-            INSERT INTO reportes (nombre, tipo, parametros, estado, fecha_generacion, generado_por)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (
-            f'Reporte Financiero - {datetime.now().strftime("%Y-%m-%d")}',
-            'financiero',
-            json.dumps({'fecha_inicio': fecha_inicio, 'fecha_fin': fecha_fin, 'formato': formato}),
-            'Completado',
-            datetime.now(),
-            session['user_id']
-        )).lastrowid
-        
-        conn.commit()
-        conn.close()
-        
-        if formato == 'csv':
-            return generar_csv_financiero(pagos)
-        else:
-            return jsonify({
-                'success': True,
-                'tipo': 'financiero',
-                'datos': {
-                    'pagos': [dict(p) for p in pagos],
-                    'estadisticas': {
-                        'ingresos_total': float(ingresos_total),
-                        'pagos_pendientes': float(pagos_pendientes),
-                        'reembolsos_total': float(reembolsos_total),
-                        'ingresos_por_metodo': ingresos_por_metodo,
-                        'ingresos_por_tipo': ingresos_por_tipo
-                    }
-                }
-            })
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@reportes_admin.route('/admin/reportes/personalizado', methods=['POST'])
-@admin_required
-def generar_reporte_personalizado():
-    """Generar reporte personalizado"""
-    try:
-        tipo_reporte = request.json.get('tipo_reporte')
-        fecha_inicio = request.json.get('fecha_inicio')
-        fecha_fin = request.json.get('fecha_fin')
-        formato = request.json.get('formato', 'pdf')
-        filtros = request.json.get('filtros_adicionales')
+        conn = sqlite3.connect('database.db')
+        cursor = conn.cursor()
         
         if tipo_reporte == 'usuarios':
-            return generar_reporte_usuarios()
+            query = '''
+                SELECT id, nombre, email, telefono, rol, fecha_registro 
+                FROM usuarios 
+                WHERE eliminado = 0
+            '''
+            if fecha_inicio and fecha_fin:
+                query += f" AND fecha_registro BETWEEN '{fecha_inicio}' AND '{fecha_fin}'"
+            
+            cursor.execute(query)
+            datos = cursor.fetchall()
+            columnas = ['ID', 'Nombre', 'Email', 'Teléfono', 'Rol', 'Fecha Registro']
+            
         elif tipo_reporte == 'asesorias':
-            return generar_reporte_asesorias()
-        elif tipo_reporte == 'financiero':
-            return generar_reporte_financiero()
-        elif tipo_reporte == 'documentos':
-            return generar_reporte_documentos()
-        elif tipo_reporte == 'asesores':
-            return generar_reporte_asesores()
+            query = '''
+                SELECT a.id, u.nombre as cliente, as.nombre as asesor, 
+                       a.fecha, a.hora, a.estado, a.tipo_asesoria
+                FROM asesorias a
+                LEFT JOIN usuarios u ON a.usuario_id = u.id
+                LEFT JOIN usuarios as ON a.asesor_id = as.id
+            '''
+            if fecha_inicio and fecha_fin:
+                query += f" WHERE a.fecha BETWEEN '{fecha_inicio}' AND '{fecha_fin}'"
+            
+            cursor.execute(query)
+            datos = cursor.fetchall()
+            columnas = ['ID', 'Cliente', 'Asesor', 'Fecha', 'Hora', 'Estado', 'Tipo']
+            
+        elif tipo_reporte == 'pagos':
+            query = '''
+                SELECT p.id, u.nombre as cliente, p.monto, p.estado, 
+                       p.fecha_pago, p.metodo_pago
+                FROM pagos p
+                LEFT JOIN usuarios u ON p.usuario_id = u.id
+            '''
+            if fecha_inicio and fecha_fin:
+                query += f" WHERE p.fecha_pago BETWEEN '{fecha_inicio}' AND '{fecha_fin}'"
+            
+            cursor.execute(query)
+            datos = cursor.fetchall()
+            columnas = ['ID', 'Cliente', 'Monto', 'Estado', 'Fecha Pago', 'Método']
+        
+        conn.close()
+        
+        if formato == 'csv':
+            return generar_csv(datos, columnas, tipo_reporte)
+        elif formato == 'pdf' and REPORTLAB_DISPONIBLE:
+            return generar_pdf(datos, columnas, tipo_reporte)
         else:
-            return jsonify({'error': 'Tipo de reporte no válido'}), 400
-        
+            return jsonify({
+                'success': True,
+                'datos': datos,
+                'columnas': columnas
+            })
+    
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error generando reporte: {e}")
+        return jsonify({'success': False, 'error': str(e)})
 
-@reportes_admin.route('/admin/reportes/<int:id>/descargar')
-@admin_required
-def descargar_reporte(id):
-    """Descargar un reporte generado"""
-    try:
-        conn = get_db_connection()
-        
-        reporte = conn.execute(
-            'SELECT * FROM reportes WHERE id_reporte = ?', (id,)
-        ).fetchone()
-        
-        conn.close()
-        
-        if not reporte:
-            flash('Reporte no encontrado.', 'error')
-            return redirect(url_for('reportes_admin.panel_reportes'))
-        
-        # TODO: Implementar descarga real del archivo
-        # Por ahora redirigimos al panel
-        flash('Funcionalidad de descarga en desarrollo.', 'info')
-        return redirect(url_for('reportes_admin.panel_reportes'))
-        
-    except Exception as e:
-        flash(f'Error al descargar reporte: {str(e)}', 'error')
-        return redirect(url_for('reportes_admin.panel_reportes'))
+def generar_csv(datos, columnas, tipo_reporte):
+    """Generar reporte en formato CSV"""
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Escribir encabezados
+    writer.writerow(columnas)
+    
+    # Escribir datos
+    for fila in datos:
+        writer.writerow(fila)
+    
+    # Crear respuesta
+    output.seek(0)
+    return send_file(
+        io.BytesIO(output.getvalue().encode('utf-8')),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=f'reporte_{tipo_reporte}_{datetime.now().strftime("%Y%m%d")}.csv'
+    )
 
-@reportes_admin.route('/admin/reportes/<int:id>/eliminar', methods=['POST'])
-@admin_required
-def eliminar_reporte(id):
-    """Eliminar un reporte"""
+def generar_pdf(datos, columnas, tipo_reporte):
+    """Generar reporte en formato PDF"""
+    if not REPORTLAB_DISPONIBLE:
+        return jsonify({
+            'success': False, 
+            'error': 'La generación de PDFs no está disponible'
+        }), 400
+        
+    buffer = io.BytesIO()
+    p = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+    
+    # Título
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(50, height - 50, f"Reporte de {tipo_reporte.title()}")
+    
+    # Fecha
+    p.setFont("Helvetica", 10)
+    p.drawString(50, height - 70, f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+    
+    # Encabezados
+    y_position = height - 100
+    p.setFont("Helvetica-Bold", 10)
+    x_positions = [50, 150, 250, 350, 450, 550]
+    
+    for i, columna in enumerate(columnas[:6]):  # Máximo 6 columnas
+        if i < len(x_positions):
+            p.drawString(x_positions[i], y_position, str(columna))
+    
+    # Datos
+    p.setFont("Helvetica", 9)
+    y_position -= 20
+    
+    for fila in datos:
+        if y_position < 50:  # Nueva página si es necesario
+            p.showPage()
+            y_position = height - 50
+        
+        for i, valor in enumerate(fila[:6]):  # Máximo 6 columnas
+            if i < len(x_positions):
+                p.drawString(x_positions[i], y_position, str(valor)[:20])  # Truncar texto largo
+        
+        y_position -= 15
+    
+    p.save()
+    buffer.seek(0)
+    
+    return send_file(
+        buffer,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=f'reporte_{tipo_reporte}_{datetime.now().strftime("%Y%m%d")}.pdf'
+    )
+
+@reportes_admin_bp.route('/estadisticas')
+def estadisticas_api():
+    """API para obtener estadísticas en tiempo real"""
+    if not verificar_admin():
+        return jsonify({'success': False, 'error': 'No autorizado'})
+    
     try:
-        conn = get_db_connection()
+        conn = sqlite3.connect('database.db')
+        cursor = conn.cursor()
         
-        # Verificar que el reporte existe
-        reporte = conn.execute(
-            'SELECT nombre FROM reportes WHERE id_reporte = ?', (id,)
-        ).fetchone()
+        # Estadísticas por mes (últimos 12 meses)
+        cursor.execute('''
+            SELECT strftime('%Y-%m', fecha_registro) as mes, COUNT(*) as total
+            FROM usuarios 
+            WHERE eliminado = 0 AND fecha_registro >= date('now', '-12 months')
+            GROUP BY strftime('%Y-%m', fecha_registro)
+            ORDER BY mes
+        ''')
+        usuarios_por_mes = cursor.fetchall()
         
-        if not reporte:
-            return jsonify({'error': 'Reporte no encontrado'}), 404
+        # Asesorías por estado
+        cursor.execute('''
+            SELECT estado, COUNT(*) as total
+            FROM asesorias
+            GROUP BY estado
+        ''')
+        asesorias_por_estado = cursor.fetchall()
         
-        # Eliminar reporte
-        conn.execute('DELETE FROM reportes WHERE id_reporte = ?', (id,))
-        conn.commit()
+        # Ingresos por mes
+        cursor.execute('''
+            SELECT strftime('%Y-%m', fecha_pago) as mes, SUM(monto) as total
+            FROM pagos 
+            WHERE estado = 'Completado' AND fecha_pago >= date('now', '-12 months')
+            GROUP BY strftime('%Y-%m', fecha_pago)
+            ORDER BY mes
+        ''')
+        ingresos_por_mes = cursor.fetchall()
+        
         conn.close()
         
         return jsonify({
             'success': True,
-            'mensaje': f'Reporte "{reporte["nombre"]}" eliminado exitosamente'
+            'usuarios_por_mes': usuarios_por_mes,
+            'asesorias_por_estado': asesorias_por_estado,
+            'ingresos_por_mes': ingresos_por_mes
         })
-        
+    
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error en estadisticas_api: {e}")
+        return jsonify({'success': False, 'error': str(e)})
 
-@reportes_admin.route('/admin/reportes/programar', methods=['POST'])
-@admin_required
-def programar_reporte():
-    """Programar generación automática de reportes"""
+@reportes_admin_bp.route('/exportar/<tipo>')
+def exportar_reporte(tipo):
+    """Exportar reportes específicos"""
+    if not verificar_admin():
+        return redirect(url_for('auth.login'))
+    
+    formato = request.args.get('formato', 'csv')
+    
+    # Verificar si se solicita PDF pero no está disponible
+    if formato == 'pdf' and not REPORTLAB_DISPONIBLE:
+        return jsonify({
+            'success': False, 
+            'error': 'La generación de PDFs no está disponible. Instale reportlab con: pip install reportlab'
+        }), 400
+    
     try:
-        tipo_reporte = request.json.get('tipo_reporte')
-        frecuencia = request.json.get('frecuencia')  # diario, semanal, mensual
-        parametros = request.json.get('parametros', {})
+        conn = sqlite3.connect('database.db')
+        cursor = conn.cursor()
         
-        conn = get_db_connection()
+        if tipo == 'usuarios_activos':
+            cursor.execute('''
+                SELECT nombre, email, telefono, rol, fecha_registro
+                FROM usuarios 
+                WHERE eliminado = 0
+                ORDER BY fecha_registro DESC
+            ''')
+            datos = cursor.fetchall()
+            columnas = ['Nombre', 'Email', 'Teléfono', 'Rol', 'Fecha Registro']
+            
+        elif tipo == 'asesorias_pendientes':
+            cursor.execute('''
+                SELECT u.nombre as cliente, as.nombre as asesor, 
+                       a.fecha, a.hora, a.tipo_asesoria
+                FROM asesorias a
+                LEFT JOIN usuarios u ON a.usuario_id = u.id
+                LEFT JOIN usuarios as ON a.asesor_id = as.id
+                WHERE a.estado = 'Programada'
+                ORDER BY a.fecha, a.hora
+            ''')
+            datos = cursor.fetchall()
+            columnas = ['Cliente', 'Asesor', 'Fecha', 'Hora', 'Tipo']
+            
+        elif tipo == 'pagos_completados':
+            cursor.execute('''
+                SELECT u.nombre as cliente, p.monto, p.fecha_pago, p.metodo_pago
+                FROM pagos p
+                LEFT JOIN usuarios u ON p.usuario_id = u.id
+                WHERE p.estado = 'Completado'
+                ORDER BY p.fecha_pago DESC
+            ''')
+            datos = cursor.fetchall()
+            columnas = ['Cliente', 'Monto', 'Fecha Pago', 'Método']
         
-        # Crear programación de reporte
-        conn.execute('''
-            INSERT INTO reportes_programados (tipo_reporte, frecuencia, parametros, 
-                                            estado, creado_por, fecha_creacion)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (tipo_reporte, frecuencia, json.dumps(parametros), 'Activo', 
-              session['user_id'], datetime.now()))
-        
-        conn.commit()
         conn.close()
         
-        return jsonify({
-            'success': True,
-            'mensaje': f'Reporte {tipo_reporte} programado para generación {frecuencia}'
-        })
-        
+        if formato == 'pdf' and REPORTLAB_DISPONIBLE:
+            return generar_pdf(datos, columnas, tipo)
+        else:
+            return generar_csv(datos, columnas, tipo)
+    
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error exportando reporte: {e}")
+        return jsonify({'success': False, 'error': str(e)})

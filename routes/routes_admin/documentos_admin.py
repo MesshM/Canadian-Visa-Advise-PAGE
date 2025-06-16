@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 from werkzeug.utils import secure_filename
 
-documentos_admin = Blueprint('documentos_admin', __name__)
+documentos_admin_bp = Blueprint('documentos_admin', __name__)
 
 def admin_required(f):
     """Decorador para verificar que el usuario sea administrador"""
@@ -23,7 +23,7 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-@documentos_admin.route('/admin/documentos')
+@documentos_admin_bp.route('/admin/documentos')
 @admin_required
 def listar_documentos():
     """Listar todos los documentos del sistema"""
@@ -87,12 +87,13 @@ def listar_documentos():
         flash(f'Error al cargar documentos: {str(e)}', 'error')
         return render_template('admin/documentos_admin.html', documentos=[])
 
-@documentos_admin.route('/admin/documentos/<int:id>/validar', methods=['POST'])
+@documentos_admin_bp.route('/admin/documentos/<int:id>/validar', methods=['POST'])
 @admin_required
 def validar_documento(id):
     """Validar un documento"""
     try:
-        comentarios = request.json.get('comentarios', '')
+        data = request.get_json()
+        comentarios = data.get('comentarios', '') if data else ''
         
         conn = get_db_connection()
         
@@ -123,13 +124,14 @@ def validar_documento(id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@documentos_admin.route('/admin/documentos/<int:id>/rechazar', methods=['POST'])
+@documentos_admin_bp.route('/admin/documentos/<int:id>/rechazar', methods=['POST'])
 @admin_required
 def rechazar_documento(id):
     """Rechazar un documento"""
     try:
-        motivo = request.json.get('motivo', '')
-        comentarios = request.json.get('comentarios', '')
+        data = request.get_json()
+        motivo = data.get('motivo', '') if data else ''
+        comentarios = data.get('comentarios', '') if data else ''
         
         if not motivo:
             return jsonify({'error': 'El motivo de rechazo es obligatorio'}), 400
@@ -163,7 +165,7 @@ def rechazar_documento(id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@documentos_admin.route('/admin/documentos/<int:id>/descargar')
+@documentos_admin_bp.route('/admin/documentos/<int:id>/descargar')
 @admin_required
 def descargar_documento(id):
     """Descargar un documento"""
@@ -195,7 +197,7 @@ def descargar_documento(id):
         flash(f'Error al descargar documento: {str(e)}', 'error')
         return redirect(url_for('documentos_admin.listar_documentos'))
 
-@documentos_admin.route('/admin/documentos/<int:id>/preview')
+@documentos_admin_bp.route('/admin/documentos/<int:id>/preview')
 @admin_required
 def preview_documento(id):
     """Vista previa de un documento"""
@@ -227,13 +229,14 @@ def preview_documento(id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@documentos_admin.route('/admin/documentos/validar-masivo', methods=['POST'])
+@documentos_admin_bp.route('/admin/documentos/validar-masivo', methods=['POST'])
 @admin_required
 def validar_documentos_masivo():
     """Validar múltiples documentos"""
     try:
-        documento_ids = request.json.get('documento_ids', [])
-        comentarios = request.json.get('comentarios', '')
+        data = request.get_json()
+        documento_ids = data.get('documento_ids', []) if data else []
+        comentarios = data.get('comentarios', '') if data else ''
         
         if not documento_ids:
             return jsonify({'error': 'Debe seleccionar al menos un documento'}), 400
@@ -260,7 +263,7 @@ def validar_documentos_masivo():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@documentos_admin.route('/admin/documentos/exportar')
+@documentos_admin_bp.route('/admin/documentos/exportar')
 @admin_required
 def exportar_documentos():
     """Exportar lista de documentos"""
@@ -313,6 +316,87 @@ def exportar_documentos():
             )
         
         return jsonify({'error': 'Formato no soportado'}), 400
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@documentos_admin_bp.route('/admin/documentos/nuevo', methods=['GET', 'POST'])
+@admin_required
+def nuevo_documento():
+    """Crear un nuevo documento"""
+    if request.method == 'POST':
+        try:
+            tipo_documento = request.form.get('tipo_documento')
+            id_usuario = request.form.get('id_usuario')
+            archivo = request.files.get('archivo')
+            comentarios = request.form.get('comentarios', '')
+            
+            if not archivo or archivo.filename == '':
+                flash('Debe seleccionar un archivo', 'error')
+                return redirect(request.url)
+            
+            # Guardar archivo
+            filename = secure_filename(archivo.filename)
+            upload_folder = 'static/uploads/documentos'
+            os.makedirs(upload_folder, exist_ok=True)
+            file_path = os.path.join(upload_folder, filename)
+            archivo.save(file_path)
+            
+            # Crear documento en la base de datos
+            conn = get_db_connection()
+            conn.execute('''
+                INSERT INTO documentos (tipo_documento, nombre_archivo, ruta_archivo, 
+                                      id_usuario, estado, fecha_subida, tamano_archivo, comentarios)
+                VALUES (?, ?, ?, ?, 'Pendiente', ?, ?, ?)
+            ''', (tipo_documento, filename, file_path, id_usuario, 
+                  datetime.now(), os.path.getsize(file_path), comentarios))
+            
+            conn.commit()
+            conn.close()
+            
+            flash('Documento creado exitosamente', 'success')
+            return redirect(url_for('documentos_admin.listar_documentos'))
+            
+        except Exception as e:
+            flash(f'Error al crear documento: {str(e)}', 'error')
+    
+    # Obtener usuarios para el formulario
+    conn = get_db_connection()
+    usuarios = conn.execute(
+        'SELECT id_usuario, nombres, apellidos FROM usuarios WHERE estado = "Activo"'
+    ).fetchall()
+    conn.close()
+    
+    return render_template('admin/crear_documento.html', usuarios=usuarios)
+
+@documentos_admin_bp.route('/admin/documentos/<int:id>/eliminar', methods=['POST'])
+@admin_required
+def eliminar_documento(id):
+    """Eliminar un documento"""
+    try:
+        conn = get_db_connection()
+        
+        # Obtener información del documento
+        documento = conn.execute(
+            'SELECT ruta_archivo FROM documentos WHERE id_documento = ?', (id,)
+        ).fetchone()
+        
+        if not documento:
+            return jsonify({'error': 'Documento no encontrado'}), 404
+        
+        # Eliminar archivo físico si existe
+        if os.path.exists(documento['ruta_archivo']):
+            os.remove(documento['ruta_archivo'])
+        
+        # Eliminar registro de la base de datos
+        conn.execute('DELETE FROM documentos WHERE id_documento = ?', (id,))
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'mensaje': 'Documento eliminado exitosamente'
+        })
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

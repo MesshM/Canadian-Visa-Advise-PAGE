@@ -26,10 +26,9 @@
         <select id="filter-status"
             class="py-3 px-4 border bg-white border-gray-200 rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm cursor-pointer">
             <option value="">Todos los estados</option>
-            <option value="vigente">Vigente</option>
-            <option value="vencida">Vencida</option>
-            <option value="pendiente">Pago Pendiente</option>
-            <option value="activo">En Proceso Activo</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="Proceso activo">Proceso activo</option>
+            <option value="Terminado">Terminado</option>
         </select>
 
         <select id="filter-date"
@@ -119,8 +118,7 @@
                 {% set is_expired = asesoria.fecha_asesoria|string < current_date|string %} <tr
                     class="transition-all duration-300 hover:bg-gray-50 relative z-0"
                     data-asesoria-id="{{ asesoria.codigo_asesoria }}"
-                    data-estado="{% if is_expired %}vencida{% else %}vigente{% endif %}"
-                    data-pago-estado="{{ asesoria.estado }}" data-tipo-asesoria="{{ asesoria.tipo_asesoria }}">
+                    data-estado-proceso="{{ asesoria.estado_proceso }}">
                     <!-- Cambiar la visualización del número de asesoría para usar el código interno -->
                     <td class="p-4 text-sm border-b border-gray-200 text-gray-700 numero-asesoria"></td>
                     <td class="p-4 text-sm border-b border-gray-200 text-gray-700">
@@ -166,19 +164,22 @@
                         </div>
                     </td>
                     <td class="p-4 text-sm border-b border-gray-200">
-                        {% if is_expired %}
-                        <span
-                            class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-600">Vencida</span>
-                        {% elif asesoria.estado == 'Pagada' %}
-                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-600">En Proceso
-                            Activo</span>
-                        {% elif asesoria.estado == 'Pendiente' %}
-                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                            Pago Pendiente
-                        </span>
+                        {% if asesoria.estado_proceso %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full
+                                {% if asesoria.estado_proceso == 'Pendiente' %}
+                                    bg-yellow-100 text-yellow-800
+                                {% elif asesoria.estado_proceso == 'Proceso activo' %}
+                                    bg-blue-100 text-blue-600
+                                {% elif asesoria.estado_proceso == 'Terminado' %}
+                                    bg-green-100 text-green-600
+                                {% else %}
+                                    bg-gray-100 text-gray-600
+                                {% endif %}
+                            ">
+                                {{ asesoria.estado_proceso }}
+                            </span>
                         {% else %}
-                        <span
-                            class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-600">Vigente</span>
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">Sin estado</span>
                         {% endif %}
                     </td>
                     <td class="p-4 text-sm border-b border-gray-200">
@@ -379,6 +380,7 @@
                 <!-- Modificar el stepper en el modal de nueva asesoría para hacer los conectores más largos y gruesos -->
                 <div class="stepper-container">
                     <div class="stepper-steps flex flex-col space-y-8">
+                        <!-- Paso 1 -->
                         <div class="stepper-step active flex items-center transition-all duration-300">
                             <div class="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white transition-all duration-300 shadow-sm">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

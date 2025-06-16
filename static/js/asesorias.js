@@ -33,13 +33,6 @@ function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString("es-ES", options)
 }
 
-// Función para verificar si una asesoría está vigente o vencida
-function isAsesoriaVigente(fechaAsesoria) {
-  const now = new Date()
-  const fechaAsesoriaDate = new Date(fechaAsesoria)
-  return fechaAsesoriaDate > now
-}
-
 // Función para generar un color aleatorio para los avatares
 function getRandomColor() {
   const colors = [
@@ -391,15 +384,10 @@ function filterAsesorias() {
       showRow = false
     }
 
-    // Filtro de estado
+    // Filtro de estado (solo por estado_proceso)
     if (statusValue) {
-      if (statusValue === "vigente" && estado !== "vigente") {
-        showRow = false
-      } else if (statusValue === "vencida" && estado !== "vencida") {
-        showRow = false
-      } else if (statusValue === "pendiente" && pagoEstado !== "Pendiente") {
-        showRow = false
-      } else if (statusValue === "activo" && pagoEstado !== "Pagada") {
+      const estadoProceso = row.getAttribute("data-estado-proceso") || ""
+      if (estadoProceso !== statusValue) {
         showRow = false
       }
     }
@@ -1245,7 +1233,6 @@ function reiniciarPasarelaPago() {
       // Crear y montar el elemento de pago
       paymentElement = elements.create("payment", { layout: "tabs" })
       paymentElement.mount("#payment-element")
-// ...existing code...
 
       // Configurar el formulario de pago
       const form = document.getElementById("payment-form")

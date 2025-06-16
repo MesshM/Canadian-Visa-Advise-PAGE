@@ -4,7 +4,7 @@ from functools import wraps
 import sqlite3
 from datetime import datetime
 
-asesores_admin = Blueprint('asesores_admin', __name__)
+asesores_admin_bp = Blueprint('asesores_admin', __name__)
 
 def admin_required(f):
     """Decorador para verificar que el usuario sea administrador"""
@@ -22,7 +22,7 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-@asesores_admin.route('/admin/asesores')
+@asesores_admin_bp.route('/admin/asesores')
 @admin_required
 def listar_asesores():
     """Listar todos los asesores del sistema"""
@@ -92,7 +92,7 @@ def listar_asesores():
         flash(f'Error al cargar asesores: {str(e)}', 'error')
         return render_template('admin/asesores_admin.html', asesores=[])
 
-@asesores_admin.route('/admin/asesores/crear', methods=['GET', 'POST'])
+@asesores_admin_bp.route('/admin/asesores/crear', methods=['GET', 'POST'])
 @admin_required
 def crear_asesor():
     """Crear un nuevo asesor"""
@@ -182,7 +182,7 @@ def crear_asesor():
     
     return render_template('admin/crear_asesor.html')
 
-@asesores_admin.route('/admin/asesores/<int:id>/editar', methods=['GET', 'POST'])
+@asesores_admin_bp.route('/admin/asesores/<int:id>/editar', methods=['GET', 'POST'])
 @admin_required
 def editar_asesor(id):
     """Editar un asesor existente"""
@@ -252,7 +252,7 @@ def editar_asesor(id):
         flash(f'Error al editar asesor: {str(e)}', 'error')
         return redirect(url_for('asesores_admin.listar_asesores'))
 
-@asesores_admin.route('/admin/asesores/<int:id>/toggle-status', methods=['POST'])
+@asesores_admin_bp.route('/admin/asesores/<int:id>/toggle-status', methods=['POST'])
 @admin_required
 def toggle_asesor_status(id):
     """Cambiar estado de un asesor"""
@@ -292,7 +292,7 @@ def toggle_asesor_status(id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@asesores_admin.route('/admin/asesores/<int:id>/detalles')
+@asesores_admin_bp.route('/admin/asesores/<int:id>/detalles')
 @admin_required
 def ver_detalles_asesor(id):
     """Ver detalles completos de un asesor"""
@@ -350,7 +350,7 @@ def ver_detalles_asesor(id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@asesores_admin.route('/admin/asesores/disponibles')
+@asesores_admin_bp.route('/admin/asesores/disponibles')
 @admin_required
 def obtener_asesores_disponibles():
     """Obtener lista de asesores disponibles para asignaciones"""

@@ -1,11 +1,11 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from werkzeug.security import generate_password_hash
 from functools import wraps
 import sqlite3
 import re
 from datetime import datetime
 
-usuarios_admin = Blueprint('usuarios_admin', __name__)
+usuarios_admin_bp = Blueprint('usuarios_admin', __name__)
 
 def admin_required(f):
     """Decorador para verificar que el usuario sea administrador"""
@@ -28,7 +28,7 @@ def validar_email(email):
     patron = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(patron, email) is not None
 
-@usuarios_admin.route('/admin/usuarios')
+@usuarios_admin_bp.route('/admin/usuarios')
 @admin_required
 def listar_usuarios():
     """Listar todos los usuarios del sistema"""
@@ -85,7 +85,7 @@ def listar_usuarios():
         flash(f'Error al cargar usuarios: {str(e)}', 'error')
         return render_template('admin/usuarios_admin.html', usuarios=[])
 
-@usuarios_admin.route('/admin/usuarios/crear', methods=['GET', 'POST'])
+@usuarios_admin_bp.route('/admin/usuarios/crear', methods=['GET', 'POST'])
 @admin_required
 def crear_usuario():
     """Crear un nuevo usuario"""
@@ -169,7 +169,7 @@ def crear_usuario():
     
     return render_template('admin/crear_usuario.html')
 
-@usuarios_admin.route('/admin/usuarios/<int:id>/editar', methods=['GET', 'POST'])
+@usuarios_admin_bp.route('/admin/usuarios/<int:id>/editar', methods=['GET', 'POST'])
 @admin_required
 def editar_usuario(id):
     """Editar un usuario existente"""
@@ -237,7 +237,7 @@ def editar_usuario(id):
         flash(f'Error al editar usuario: {str(e)}', 'error')
         return redirect(url_for('usuarios_admin.listar_usuarios'))
 
-@usuarios_admin.route('/admin/usuarios/<int:id>/toggle-status', methods=['POST'])
+@usuarios_admin_bp.route('/admin/usuarios/<int:id>/toggle-status', methods=['POST'])
 @admin_required
 def toggle_usuario_status(id):
     """Cambiar estado de un usuario (Activo/Inactivo)"""
@@ -269,7 +269,7 @@ def toggle_usuario_status(id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@usuarios_admin.route('/admin/usuarios/<int:id>/eliminar', methods=['POST'])
+@usuarios_admin_bp.route('/admin/usuarios/<int:id>/eliminar', methods=['POST'])
 @admin_required
 def eliminar_usuario(id):
     """Eliminar un usuario (soft delete)"""
@@ -300,7 +300,7 @@ def eliminar_usuario(id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@usuarios_admin.route('/admin/usuarios/buscar')
+@usuarios_admin_bp.route('/admin/usuarios/buscar')
 @admin_required
 def buscar_usuarios():
     """Buscar usuarios para autocompletado"""

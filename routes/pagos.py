@@ -6,6 +6,7 @@ import os
 import json
 from datetime import datetime
 from utils.notification import notify_payment_completed, notify_appointment_confirmed
+from utils.auth_helpers import role_required
 
 # Configurar Stripe
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
@@ -14,6 +15,7 @@ stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 pagos_bp = Blueprint('pagos', __name__)
 
 @pagos_bp.route('/procesar_pago', methods=['POST'])
+@role_required('Usuario')
 def procesar_pago():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -133,6 +135,7 @@ def procesar_pago():
             return redirect(url_for('asesorias.asesorias'))
 
 @pagos_bp.route('/crear_payment_intent', methods=['POST'])
+@role_required('Usuario')
 def crear_payment_intent():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -198,6 +201,7 @@ def crear_payment_intent():
         return jsonify({'error': str(e)}), 500
     
 @pagos_bp.route('/confirmar_pago', methods=['GET'])
+@role_required('Usuario')
 def confirmar_pago():
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))

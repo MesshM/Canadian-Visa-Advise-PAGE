@@ -22,6 +22,7 @@ import pyotp
 import qrcode
 import base64
 from config.twilio_config import send_verification_code, check_verification_code
+from utils.auth_helpers import role_required
 
 perfil_bp = Blueprint('perfil', __name__)
 
@@ -34,6 +35,7 @@ os.makedirs(CACHE_FOLDER, exist_ok=True)
 CACHE_EXPIRATION = 86400
 
 @perfil_bp.route('/perfil')
+@role_required('Usuario')
 def perfil():
   if 'user_id' not in session:
       return redirect(url_for('auth.login'))
@@ -108,6 +110,7 @@ def perfil():
 # Agregar nuevas rutas para 2FA
 
 @perfil_bp.route('/generar_2fa', methods=['POST'])
+@role_required('Usuario')
 def generar_2fa():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -190,6 +193,7 @@ def generar_2fa():
         return jsonify({'error': str(e)}), 500
 
 @perfil_bp.route('/verificar_2fa', methods=['POST'])
+@role_required('Usuario')
 def verificar_2fa():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -286,6 +290,7 @@ def verificar_2fa():
 
 # Mejorar la función desactivar_2fa para manejar mejor los errores
 @perfil_bp.route('/desactivar_2fa', methods=['POST'])
+@role_required('Usuario')
 def desactivar_2fa():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -353,6 +358,7 @@ def desactivar_2fa():
 
 # Mejorar la función verificar_estado_2fa para manejar mejor los errores
 @perfil_bp.route('/verificar_estado_2fa', methods=['GET'])
+@role_required('Usuario')
 def verificar_estado_2fa():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -387,6 +393,7 @@ def verificar_estado_2fa():
 # Resto del código original...
 # (Mantener todas las demás funciones sin cambios)
 @perfil_bp.route('/cargar_imagen_perfil_sesion', methods=['POST'])
+@role_required('Usuario')
 def cargar_imagen_perfil_sesion():
   """
   Función para cargar la imagen de perfil en la sesión.
@@ -531,6 +538,7 @@ def get_cloudinary_image_with_cache(public_id, width=200, height=200):
     return None
 
 @perfil_bp.route('/cambiar_contrasena', methods=['POST'])
+@role_required('Usuario')
 def cambiar_contrasena():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -566,6 +574,7 @@ def cambiar_contrasena():
         return jsonify({'error': str(e)}), 500
 
 @perfil_bp.route('/enviar_codigo_cambio_contrasena', methods=['POST'])
+@role_required('Usuario')
 def enviar_codigo_cambio_contrasena():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -642,6 +651,7 @@ def enviar_codigo_cambio_contrasena():
         return jsonify({'error': str(e)}), 500
 
 @perfil_bp.route('/verificar_codigo_cambio_contrasena', methods=['POST'])
+@role_required('Usuario')
 def verificar_codigo_cambio_contrasena():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -697,6 +707,7 @@ def verificar_codigo_cambio_contrasena():
 
 
 @perfil_bp.route('/verificar_codigo', methods=['POST'])
+@role_required('Usuario')
 def verificar_codigo():
   if 'user_id' not in session:
       return jsonify({'error': 'No autorizado'}), 401
@@ -738,6 +749,7 @@ def verificar_codigo():
       return jsonify({'error': str(e)}), 500
 
 @perfil_bp.route('/obtener_preferencias', methods=['GET'])
+@role_required('Usuario')
 def obtener_preferencias():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -820,6 +832,7 @@ def obtener_preferencias():
         return jsonify({'error': str(e)}), 500
 
 @perfil_bp.route('/actualizar_preferencias', methods=['POST'])
+@role_required('Usuario')
 def actualizar_preferencias():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -915,6 +928,7 @@ def actualizar_preferencias():
         return jsonify({'error': str(e)}), 500
 
 @perfil_bp.route('/descargar_datos_personales')
+@role_required('Usuario')
 def descargar_datos_personales():
   if 'user_id' not in session:
       return redirect(url_for('auth.login'))
@@ -982,6 +996,7 @@ def descargar_datos_personales():
       return redirect(url_for('perfil.perfil'))
 
 @perfil_bp.route('/eliminar_cuenta', methods=['POST'])
+@role_required('Usuario')
 def eliminar_cuenta():
   if 'user_id' not in session:
       return jsonify({'error': 'No autorizado'}), 401
@@ -1094,6 +1109,7 @@ def actualizar_imagen_perfil_en_sidebar(user_id, image_url=None):
   return True
 
 @perfil_bp.route('/subir_imagen_perfil', methods=['POST'])
+@role_required('Usuario')
 def subir_imagen_perfil():
   if 'user_id' not in session:
       return jsonify({'error': 'No autorizado'}), 401
@@ -1199,6 +1215,7 @@ def subir_imagen_perfil():
       return jsonify({'error': str(e)}), 500
 
 @perfil_bp.route('/eliminar_imagen_perfil', methods=['POST'])
+@role_required('Usuario')
 def eliminar_imagen_perfil():
   if 'user_id' not in session:
       return jsonify({'error': 'No autorizado'}), 401
@@ -1254,6 +1271,7 @@ def eliminar_imagen_perfil():
       return jsonify({'error': str(e)}), 500
 
 @perfil_bp.route('/obtener_imagen_perfil')
+@role_required('Usuario')
 def obtener_imagen_perfil():
   if 'user_id' not in session:
       return jsonify({'error': 'No autorizado'}), 401
@@ -1309,6 +1327,7 @@ def obtener_imagen_perfil():
       return jsonify({'error': str(e)}), 500
 
 @perfil_bp.route('/imagen_perfil_cache/<filename>')
+@role_required('Usuario')
 def obtener_imagen_perfil_cache(filename):
   """
   Sirve imágenes de perfil desde el caché local
@@ -1324,6 +1343,7 @@ def obtener_imagen_perfil_cache(filename):
       return "Archivo no encontrado", 404
 
 @perfil_bp.route('/actualizar_datos_personales', methods=['POST'])
+@role_required('Usuario')
 def actualizar_datos_personales():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -1430,6 +1450,7 @@ def actualizar_datos_personales():
         return jsonify({'error': str(e)}), 500
 
 @perfil_bp.route('/enviar_verificacion_correo', methods=['POST'])
+@role_required('Usuario')
 def enviar_verificacion_correo():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -1525,6 +1546,7 @@ def enviar_verificacion_correo():
 
 # Añadir una nueva ruta para verificar el estado del cooldown
 @perfil_bp.route('/verificar_cooldown_correo', methods=['GET'])
+@role_required('Usuario')
 def verificar_cooldown_correo():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -1555,6 +1577,7 @@ def verificar_cooldown_correo():
         return jsonify({'error': str(e)}), 500
 
 @perfil_bp.route('/verificar_codigo_correo', methods=['POST'])
+@role_required('Usuario')
 def verificar_codigo_correo():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -1612,6 +1635,7 @@ def verificar_codigo_correo():
 # Agregar estas nuevas rutas después de la ruta '/verificar_codigo_correo'
 
 @perfil_bp.route('/enviar_verificacion_telefono', methods=['POST'])
+@role_required('Usuario')
 def enviar_verificacion_telefono():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -1711,6 +1735,7 @@ def enviar_verificacion_telefono():
         return jsonify({'error': 'Error interno del servidor. Por favor, inténtalo de nuevo más tarde.'}), 500
 
 @perfil_bp.route('/verificar_codigo_telefono', methods=['POST'])
+@role_required('Usuario')
 def verificar_codigo_telefono():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -1811,6 +1836,7 @@ def verificar_codigo_telefono():
         return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
 
 @perfil_bp.route('/verificar_cooldown_telefono', methods=['GET'])
+@role_required('Usuario')
 def verificar_cooldown_telefono():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -1843,6 +1869,7 @@ def verificar_cooldown_telefono():
 # Agregar estas nuevas rutas al final del archivo perfil_bp
 
 @perfil_bp.route('/api/notificaciones')
+@role_required('Usuario')
 def obtener_notificaciones():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -1883,6 +1910,7 @@ def obtener_notificaciones():
         return jsonify({'error': str(e)}), 500
 
 @perfil_bp.route('/api/notificaciones/<int:notif_id>/leer', methods=['POST'])
+@role_required('Usuario')
 def marcar_notificacion_leida(notif_id):
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
@@ -1922,6 +1950,7 @@ def marcar_notificacion_leida(notif_id):
         return jsonify({'error': str(e)}), 500
 
 @perfil_bp.route('/api/notificaciones/leer-todas', methods=['POST'])
+@role_required('Usuario')
 def marcar_todas_leidas():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401

@@ -1,0 +1,106 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Editar Pago - Panel Administrativo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-edit"></i>
+                        Editar Pago #{{ pago.id }}
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{{ url_for('pagos_admin.listar_pagos') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Volver
+                        </a>
+                    </div>
+                </div>
+                
+                <form method="POST" class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Cliente</label>
+                                <input type="text" class="form-control" 
+                                       value="{{ pago.cliente_nombre }} ({{ pago.cliente_email }})" 
+                                       readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="monto">Monto *</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">$</span>
+                                    </div>
+                                    <input type="number" class="form-control" id="monto" name="monto" 
+                                           step="0.01" min="0" value="{{ pago.monto }}" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="estado">Estado</label>
+                                <select class="form-control" id="estado" name="estado">
+                                    <option value="Pendiente" {% if pago.estado == 'Pendiente' %}selected{% endif %}>Pendiente</option>
+                                    <option value="Completado" {% if pago.estado == 'Completado' %}selected{% endif %}>Completado</option>
+                                    <option value="Cancelado" {% if pago.estado == 'Cancelado' %}selected{% endif %}>Cancelado</option>
+                                    <option value="Reembolsado" {% if pago.estado == 'Reembolsado' %}selected{% endif %}>Reembolsado</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="fecha">Fecha</label>
+                                <input type="date" class="form-control" id="fecha" name="fecha" 
+                                       value="{{ pago.fecha }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="descripcion">Descripción</label>
+                        <textarea class="form-control" id="descripcion" name="descripcion" 
+                                  rows="3">{{ pago.descripcion or '' }}</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Actualizar Pago
+                        </button>
+                        <a href="{{ url_for('pagos_admin.listar_pagos') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación del formulario
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const monto = document.getElementById('monto').value;
+        
+        if (!monto || parseFloat(monto) <= 0) {
+            e.preventDefault();
+            alert('Por favor ingresa un monto válido.');
+            return;
+        }
+    });
+});
+</script>
+{% endblock %}

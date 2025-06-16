@@ -1,10 +1,12 @@
 from flask import Blueprint, request, redirect, url_for, flash, render_template, session, jsonify
 from config.database import create_connection
 from mysql.connector import Error
+from utils.auth_helpers import role_required
 
 user_bp = Blueprint('user', __name__)
 
 @user_bp.route('/agregar_solicitante', methods=['POST'])
+@role_required('Usuario')
 def agregar_solicitante():
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
@@ -45,6 +47,7 @@ def agregar_solicitante():
     return redirect(url_for('user.solicitantes'))
 
 @user_bp.route('/obtener_id_solicitante', methods=['GET'])
+@role_required('Usuario')
 def obtener_id_solicitante():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401

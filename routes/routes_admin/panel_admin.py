@@ -3,7 +3,7 @@ from functools import wraps
 from datetime import datetime, timedelta
 import sqlite3
 
-panel_admin = Blueprint('panel_admin', __name__)
+panel_admin_bp = Blueprint('panel_admin', __name__)
 
 def admin_required(f):
     """Decorador para verificar que el usuario sea administrador"""
@@ -21,7 +21,7 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-@panel_admin.route('/admin')
+@panel_admin_bp.route('/admin')
 @admin_required
 def index_admin():
     """Panel principal del administrador"""
@@ -66,7 +66,7 @@ def index_admin():
         flash(f'Error al cargar el panel: {str(e)}', 'error')
         return render_template('admin/index_admin.html')
 
-@panel_admin.route('/admin/notificaciones')
+@panel_admin_bp.route('/admin/notificaciones')
 @admin_required
 def obtener_notificaciones():
     """Obtener notificaciones del sistema para el administrador"""
@@ -102,7 +102,7 @@ def obtener_notificaciones():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@panel_admin.route('/admin/estadisticas')
+@panel_admin_bp.route('/admin/estadisticas')
 @admin_required
 def obtener_estadisticas():
     """Obtener estadísticas para gráficos del dashboard"""
