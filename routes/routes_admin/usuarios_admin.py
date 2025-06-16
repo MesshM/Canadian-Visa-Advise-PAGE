@@ -335,5 +335,3 @@ def buscar_usuarios():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-usuarios_admin_bp = usuarios_admin

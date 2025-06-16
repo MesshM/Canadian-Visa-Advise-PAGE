@@ -282,5 +282,3 @@ def api_estadisticas_pagos():
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-pagos_admin_bp = pagos_admin

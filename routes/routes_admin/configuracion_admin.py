@@ -399,14 +399,8 @@ def inicializar_configuraciones():
         })
     
     except Exception as e:
-<<<<<<< HEAD
-        return jsonify({'error': str(e)}), 500
-
-configuracion_admin_bp = configuracion_admin
-=======
         return jsonify({
             'success': False, 
             'message': f'Error al inicializar configuraciones: {str(e)}'
         }), 500
  
->>>>>>> f9254aa6870c4cc71663c6c3758ea97f835ede38

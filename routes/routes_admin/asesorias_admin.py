@@ -453,5 +453,3 @@ def exportar_asesorias():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-asesorias_admin_bp = asesorias_admin

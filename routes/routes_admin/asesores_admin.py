@@ -386,5 +386,3 @@ def obtener_asesores_disponibles():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-asesores_admin_bp = asesores_admin

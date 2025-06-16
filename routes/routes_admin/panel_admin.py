@@ -162,5 +162,3 @@ def obtener_estadisticas():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-panel_admin_bp = panel_admin
