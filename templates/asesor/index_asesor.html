@@ -47,7 +47,7 @@
         <!-- Admin Dashboard Overview -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
             <!-- Card 1: Total Solicitudes -->
-            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500 animate-fade-in card-hover kpi-badge animate-float">
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm text-gray-500">Total Solicitudes</p>
@@ -71,7 +71,7 @@
             </div>
             
             <!-- Card 2: Asesorías Pendientes -->
-            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500 animate-fade-in card-hover kpi-badge animate-float">
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm text-gray-500">Asesorías Pendientes</p>
@@ -95,7 +95,7 @@
             </div>
             
             <!-- Card 3: Formularios Completados -->
-            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500 animate-fade-in card-hover kpi-badge animate-float">
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm text-gray-500">Formularios Completados</p>
@@ -119,7 +119,7 @@
             </div>
             
             <!-- Card 4: Visas Aprobadas -->
-            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500">
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500 animate-fade-in card-hover kpi-badge animate-float">
                 <div class="flex justify-between items-start">
                     <div>
                         <p class="text-sm text-gray-500">Visas Aprobadas</p>
@@ -140,6 +140,44 @@
                     </span>
                     <span class="text-gray-500 ml-2">vs mes anterior</span>
                 </div>
+            </div>
+        </div>
+
+        <!-- KPIs adicionales -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-indigo-500 animate-fade-in">
+                <p class="text-sm text-gray-500">Ingresos Totales</p>
+                <h3 class="text-2xl font-bold text-gray-900 mt-1">${{ ingresos_totales|round(2) }}</h3>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-pink-500 animate-fade-in">
+                <p class="text-sm text-gray-500">Calificación Promedio</p>
+                <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ calificacion_promedio }}/5</h3>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-gray-500 animate-fade-in">
+                <p class="text-sm text-gray-500">Formularios Pendientes</p>
+                <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ formularios_pendientes }}</h3>
+            </div>
+        </div>
+
+        <!-- Filtros de período -->
+        <div class="flex flex-wrap gap-2 mb-4">
+            <button class="period-btn px-3 py-1 rounded bg-primary-100 text-primary-700 hover:bg-primary-200 transition" data-period="6m">Últimos 6 meses</button>
+            <button class="period-btn px-3 py-1 rounded bg-primary-100 text-primary-700 hover:bg-primary-200 transition" data-period="1y">Último año</button>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="bg-white rounded-lg shadow p-6 animate-fade-in">
+                <h3 class="text-lg font-semibold mb-2">Tendencia de Asesorías</h3>
+                <canvas id="chartTendencia"></canvas>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 animate-fade-in">
+                <h3 class="text-lg font-semibold mb-2">Distribución por Tipo de Visa</h3>
+                <canvas id="chartTipos"></canvas>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 animate-fade-in">
+                <h3 class="text-lg font-semibold mb-2">Ingresos Mensuales</h3>
+                <canvas id="chartIngresos"></canvas>
             </div>
         </div>
 
@@ -206,10 +244,42 @@
                         </tbody>
                     </table>
                 </div>
+                <!-- Botón ver todas las solicitudes -->
                 <div class="flex justify-center mt-6">
-                    <a href="{{ url_for('citas_asesor.solicitudes_asesor') }}" class="inline-flex items-center px-4 py-2 border border-primary-300 text-sm font-medium rounded-md text-primary-700 bg-white hover:bg-primary-50">
+                    <button id="verTodasSolicitudesBtn" class="inline-flex items-center px-4 py-2 border border-primary-300 text-sm font-medium rounded-md text-primary-700 bg-white hover:bg-primary-50 shadow transition-all">
                         Ver todas las solicitudes
-                    </a>
+                    </button>
+                </div>
+                <!-- Modal de todas las solicitudes -->
+                <div id="modalSolicitudes" class="modal-bg fixed inset-0 hidden flex items-center justify-center">
+                    <div class="modal-content bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] overflow-y-auto relative">
+                        <button id="closeModalSolicitudes" class="absolute top-2 right-2 text-gray-400 hover:text-primary-600 text-2xl">&times;</button>
+                        <div class="p-6">
+                            <h2 class="text-xl font-bold mb-4">Todas las Solicitudes</h2>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full bg-white">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solicitante</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo de Visa</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-200">
+                                        {% for s in solicitudes_recientes %}
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4 whitespace-nowrap">{{ s.nombres }} {{ s.apellidos }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">{{ s.tipo_solicitud }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">{{ s.fecha_solicitud.strftime('%d %b, %Y') if s.fecha_solicitud else '' }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">{{ s.estado }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -253,7 +323,7 @@
         <h2 class="text-xl font-bold text-gray-900 mb-4 font-roboto">Acciones Rápidas</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- Nueva Solicitud -->
-            <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-300">
+            <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-300 card-hover quick-action-btn animate-float" data-modal="modalNuevaSolicitud">
                 <div class="flex items-center justify-center h-12 w-12 rounded-lg bg-primary-100 text-primary-600 mb-4 mx-auto">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -269,7 +339,7 @@
             </div>
 
             <!-- Agendar Asesoría -->
-            <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-300">
+            <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-300 card-hover quick-action-btn animate-float" data-modal="modalAgendarAsesoria">
                 <div class="flex items-center justify-center h-12 w-12 rounded-lg bg-green-100 text-green-600 mb-4 mx-auto">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -285,7 +355,7 @@
             </div>
 
             <!-- Generar Reporte -->
-            <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-300">
+            <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-300 card-hover quick-action-btn animate-float" data-modal="modalGenerarReporte">
                 <div class="flex items-center justify-center h-12 w-12 rounded-lg bg-blue-100 text-blue-600 mb-4 mx-auto">
                     <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -302,5 +372,187 @@
         </div>
     </div>
     
+    <style>
+    /* Animaciones y efectos flotantes */
+    .animate-float {
+        animation: floatY 2.5s ease-in-out infinite;
+    }
+    @keyframes floatY {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-12px); }
+    }
+    .card-hover {
+        transition: box-shadow 0.3s, transform 0.3s, background 0.3s;
+    }
+    .card-hover:hover {
+        box-shadow: 0 8px 32px 0 rgba(37,99,235,0.15), 0 1.5px 6px 0 rgba(0,0,0,0.08);
+        transform: translateY(-6px) scale(1.03);
+        background: linear-gradient(90deg, #f0f4ff 0%, #f8fafc 100%);
+    }
+    .kpi-badge {
+        transition: background 0.3s, color 0.3s, box-shadow 0.3s;
+    }
+    .kpi-badge:hover {
+        background: #2563eb;
+        color: #fff;
+        box-shadow: 0 4px 16px 0 rgba(37,99,235,0.15);
+    }
+    .chartjs-render-monitor {
+        transition: filter 0.3s;
+    }
+    .chartjs-hover {
+        filter: drop-shadow(0 0 12px #2563eb55);
+    }
+    /* Modal styles */
+    .modal-bg {
+        background: rgba(30,41,59,0.45);
+        z-index: 1000;
+    }
+    .modal-content {
+        animation: modalIn 0.4s cubic-bezier(.68,-0.55,.27,1.55);
+    }
+    @keyframes modalIn {
+        0% { transform: scale(0.85) translateY(40px); opacity: 0; }
+        100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    </style>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/static/js/asesor/index_asesor.js"></script>
+    <script>
+    // Animación fade-in y flotante
+    document.querySelectorAll('.animate-fade-in').forEach(el => {
+        el.classList.add('opacity-0');
+        setTimeout(() => el.classList.remove('opacity-0'), 100);
+    });
+    document.querySelectorAll('.card-hover').forEach(el => {
+        el.classList.add('animate-float');
+    });
+    // KPI hover
+    document.querySelectorAll('.kpi-badge').forEach(el => {
+        el.addEventListener('mouseenter', () => el.classList.add('shadow-lg'));
+        el.addEventListener('mouseleave', () => el.classList.remove('shadow-lg'));
+    });
+    // Modal para ver todas las solicitudes
+    document.getElementById('verTodasSolicitudesBtn')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('modalSolicitudes').classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+    });
+    document.getElementById('closeModalSolicitudes')?.addEventListener('click', function() {
+        document.getElementById('modalSolicitudes').classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    });
+    // Acciones rápidas popups
+    document.querySelectorAll('.quick-action-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const modalId = btn.getAttribute('data-modal');
+            document.getElementById(modalId).classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        });
+    });
+    document.querySelectorAll('.close-quick-modal').forEach(btn => {
+        btn.addEventListener('click', function() {
+            btn.closest('.modal-bg').classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        });
+    });
+    // Datos para gráficos desde backend
+    const tendenciaData = JSON.parse('{{ tendencia_asesorias|tojson|safe }}');
+    const tiposData = JSON.parse('{{ distribucion_tipos|tojson|safe }}');
+    const ingresosData = JSON.parse('{{ ingresos_mensuales|tojson|safe }}');
+    // Gráfico de tendencia
+    const ctxTendencia = document.getElementById('chartTendencia').getContext('2d');
+    const chartTendencia = new Chart(ctxTendencia, {
+        type: 'line',
+        data: {
+            labels: tendenciaData.map(d => d.mes),
+            datasets: [{
+                label: 'Asesorías',
+                data: tendenciaData.map(d => d.total),
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37,99,235,0.13)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 6,
+                pointHoverRadius: 10,
+                pointBackgroundColor: '#fff',
+                pointBorderColor: '#2563eb',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {legend: {display: false}},
+            animation: {duration: 1200, easing: 'easeOutElastic'},
+            hover: {mode: 'nearest', intersect: true, animationDuration: 600},
+            onHover: (e, activeEls) => {
+                e.native.target.classList.toggle('chartjs-hover', activeEls.length > 0);
+            }
+        }
+    });
+    // Gráfico de tipos
+    const ctxTipos = document.getElementById('chartTipos').getContext('2d');
+    const pastelColors = [
+        '#6366f1','#f472b6','#facc15','#34d399','#38bdf8','#f87171','#a78bfa','#fbbf24','#60a5fa','#f472b6','#fcd34d','#4ade80'
+    ];
+    const chartTipos = new Chart(ctxTipos, {
+        type: 'doughnut',
+        data: {
+            labels: tiposData.map(d => d.tipo_asesoria),
+            datasets: [{
+                data: tiposData.map(d => d.total),
+                backgroundColor: pastelColors,
+                hoverOffset: 18,
+                borderWidth: 2,
+                borderColor: '#fff',
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {legend: {position: 'bottom'}},
+            animation: {animateScale: true, animateRotate: true, duration: 1200},
+            onHover: (e, activeEls) => {
+                e.native.target.classList.toggle('chartjs-hover', activeEls.length > 0);
+            }
+        }
+    });
+    // Gráfico de ingresos
+    const ctxIngresos = document.getElementById('chartIngresos').getContext('2d');
+    const chartIngresos = new Chart(ctxIngresos, {
+        type: 'bar',
+        data: {
+            labels: ingresosData.map(d => d.mes),
+            datasets: [{
+                label: 'Ingresos',
+                data: ingresosData.map(d => d.total),
+                backgroundColor: ingresosData.map((_,i) => pastelColors[i%pastelColors.length]),
+                borderRadius: 8,
+                hoverBackgroundColor: '#2563eb',
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {legend: {display: false}},
+            animation: {duration: 1200, easing: 'easeOutBounce'},
+            hover: {mode: 'index', intersect: false, animationDuration: 600},
+            onHover: (e, activeEls) => {
+                e.native.target.classList.toggle('chartjs-hover', activeEls.length > 0);
+            }
+        }
+    });
+    // Filtros de período (placeholder, para futura integración AJAX)
+    document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.preventDefault();
+            btn.classList.add('bg-primary-600','text-white');
+            btn.classList.remove('bg-primary-100','text-primary-700');
+            btn.parentElement.querySelectorAll('.period-btn').forEach(b => {
+                if(b!==btn) b.classList.remove('bg-primary-600','text-white');
+                if(b!==btn) b.classList.add('bg-primary-100','text-primary-700');
+            });
+        });
+    });
+    </script>
 {% endblock %}
