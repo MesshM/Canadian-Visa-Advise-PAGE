@@ -3,7 +3,7 @@ from functools import wraps
 import sqlite3
 from datetime import datetime, timedelta
 
-asesorias_admin = Blueprint('asesorias_admin', __name__)
+asesorias_admin_bp = Blueprint('asesorias_admin', __name__)
 
 def admin_required(f):
     """Decorador para verificar que el usuario sea administrador"""
@@ -21,7 +21,7 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-@asesorias_admin.route('/admin/asesorias')
+@asesorias_admin_bp.route('/admin/asesorias')
 @admin_required
 def listar_asesorias():
     """Listar todas las asesorías del sistema"""
@@ -96,7 +96,7 @@ def listar_asesorias():
         flash(f'Error al cargar asesorías: {str(e)}', 'error')
         return render_template('admin/asesorias_admin.html', asesorias=[])
 
-@asesorias_admin.route('/admin/asesorias/<codigo>/ver')
+@asesorias_admin_bp.route('/admin/asesorias/<codigo>/ver')
 @admin_required
 def ver_asesoria(codigo):
     """Ver detalles completos de una asesoría"""
@@ -151,7 +151,7 @@ def ver_asesoria(codigo):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@asesorias_admin.route('/admin/asesorias/<codigo>/reasignar', methods=['POST'])
+@asesorias_admin_bp.route('/admin/asesorias/<codigo>/reasignar', methods=['POST'])
 @admin_required
 def reasignar_asesoria(codigo):
     """Reasignar una asesoría a otro asesor"""
@@ -206,7 +206,7 @@ def reasignar_asesoria(codigo):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@asesorias_admin.route('/admin/asesorias/<codigo>/cancelar', methods=['POST'])
+@asesorias_admin_bp.route('/admin/asesorias/<codigo>/cancelar', methods=['POST'])
 @admin_required
 def cancelar_asesoria(codigo):
     """Cancelar una asesoría"""
@@ -244,7 +244,7 @@ def cancelar_asesoria(codigo):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@asesorias_admin.route('/admin/asesorias/<codigo>/editar', methods=['GET', 'POST'])
+@asesorias_admin_bp.route('/admin/asesorias/<codigo>/editar', methods=['GET', 'POST'])
 @admin_required
 def editar_asesoria(codigo):
     """Editar una asesoría"""
@@ -306,7 +306,7 @@ def editar_asesoria(codigo):
         flash(f'Error al editar asesoría: {str(e)}', 'error')
         return redirect(url_for('asesorias_admin.listar_asesorias'))
 
-@asesorias_admin.route('/admin/asesorias/crear', methods=['GET', 'POST'])
+@asesorias_admin_bp.route('/admin/asesorias/crear', methods=['GET', 'POST'])
 @admin_required
 def crear_asesoria():
     """Crear una nueva asesoría (para casos especiales)"""
@@ -391,7 +391,7 @@ def crear_asesoria():
         flash(f'Error al cargar formulario: {str(e)}', 'error')
         return redirect(url_for('asesorias_admin.listar_asesorias'))
 
-@asesorias_admin.route('/admin/asesorias/exportar')
+@asesorias_admin_bp.route('/admin/asesorias/exportar')
 @admin_required
 def exportar_asesorias():
     """Exportar asesorías a CSV/Excel"""

@@ -1,367 +1,412 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
-from functools import wraps
 import sqlite3
 import json
 from datetime import datetime
+import os
 
-configuracion_admin = Blueprint('configuracion_admin', __name__)
+# Crear el blueprint
+configuracion_admin_bp = Blueprint('configuracion_admin', __name__, url_prefix='/admin/configuracion')
 
-def admin_required(f):
-    """Decorador para verificar que el usuario sea administrador"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session or session.get('user_role') != 'Administrador':
-            flash('Acceso denegado. Se requieren permisos de administrador.', 'error')
-            return redirect(url_for('auth.login'))
-        return f(*args, **kwargs)
-    return decorated_function
+def verificar_admin():
+    """Verificar si el usuario es administrador"""
+    if 'user_id' not in session:
+        return False
+    if session.get('user_role') != 'Administrador':
+        return False
+    return True
 
-def get_db_connection():
+def obtener_conexion():
     """Obtener conexión a la base de datos"""
     conn = sqlite3.connect('database.db')
     conn.row_factory = sqlite3.Row
     return conn
 
-@configuracion_admin.route('/admin/configuracion')
-@admin_required
+@configuracion_admin_bp.route('/')
 def configuracion_general():
-    """Panel de configuración general del sistema"""
+    """Panel principal de configuración"""
+    if not verificar_admin():
+        flash('Acceso denegado. Se requieren permisos de administrador.', 'error')
+        return redirect(url_for('auth.login'))
+    
     try:
-        conn = get_db_connection()
+        conn = obtener_conexion()
+        cursor = conn.cursor()
         
         # Obtener configuraciones actuales
-        configuraciones = {}
-        config_rows = conn.execute('SELECT clave, valor FROM configuraciones').fetchall()
+        cursor.execute('''
+            SELECT * FROM configuraciones 
+            ORDER BY categoria, nombre
+        ''')
+        configuraciones = cursor.fetchall()
         
-        for config in config_rows:
-            configuraciones[config['clave']] = config['valor']
+        # Organizar por categorías
+        config_por_categoria = {}
+        for config in configuraciones:
+            categoria = config['categoria']
+            if categoria not in config_por_categoria:
+                config_por_categoria[categoria] = []
+            config_por_categoria[categoria].append(config)
         
         conn.close()
         
-        return render_template('admin/configuracion_admin.html',
-                             configuraciones=configuraciones)
-                             
+        return render_template('admin/configuracion_admin.html', 
+                             configuraciones=config_por_categoria)
+    
     except Exception as e:
-        flash(f'Error al cargar configuración: {str(e)}', 'error')
-        return render_template('admin/configuracion_admin.html', configuraciones={})
+        flash(f'Error al cargar configuraciones: {str(e)}', 'error')
+        return redirect(url_for('panel_admin.index_admin'))
 
-@configuracion_admin.route('/admin/configuracion/guardar', methods=['POST'])
-@admin_required
-def guardar_configuracion():
-    """Guardar configuraciones del sistema"""
+@configuracion_admin_bp.route('/actualizar', methods=['POST'])
+def actualizar_configuracion():
+    """Actualizar configuraciones del sistema"""
+    if not verificar_admin():
+        return jsonify({'success': False, 'message': 'Acceso denegado'}), 403
+    
     try:
-        conn = get_db_connection()
+        data = request.get_json()
+        configuraciones = data.get('configuraciones', {})
         
-        # Configuraciones generales
-        configuraciones = {
-            'nombre_empresa': request.form.get('nombre_empresa', ''),
-            'correo_empresa': request.form.get('correo_empresa', ''),
-            'telefono_empresa': request.form.get('telefono_empresa', ''),
-            'sitio_web': request.form.get('sitio_web', ''),
-            'direccion_empresa': request.form.get('direccion_empresa', ''),
-            'zona_horaria': request.form.get('zona_horaria', 'America/Toronto'),
-            'idioma_sistema': request.form.get('idioma_sistema', 'es'),
-            'moneda': request.form.get('moneda', 'CAD'),
-            'formato_fecha': request.form.get('formato_fecha', 'DD/MM/YYYY'),
-            
-            # Notificaciones
-            'email_nuevos_usuarios': 'email_nuevos_usuarios' in request.form,
-            'email_nuevas_asesorias': 'email_nuevas_asesorias' in request.form,
-            'email_pagos_pendientes': 'email_pagos_pendientes' in request.form,
-            'email_documentos_revision': 'email_documentos_revision' in request.form,
-            
-            # SMTP
-            'smtp_servidor': request.form.get('smtp_servidor', ''),
-            'smtp_puerto': request.form.get('smtp_puerto', '587'),
-            'smtp_usuario': request.form.get('smtp_usuario', ''),
-            'smtp_password': request.form.get('smtp_password', ''),
-            
-            # Recordatorios
-            'recordatorio_asesorias': request.form.get('recordatorio_asesorias', '24'),
-            'recordatorio_documentos': request.form.get('recordatorio_documentos', '7'),
-            
-            # Seguridad
-            'min_longitud_password': request.form.get('min_longitud_password', '8'),
-            'expiracion_password': request.form.get('expiracion_password', '0'),
-            'require_mayusculas': 'require_mayusculas' in request.form,
-            'require_numeros': 'require_numeros' in request.form,
-            'require_simbolos': 'require_simbolos' in request.form,
-            'enable_2fa': 'enable_2fa' in request.form,
-            'force_2fa_admin': 'force_2fa_admin' in request.form,
-            'timeout_sesion': request.form.get('timeout_sesion', '30'),
-            'max_intentos_login': request.form.get('max_intentos_login', '5'),
-            
-            # Integraciones
-            'stripe_public_key': request.form.get('stripe_public_key', ''),
-            'stripe_secret_key': request.form.get('stripe_secret_key', ''),
-            'stripe_enabled': 'stripe_enabled' in request.form,
-            'google_analytics_id': request.form.get('google_analytics_id', ''),
-            'analytics_enabled': 'analytics_enabled' in request.form,
-            'zoom_api_key': request.form.get('zoom_api_key', ''),
-            'zoom_api_secret': request.form.get('zoom_api_secret', ''),
-            'zoom_enabled': 'zoom_enabled' in request.form,
-            'cloudinary_cloud_name': request.form.get('cloudinary_cloud_name', ''),
-            'cloudinary_api_key': request.form.get('cloudinary_api_key', ''),
-            'cloudinary_api_secret': request.form.get('cloudinary_api_secret', ''),
-            'cloudinary_enabled': 'cloudinary_enabled' in request.form,
-            
-            # Respaldos
-            'backup_frequency': request.form.get('backup_frequency', 'daily'),
-            'backup_enabled': 'backup_enabled' in request.form,
-        }
+        conn = obtener_conexion()
+        cursor = conn.cursor()
         
-        # Guardar cada configuración
-        for clave, valor in configuraciones.items():
-            # Convertir booleanos a string
-            if isinstance(valor, bool):
-                valor = 'true' if valor else 'false'
-            
-            # Insertar o actualizar configuración
-            conn.execute('''
-                INSERT OR REPLACE INTO configuraciones (clave, valor, fecha_modificacion, modificado_por)
-                VALUES (?, ?, ?, ?)
-            ''', (clave, str(valor), datetime.now(), session['user_id']))
+        # Actualizar cada configuración
+        for config_id, valor in configuraciones.items():
+            cursor.execute('''
+                UPDATE configuraciones 
+                SET valor = ?, fecha_modificacion = ?
+                WHERE id = ?
+            ''', (valor, datetime.now().isoformat(), config_id))
         
         conn.commit()
         conn.close()
         
-        flash('Configuración guardada exitosamente.', 'success')
-        return redirect(url_for('configuracion_admin.configuracion_general'))
-        
-    except Exception as e:
-        flash(f'Error al guardar configuración: {str(e)}', 'error')
-        return redirect(url_for('configuracion_admin.configuracion_general'))
-
-@configuracion_admin.route('/admin/configuracion/probar-smtp', methods=['POST'])
-@admin_required
-def probar_conexion_smtp():
-    """Probar conexión SMTP"""
-    try:
-        servidor = request.json.get('servidor')
-        puerto = int(request.json.get('puerto', 587))
-        usuario = request.json.get('usuario')
-        password = request.json.get('password')
-        
-        # TODO: Implementar prueba real de SMTP
-        import smtplib
-        from email.mime.text import MIMEText
-        
-        # Crear conexión SMTP
-        server = smtplib.SMTP(servidor, puerto)
-        server.starttls()
-        server.login(usuario, password)
-        
-        # Enviar email de prueba
-        msg = MIMEText('Prueba de conexión SMTP desde CVA Admin')
-        msg['Subject'] = 'Prueba SMTP - CVA'
-        msg['From'] = usuario
-        msg['To'] = usuario
-        
-        server.send_message(msg)
-        server.quit()
-        
         return jsonify({
-            'success': True,
-            'mensaje': 'Conexión SMTP exitosa. Email de prueba enviado.'
+            'success': True, 
+            'message': 'Configuraciones actualizadas correctamente'
         })
-        
+    
     except Exception as e:
         return jsonify({
-            'success': False,
-            'error': f'Error en conexión SMTP: {str(e)}'
+            'success': False, 
+            'message': f'Error al actualizar configuraciones: {str(e)}'
         }), 500
 
-@configuracion_admin.route('/admin/configuracion/limpiar-cache', methods=['POST'])
-@admin_required
-def limpiar_cache():
-    """Limpiar caché del sistema"""
+@configuracion_admin_bp.route('/crear', methods=['POST'])
+def crear_configuracion():
+    """Crear nueva configuración"""
+    if not verificar_admin():
+        return jsonify({'success': False, 'message': 'Acceso denegado'}), 403
+    
     try:
-        # TODO: Implementar limpieza real de caché
-        # Por ahora simulamos la operación
+        nombre = request.form.get('nombre')
+        categoria = request.form.get('categoria')
+        valor = request.form.get('valor')
+        descripcion = request.form.get('descripcion', '')
+        tipo = request.form.get('tipo', 'texto')
         
-        import time
-        time.sleep(2)  # Simular procesamiento
-        
-        return jsonify({
-            'success': True,
-            'mensaje': 'Caché del sistema limpiado exitosamente'
-        })
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@configuracion_admin.route('/admin/configuracion/optimizar-bd', methods=['POST'])
-@admin_required
-def optimizar_base_datos():
-    """Optimizar base de datos"""
-    try:
-        conn = get_db_connection()
-        
-        # Ejecutar VACUUM para optimizar la base de datos
-        conn.execute('VACUUM')
-        
-        # Analizar estadísticas
-        conn.execute('ANALYZE')
-        
-        conn.close()
-        
-        return jsonify({
-            'success': True,
-            'mensaje': 'Base de datos optimizada exitosamente'
-        })
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@configuracion_admin.route('/admin/configuracion/verificar-integridad', methods=['POST'])
-@admin_required
-def verificar_integridad():
-    """Verificar integridad de archivos y base de datos"""
-    try:
-        conn = get_db_connection()
-        
-        # Verificar integridad de la base de datos
-        resultado = conn.execute('PRAGMA integrity_check').fetchone()
-        
-        conn.close()
-        
-        if resultado[0] == 'ok':
+        if not all([nombre, categoria, valor]):
             return jsonify({
-                'success': True,
-                'mensaje': 'Verificación de integridad completada. Todo está correcto.'
-            })
-        else:
+                'success': False, 
+                'message': 'Todos los campos son obligatorios'
+            }), 400
+        
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        
+        # Verificar si ya existe
+        cursor.execute('''
+            SELECT id FROM configuraciones 
+            WHERE nombre = ? AND categoria = ?
+        ''', (nombre, categoria))
+        
+        if cursor.fetchone():
             return jsonify({
-                'success': False,
-                'error': f'Problemas de integridad detectados: {resultado[0]}'
-            })
+                'success': False, 
+                'message': 'Ya existe una configuración con ese nombre en esa categoría'
+            }), 400
         
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@configuracion_admin.route('/admin/configuracion/crear-respaldo', methods=['POST'])
-@admin_required
-def crear_respaldo_manual():
-    """Crear respaldo manual del sistema"""
-    try:
-        import shutil
-        import os
-        from datetime import datetime
-        
-        # Crear nombre del archivo de respaldo
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        backup_filename = f'backup_cva_{timestamp}.db'
-        backup_path = os.path.join('backups', backup_filename)
-        
-        # Crear directorio de respaldos si no existe
-        os.makedirs('backups', exist_ok=True)
-        
-        # Copiar base de datos
-        shutil.copy2('database.db', backup_path)
-        
-        # Registrar el respaldo en la base de datos
-        conn = get_db_connection()
-        conn.execute('''
-            INSERT INTO respaldos (nombre_archivo, ruta_archivo, tipo, estado, 
-                                 fecha_creacion, creado_por)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (backup_filename, backup_path, 'Manual', 'Completado', 
-              datetime.now(), session['user_id']))
+        # Crear nueva configuración
+        cursor.execute('''
+            INSERT INTO configuraciones 
+            (nombre, categoria, valor, descripcion, tipo, fecha_creacion, fecha_modificacion)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (nombre, categoria, valor, descripcion, tipo, 
+              datetime.now().isoformat(), datetime.now().isoformat()))
         
         conn.commit()
         conn.close()
         
         return jsonify({
-            'success': True,
-            'mensaje': f'Respaldo creado exitosamente: {backup_filename}'
+            'success': True, 
+            'message': 'Configuración creada correctamente'
         })
-        
+    
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'success': False, 
+            'message': f'Error al crear configuración: {str(e)}'
+        }), 500
 
-@configuracion_admin.route('/admin/configuracion/estado-sistema')
-@admin_required
-def obtener_estado_sistema():
-    """Obtener estado actual del sistema"""
+@configuracion_admin_bp.route('/eliminar/<int:config_id>', methods=['DELETE'])
+def eliminar_configuracion(config_id):
+    """Eliminar configuración"""
+    if not verificar_admin():
+        return jsonify({'success': False, 'message': 'Acceso denegado'}), 403
+    
     try:
-        import psutil
-        import os
+        conn = obtener_conexion()
+        cursor = conn.cursor()
         
-        # Estado de la base de datos
-        try:
-            conn = get_db_connection()
-            conn.execute('SELECT 1').fetchone()
-            conn.close()
-            estado_bd = 'Conectada'
-        except:
-            estado_bd = 'Error'
+        # Verificar que existe
+        cursor.execute('SELECT id FROM configuraciones WHERE id = ?', (config_id,))
+        if not cursor.fetchone():
+            return jsonify({
+                'success': False, 
+                'message': 'Configuración no encontrada'
+            }), 404
         
-        # Estado del servidor de correo (simulado)
-        estado_correo = 'Funcionando'
-        
-        # Uso de almacenamiento
-        disk_usage = psutil.disk_usage('.')
-        porcentaje_usado = (disk_usage.used / disk_usage.total) * 100
-        
-        # Memoria del sistema
-        memory = psutil.virtual_memory()
+        # Eliminar configuración
+        cursor.execute('DELETE FROM configuraciones WHERE id = ?', (config_id,))
+        conn.commit()
+        conn.close()
         
         return jsonify({
-            'base_datos': estado_bd,
-            'servidor_correo': estado_correo,
-            'almacenamiento': {
-                'porcentaje_usado': round(porcentaje_usado, 1),
-                'espacio_libre': round(disk_usage.free / (1024**3), 2),
-                'espacio_total': round(disk_usage.total / (1024**3), 2)
-            },
-            'memoria': {
-                'porcentaje_usado': memory.percent,
-                'memoria_libre': round(memory.available / (1024**3), 2),
-                'memoria_total': round(memory.total / (1024**3), 2)
-            }
+            'success': True, 
+            'message': 'Configuración eliminada correctamente'
         })
-        
+    
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'success': False, 
+            'message': f'Error al eliminar configuración: {str(e)}'
+        }), 500
 
-@configuracion_admin.route('/admin/configuracion/logs-sistema')
-@admin_required
-def obtener_logs_sistema():
-    """Obtener logs del sistema"""
+@configuracion_admin_bp.route('/sistema')
+def configuracion_sistema():
+    """Configuraciones específicas del sistema"""
+    if not verificar_admin():
+        flash('Acceso denegado. Se requieren permisos de administrador.', 'error')
+        return redirect(url_for('auth.login'))
+    
     try:
-        conn = get_db_connection()
+        conn = obtener_conexion()
+        cursor = conn.cursor()
         
-        # Obtener logs recientes (últimos 100)
-        logs = conn.execute('''
-            SELECT nivel, mensaje, fecha, usuario, ip_address
-            FROM logs_sistema 
-            ORDER BY fecha DESC 
-            LIMIT 100
-        ''').fetchall()
+        # Obtener información del sistema
+        cursor.execute('SELECT COUNT(*) as total FROM usuarios')
+        total_usuarios = cursor.fetchone()['total']
+        
+        cursor.execute('SELECT COUNT(*) as total FROM asesorias')
+        total_asesorias = cursor.fetchone()['total']
+        
+        cursor.execute('SELECT COUNT(*) as total FROM pagos')
+        total_pagos = cursor.fetchone()['total']
+        
+        # Obtener configuraciones del sistema
+        cursor.execute('''
+            SELECT * FROM configuraciones 
+            WHERE categoria = 'sistema'
+            ORDER BY nombre
+        ''')
+        config_sistema = cursor.fetchall()
+        
+        conn.close()
+        
+        estadisticas = {
+            'usuarios': total_usuarios,
+            'asesorias': total_asesorias,
+            'pagos': total_pagos
+        }
+        
+        return render_template('admin/configuracion_sistema.html', 
+                             configuraciones=config_sistema,
+                             estadisticas=estadisticas)
+    
+    except Exception as e:
+        flash(f'Error al cargar configuración del sistema: {str(e)}', 'error')
+        return redirect(url_for('configuracion_admin.configuracion_general'))
+
+@configuracion_admin_bp.route('/backup')
+def crear_backup():
+    """Crear backup de la base de datos"""
+    if not verificar_admin():
+        return jsonify({'success': False, 'message': 'Acceso denegado'}), 403
+    
+    try:
+        # Crear nombre del backup con timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_filename = f'backup_database_{timestamp}.db'
+        backup_path = os.path.join('static', 'uploads', 'backups', backup_filename)
+        
+        # Crear directorio si no existe
+        os.makedirs(os.path.dirname(backup_path), exist_ok=True)
+        
+        # Copiar base de datos
+        import shutil
+        shutil.copy2('database.db', backup_path)
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Backup creado correctamente',
+            'filename': backup_filename,
+            'path': backup_path
+        })
+    
+    except Exception as e:
+        return jsonify({
+            'success': False, 
+            'message': f'Error al crear backup: {str(e)}'
+        }), 500
+
+@configuracion_admin_bp.route('/logs')
+def ver_logs():
+    """Ver logs del sistema"""
+    if not verificar_admin():
+        flash('Acceso denegado. Se requieren permisos de administrador.', 'error')
+        return redirect(url_for('auth.login'))
+    
+    try:
+        # Leer logs si existen
+        logs = []
+        log_files = ['app.log', 'error.log', 'access.log']
+        
+        for log_file in log_files:
+            if os.path.exists(log_file):
+                with open(log_file, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                    # Obtener las últimas 100 líneas
+                    logs.extend([{
+                        'file': log_file,
+                        'line': line.strip(),
+                        'timestamp': datetime.now().isoformat()
+                    } for line in lines[-100:]])
+        
+        return render_template('admin/logs_sistema.html', logs=logs)
+    
+    except Exception as e:
+        flash(f'Error al cargar logs: {str(e)}', 'error')
+        return redirect(url_for('configuracion_admin.configuracion_general'))
+
+@configuracion_admin_bp.route('/api/estadisticas')
+def api_estadisticas():
+    """API para obtener estadísticas del sistema"""
+    if not verificar_admin():
+        return jsonify({'success': False, 'message': 'Acceso denegado'}), 403
+    
+    try:
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        
+        # Estadísticas generales
+        cursor.execute('SELECT COUNT(*) as total FROM usuarios')
+        total_usuarios = cursor.fetchone()['total']
+        
+        cursor.execute('SELECT COUNT(*) as total FROM usuarios WHERE activo = 1')
+        usuarios_activos = cursor.fetchone()['total']
+        
+        cursor.execute('SELECT COUNT(*) as total FROM asesorias')
+        total_asesorias = cursor.fetchone()['total']
+        
+        cursor.execute('SELECT COUNT(*) as total FROM asesorias WHERE estado = "Programada"')
+        asesorias_pendientes = cursor.fetchone()['total']
+        
+        cursor.execute('SELECT COUNT(*) as total FROM pagos')
+        total_pagos = cursor.fetchone()['total']
+        
+        cursor.execute('SELECT SUM(monto) as total FROM pagos WHERE estado = "Completado"')
+        ingresos_totales = cursor.fetchone()['total'] or 0
         
         conn.close()
         
         return jsonify({
-            'logs': [dict(log) for log in logs]
+            'success': True,
+            'estadisticas': {
+                'usuarios': {
+                    'total': total_usuarios,
+                    'activos': usuarios_activos
+                },
+                'asesorias': {
+                    'total': total_asesorias,
+                    'pendientes': asesorias_pendientes
+                },
+                'pagos': {
+                    'total': total_pagos,
+                    'ingresos': float(ingresos_totales)
+                }
+            }
         })
-        
+    
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'success': False, 
+            'message': f'Error al obtener estadísticas: {str(e)}'
+        }), 500
 
-@configuracion_admin.route('/admin/configuracion/actualizar-sistema', methods=['POST'])
-@admin_required
-def actualizar_sistema():
-    """Actualizar sistema (placeholder)"""
+@configuracion_admin_bp.route('/inicializar-configuraciones')
+def inicializar_configuraciones():
+    """Inicializar configuraciones por defecto"""
+    if not verificar_admin():
+        return jsonify({'success': False, 'message': 'Acceso denegado'}), 403
+    
     try:
-        # TODO: Implementar actualización real del sistema
-        # Por ahora simulamos la operación
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        
+        # Crear tabla de configuraciones si no existe
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS configuraciones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT NOT NULL,
+                categoria TEXT NOT NULL,
+                valor TEXT NOT NULL,
+                descripcion TEXT,
+                tipo TEXT DEFAULT 'texto',
+                fecha_creacion TEXT NOT NULL,
+                fecha_modificacion TEXT NOT NULL,
+                UNIQUE(nombre, categoria)
+            )
+        ''')
+        
+        # Configuraciones por defecto
+        configuraciones_default = [
+            ('nombre_sitio', 'general', 'Canadian Visa Advise', 'Nombre del sitio web', 'texto'),
+            ('email_contacto', 'general', 'info@canadianvisaadvise.com', 'Email de contacto', 'email'),
+            ('telefono_contacto', 'general', '+1-800-123-4567', 'Teléfono de contacto', 'texto'),
+            ('direccion', 'general', 'Toronto, ON, Canada', 'Dirección de la empresa', 'texto'),
+            ('moneda', 'pagos', 'CAD', 'Moneda por defecto', 'texto'),
+            ('iva_porcentaje', 'pagos', '13', 'Porcentaje de IVA/HST', 'numero'),
+            ('precio_asesoria', 'servicios', '150', 'Precio base de asesoría', 'numero'),
+            ('duracion_asesoria', 'servicios', '60', 'Duración en minutos', 'numero'),
+            ('max_archivos_usuario', 'sistema', '10', 'Máximo archivos por usuario', 'numero'),
+            ('tamaño_max_archivo', 'sistema', '5', 'Tamaño máximo archivo (MB)', 'numero'),
+        ]
+        
+        fecha_actual = datetime.now().isoformat()
+        
+        for nombre, categoria, valor, descripcion, tipo in configuraciones_default:
+            cursor.execute('''
+                INSERT OR IGNORE INTO configuraciones 
+                (nombre, categoria, valor, descripcion, tipo, fecha_creacion, fecha_modificacion)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (nombre, categoria, valor, descripcion, tipo, fecha_actual, fecha_actual))
+        
+        conn.commit()
+        conn.close()
         
         return jsonify({
-            'success': True,
-            'mensaje': 'Sistema actualizado exitosamente a la versión 2.1.0'
+            'success': True, 
+            'message': 'Configuraciones inicializadas correctamente'
         })
-        
+    
     except Exception as e:
+<<<<<<< HEAD
         return jsonify({'error': str(e)}), 500
 
 configuracion_admin_bp = configuracion_admin
+=======
+        return jsonify({
+            'success': False, 
+            'message': f'Error al inicializar configuraciones: {str(e)}'
+        }), 500
+ 
+>>>>>>> f9254aa6870c4cc71663c6c3758ea97f835ede38
