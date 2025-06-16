@@ -1,0 +1,152 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block title %}CVA | Administrador | Crear Asesor{% endblock %}
+
+{% block main_admin %}
+    <div class="space-y-6">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900 font-roboto">Crear Nuevo Asesor</h1>
+                <p class="text-gray-600 mt-1">Completa la información para agregar un nuevo asesor al equipo</p>
+            </div>
+            <a href="{{ url_for('asesores_admin.listar_asesores') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-300">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Volver
+            </a>
+        </div>
+
+        <!-- Form -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <form method="POST" action="{{ url_for('asesores_admin.crear_asesor') }}">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Información Personal -->
+                    <div class="col-span-2">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Información Personal</h3>
+                    </div>
+                    
+                    <div>
+                        <label for="nombre" class="block text-sm font-medium text-gray-700 mb-2">Nombres *</label>
+                        <input type="text" id="nombre" name="nombre" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="Ingresa los nombres">
+                    </div>
+
+                    <div>
+                        <label for="apellidos" class="block text-sm font-medium text-gray-700 mb-2">Apellidos *</label>
+                        <input type="text" id="apellidos" name="apellidos" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="Ingresa los apellidos">
+                    </div>
+
+                    <div>
+                        <label for="correo" class="block text-sm font-medium text-gray-700 mb-2">Correo Electrónico *</label>
+                        <input type="email" id="correo" name="correo" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="correo@ejemplo.com">
+                    </div>
+
+                    <div>
+                        <label for="telefono" class="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
+                        <input type="tel" id="telefono" name="telefono" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="+57 300 123 4567">
+                    </div>
+
+                    <!-- Información Profesional -->
+                    <div class="col-span-2 mt-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Información Profesional</h3>
+                    </div>
+
+                    <div>
+                        <label for="especialidad" class="block text-sm font-medium text-gray-700 mb-2">Especialidad *</label>
+                        <select id="especialidad" name="especialidad" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                            <option value="">Selecciona una especialidad</option>
+                            <option value="Inmigración Canadiense">Inmigración Canadiense</option>
+                            <option value="Visa de Trabajo">Visa de Trabajo</option>
+                            <option value="Visa de Estudiante">Visa de Estudiante</option>
+                            <option value="Residencia Permanente">Residencia Permanente</option>
+                            <option value="Reunificación Familiar">Reunificación Familiar</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="experiencia" class="block text-sm font-medium text-gray-700 mb-2">Años de Experiencia</label>
+                        <input type="number" id="experiencia" name="experiencia" min="0" max="50" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="5">
+                    </div>
+
+                    <div>
+                        <label for="licencia" class="block text-sm font-medium text-gray-700 mb-2">Número de Licencia</label>
+                        <input type="text" id="licencia" name="licencia" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="Número de licencia profesional">
+                    </div>
+
+                    <div>
+                        <label for="idiomas" class="block text-sm font-medium text-gray-700 mb-2">Idiomas</label>
+                        <input type="text" id="idiomas" name="idiomas" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="Español, Inglés, Francés">
+                    </div>
+
+                    <!-- Información de Acceso -->
+                    <div class="col-span-2 mt-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Información de Acceso</h3>
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Contraseña *</label>
+                        <input type="password" id="password" name="password" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="Mínimo 8 caracteres">
+                    </div>
+
+                    <div>
+                        <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-2">Confirmar Contraseña *</label>
+                        <input type="password" id="confirm_password" name="confirm_password" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="Repite la contraseña">
+                    </div>
+
+                    <!-- Horarios de Trabajo -->
+                    <div class="col-span-2 mt-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Horarios de Trabajo</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="hora_inicio" class="block text-sm font-medium text-gray-700 mb-2">Hora de Inicio</label>
+                                <input type="time" id="hora_inicio" name="hora_inicio" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" value="08:00">
+                            </div>
+                            <div>
+                                <label for="hora_fin" class="block text-sm font-medium text-gray-700 mb-2">Hora de Fin</label>
+                                <input type="time" id="hora_fin" name="hora_fin" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" value="17:00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Biografía -->
+                    <div class="col-span-2 mt-6">
+                        <label for="biografia" class="block text-sm font-medium text-gray-700 mb-2">Biografía Profesional</label>
+                        <textarea id="biografia" name="biografia" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="Describe la experiencia y especialidades del asesor..."></textarea>
+                    </div>
+
+                    <!-- Configuraciones -->
+                    <div class="col-span-2 mt-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Configuraciones</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="activo" name="activo" checked class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                <label for="activo" class="ml-2 block text-sm text-gray-900">Asesor activo (puede recibir asignaciones)</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="notificaciones" name="notificaciones" checked class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                <label for="notificaciones" class="ml-2 block text-sm text-gray-900">Recibir notificaciones por correo</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="enviar_credenciales" name="enviar_credenciales" checked class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded">
+                                <label for="enviar_credenciales" class="ml-2 block text-sm text-gray-900">Enviar credenciales de acceso por correo</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
+                    <a href="{{ url_for('asesores_admin.listar_asesores') }}" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-300">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-300">
+                        Crear Asesor
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/js/admin/crear_asesor.js"></script>
+{% endblock %}
