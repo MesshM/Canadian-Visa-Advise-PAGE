@@ -15,6 +15,16 @@ from routes.routes_asesor.mensajeria import mensajeria_asesor_bp
 from routes.routes_asesor.recursos import recursos_asesor_bp
 from routes.routes_asesor.perfil_asesor import perfil_asesor_bp
 
+# Importa otros blueprints de administrador si los tienes
+from routes.routes_admin.usuarios_admin import usuarios_admin_bp
+from routes.routes_admin.asesores_admin import asesores_admin_bp
+from routes.routes_admin.asesorias_admin import asesorias_admin_bp
+from routes.routes_admin.documentos_admin import documentos_admin_bp
+from routes.routes_admin.pagos_admin import pagos_admin_bp
+from routes.routes_admin.reportes_admin import reportes_admin_bp
+from routes.routes_admin.configuracion_admin import configuracion_admin_bp
+
+
 import os
 from datetime import datetime, timedelta
 import secrets
@@ -46,6 +56,15 @@ app.register_blueprint(citas_asesor_bp)
 app.register_blueprint(mensajeria_asesor_bp)
 app.register_blueprint(recursos_asesor_bp)
 app.register_blueprint(perfil_asesor_bp)
+
+# Registrar los blueprints de administrador
+app.register_blueprint(usuarios_admin_bp)
+app.register_blueprint(asesores_admin_bp)
+app.register_blueprint(asesorias_admin_bp)
+app.register_blueprint(documentos_admin_bp)
+app.register_blueprint(pagos_admin_bp)
+app.register_blueprint(reportes_admin_bp)
+app.register_blueprint(configuracion_admin_bp)
 
 # Rutas de redirección para mantener compatibilidad con URLs antiguas
 
@@ -118,6 +137,63 @@ def asesor_reportes_redirect():
 def asesor_perfil_redirect():
     return redirect(url_for('perfil_asesor.perfil_asesor'))
 
+# Rutas de redirección para admin
+@app.route('/admin/usuarios')
+def usuarios_admin_redirect():
+    return redirect(url_for('usuarios_admin.listar_usuarios'))
+
+@app.route('/admin/usuarios/crear')
+def usuarios_crear_redirect():
+    return redirect(url_for('usuarios_admin.crear_usuario'))
+
+@app.route('/admin/asesores')
+def asesores_admin_redirect():
+    return redirect(url_for('asesores_admin.listar_asesores'))
+
+@app.route('/admin/asesores/crear')
+def asesores_crear_redirect():
+    return redirect(url_for('asesores_admin.crear_asesor'))
+
+@app.route('/admin/asesorias')
+def asesorias_admin_redirect():
+    return redirect(url_for('asesorias_admin.listar_asesorias'))
+
+@app.route('/admin/asesorias/ver')
+def asesorias_ver_redirect():
+    return redirect(url_for('asesorias_admin.ver_asesoria'))
+
+@app.route('/admin/documentos')
+def documentos_admin_redirect():
+    return redirect(url_for('documentos_admin.listar_documentos'))
+
+@app.route('/admin/documentos/subir')
+def documentos_subir_redirect():
+    return redirect(url_for('documentos_admin.subir_documento'))
+
+@app.route('/admin/pagos')
+def pagos_admin_redirect():
+    return redirect(url_for('pagos_admin.listar_pagos'))
+
+@app.route('/admin/pagos/procesar')
+def pagos_procesar_redirect():
+    return redirect(url_for('pagos_admin.procesar_pago'))
+
+@app.route('/admin/reportes')
+def reportes_admin_redirect():
+    return redirect(url_for('reportes_admin.panel_reportes'))
+
+@app.route('/admin/reportes/generar')
+def reportes_generar_redirect():
+    return redirect(url_for('reportes_admin.generar_reporte'))
+
+@app.route('/admin/configuracion')
+def configuracion_admin_redirect():
+    return redirect(url_for('configuracion_admin.configuracion_general'))
+
+@app.route('/admin/configuracion/actualizar')
+def configuracion_actualizar_redirect():
+    return redirect(url_for('configuracion_admin.actualizar_configuracion'))
+
 # Actualizar la función inject_urls para incluir las nuevas rutas
 @app.context_processor
 def inject_urls():
@@ -145,6 +221,31 @@ def inject_urls():
         'url_for_asesor_dashboard': lambda: url_for('panel_asesor.dashboard_asesor'),
         'url_for_asesor_perfil': lambda: url_for('perfil_asesor.perfil_asesor'),
 
+        # Rutas de admin
+        'url_for_admin_usuarios': lambda: url_for('usuarios_admin.listar_usuarios'),
+        'url_for_admin_usuarios_crear': lambda: url_for('usuarios_admin.crear_usuario'),
+        'url_for_admin_usuarios_editar': lambda id: url_for('usuarios_admin.editar_usuario', id=id),
+        'url_for_admin_usuarios_eliminar': lambda id: url_for('usuarios_admin.eliminar_usuario', id=id),
+        
+        'url_for_admin_asesores': lambda: url_for('asesores_admin.listar_asesores'),
+        'url_for_admin_asesores_crear': lambda: url_for('asesores_admin.crear_asesor'),
+        'url_for_admin_asesores_editar': lambda id: url_for('asesores_admin.editar_asesor', id=id),
+        
+        'url_for_admin_asesorias': lambda: url_for('asesorias_admin.listar_asesorias'),
+        'url_for_admin_asesorias_ver': lambda id: url_for('asesorias_admin.ver_asesoria', id=id),
+        
+        'url_for_admin_documentos': lambda: url_for('documentos_admin.listar_documentos'),
+        'url_for_admin_documentos_subir': lambda: url_for('documentos_admin.subir_documento'),
+        
+        'url_for_admin_pagos': lambda: url_for('pagos_admin.listar_pagos'),
+        'url_for_admin_pagos_procesar': lambda id: url_for('pagos_admin.procesar_pago', id=id),
+        
+        'url_for_admin_reportes': lambda: url_for('reportes_admin.panel_reportes'),
+        'url_for_admin_reportes_generar': lambda: url_for('reportes_admin.generar_reporte'),
+        
+        'url_for_admin_configuracion': lambda: url_for('configuracion_admin.configuracion_general'),
+        'url_for_admin_configuracion_actualizar': lambda: url_for('configuracion_admin.actualizar_configuracion'),
+
         'now': lambda: datetime.now()
     }
 
@@ -156,8 +257,9 @@ def index():
         if session.get('user_role') == 'Asesor':
             return redirect(url_for('panel_asesor.index_asesor'))
         # Puedes agregar más roles aquí si lo necesitas
-        # elif session.get('user_role') == 'OtroRol':
-        #     return redirect(url_for('otro_blueprint.dashboard'))
+
+        elif session.get('user_role') == 'Administrador':
+              return redirect(url_for('panel_admin.index_admin'))
         else:
             return render_template('index.html')  # Usuario normal
     return render_template('index.html')  # Visitante no autenticado

@@ -1,231 +1,403 @@
 {% extends 'admin/base_admin.html' %}
 
-{% block title %}Panel de Administración - Canadian Visa Advise{% endblock %}
+{% block title %}CVA | Administrador | Panel Principal{% endblock %}
 
-{% block mainAdmin %}
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 m-0 mb-2">Panel de Administración</h1>
-        <p class="text-gray-500 text-sm">Bienvenido al sistema de administración de Canadian Visa Advise</p>
-    </div>
-    
-    <!-- Tarjetas de acceso rápido -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <!-- Gestión de Usuarios -->
-        <a href="{{ url_for('admin.usuarios') }}" class="bg-white rounded-2xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl hover:translate-y-[-5px] group">
-            <div class="flex items-center mb-4">
-                <div class="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mr-4 transition-all duration-300 group-hover:bg-blue-600 group-hover:text-white">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+{% block main_admin %}
+    <!-- Main content area -->
+    <div class="space-y-6">
+        <!-- Header with admin title and notification icon -->
+        <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow">
+            <h1 class="text-2xl font-bold text-gray-900 font-roboto">Panel de Administrador</h1>
+            <div class="relative">
+                <button id="notificationBtn" class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-700 hover:bg-primary-100 hover:text-primary-600 transition-all duration-300 ease-in-out">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                     </svg>
+                    <span id="notificationBadge" class="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">5</span>
+                </button>
+                <!-- Notification dropdown -->
+                <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 border border-gray-100">
+                    <div class="p-4 border-b border-gray-100">
+                        <h3 class="font-medium text-gray-900 font-roboto">Notificaciones del Sistema</h3>
+                    </div>
+                    <div class="max-h-64 overflow-y-auto">
+                        <a href="#" class="block p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200">
+                            <p class="text-sm font-medium text-gray-900">Nuevo usuario registrado</p>
+                            <p class="text-xs text-gray-500 mt-1">Se ha registrado un nuevo cliente en el sistema.</p>
+                            <p class="text-xs text-gray-400 mt-1">Hace 1 hora</p>
+                        </a>
+                        <a href="#" class="block p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200">
+                            <p class="text-sm font-medium text-gray-900">Pago pendiente de aprobación</p>
+                            <p class="text-xs text-gray-500 mt-1">Hay un pago que requiere tu aprobación.</p>
+                            <p class="text-xs text-gray-400 mt-1">Hace 2 horas</p>
+                        </a>
+                        <a href="#" class="block p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200">
+                            <p class="text-sm font-medium text-gray-900">Documento rechazado</p>
+                            <p class="text-xs text-gray-500 mt-1">Un asesor ha rechazado un documento de cliente.</p>
+                            <p class="text-xs text-gray-400 mt-1">Hace 3 horas</p>
+                        </a>
+                    </div>
+                    <div class="p-2 text-center border-t border-gray-100">
+                        <a href="#" class="text-xs text-primary-600 hover:text-primary-700 font-medium">Ver todas las notificaciones</a>
+                    </div>
                 </div>
-                <h3 class="text-lg font-bold text-gray-900">Gestión de Usuarios</h3>
             </div>
-            <p class="text-gray-600 text-sm">Administra clientes, asesores y administradores del sistema.</p>
-            <div class="mt-4 flex justify-end">
-                <span class="text-blue-600 group-hover:translate-x-2 transition-transform duration-300 flex items-center text-sm font-medium">
-                    Acceder
-                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                </span>
-            </div>
-        </a>
-        
-        <!-- Gestión de Asesorías -->
-        <a href="{{ url_for('admin.asesorias_admin') }}" class="bg-white rounded-2xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl hover:translate-y-[-5px] group">
-            <div class="flex items-center mb-4">
-                <div class="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 mr-4 transition-all duration-300 group-hover:bg-purple-600 group-hover:text-white">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-lg font-bold text-gray-900">Gestión de Asesorías</h3>
-            </div>
-            <p class="text-gray-600 text-sm">Administra todas las asesorías, asignaciones y programación.</p>
-            <div class="mt-4 flex justify-end">
-                <span class="text-purple-600 group-hover:translate-x-2 transition-transform duration-300 flex items-center text-sm font-medium">
-                    Acceder
-                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                </span>
-            </div>
-        </a>
-        
-        <!-- Gestión de Documentos -->
-        <a href="{{ url_for('admin.documentos') }}" class="bg-white rounded-2xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl hover:translate-y-[-5px] group">
-            <div class="flex items-center mb-4">
-                <div class="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mr-4 transition-all duration-300 group-hover:bg-green-600 group-hover:text-white">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-lg font-bold text-gray-900">Gestión de Documentos</h3>
-            </div>
-            <p class="text-gray-600 text-sm">Administra documentos de clientes, validaciones y descargas.</p>
-            <div class="mt-4 flex justify-end">
-                <span class="text-green-600 group-hover:translate-x-2 transition-transform duration-300 flex items-center text-sm font-medium">
-                    Acceder
-                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                </span>
-            </div>
-        </a>
-        
-        <!-- Gestión de Pagos -->
-        <a href="{{ url_for('admin.pagos_admin') }}" class="bg-white rounded-2xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl hover:translate-y-[-5px] group">
-            <div class="flex items-center mb-4">
-                <div class="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center text-red-600 mr-4 transition-all duration-300 group-hover:bg-red-600 group-hover:text-white">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-lg font-bold text-gray-900">Gestión de Pagos</h3>
-            </div>
-            <p class="text-gray-600 text-sm">Administra pagos, aprobaciones y registros financieros.</p>
-            <div class="mt-4 flex justify-end">
-                <span class="text-red-600 group-hover:translate-x-2 transition-transform duration-300 flex items-center text-sm font-medium">
-                    Acceder
-                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                </span>
-            </div>
-        </a>
-        
-        <!-- Gestión de Reportes -->
-        <a href="{{ url_for('admin.reportes') }}" class="bg-white rounded-2xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl hover:translate-y-[-5px] group">
-            <div class="flex items-center mb-4">
-                <div class="h-12 w-12 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600 mr-4 transition-all duration-300 group-hover:bg-yellow-600 group-hover:text-white">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-lg font-bold text-gray-900">Gestión de Reportes</h3>
-            </div>
-            <p class="text-gray-600 text-sm">Genera y exporta reportes de clientes, asesorías, documentos y pagos.</p>
-            <div class="mt-4 flex justify-end">
-                <span class="text-yellow-600 group-hover:translate-x-2 transition-transform duration-300 flex items-center text-sm font-medium">
-                    Acceder
-                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                </span>
-            </div>
-        </a>
-        
-        <!-- Configuración del Sistema -->
-        <a href="{{ url_for('admin.configuracion') }}" class="bg-white rounded-2xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl hover:translate-y-[-5px] group">
-            <div class="flex items-center mb-4">
-                <div class="h-12 w-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 mr-4 transition-all duration-300 group-hover:bg-indigo-600 group-hover:text-white">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                </div>
-                <h3 class="text-lg font-bold text-gray-900">Configuración del Sistema</h3>
-            </div>
-            <p class="text-gray-600 text-sm">Configura datos institucionales, notificaciones, roles y permisos.</p>
-            <div class="mt-4 flex justify-end">
-                <span class="text-indigo-600 group-hover:translate-x-2 transition-transform duration-300 flex items-center text-sm font-medium">
-                    Acceder
-                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                </span>
-            </div>
-        </a>
-    </div>
-    
-    <!-- Estadísticas rápidas -->
-    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
-        <h3 class="text-lg font-bold text-gray-900 mb-4">Estadísticas del Sistema</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="border border-gray-100 rounded-lg p-4">
-                <div class="flex items-center">
-                    <div class="h-10 w-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 mr-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        </div>
+
+        <!-- Admin Dashboard Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <!-- Card 1: Total Usuarios -->
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-gray-500">Total Usuarios</p>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ total_usuarios or 0 }}</h3>
+                    </div>
+                    <div class="p-2 bg-blue-100 rounded-lg">
+                        <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                         </svg>
                     </div>
-                    <div>
-                        <p class="text-sm text-gray-500">Total Clientes</p>
-                        <p class="text-xl font-bold text-gray-900">{{ estadisticas.total_clientes|default('0') }}</p>
-                    </div>
+                </div>
+                <div class="mt-2 flex items-center text-sm">
+                    <span class="text-green-500 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                        </svg>
+                        15.2%
+                    </span>
+                    <span class="text-gray-500 ml-2">vs mes anterior</span>
                 </div>
             </div>
             
-            <div class="border border-gray-100 rounded-lg p-4">
-                <div class="flex items-center">
-                    <div class="h-10 w-10 bg-purple-50 rounded-full flex items-center justify-center text-purple-600 mr-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <!-- Card 2: Asesores Activos -->
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-gray-500">Asesores Activos</p>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ total_asesores or 0 }}</h3>
+                    </div>
+                    <div class="p-2 bg-green-100 rounded-lg">
+                        <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="mt-2 flex items-center text-sm">
+                    <span class="text-green-500 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                        </svg>
+                        8.1%
+                    </span>
+                    <span class="text-gray-500 ml-2">vs mes anterior</span>
+                </div>
+            </div>
+            
+            <!-- Card 3: Asesorías del Mes -->
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-gray-500">Asesorías del Mes</p>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ total_asesorias_mes or 0 }}</h3>
+                    </div>
+                    <div class="p-2 bg-yellow-100 rounded-lg">
+                        <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
                     </div>
-                    <div>
-                        <p class="text-sm text-gray-500">Asesorías Pendientes</p>
-                        <p class="text-xl font-bold text-gray-900">{{ estadisticas.asesorias_pendientes|default('0') }}</p>
-                    </div>
                 </div>
-            </div>
-            
-            <div class="border border-gray-100 rounded-lg p-4">
-                <div class="flex items-center">
-                    <div class="h-10 w-10 bg-green-50 rounded-full flex items-center justify-center text-green-600 mr-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                <div class="mt-2 flex items-center text-sm">
+                    <span class="text-green-500 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
                         </svg>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500">Documentos por Revisar</p>
-                        <p class="text-xl font-bold text-gray-900">{{ estadisticas.documentos_pendientes|default('0') }}</p>
-                    </div>
+                        22.5%
+                    </span>
+                    <span class="text-gray-500 ml-2">vs mes anterior</span>
                 </div>
             </div>
             
-            <div class="border border-gray-100 rounded-lg p-4">
-                <div class="flex items-center">
-                    <div class="h-10 w-10 bg-red-50 rounded-full flex items-center justify-center text-red-600 mr-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <!-- Card 4: Ingresos del Mes -->
+            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-gray-500">Ingresos del Mes</p>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1">${{ ingresos_mes or '0.00' }}</h3>
+                    </div>
+                    <div class="p-2 bg-purple-100 rounded-lg">
+                        <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
-                    <div>
-                        <p class="text-sm text-gray-500">Pagos Recientes</p>
-                        <p class="text-xl font-bold text-gray-900">{{ estadisticas.pagos_recientes|default('0') }}</p>
+                </div>
+                <div class="mt-2 flex items-center text-sm">
+                    <span class="text-green-500 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                        </svg>
+                        18.7%
+                    </span>
+                    <span class="text-gray-500 ml-2">vs mes anterior</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Tabs -->
+        <div class="bg-white rounded-lg shadow mb-6">
+            <div class="border-b border-gray-200">
+                <ul class="flex flex-wrap -mb-px text-sm font-medium" id="adminTabs" role="tablist">
+                    <li class="mr-2" role="presentation">
+                        <button class="inline-block p-4 border-b-2 border-primary-600 text-primary-600 rounded-t-lg active font-inter" id="usuarios-tab" data-tab="usuarios" type="button" role="tab" aria-selected="true">
+                            Usuarios Recientes
+                        </button>
+                    </li>
+                    <li class="mr-2" role="presentation">
+                        <button class="inline-block p-4 border-b-2 border-transparent hover:text-primary-600 hover:border-primary-300 rounded-t-lg font-inter" id="actividad-tab" data-tab="actividad" type="button" role="tab" aria-selected="false">
+                            Actividad del Sistema
+                        </button>
+                    </li>
+                    <li class="mr-2" role="presentation">
+                        <button class="inline-block p-4 border-b-2 border-transparent hover:text-primary-600 hover:border-primary-300 rounded-t-lg font-inter" id="alertas-tab" data-tab="alertas" type="button" role="tab" aria-selected="false">
+                            Alertas y Notificaciones
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Tab Content: Recent Users -->
+            <div id="usuarios-content" class="tab-content active p-6">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Registro</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            {% for usuario in usuarios_recientes %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="h-10 w-10 flex-shrink-0 bg-gray-200 rounded-full text-gray-500 flex items-center justify-center">
+                                            {{ usuario.nombres[0] if usuario.nombres else 'U' }}{{ usuario.apellidos[0] if usuario.apellidos else '' }}
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900">{{ usuario.nombres }} {{ usuario.apellidos }}</div>
+                                            <div class="text-sm text-gray-500">{{ usuario.correo }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                        Cliente
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ usuario.fecha_registro.strftime('%d %b, %Y') if usuario.fecha_registro else 'N/A' }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        Activo
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="{{ url_for('usuarios_admin.editar_usuario', id=usuario.id_usuario) }}" class="text-primary-600 hover:text-primary-900 mr-3">Editar</a>
+                                    <a href="#" class="text-red-600 hover:text-red-900">Desactivar</a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-center text-gray-500">No hay usuarios recientes</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="flex justify-center mt-6">
+                    <a href="{{ url_for('usuarios_admin.listar_usuarios') }}" class="inline-flex items-center px-4 py-2 border border-primary-300 text-sm font-medium rounded-md text-primary-700 bg-white hover:bg-primary-50">
+                        Ver todos los usuarios
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Tab Content: System Activity -->
+            <div id="actividad-content" class="tab-content hidden p-6">
+                <div class="space-y-4">
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                            <div class="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                                <svg class="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-medium text-gray-900">Nuevo usuario registrado</p>
+                            <p class="text-sm text-gray-500">Juan Pérez se registró en el sistema</p>
+                            <p class="text-xs text-gray-400 mt-1">Hace 2 horas</p>
+                        </div>
                     </div>
+                    
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                            <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                <svg class="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-medium text-gray-900">Asesoría programada</p>
+                            <p class="text-sm text-gray-500">María García programó una asesoría para mañana</p>
+                            <p class="text-xs text-gray-400 mt-1">Hace 4 horas</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                            <div class="h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center">
+                                <svg class="h-4 w-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-medium text-gray-900">Pago procesado</p>
+                            <p class="text-sm text-gray-500">Pago de $150.00 procesado exitosamente</p>
+                            <p class="text-xs text-gray-400 mt-1">Hace 6 horas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab Content: Alerts -->
+            <div id="alertas-content" class="tab-content hidden p-6">
+                <div class="space-y-4">
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-red-800">Documentos pendientes de revisión</h3>
+                                <p class="text-sm text-red-700 mt-1">Hay 5 documentos que requieren revisión urgente</p>
+                                <div class="mt-2">
+                                    <a href="{{ url_for('documentos_admin.listar_documentos') }}" class="text-sm text-red-600 hover:text-red-500 font-medium">Ver documentos →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-yellow-800">Pagos pendientes de aprobación</h3>
+                                <p class="text-sm text-yellow-700 mt-1">3 pagos requieren tu aprobación</p>
+                                <div class="mt-2">
+                                    <a href="{{ url_for('pagos_admin.listar_pagos') }}" class="text-sm text-yellow-600 hover:text-yellow-500 font-medium">Ver pagos →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-blue-800">Actualización del sistema disponible</h3>
+                                <p class="text-sm text-blue-700 mt-1">Nueva versión 2.1.0 disponible para instalación</p>
+                                <div class="mt-2">
+                                    <a href="{{ url_for('configuracion_admin.configuracion_general') }}" class="text-sm text-blue-600 hover:text-blue-500 font-medium">Ver configuración →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Action Cards -->
+        <h2 class="text-xl font-bold text-gray-900 mb-4 font-roboto">Acciones Rápidas de Administrador</h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <!-- Crear Usuario -->
+            <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-300">
+                <div class="flex items-center justify-center h-12 w-12 rounded-lg bg-primary-100 text-primary-600 mb-4 mx-auto">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 text-center mb-2 font-roboto">Crear Usuario</h3>
+                <p class="text-gray-600 text-center mb-4">Agregar un nuevo usuario al sistema.</p>
+                <div class="text-center">
+                    <a href="{{ url_for('usuarios_admin.crear_usuario') }}" class="inline-flex items-center justify-center px-4 py-2 text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors duration-300 font-roboto text-sm">
+                        Crear usuario
+                    </a>
+                </div>
+            </div>
+
+            <!-- Crear Asesor -->
+            <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-300">
+                <div class="flex items-center justify-center h-12 w-12 rounded-lg bg-green-100 text-green-600 mb-4 mx-auto">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 text-center mb-2 font-roboto">Crear Asesor</h3>
+                <p class="text-gray-600 text-center mb-4">Agregar un nuevo asesor al equipo.</p>
+                <div class="text-center">
+                    <a href="{{ url_for('asesores_admin.crear_asesor') }}" class="inline-flex items-center justify-center px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors duration-300 font-roboto text-sm">
+                        Crear asesor
+                    </a>
+                </div>
+            </div>
+
+            <!-- Generar Reporte -->
+            <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-300">
+                <div class="flex items-center justify-center h-12 w-12 rounded-lg bg-blue-100 text-blue-600 mb-4 mx-auto">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 text-center mb-2 font-roboto">Generar Reporte</h3>
+                <p class="text-gray-600 text-center mb-4">Crear reportes del sistema completos.</p>
+                <div class="text-center">
+                    <a href="{{ url_for('reportes_admin.panel_reportes') }}" class="inline-flex items-center justify-center px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-300 font-roboto text-sm">
+                        Generar reporte
+                    </a>
+                </div>
+            </div>
+
+            <!-- Configuración -->
+            <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow duration-300">
+                <div class="flex items-center justify-center h-12 w-12 rounded-lg bg-purple-100 text-purple-600 mb-4 mx-auto">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 text-center mb-2 font-roboto">Configuración</h3>
+                <p class="text-gray-600 text-center mb-4">Configurar ajustes del sistema.</p>
+                <div class="text-center">
+                    <a href="{{ url_for('configuracion_admin.configuracion_general') }}" class="inline-flex items-center justify-center px-4 py-2 text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors duration-300 font-roboto text-sm">
+                        Configurar
+                    </a>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Actividades recientes -->
-    <div class="bg-white rounded-2xl shadow-lg p-6">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-bold text-gray-900">Actividades Recientes</h3>
-            <a href="#" class="text-sm text-red-600 hover:text-red-800 transition-colors">Ver todas</a>
-        </div>
-        <div class="space-y-4">
-            {% if actividades_recientes %}
-                {% for actividad in actividades_recientes %}
-                    <div class="flex items-start">
-                        <div class="h-9 w-9 rounded-full bg-{{ actividad.color }}-100 text-{{ actividad.color }}-600 flex items-center justify-center mr-3 flex-shrink-0">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ actividad.icono }}"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-800">{{ actividad.mensaje }}</p>
-                            <p class="text-xs text-gray-500 mt-1">{{ actividad.fecha }}</p>
-                        </div>
-                    </div>
-                {% endfor %}
-            {% else %}
-                <div class="text-center text-gray-500 py-4">
-                    No hay actividades recientes
-                </div>
-            {% endif %}
-        </div>
-    </div>
+    <script src="/static/js/admin/index_admin.js"></script>
 {% endblock %}
