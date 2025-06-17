@@ -58,9 +58,6 @@ def obtener_asesorias_pagadas():
             a.codigo_asesoria,
             a.fecha_asesoria,
             a.tipo_asesoria,
-            a.descripcion,
-            a.lugar,
-            a.estado,
             a.nombre_asesor,
             a.especialidad,
             a.id_formElegibilidad,
@@ -68,7 +65,8 @@ def obtener_asesorias_pagadas():
             u.apellidos,
             u.correo,
             s.id_solicitante,
-            COALESCE(fe.completado, 0) as completado
+            COALESCE(fe.completado, 0) as completado,
+            fe.motivo_viaje
         FROM tbl_asesoria a
         INNER JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
         INNER JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
@@ -98,6 +96,225 @@ def obtener_asesorias_pagadas():
             'success': False,
             'message': 'Error interno del servidor'
         }), 500
+
+@formulario_bp.route('/verificar_documentos/<int:codigo_asesoria>')
+@role_required('Usuario')
+@login_required
+def verificar_documentos_asesoria(codigo_asesoria):
+    """Verificar el estado de los documentos de una asesoría específica"""
+    try:
+        connection = create_connection()
+        if not connection:
+            return jsonify({
+                'success': False,
+                'message': 'Error de conexión a la base de datos'
+            }), 500
+
+        cursor = connection.cursor(dictionary=True)
+        
+        # Obtener información del formulario de elegibilidad
+        query = """
+        SELECT fe.*, a.tipo_asesoria
+        FROM tbl_form_eligibilidadCVA fe
+        INNER JOIN tbl_asesoria a ON fe.codigo_asesoria = a.codigo_asesoria
+        INNER JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
+        INNER JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+        WHERE fe.codigo_asesoria = %s AND u.id_usuario = %s AND fe.completado = 1
+        """
+        
+        user_id = session.get('user_id')
+        cursor.execute(query, (codigo_asesoria, user_id))
+        formulario = cursor.fetchone()
+        
+        cursor.close()
+        connection.close()
+        
+        if not formulario:
+            return jsonify({
+                'success': False,
+                'message': 'Formulario no encontrado'
+            }), 404
+        
+        # Definir documentos requeridos por tipo de visa
+        documentos_por_visa = {
+            'Turismo': [
+                {'name': 'doc_itinerario_viaje', 'label': 'Itinerario de viaje', 'required': True},
+                {'name': 'doc_carta_motivacion', 'label': 'Carta de motivación o carta de intención', 'required': True},
+                {'name': 'doc_carta_laboral', 'label': 'Carta laboral o de estudio', 'required': True},
+                {'name': 'doc_certificados_propiedad', 'label': 'Certificados de propiedad', 'required': False},
+                {'name': 'doc_extractos_bancarios', 'label': 'Declaraciones de renta o extractos bancarios', 'required': True},
+                {'name': 'doc_carta_invitacion', 'label': 'Carta de invitación (si aplica)', 'required': False},
+                {'name': 'doc_carta_invitacion_familiar', 'label': 'Carta de invitación del familiar en Canadá (si aplica)', 'required': False},
+                {'name': 'doc_prueba_parentesco', 'label': 'Prueba de parentesco (si aplica)', 'required': False},
+                {'name': 'doc_finanzas_familiar', 'label': 'Documentos financieros del familiar (si cubre gastos)', 'required': False},
+            ],
+            'Estudios': [
+                {'name': 'doc_carta_aceptacion', 'label': 'Carta de aceptación de una institución educativa canadiense (DLI)', 'required': True},
+                {'name': 'doc_pago_matricula', 'label': 'Comprobante de pago de matrícula', 'required': True},
+                {'name': 'doc_pruebas_fondos', 'label': 'Pruebas de fondos para cubrir matrícula y manutención', 'required': True},
+                {'name': 'doc_carta_motivacion_estudio', 'label': 'Carta de motivación para estudios', 'required': True},
+                {'name': 'doc_historial_academico', 'label': 'Historial académico (diplomas, certificados, notas)', 'required': True},
+                {'name': 'doc_examen_medico_estudio', 'label': 'Examen médico (si aplica)', 'required': False},
+                {'name': 'doc_formulario_custodia', 'label': 'Formulario custodia (si es menor de edad)', 'required': False},
+            ],
+            'Trabajo Temporal': [
+                {'name': 'doc_oferta_laboral', 'label': 'Oferta laboral firmada (Job Offer Letter)', 'required': True},
+                {'name': 'doc_lmia', 'label': 'LMIA o documento de exención', 'required': True},
+                {'name': 'doc_contrato_laboral', 'label': 'Contrato laboral', 'required': True},
+                {'name': 'doc_certificados_experiencia', 'label': 'Certificados de experiencia laboral previa', 'required': True},
+                {'name': 'doc_hoja_vida', 'label': 'Hoja de vida actualizada', 'required': True},
+                {'name': 'doc_diplomas', 'label': 'Diplomas o certificados relacionados al cargo', 'required': True},
+                {'name': 'doc_examen_medico', 'label': 'Examen médico (si aplica)', 'required': False},
+                {'name': 'doc_carta_motivacion_trabajo', 'label': 'Carta de motivación (opcional)', 'required': False},
+            ],
+            'Negocios': [
+                {'name': 'doc_carta_invitacion_negocios', 'label': 'Carta de invitación de la empresa canadiense', 'required': True},
+                {'name': 'doc_registro_camara', 'label': 'Registro de Cámara de Comercio de la empresa solicitante', 'required': True},
+                {'name': 'doc_certificados_bancarios_empresa', 'label': 'Certificados bancarios y financieros de la empresa', 'required': True},
+                {'name': 'doc_itinerario_negocios', 'label': 'Itinerario de negocios', 'required': True},
+                {'name': 'doc_carta_empleador', 'label': 'Carta del empleador (si aplica)', 'required': False},
+                {'name': 'doc_contratos_comerciales', 'label': 'Contratos comerciales previos (si existen)', 'required': False},
+                {'name': 'doc_vinculo_comercial', 'label': 'Documentación que demuestre vínculo comercial', 'required': True},
+            ],
+            'Residencia Permanente': [
+                {'name': 'doc_idioma', 'label': 'Resultados del examen de idioma (IELTS/CELPIP)', 'required': True},
+                {'name': 'doc_eca', 'label': 'Evaluación de credenciales académicas (ECA)', 'required': True},
+                {'name': 'doc_pasaporte', 'label': 'Pasaporte vigente', 'required': True},
+                {'name': 'doc_historial_laboral', 'label': 'Historial laboral (referencias, cartas laborales)', 'required': True},
+                {'name': 'doc_carta_intencion_residencia', 'label': 'Carta de intención (por qué desea inmigrar)', 'required': True},
+                {'name': 'doc_examen_medico_residencia', 'label': 'Resultados de exámenes médicos (cuando aplica)', 'required': False},
+                {'name': 'doc_antecedentes', 'label': 'Certificado de antecedentes penales', 'required': True},
+            ],
+        }
+        
+        motivo_viaje = formulario.get('motivo_viaje')
+        documentos_requeridos = documentos_por_visa.get(motivo_viaje, [])
+        
+        required_missing_documents = [] # Para la verificación de estado
+        all_missing_documents = []      # Para la visualización en el modal (requeridos + opcionales faltantes)
+        documentos_presentes = []
+        
+        for doc_config in documentos_requeridos:
+            doc_value = formulario.get(doc_config['name'])
+            doc_info = {
+                'name': doc_config['name'],
+                'label': doc_config['label'],
+                'required': doc_config['required'],
+                'present': bool(doc_value and doc_value.strip())
+            }
+            
+            if doc_info['present']:
+                documentos_presentes.append(doc_info)
+            else:
+                # El documento está faltando (sea requerido u opcional)
+                all_missing_documents.append(doc_info)
+                if doc_config['required']:
+                    required_missing_documents.append(doc_info)
+        
+        # Determinar el estado del formulario basado SÓLO en los documentos requeridos faltantes
+        tiene_documentos_faltantes = len(required_missing_documents) > 0
+        estado_formulario = 'Pendiente' if tiene_documentos_faltantes else 'Completo'
+        
+        return jsonify({
+            'success': True,
+            'estado': estado_formulario,
+            'documentos_faltantes': all_missing_documents, # Ahora envía TODOS los documentos faltantes
+            'documentos_presentes': documentos_presentes,
+            'motivo_viaje': motivo_viaje,
+            'total_documentos': len(documentos_requeridos),
+            'documentos_completados': len(documentos_presentes)
+        })
+        
+    except Exception as e:
+        print(f"Error al verificar documentos: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Error interno del servidor'
+        }), 500
+
+@formulario_bp.route('/actualizar_documentos', methods=['POST'])
+@role_required('Usuario')
+@login_required
+def actualizar_documentos():
+    """Actualizar documentos faltantes de un formulario existente"""
+    try:
+        datos = request.get_json()
+        
+        if not datos:
+            return jsonify({'success': False, 'message': 'No se recibieron datos'}), 400
+        
+        codigo_asesoria = datos.get('codigo_asesoria')
+        if not codigo_asesoria:
+            return jsonify({'success': False, 'message': 'Código de asesoría requerido'}), 400
+        
+        connection = create_connection()
+        if not connection:
+            return jsonify({'success': False, 'message': 'Error de conexión a la base de datos'}), 500
+
+        cursor = connection.cursor()
+        
+        # Verificar que el formulario existe y pertenece al usuario
+        user_id = session.get('user_id')
+        cursor.execute("""
+            SELECT fe.id_formElegibilidad 
+            FROM tbl_form_eligibilidadCVA fe
+            INNER JOIN tbl_asesoria a ON fe.codigo_asesoria = a.codigo_asesoria
+            INNER JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
+            INNER JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+            WHERE fe.codigo_asesoria = %s AND u.id_usuario = %s AND fe.completado = 1
+        """, (codigo_asesoria, user_id))
+        
+        formulario_existente = cursor.fetchone()
+        if not formulario_existente:
+            cursor.close()
+            connection.close()
+            return jsonify({'success': False, 'message': 'Formulario no encontrado'}), 404
+        
+        # Preparar campos para actualizar (solo documentos)
+        campos_documentos = {}
+        for key, value in datos.items():
+            if key.startswith('doc_') and value and value.strip():
+                campos_documentos[key] = value
+        
+        if not campos_documentos:
+            cursor.close()
+            connection.close()
+            return jsonify({'success': False, 'message': 'No hay documentos para actualizar'}), 400
+        
+        # Construir query de actualización
+        set_clauses = []
+        valores = []
+        for campo, valor in campos_documentos.items():
+            set_clauses.append(f"{campo} = %s")
+            valores.append(valor)
+        
+        valores.append(codigo_asesoria)
+        
+        query_update = f"""
+            UPDATE tbl_form_eligibilidadCVA 
+            SET {', '.join(set_clauses)}
+            WHERE codigo_asesoria = %s
+        """
+        
+        cursor.execute(query_update, valores)
+        connection.commit()
+        
+        cursor.close()
+        connection.close()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Documentos actualizados exitosamente',
+            'documentos_actualizados': len(campos_documentos)
+        })
+        
+    except Exception as e:
+        print(f"Error al actualizar documentos: {str(e)}")
+        if 'connection' in locals() and connection.is_connected():
+            if 'cursor' in locals() and cursor:
+                cursor.close()
+            connection.close()
+        return jsonify({'success': False, 'message': f'Error interno del servidor: {str(e)}'}), 500
 
 @formulario_bp.route('/procesar_elegibilidad', methods=['POST'])
 @role_required('Usuario')
@@ -216,6 +433,13 @@ def procesar_formulario_elegibilidad():
             'doc_certificados_estudio_familiar': datos.get('doc_certificados_estudio_familiar'),
             'doc_propiedades_nombre': datos.get('doc_propiedades_nombre'),
             'doc_carta_motivacion_familiar': datos.get('doc_carta_motivacion_familiar'),
+            'doc_idioma': datos.get('doc_idioma'),
+            'doc_eca': datos.get('doc_eca'),
+            'doc_pasaporte': datos.get('doc_pasaporte'),
+            'doc_historial_laboral': datos.get('doc_historial_laboral'),
+            'doc_carta_intencion_residencia': datos.get('doc_carta_intencion_residencia'),
+            'doc_examen_medico_residencia': datos.get('doc_examen_medico_residencia'),
+            'doc_antecedentes': datos.get('doc_antecedentes'),
         }
         
         campos_db = [key for key, value in campos_formulario.items() if value is not None]
@@ -369,6 +593,7 @@ def validar_datos_formulario(datos):
                 errores.append('Debe indicar el motivo por el que no tiene trabajo')
 
     # Validar opciones de sí/no
+    
     opciones_si_no = ['familiares_canada','viaja_conocido', 'co_deudor', 'viajes_recientes',
                       'antecedente_judiciales', 'examenes_medicos', 'aplicacion_familiares', 
                       'biometricos_canada', 'pago_tasas', 'empleo_origen', 'dependencia_economica', 'acompana_familiar',

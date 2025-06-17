@@ -7,7 +7,146 @@
  * - Corregido el ID para obtener el id_usuario.
  * - Nombre de archivo reemplaza texto en drop-area.
  * - Animación de error para drop-area.
+ * - **NUEVO: Implementación de paginación para las tarjetas de asesorías.**
+ * - **CORREGIDO: Orden de las asesorías para que la más reciente (mayor código) sea la primera y se numere como #1.**
+ * - **NUEVO: Verificación de documentos y modal para documentos faltantes.**
+ * - **MEJORA: Carga de tarjetas de formularios en paralelo para mejor rendimiento.**
+ * - **CORREGIDO: Eliminado el estado 'Pagada' de la visualización de la tarjeta.**
+ * - **MEJORA: Añadido spinner de carga al botón 'Adjuntar Documentos Faltantes'.**
+ * - **MEJORA: Conexión del spinner 'Cargando formularios' con la carga completa de las cards.**
+ * - **CORREGIDO: El primer paso del stepper ahora se muestra en color primario (rojo) al inicio.**
+ * - **MEJORA: Implementación de auto-guardado y restauración de datos del formulario (excluyendo documentos).**
+ * - **MEJORA: Los datos guardados se borran solo al enviar el formulario exitosamente.**
+ * - **ACTUALIZADO: Tipos de visa y requisitos de documentos.**
+ * - **NUEVO: Autoselección del tipo de visa en el formulario y campo deshabilitado.**
  */
+
+// Add these functions outside the DOMContentLoaded listener, but within the script scope
+function saveFormData(codigoAsesoria) {
+  const form = document.getElementById("formularioElegibilidad")
+  if (!form) return
+
+  const formData = new FormData(form)
+  const dataToSave = {}
+
+  for (const [key, value] of formData.entries()) {
+    // Exclude file inputs and their related state selects
+    if (!key.endsWith("_file_input") && !key.endsWith("_estado")) {
+      // Handle radio buttons and checkboxes correctly
+      const inputElement = form.querySelector(`[name="${key}"]`)
+      if (inputElement && inputElement.type === "radio") {
+        if (inputElement.checked) {
+          dataToSave[key] = value
+        }
+      } else if (inputElement && inputElement.type === "checkbox") {
+        dataToSave[key] = inputElement.checked
+      } else {
+        dataToSave[key] = value
+      }
+    }
+  }
+
+  // Manually add values for radio groups that might not have a checked value if not interacted with
+  const radioGroups = [
+    "tiene_pasaporte",
+    "empleo_origen",
+    "empleo_extranjero",
+    "tiene_negocios_actuales",
+    "dependencia_economica",
+    "familiares_canada",
+    "puede_comprobar_relacion",
+    "acompana_familiar",
+    "viaja_conocido",
+    "co_deudor",
+    "viajes_recientes",
+    "antecedente_judiciales",
+    "examenes_medicos",
+    "aplicacion_familiares",
+    "biometricos_canada",
+    "pago_tasas",
+    "posee_ahorros",
+    "estudios_en_curso",
+    "rechazado_canada",
+    "habla_idioma_oficial",
+    "aplicado_programa_migratorio",
+    "intencion_extender_estadia",
+  ]
+
+  radioGroups.forEach((groupName) => {
+    const checkedRadio = form.querySelector(`input[name="${groupName}"]:checked`)
+    if (checkedRadio) {
+      dataToSave[groupName] = checkedRadio.value
+    } else if (!dataToSave.hasOwnProperty(groupName)) {
+      dataToSave[groupName] = null // Or an empty string, depending on how you want to represent unchecked
+    }
+  })
+
+  localStorage.setItem(`form_data_${codigoAsesoria}`, JSON.stringify(dataToSave))
+  console.log(`Form data for ${codigoAsesoria} saved.`)
+}
+
+function restoreFormData(codigoAsesoria) {
+  const form = document.getElementById("formularioElegibilidad")
+  if (!form) return
+
+  const savedData = localStorage.getItem(`form_data_${codigoAsesoria}`)
+  if (!savedData) {
+    console.log(`No saved data found for ${codigoAsesoria}.`)
+    return
+  }
+
+  const data = JSON.parse(savedData)
+  console.log(`Restoring form data for ${codigoAsesoria}:`, data)
+
+  for (const key in data) {
+    if (data.hasOwnProperty(key)) {
+      const value = data[key]
+      const inputElement = form.querySelector(`[name="${key}"]`)
+
+      if (inputElement) {
+        // Skip restoring motivo_viaje if it's already disabled (meaning it was pre-set)
+        if (key === "motivo_viaje" && inputElement.disabled) {
+          continue
+        }
+        if (inputElement.type === "radio") {
+          const radioButtons = form.querySelectorAll(`input[name="${key}"]`)
+          radioButtons.forEach((radio) => {
+            if (radio.value === value) {
+              radio.checked = true
+              // Trigger change event for radio buttons to update dependent fields
+              radio.dispatchEvent(new Event("change", { bubbles: true }))
+            }
+          })
+        } else if (inputElement.type === "checkbox") {
+          inputElement.checked = value
+        } else if (inputElement.tagName === "SELECT") {
+          inputElement.value = value
+          // Trigger change event for select elements (e.g., motivoViaje)
+          inputElement.dispatchEvent(new Event("change", { bubbles: true }))
+        } else {
+          inputElement.value = value
+        }
+      }
+    }
+  }
+  // Re-evaluate conditional display logic after restoring data
+  // This is crucial for fields like 'numeroPasaporteDiv', 'trabajoActualDiv', etc.
+  // Trigger change events for relevant inputs to re-run their display logic
+  const relevantInputs = [
+    "tiene_pasaporte",
+    "empleo_origen",
+    "empleo_extranjero",
+    "tiene_negocios_actuales",
+    "familiares_canada",
+    "acompana_familiar",
+  ]
+  relevantInputs.forEach((name) => {
+    const input = form.querySelector(`[name="${name}"]:checked`) || form.querySelector(`[name="${name}"]`)
+    if (input) {
+      input.dispatchEvent(new Event("change", { bubbles: true }))
+    }
+  })
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   // Elementos del DOM
@@ -16,6 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const formularioModal = document.getElementById("formularioModal")
   const formularioElegibilidad = document.getElementById("formularioElegibilidad")
   const cerrarModal = document.getElementById("cerrarModal")
+  const paginationContainer = document.getElementById("paginationContainer") // Nuevo elemento para paginación
 
   // Elementos del stepper
   const stepperPrevBtn = document.getElementById("stepper-prev-btn")
@@ -33,20 +173,29 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentStep = 0
   const totalSteps = 4 // Asumiendo 4 pasos de contenido antes del mensaje de éxito
 
+  // Variables de paginación
+  let allAsesorias = [] // Almacena todas las asesorías
+  const itemsPerPage = 9 // Número de tarjetas por página
+  let currentPage = 1 // Página actual
+
   // Almacenamiento para archivos a subir
   let filesToUploadGlobally = {} // { docId: File }
   let fileUrlsFromUpload = {} // { docId: cloudinaryUrl }
 
+  // Variables para modal de documentos faltantes
+  let documentosModal = null
+  let currentCodigoAsesoria = null
+
   // Contenido original del drop area para restaurarlo
   const originalDropAreaContent = `
-    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-    </svg>
-    <div class="flex text-sm text-gray-600">
-      <p class="pl-1">Arrastra y suelta archivos aquí o <span class="font-medium text-primary-600 hover:text-primary-500">haz clic para seleccionar</span></p>
-    </div>
-    <p class="text-xs text-gray-500">PDF, JPG, PNG, DOC, DOCX hasta 10MB</p>
-  `
+  <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+  <div class="flex text-sm text-gray-600">
+    <p class="pl-1">Arrastra y suelta archivos aquí o <span class="font-medium text-primary-600 hover:text-primary-500">haz clic para seleccionar</span></p>
+  </div>
+  <p class="text-xs text-gray-500">PDF, JPG, PNG, DOC, DOCX hasta 10MB</p>
+`
 
   // Cargar asesorías pagadas al iniciar
   cargarAsesoriasPagadas()
@@ -238,53 +387,61 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     notification.innerHTML = `
-    <div class="flex items-center">
-        <div class="flex-shrink-0">
-            ${
-              type === "success"
-                ? '<svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
-                : type === "error"
-                  ? '<svg class="h-5 w-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>'
-                  : type === "warning"
-                    ? '<svg class="h-5 w-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>'
-                    : '<svg class="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
-            }
-        </div>
-        <div class="ml-3">
-            <p class="text-sm font-medium">${message}</p>
-        </div>
-        <div class="ml-auto pl-3">
-            <button class="inline-flex text-gray-400 hover:text-gray-500 focus:outline-none cursor-pointer transition-colors duration-200">
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-        </div>
-    </div>
-  `
+  <div class="flex items-center">
+      <div class="flex-shrink-0">
+          ${
+            type === "success"
+              ? '<svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
+              : type === "error"
+                ? '<svg class="h-5 w-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>'
+                : type === "warning"
+                  ? '<svg class="h-5 w-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>'
+                  : '<svg class="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+          }
+      </div>
+      <div class="ml-3">
+          <p class="text-sm font-medium">${message}</p>
+      </div>
+      <div class="ml-auto pl-3">
+          <button class="inline-flex text-gray-400 hover:text-gray-500 focus:outline-none cursor-pointer transition-colors duration-200">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+      </div>
+  </div>
+`
     document.body.appendChild(notification)
-    setTimeout(() => {
+      setTimeout(() => {
       notification.classList.remove("translate-x-full")
       notification.classList.add("translate-x-0")
     }, 100)
+
+    // Configurar la eliminación automática
     setTimeout(() => {
       notification.classList.remove("translate-x-0")
       notification.classList.add("translate-x-full")
-      setTimeout(() => notification.remove(), 500)
+
+      // Eliminar del DOM después de la animación
+      setTimeout(() => {
+        notification.remove()
+      }, 500)
     }, 5000)
-    notification.querySelector("button").addEventListener("click", () => {
-      notification.classList.remove("translate-x-0")
-      notification.classList.add("translate-x-full")
-      setTimeout(() => notification.remove(), 500)
-    })
   }
 
   async function cargarAsesoriasPagadas() {
     try {
-      mostrarSpinner(true)
+      mostrarSpinner(true) // Spinner shown here
       const response = await fetch("/formularios/asesorias_pagadas")
       const data = await response.json()
       if (data.success) {
-        mostrarAsesorias(data.asesorias)
+        // Ordenar las asesorías de forma descendente por codigo_asesoria
+        allAsesorias = data.asesorias.sort((a, b) => b.codigo_asesoria - a.codigo_asesoria)
+        // Asignar números secuenciales después de ordenar (1 para la más reciente)
+        const totalAsesorias = allAsesorias.length
+        allAsesorias.forEach((asesoria, idx) => {
+          asesoria.numero_secuencial = totalAsesorias - idx
+        })
+        await renderPaginatedAsesorias() // Await the rendering of paginated cards
       } else {
         showNotification("Error al cargar las asesorías: " + data.message, "error")
       }
@@ -292,43 +449,148 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error:", error)
       showNotification("Error de conexión al cargar las asesorías", "error")
     } finally {
-      mostrarSpinner(false)
+      mostrarSpinner(false) // Spinner hidden here, after all rendering is complete
     }
   }
 
-  function mostrarAsesorias(asesorias) {
-    asesoriasContainer.innerHTML = ""
-    if (asesorias.length === 0) {
+  async function verificarEstadoDocumentos(codigoAsesoria) {
+    try {
+      const response = await fetch(`/formularios/verificar_documentos/${codigoAsesoria}`)
+      const data = await response.json()
+
+      if (data.success) {
+        return {
+          estado: data.estado,
+          documentos_faltantes: data.documentos_faltantes,
+          motivo_viaje: data.motivo_viaje,
+        }
+      } else {
+        return {
+          estado: "Sin formulario",
+          documentos_faltantes: [],
+          motivo_viaje: null,
+        }
+      }
+    } catch (error) {
+      console.error("Error al verificar documentos:", error)
+      return {
+        estado: "Error",
+        documentos_faltantes: [],
+        motivo_viaje: null,
+      }
+    }
+  }
+
+  async function renderPaginatedAsesorias() {
+    // Made async
+    asesoriasContainer.innerHTML = "" // Limpia las tarjetas existentes
+
+    if (allAsesorias.length === 0) {
       asesoriasContainer.innerHTML = `
-      <div class="col-span-full text-center py-12 animate-fade-in">
-          <div class="text-gray-500 text-lg">
-              <svg class="w-20 h-20 mx-auto mb-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-              </svg>
-              <h3 class="text-xl font-medium text-gray-900 mb-2">No hay asesorías pagadas disponibles</h3>
-              <p class="text-gray-600">Una vez que tenga asesorías pagadas, aparecerán aquí para completar el formulario de elegibilidad.</p>
-          </div>
-      </div>
-    `
+    <div class="col-span-full text-center py-12 animate-fade-in">
+        <div class="text-gray-500 text-lg">
+            <svg class="w-20 h-20 mx-auto mb-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <h3 class="text-xl font-medium text-gray-900 mb-2">No hay asesorías pagadas disponibles</h3>
+            <p class="text-gray-600">Una vez que tenga asesorías pagadas, aparecerán aquí para completar el formulario de elegibilidad.</p>
+        </div>
+    </div>
+  `
+      paginationContainer.innerHTML = "" // Limpia la paginación si no hay tarjetas
+      paginationContainer.classList.add("hidden")
       return
     }
-    asesorias.sort((a, b) => a.codigo_asesoria - b.codigo_asesoria)
-    asesorias.forEach((asesoria, idx) => {
-      asesoria.numero_secuencial = idx + 1
-    })
-    asesorias
-      .slice()
-      .reverse()
-      .forEach((asesoria, idx) => {
-        const card = crearCardAsesoria(asesoria, idx)
-        asesoriasContainer.appendChild(card)
-      })
+
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    const asesoriasToDisplay = allAsesorias.slice(startIndex, endIndex)
+
+    await renderCardsForPage(asesoriasToDisplay) // Await this call
+    renderPaginationButtons() // Renderiza los botones de paginación
   }
 
-  function crearCardAsesoria(asesoria, index) {
+  async function renderCardsForPage(asesoriasToDisplay) {
+    asesoriasContainer.innerHTML = "" // Asegura que el contenedor esté vacío antes de añadir
+
+    // Crear un array de promesas para todas las tarjetas
+    const cardPromises = asesoriasToDisplay.map((asesoria, i) => crearCardAsesoria(asesoria, i))
+
+    // Esperar a que todas las promesas se resuelvan
+    const cardElements = await Promise.all(cardPromises)
+
+    // Añadir todos los elementos de tarjeta al DOM de una vez
+    cardElements.forEach((card) => {
+      asesoriasContainer.appendChild(card)
+    })
+  }
+
+  function renderPaginationButtons() {
+    paginationContainer.innerHTML = "" // Limpia los botones existentes
+    const totalPages = Math.ceil(allAsesorias.length / itemsPerPage)
+
+    if (totalPages <= 1) {
+      paginationContainer.classList.add("hidden")
+      return
+    }
+
+    paginationContainer.classList.remove("hidden")
+    paginationContainer.className = "flex justify-center items-center space-x-2 mt-8 animate-fade-in delay-300" // Asegura las clases correctas
+
+    // Botón "Anterior"
+    const prevButton = document.createElement("button")
+    prevButton.className = `px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+      currentPage === 1
+        ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+        : "bg-primary-100 text-primary-700 hover:bg-primary-200"
+    }`
+    prevButton.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>`
+    prevButton.disabled = currentPage === 1
+    prevButton.addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage--
+        renderPaginatedAsesorias()
+      }
+    })
+    paginationContainer.appendChild(prevButton)
+
+    // Botones de número de página
+    for (let i = 1; i <= totalPages; i++) {
+      const pageButton = document.createElement("button")
+      pageButton.className = `px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+        i === currentPage ? "bg-primary-600 text-white shadow-md" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+      }`
+      pageButton.textContent = i
+      pageButton.addEventListener("click", () => {
+        currentPage = i
+        renderPaginatedAsesorias()
+      })
+      paginationContainer.appendChild(pageButton)
+    }
+
+    // Botón "Siguiente"
+    const nextButton = document.createElement("button")
+    nextButton.className = `px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+      currentPage === totalPages
+        ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+        : "bg-primary-100 text-primary-700 hover:bg-primary-200"
+    }`
+    nextButton.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>`
+    nextButton.disabled = currentPage === totalPages
+    nextButton.addEventListener("click", () => {
+      if (currentPage < totalPages) {
+        currentPage++
+        renderPaginatedAsesorias()
+      }
+    })
+    paginationContainer.appendChild(nextButton)
+  }
+
+  async function crearCardAsesoria(asesoria, index) {
     const card = document.createElement("div")
     card.className = `bg-white rounded-2xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] animate-fade-in`
     card.style.animationDelay = `${index * 100}ms`
+
     const fechaFormateada = new Date(asesoria.fecha_asesoria).toLocaleDateString("es-ES", {
       year: "numeric",
       month: "long",
@@ -336,61 +598,66 @@ document.addEventListener("DOMContentLoaded", () => {
       hour: "2-digit",
       minute: "2-digit",
     })
-    const tieneFormulario = asesoria.completado === 1
-    const estadoFormulario = tieneFormulario ? "Completado" : "Pendiente"
-    const colorEstado = tieneFormulario ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
 
+    let estadoFormularioTexto = "Pendiente"
+    let colorEstado = "bg-yellow-100 text-yellow-800"
+    let actionButtonHtml = ""
+
+    if (asesoria.completado === 1) {
+      const { estado, documentos_faltantes, motivo_viaje } = await verificarEstadoDocumentos(asesoria.codigo_asesoria)
+      if (estado === "Completo") {
+        estadoFormularioTexto = "Completo"
+        colorEstado = "bg-green-100 text-green-800"
+        actionButtonHtml = `<button disabled class="w-full px-6 py-3 bg-gray-300 text-gray-500 rounded-xl cursor-not-allowed font-medium flex items-center justify-center"><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Formulario Completado</button>`
+      } else {
+        estadoFormularioTexto = "Pendiente (Documentos)"
+        colorEstado = "bg-red-100 text-red-800"
+        actionButtonHtml = `<button onclick="abrirModalDocumentosFaltantes(this, ${asesoria.codigo_asesoria}, '${motivo_viaje}')" class="w-full relative overflow-hidden group bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-red-500/30 transition-all duration-300 cursor-pointer transform hover:scale-[1.02]"><span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span><div class="relative flex items-center justify-center"><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><span>Adjuntar Documentos Faltantes</span></div></button>`
+      }
+    } else {
+      estadoFormularioTexto = "Pendiente (Formulario)"
+      colorEstado = "bg-yellow-100 text-yellow-800"
+      actionButtonHtml = `<button onclick="abrirFormularioElegibilidad(${asesoria.codigo_asesoria}, ${asesoria.id_solicitante})" class="w-full relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer transform hover:scale-[1.02]"><span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span><div class="relative flex items-center justify-center"><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><span>Llenar Formulario de Elegibilidad</span></div></button>`
+    }
+    let tipoVisaMostrar = asesoria.tipo_asesoria === "Turismo" ? "Turismo / Visita Familiar" : asesoria.tipo_asesoria
     card.innerHTML = `
-    <div class="p-6">
-        <div class="flex justify-between items-start mb-6">
-            <div>
-                <h3 class="text-xl font-bold text-gray-900 font-roboto">
-                    Formulario #${asesoria.numero_secuencial}
-                </h3>
-                <p class="text-sm text-primary-600 font-medium">${asesoria.tipo_asesoria}</p>
-            </div>
-            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                ${asesoria.estado}
-            </span>
-        </div>
-        <div class="space-y-4 mb-6">
-            <div class="flex items-center text-sm text-gray-600">
-                <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center mr-3">
-                    <svg class="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4h3a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2h3z"></path></svg>
-                </div>
-                <div><p class="font-medium text-gray-900">${fechaFormateada}</p><p class="text-xs text-gray-500">Fecha de la asesoría</p></div>
-            </div>
-            <div class="flex items-center text-sm text-gray-600">
-                <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center mr-3">
-                    <svg class="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                </div>
-                <div><p class="font-medium text-gray-900">${asesoria.nombre_asesor || "Asesor no asignado"}</p><p class="text-xs text-gray-500">Asesor especializado</p></div>
-            </div>
-            <div class="flex items-center text-sm text-gray-600">
-                <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center mr-3">
-                    <svg class="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                </div>
-                <div><p class="font-medium text-gray-900">${asesoria.lugar}</p><p class="text-xs text-gray-500">Modalidad</p></div>
-            </div>
-        </div>
-        <div class="mb-6">
-            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                <div class="flex items-center">
-                    <svg class="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    <span class="text-sm font-medium text-gray-700">Estado del Formulario:</span>
-                </div>
-                <span class="px-3 py-1 text-xs font-semibold rounded-full ${colorEstado}">${estadoFormulario}</span>
-            </div>
-        </div>
-        ${asesoria.descripcion ? `<div class="mb-6 p-4 bg-primary-50 rounded-xl border border-primary-100"><p class="text-sm text-gray-700 leading-relaxed">${asesoria.descripcion}</p></div>` : ""}
-        <div class="pt-4 border-t border-gray-200">
-            ${
-              tieneFormulario
-                ? `<button disabled class="w-full px-6 py-3 bg-gray-300 text-gray-500 rounded-xl cursor-not-allowed font-medium flex items-center justify-center"><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Formulario Completado</button>`
-                : `<button onclick="abrirFormularioElegibilidad(${asesoria.codigo_asesoria}, ${asesoria.id_solicitante})" class="w-full relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer transform hover:scale-[1.02]"><span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span><div class="relative flex items-center justify-center"><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><span>Llenar Formulario de Elegibilidad</span></div></button>`
-            }
-        </div>
-    </div>
+  <div class="p-6">
+      <div class="flex justify-between items-start mb-6">
+          <div>
+              <h3 class="text-xl font-bold text-gray-900 font-roboto">
+                  Formulario #${asesoria.numero_secuencial}
+              </h3>
+              <p class="text-sm text-primary-600 font-medium">Visa de ${tipoVisaMostrar}</p>
+          </div>
+          <!-- Eliminado el span de asesoria.estado -->
+      </div>
+      <div class="space-y-4 mb-6">
+          <div class="flex items-center text-sm text-gray-600">
+              <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center mr-3">
+                  <svg class="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4h3a2 2 0 012 2v9a2 2 0 01-2-2H5a2 2 0 01-2-2V9a2 2 0 012-2h3z"></path></svg>
+              </div>
+              <div><p class="font-medium text-gray-900">${fechaFormateada}</p><p class="text-xs text-gray-500">Fecha de la asesoría</p></div>
+          </div>
+          <div class="flex items-center text-sm text-gray-600">
+              <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center mr-3">
+                  <svg class="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+              </div>
+              <div><p class="font-medium text-gray-900">${asesoria.nombre_asesor || "Asesor no asignado"}</p><p class="text-xs text-gray-500">Asesor especializado</p></div>
+          </div>
+      </div>
+      <div class="mb-6">
+          <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+              <div class="flex items-center">
+                  <svg class="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                  <span class="text-sm font-medium text-gray-700">Estado del Formulario:</span>
+              </div>
+              <span class="px-3 py-1 text-xs font-semibold rounded-full ${colorEstado}">${estadoFormularioTexto}</span>
+          </div>
+      </div>
+      <div class="pt-4 border-t border-gray-200">
+          ${actionButtonHtml}
+      </div>
+  </div>
   `
     return card
   }
@@ -400,25 +667,51 @@ document.addEventListener("DOMContentLoaded", () => {
     if (formularioElegibilidad) {
       formularioElegibilidad.dataset.idSolicitante = idSolicitante
     }
+
+    const motivoViajeInput = document.getElementById("motivoViaje")
+    const asesoria = allAsesorias.find((a) => a.codigo_asesoria === codigoAsesoria)
+    if (asesoria && asesoria.tipo_asesoria) {
+      let tipoVisa = asesoria.tipo_asesoria.trim()
+      // Mostrar "Turismo / Visita Familiar" pero usar "Turismo" como clave real
+      if (tipoVisa.toLowerCase() === "turismo") {
+        motivoViajeInput.value = "Turismo / Visita Familiar"
+        motivoViajeInput.dataset.realValue = "Turismo"
+      } else {
+        motivoViajeInput.value = tipoVisa
+        motivoViajeInput.dataset.realValue = tipoVisa
+      }
+    } else {
+      motivoViajeInput.value = ""
+      motivoViajeInput.dataset.realValue = ""
+    }
+    motivoViajeInput.readOnly = true
+    motivoViajeInput.classList.add("bg-gray-100", "cursor-not-allowed")
+
     resetStepper()
+    renderDocumentosPaso4()
     formularioModal.classList.remove("hidden")
     formularioModal.classList.add("flex")
     document.body.style.overflow = "hidden"
     const modalContent = formularioModal.querySelector(".bg-white")
     if (modalContent) modalContent.classList.add("animate-scale-in")
+
+    restoreFormData(codigoAsesoria)
   }
 
   function cerrarModalFormulario() {
     const modalContent = formularioModal.querySelector(".bg-white")
     if (modalContent) modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+
+    // Save form data before closing
+    const codigoAsesoria = document.getElementById("codigoAsesoria").value
+    if (codigoAsesoria) {
+      saveFormData(codigoAsesoria)
+    }
+
     setTimeout(() => {
       formularioModal.classList.remove("flex")
       formularioModal.classList.add("hidden")
       document.body.style.overflow = "auto"
-      formularioElegibilidad.reset()
-      resetStepper()
-      filesToUploadGlobally = {}
-      fileUrlsFromUpload = {}
       // Restaurar contenido original de todos los drop areas
       document.querySelectorAll('[id$="_drop_area_content"]').forEach((contentDiv) => {
         contentDiv.innerHTML = originalDropAreaContent
@@ -431,52 +724,247 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       })
       document.querySelectorAll('input[type="file"]').forEach((input) => (input.value = null))
-      document.getElementById("relacionFamiliaresDiv").classList.add("hidden")
-      document.getElementById("relacionFamiliares").required = false
-      document.getElementById("trabajoActualDiv").style.display = "none"
-      document.getElementById("trabajoActual").removeAttribute("required")
+      
       if (modalContent) modalContent.classList.remove("opacity-0", "scale-95", "transition-all", "duration-300")
     }, 300)
   }
 
   function resetStepper() {
     currentStep = 0
-    updateStepperUI()
-    showStep(0)
-    filesToUploadGlobally = {}
-    fileUrlsFromUpload = {}
-    // Restaurar contenido original de todos los drop areas en resetStepper también
-    document.querySelectorAll('[id$="_drop_area_content"]').forEach((contentDiv) => {
-      contentDiv.innerHTML = originalDropAreaContent
-      contentDiv.classList.remove("text-green-600", "text-red-600", "items-center", "justify-center", "break-all")
-      contentDiv.classList.add("space-y-1", "text-center")
-      const parentLabel = contentDiv.closest("label")
-      if (parentLabel) {
-        parentLabel.classList.remove("border-red-500", "bg-red-50", "animate-shake", "border-green-500", "bg-green-50")
-        parentLabel.classList.add("border-gray-300", "bg-gray-50")
+    showStep(0) // This shows the content of step 0
+
+    const steps = document.querySelectorAll(".stepper-step")
+    const stepperPrevBtn = document.getElementById("stepper-prev-btn")
+    const stepperNextBtn = document.getElementById("stepper-next-btn")
+    const stepperSubmitBtn = document.getElementById("stepper-submit-btn")
+    const connectors = document.querySelectorAll(".stepper-connector")
+
+    // Reset all steps to default (grey with number)
+    steps.forEach((step, index) => {
+      step.classList.remove("active", "completed")
+      const circle = step.querySelector("div:first-child")
+      if (circle) {
+        circle.classList.remove("bg-primary-600", "text-white")
+        circle.classList.add("bg-gray-200", "text-gray-500")
+        circle.innerHTML = `<span>${index + 1}</span>`
       }
     })
-    document.querySelectorAll('input[type="file"]').forEach((input) => (input.value = null))
-  }
 
-  function prevStep() {
-    if (currentStep > 0) {
-      currentStep--
-      updateStepperUI()
-      showStep(currentStep)
-    }
-  }
+    // Reset all connectors to grey
+    connectors.forEach((connector) => {
+      connector.classList.remove("bg-primary-600")
+      connector.classList.add("bg-gray-200")
+    })
 
-  function nextStep() {
-    if (validateCurrentStep() && currentStep < totalSteps - 1) {
-      currentStep++
-      updateStepperUI()
-      showStep(currentStep)
-      if (currentStep === 3 && documentosContenido.classList.contains("max-h-0")) {
-        setTimeout(() => toggleDocumentosSection(), 300)
+    // Set the first step to active (primary-600 with number 1)
+    const firstStep = steps[0]
+    if (firstStep) {
+      firstStep.classList.add("active")
+      const firstCircle = firstStep.querySelector("div:first-child")
+      if (firstCircle) {
+        firstCircle.classList.remove("bg-gray-200", "text-gray-500")
+        firstCircle.classList.add("bg-primary-600", "text-white")
+        firstCircle.innerHTML = `<span>1</span>`
       }
     }
+
+    // Update buttons for the first step
+    if (stepperPrevBtn) stepperPrevBtn.classList.add("hidden")
+    if (stepperNextBtn) stepperNextBtn.classList.remove("hidden")
+    if (stepperSubmitBtn) stepperSubmitBtn.classList.add("hidden")
   }
+
+  // Replace the entire `prevStep` function with the following:
+  function prevStep() {
+    const steps = document.querySelectorAll(".stepper-step")
+    const contents = document.querySelectorAll(".stepper-content")
+    const connectors = document.querySelectorAll(".stepper-connector")
+    const stepperPrevBtn = document.getElementById("stepper-prev-btn")
+    const stepperNextBtn = document.getElementById("stepper-next-btn")
+    const stepperSubmitBtn = document.getElementById("stepper-submit-btn")
+
+    const activeIndex = currentStep // Use currentStep directly
+
+    if (activeIndex <= 0) return // Already at the first step
+
+    // Animate the exit of the current content
+    contents[activeIndex].classList.add("transform", "transition-all", "duration-500", "translate-x-full", "opacity-0")
+
+    // After a brief delay, hide the current content and show the previous one
+    setTimeout(() => {
+      contents[activeIndex].classList.add("hidden")
+      contents[activeIndex].classList.remove(
+        "transform",
+        "transition-all",
+        "duration-500",
+        "translate-x-full",
+        "opacity-0",
+      )
+
+      // Prepare the previous content for the entrance animation
+      contents[activeIndex - 1].classList.remove("hidden")
+      contents[activeIndex - 1].classList.add(
+        "transform",
+        "transition-all",
+        "duration-500",
+        "translate-x-full",
+        "opacity-0",
+      )
+
+      // Force a reflow for the animation to work
+      contents[activeIndex - 1].offsetHeight
+
+      // Animate the entrance of the previous content
+      contents[activeIndex - 1].classList.remove("translate-x-full", "opacity-0")
+      contents[activeIndex - 1].classList.add("translate-x-0", "opacity-100")
+    }, 300)
+
+    const currentCircle = steps[activeIndex].querySelector("div:first-child")
+    if (currentCircle) {
+      currentCircle.classList.add("transition-all", "duration-500")
+      currentCircle.classList.remove("bg-primary-600", "text-white")
+      currentCircle.classList.add("bg-gray-200", "text-gray-500")
+      currentCircle.innerHTML = `<span>${activeIndex + 1}</span>`
+    }
+
+    steps[activeIndex].classList.remove("active", "completed")
+    steps[activeIndex - 1].classList.add("active")
+    steps[activeIndex - 1].classList.remove("completed")
+
+    setTimeout(() => {
+      if (activeIndex > 0 && activeIndex - 1 < connectors.length) {
+        connectors[activeIndex - 1].classList.add("transition-all", "duration-700")
+        connectors[activeIndex - 1].classList.remove("bg-primary-600")
+        connectors[activeIndex - 1].classList.add("bg-gray-200")
+      }
+    }, 300)
+
+    setTimeout(() => {
+      const prevCircle = steps[activeIndex - 1].querySelector("div:first-child")
+      if (prevCircle) {
+        prevCircle.classList.add("transition-all", "duration-500")
+        prevCircle.classList.remove("bg-gray-200", "text-gray-500")
+        prevCircle.classList.add("bg-primary-600", "text-white") // Always make it primary-600 when it becomes the active step
+
+        // If it's the first step (index 0), show the number 1
+        if (activeIndex - 1 === 0) {
+          prevCircle.innerHTML = `<span>1</span>`
+        } else {
+          // For other steps, show their number
+          prevCircle.innerHTML = `<span class="inline-block animate-fade-in">${activeIndex}</span>`
+        }
+      }
+    }, 600)
+
+    currentStep-- // Decrement currentStep after animations are set up
+
+    // Update buttons
+    if (currentStep === 0) {
+      stepperPrevBtn.classList.add("hidden")
+    }
+    stepperNextBtn.classList.remove("hidden")
+    stepperSubmitBtn.classList.add("hidden")
+  }
+
+  // Replace the entire `nextStep` function with the following:
+  function nextStep() {
+    const steps = document.querySelectorAll(".stepper-step")
+    const contents = document.querySelectorAll(".stepper-content")
+    const connectors = document.querySelectorAll(".stepper-connector")
+    const stepperPrevBtn = document.getElementById("stepper-prev-btn")
+    const stepperNextBtn = document.getElementById("stepper-next-btn")
+    const stepperSubmitBtn = document.getElementById("stepper-submit-btn")
+
+    const activeIndex = currentStep // Use currentStep directly
+
+    if (!validateCurrentStep()) {
+      return
+    }
+
+    if (activeIndex >= totalSteps - 1) return // Already at the last step
+
+    // Animate the exit of the current content with a more evident transition
+    contents[activeIndex].classList.add(
+      "transform",
+      "transition-all",
+      "duration-500",
+      "translate-x-[-100%]",
+      "opacity-0",
+    )
+
+    // After a brief delay, hide the current content and show the next one
+    setTimeout(() => {
+      contents[activeIndex].classList.add("hidden")
+      contents[activeIndex].classList.remove(
+        "transform",
+        "transition-all",
+        "duration-500",
+        "translate-x-[-100%]",
+        "opacity-0",
+      )
+
+      // Prepare the next content for the entrance animation
+      contents[activeIndex + 1].classList.remove("hidden")
+      contents[activeIndex + 1].classList.add(
+        "transform",
+        "transition-all",
+        "duration-500",
+        "translate-x-[-100%]",
+        "opacity-0",
+      )
+
+      // Force a reflow to make the animation work
+      contents[activeIndex + 1].offsetHeight
+
+      // Animate the entrance of the next content
+      contents[activeIndex + 1].classList.remove("translate-x-[-100%]", "opacity-0")
+      contents[activeIndex + 1].classList.add("translate-x-0", "opacity-100")
+    }, 300)
+
+    if (activeIndex < connectors.length) {
+      connectors[activeIndex].classList.remove("bg-gray-200")
+      connectors[activeIndex].classList.add("bg-primary-600", "transition-all", "duration-700")
+
+      setTimeout(() => {
+        steps[activeIndex].classList.remove("active")
+        steps[activeIndex].classList.add("completed")
+        steps[activeIndex + 1].classList.add("active")
+
+        const currentCircle = steps[activeIndex].querySelector("div:first-child")
+        const nextCircle = steps[activeIndex + 1].querySelector("div:first-child")
+
+        if (currentCircle) {
+          currentCircle.classList.remove("bg-gray-200", "text-gray-500")
+          currentCircle.classList.add("bg-primary-600", "text-white", "transition-all", "duration-500")
+          currentCircle.innerHTML =
+            '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
+        }
+
+        if (nextCircle) {
+          nextCircle.classList.remove("bg-gray-200", "text-gray-500")
+          nextCircle.classList.add("bg-primary-600", "text-white", "transition-all", "duration-500")
+          nextCircle.innerHTML = `<span>${activeIndex + 2}</span>`
+        }
+      }, 300)
+    }
+
+    currentStep++ // Increment currentStep after animations are set up
+
+    // Update buttons
+    stepperPrevBtn.classList.remove("hidden")
+
+    if (currentStep === totalSteps - 1) {
+      stepperNextBtn.classList.add("hidden")
+      stepperSubmitBtn.classList.remove("hidden")
+    }
+
+    if (currentStep === 3 && documentosContenido.classList.contains("max-h-0")) {
+      setTimeout(() => toggleDocumentosSection(), 300)
+    }
+  }
+
+  // Remove the entire `updateStepperUI` function as its logic is now integrated into `prevStep` and `nextStep`.
+  // This function is no longer needed.
 
   function showStep(stepIndex) {
     const contents = document.querySelectorAll(".stepper-content")
@@ -489,71 +977,15 @@ document.addEventListener("DOMContentLoaded", () => {
         content.classList.remove("animate-fade-in")
       }
     })
+    // Si es el paso 4 (índice 3), renderiza los documentos requeridos
+    if (stepIndex === 3) {
+      renderDocumentosPaso4()
+    }
     if (stepIndex === totalSteps) {
       if (stepperPrevBtn) stepperPrevBtn.classList.add("hidden")
       if (stepperNextBtn) stepperNextBtn.classList.add("hidden")
       if (stepperSubmitBtn) stepperSubmitBtn.classList.add("hidden")
     }
-  }
-
-  function updateStepperUI() {
-    const steps = document.querySelectorAll(".stepper-step")
-    const connectors = document.querySelectorAll(".stepper-connector")
-    steps.forEach((step, index) => {
-      const circle = step.querySelector("div:first-child")
-      if (index < currentStep) {
-        step.classList.add("completed")
-        step.classList.remove("active")
-        if (circle) {
-          circle.classList.remove("bg-gray-200", "text-gray-500")
-          circle.classList.add("bg-primary-600", "text-white")
-          circle.innerHTML =
-            '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
-        }
-      } else if (index === currentStep) {
-        step.classList.add("active")
-        step.classList.remove("completed")
-        if (circle) {
-          circle.classList.remove("bg-gray-200", "text-gray-500")
-          circle.classList.add("bg-primary-600", "text-white")
-          circle.innerHTML = `<span>${index + 1}</span>`
-        }
-      } else {
-        step.classList.remove("active", "completed")
-        if (circle) {
-          circle.classList.remove("bg-primary-600", "text-white")
-          circle.classList.add("bg-gray-200", "text-gray-500")
-          circle.innerHTML = `<span>${index + 1}</span>`
-        }
-      }
-    })
-    connectors.forEach((connector, index) => {
-      if (index < currentStep) {
-        connector.classList.remove("bg-gray-200")
-        connector.classList.add("bg-primary-600")
-      } else {
-        connector.classList.remove("bg-primary-600")
-        connector.classList.add("bg-gray-200")
-      }
-    })
-    if (stepperPrevBtn) {
-      if (currentStep === 0) stepperPrevBtn.classList.add("hidden")
-      else stepperPrevBtn.classList.remove("hidden")
-    }
-    if (stepperNextBtn && stepperSubmitBtn) {
-      if (currentStep === totalSteps - 1) {
-        stepperNextBtn.classList.add("hidden")
-        stepperSubmitBtn.classList.remove("hidden")
-      } else {
-        stepperNextBtn.classList.remove("hidden")
-        stepperSubmitBtn.classList.add("hidden")
-      }
-    }
-    if (progressBar) {
-      const progress = ((currentStep + 1) / totalSteps) * 100
-      progressBar.style.width = `${progress}%`
-    }
-    if (currentStepSpan) currentStepSpan.textContent = currentStep + 1
   }
 
   function validateCurrentStep() {
@@ -584,26 +1016,8 @@ document.addEventListener("DOMContentLoaded", () => {
         return false
       }
     }
-    if (currentStep === 0) {
-      const fechaNac = document.getElementById("fechaNacimiento").value
-      if (fechaNac) {
-        const fechaNacimiento = new Date(fechaNac)
-        const hoy = new Date()
-        let edad = hoy.getFullYear() - fechaNacimiento.getFullYear()
-        const m = hoy.getMonth() - fechaNacimiento.getMonth()
-        if (m < 0 || (m === 0 && hoy.getDate() < fechaNacimiento.getDate())) edad--
-        if (edad < 18) {
-          showNotification("Debe ser mayor de 18 años para aplicar", "error")
-          return false
-        }
-        if (edad > 100) {
-          showNotification("Por favor verifique la fecha de nacimiento", "error")
-          return false
-        }
-      }
-    }
     if (currentStep === 3) {
-      const tipoVisa = document.getElementById("motivoViaje").value
+      const tipoVisa = getTipoVisaClave()
       const docs = documentosPorVisa[tipoVisa] || []
       for (const doc of docs) {
         const estadoSelect = document.getElementById(`${doc.name}_estado`)
@@ -633,9 +1047,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (mostrar) {
       loadingSpinner.classList.remove("hidden")
       asesoriasContainer.classList.add("hidden")
+      paginationContainer.classList.add("hidden") // Ocultar paginación también
     } else {
       loadingSpinner.classList.add("hidden")
       asesoriasContainer.classList.remove("hidden")
+      // La visibilidad de paginationContainer se maneja en renderPaginationButtons
     }
   }
 
@@ -717,88 +1133,85 @@ document.addEventListener("DOMContentLoaded", () => {
   resetStepper()
 
   const documentosPorVisa = {
-    Turismo: [
+    
+    "Turismo": [
       { label: "Itinerario de viaje", name: "doc_itinerario_viaje", required: true },
       { label: "Carta de motivación o carta de intención", name: "doc_carta_motivacion", required: true },
       { label: "Carta laboral o de estudio", name: "doc_carta_laboral", required: true },
       { label: "Certificados de propiedad", name: "doc_certificados_propiedad", required: false },
       { label: "Declaraciones de renta o extractos bancarios", name: "doc_extractos_bancarios", required: true },
       { label: "Carta de invitación (si aplica)", name: "doc_carta_invitacion", required: false },
+      { label: "Carta de invitación del familiar en Canadá (si aplica)", name: "doc_carta_invitacion_familiar", required: false },
+      { label: "Prueba de parentesco (si aplica)", name: "doc_prueba_parentesco", required: false },
+      { label: "Documentos financieros del familiar (si cubre gastos)", name: "doc_finanzas_familiar", required: false },
     ],
-    Trabajo: [
+    "Estudios": [
+      { label: "Carta de aceptación de una institución educativa canadiense (DLI)", name: "doc_carta_aceptacion", required: true },
+      { label: "Comprobante de pago de matrícula", name: "doc_pago_matricula", required: true },
+      { label: "Pruebas de fondos para cubrir matrícula y manutención", name: "doc_pruebas_fondos", required: true },
+      { label: "Carta de motivación para estudios", name: "doc_carta_motivacion_estudio", required: true },
+      { label: "Historial académico (diplomas, certificados, notas)", name: "doc_historial_academico", required: true },
+      { label: "Examen médico (si aplica)", name: "doc_examen_medico_estudio", required: false },
+      { label: "Formulario custodia (si es menor de edad)", name: "doc_formulario_custodia", required: false },
+    ],
+    "Trabajo Temporal": [
       { label: "Oferta laboral firmada (Job Offer Letter)", name: "doc_oferta_laboral", required: true },
-      { label: "LMIA o exención", name: "doc_lmia", required: true },
+      { label: "LMIA o documento de exención", name: "doc_lmia", required: true },
       { label: "Contrato laboral", name: "doc_contrato_laboral", required: true },
       { label: "Certificados de experiencia laboral previa", name: "doc_certificados_experiencia", required: true },
       { label: "Hoja de vida actualizada", name: "doc_hoja_vida", required: true },
       { label: "Diplomas o certificados relacionados al cargo", name: "doc_diplomas", required: true },
       { label: "Examen médico (si aplica)", name: "doc_examen_medico", required: false },
-      { label: "Carta de motivación", name: "doc_carta_motivacion_trabajo", required: false },
+      { label: "Carta de motivación (opcional)", name: "doc_carta_motivacion_trabajo", required: false },
     ],
-    Estudio: [
-      {
-        label: "Carta de aceptación de una institución educativa canadiense (DLI)",
-        name: "doc_carta_aceptacion",
-        required: true,
-      },
-      { label: "Comprobante de pago de matrícula", name: "doc_pago_matricula", required: true },
-      { label: "Pruebas de fondos para cubrir matrícula y manutención", name: "doc_pruebas_fondos", required: true },
-      { label: "Carta de motivación/Estudio", name: "doc_carta_motivacion_estudio", required: true },
-      { label: "Historial académico (diplomas, certificados, notas)", name: "doc_historial_academico", required: true },
-      { label: "Examen médico (si aplica)", name: "doc_examen_medico_estudio", required: false },
-      { label: "Formulario custodia (si es menor de edad)", name: "doc_formulario_custodia", required: false },
-    ],
-    Negocios: [
+    "Negocios": [
       { label: "Carta de invitación de la empresa canadiense", name: "doc_carta_invitacion_negocios", required: true },
-      {
-        label: "Registro de Cámara de Comercio de la empresa solicitante",
-        name: "doc_registro_camara",
-        required: true,
-      },
-      {
-        label: "Certificados bancarios y financieros de la empresa",
-        name: "doc_certificados_bancarios_empresa",
-        required: true,
-      },
+      { label: "Registro de Cámara de Comercio de la empresa solicitante", name: "doc_registro_camara", required: true },
+      { label: "Certificados bancarios y financieros de la empresa", name: "doc_certificados_bancarios_empresa", required: true },
       { label: "Itinerario de negocios", name: "doc_itinerario_negocios", required: true },
       { label: "Carta del empleador (si aplica)", name: "doc_carta_empleador", required: false },
       { label: "Contratos comerciales previos (si existen)", name: "doc_contratos_comerciales", required: false },
       { label: "Documentación que demuestre vínculo comercial", name: "doc_vinculo_comercial", required: true },
     ],
-    "Visita Familiar": [
-      { label: "Carta de invitación del familiar en Canadá", name: "doc_carta_invitacion_familiar", required: true },
-      { label: "Prueba de parentesco", name: "doc_prueba_parentesco", required: true },
-      {
-        label: "Documentos financieros del familiar (si cubrirá gastos)",
-        name: "doc_finanzas_familiar",
-        required: false,
-      },
-      { label: "Contrato laboral", name: "doc_contrato_laboral_familiar", required: true },
-      { label: "Certificados de estudio", name: "doc_certificados_estudio_familiar", required: false },
-      { label: "Propiedades a tu nombre", name: "doc_propiedades_nombre", required: false },
-      { label: "Carta de motivación", name: "doc_carta_motivacion_familiar", required: true },
+    "Residencia Permanente": [
+      { label: "Resultados del examen de idioma (IELTS/CELPIP)", name: "doc_idioma", required: true },
+      { label: "Evaluación de credenciales académicas (ECA)", name: "doc_eca", required: true },
+      { label: "Pasaporte vigente", name: "doc_pasaporte", required: true },
+      { label: "Historial laboral (referencias, cartas laborales)", name: "doc_historial_laboral", required: true },
+      { label: "Carta de intención (por qué desea inmigrar)", name: "doc_carta_intencion_residencia", required: true },
+      { label: "Resultados de exámenes médicos (cuando aplica)", name: "doc_examen_medico_residencia", required: false },
+      { label: "Certificado de antecedentes penales", name: "doc_antecedentes", required: true },
     ],
   }
 
-  function renderDocumentosPorVisa(tipoVisa) {
-    const contenedor = document.getElementById("documentosDinamicos")
+  function renderDocumentosPorVisa(tipoVisa, targetContainerId = "documentosDinamicos") {
+    const contenedor = document.getElementById(targetContainerId)
     contenedor.innerHTML = ""
     if (!tipoVisa || !documentosPorVisa[tipoVisa]) {
       contenedor.innerHTML = `<div class="col-span-full text-center py-12 text-gray-500"><svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><h3 class="text-lg font-medium text-gray-900 mb-2">Seleccione un motivo de viaje</h3><p class="text-sm">Vaya al Paso 1 y seleccione un motivo de viaje para ver los documentos requeridos</p></div>`
       return
     }
     const documentos = documentosPorVisa[tipoVisa]
-    documentosContador.textContent = `${documentos.length} documento${documentos.length !== 1 ? "s" : ""}`
+    if (targetContainerId === "documentosDinamicos") {
+      // Solo actualizar el contador en el modal principal
+      documentosContador.textContent = `${documentos.length} documento${documentos.length !== 1 ? "s" : ""}`
+    }
+
     for (let i = 0; i < documentos.length; i += 2) {
       const fila = document.createElement("div")
       fila.className = "grid grid-cols-1 lg:grid-cols-2 gap-4"
-      fila.appendChild(crearElementoDocumentoSimplificado(documentos[i], i))
-      if (i + 1 < documentos.length) fila.appendChild(crearElementoDocumentoSimplificado(documentos[i + 1], i + 1))
+      fila.appendChild(
+        crearElementoDocumentoSimplificado(documentos[i], i, targetContainerId === "documentosModalContent"),
+      )
+      if (i + 1 < documentos.length)
+        fila.appendChild(
+          crearElementoDocumentoSimplificado(documentos[i + 1], i + 1, targetContainerId === "documentosModalContent"),
+        )
       contenedor.appendChild(fila)
     }
   }
 
-  function crearElementoDocumentoSimplificado(doc, index) {
+  function crearElementoDocumentoSimplificado(doc, index, isModalContext = false) {
     const docId = doc.name
     const isRequired = doc.required
     const bloque = document.createElement("div")
@@ -807,37 +1220,37 @@ document.addEventListener("DOMContentLoaded", () => {
     bloque.setAttribute("data-doc-id", docId)
 
     bloque.innerHTML = `
-    <div class="space-y-3">
-      <div class="flex items-start justify-between">
-        <div class="flex items-start space-x-3 flex-1">
-          <span class="w-6 h-6 rounded-full bg-primary-100 text-primary-600 text-xs font-bold flex items-center justify-center mt-0.5 flex-shrink-0">${index + 1}</span>
-          <div class="flex-1 min-w-0">
-            <label class="block text-sm font-medium text-gray-800 leading-tight mb-1">${doc.label}</label>
-            <span class="text-xs text-gray-500 flex items-center">
-              <span class="${isRequired ? "text-red-500" : "text-blue-500"} mr-1 font-medium">*</span>
-              ${isRequired ? "Requerido" : "Opcional"}
-            </span>
-          </div>
-        </div>
-      </div>
-      <div class="space-y-3">
-        <select name="${docId}_estado" id="${docId}_estado" class="w-full py-2.5 px-3 border border-gray-200 bg-white rounded-lg text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all duration-200">
-          <option value="">Seleccione el estado del documento</option>
-          <option value="Disponible">Disponible</option>
-          <option value="En proceso">En proceso</option>
-          <option value="No disponible">No disponible</option>
-        </select>
-        <div id="${docId}_upload_area" class="hidden">
-          <input type="file" name="${docId}_file_input" id="${docId}_file_input" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="hidden"/>
-          <label for="${docId}_file_input" id="${docId}_drop_area" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-primary-500 bg-gray-50 hover:bg-primary-50 transition-all duration-200">
-            <div id="${docId}_drop_area_content" class="space-y-1 text-center">
-              ${originalDropAreaContent}
-            </div>
-          </label>
-          <!-- El span para mensajes de subida se elimina de aquí, ya que el contenido del drop_area_content lo reemplazará -->
+  <div class="space-y-3">
+    <div class="flex items-start justify-between">
+      <div class="flex items-start space-x-3 flex-1">
+        <span class="w-6 h-6 rounded-full bg-primary-100 text-primary-600 text-xs font-bold flex items-center justify-center mt-0.5 flex-shrink-0">${index + 1}</span>
+        <div class="flex-1 min-w-0">
+          <label class="block text-sm font-medium text-gray-800 leading-tight mb-1">${doc.label}</label>
+          <span class="text-xs text-gray-500 flex items-center">
+            <span class="${isRequired ? "text-red-500" : "text-blue-500"} mr-1 font-medium">*</span>
+            ${isRequired ? "Requerido" : "Opcional"}
+          </span>
         </div>
       </div>
     </div>
+    <div class="space-y-3">
+      <select name="${docId}_estado" id="${docId}_estado" class="w-full py-2.5 px-3 border border-gray-200 bg-white rounded-lg text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all duration-200">
+        <option value="">Seleccione el estado del documento</option>
+        <option value="Disponible">Disponible</option>
+        <option value="En proceso">En proceso</option>
+        <option value="No disponible">No disponible</option>
+      </select>
+      <div id="${docId}_upload_area" class="hidden">
+        <input type="file" name="${docId}_file_input" id="${docId}_file_input" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="hidden"/>
+        <label for="${docId}_file_input" id="${docId}_drop_area" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-primary-500 bg-gray-50 hover:bg-primary-50 transition-all duration-200">
+          <div id="${docId}_drop_area_content" class="space-y-1 text-center">
+            ${originalDropAreaContent}
+          </div>
+        </label>
+        <!-- El span para mensajes de subida se elimina de aquí, ya que el contenido del drop_area_content lo reemplazará -->
+      </div>
+    </div>
+  </div>
   `
     const selectEstado = bloque.querySelector(`#${docId}_estado`)
     const uploadArea = bloque.querySelector(`#${docId}_upload_area`)
@@ -894,9 +1307,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         filesToUploadGlobally[docId] = file
         dropAreaContent.innerHTML = `
-          <svg class="mx-auto h-10 w-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          <p class="text-sm font-medium text-green-700 break-all">${file.name}</p>
-          <p class="text-xs text-gray-500">Archivo listo para subir</p>`
+       
+        <svg class="mx-auto h-10 w-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <p class="text-sm font-medium text-green-700 break-all">${file.name}</p>
+        <p class="text-xs text-gray-500">Archivo listo para subir</p>`
         dropAreaContent.classList.remove("space-y-1", "text-center")
         dropAreaContent.classList.add("items-center", "justify-center", "flex", "flex-col", "break-all")
         dropAreaLabel.classList.add("border-green-500", "bg-green-50")
@@ -993,25 +1407,14 @@ document.addEventListener("DOMContentLoaded", () => {
     motivoViajeSelect.addEventListener("change", function () {
       renderDocumentosPorVisa(this.value)
     })
-    if (motivoViajeSelect.value) renderDocumentosPorVisa(motivoViajeSelect.value)
+    // No llamar renderDocumentosPorVisa aquí, se llamará desde abrirFormularioElegibilidad
+    // if (motivoViajeSelect.value) renderDocumentosPorVisa(motivoViajeSelect.value)
   }
 
-  async function uploadSingleFileToCloudinary(docId, file) {
-    const form = document.getElementById("formularioElegibilidad")
-    const codigoAsesoriaElement = form.querySelector('[name="codigo_asesoria"]')
-    const idSolicitante = form.dataset.idSolicitante || "unknown_sol"
-    const idAsesoria = codigoAsesoriaElement ? codigoAsesoriaElement.value : "unknown_ase"
-    const idUsuarioElement = document.getElementById("id_usuario")
-    const currentUserId = idUsuarioElement ? idUsuarioElement.value : null
-
-    if (!currentUserId) {
-      showNotification("Error: ID de usuario no encontrado. No se puede construir la ruta de Cloudinary.", "error")
-      throw new Error("User ID not found for Cloudinary path")
-    }
-
+  async function uploadSingleFileToCloudinary(docId, file, { idUsuario, idSolicitante, codigoAsesoria }) {
     const timestamp = Date.now()
-    const baseFileName = `${docId}_${idSolicitante}_${idAsesoria}_${timestamp}`
-    const cloudinaryFolder = `doc_users/doc_${currentUserId}`
+    const baseFileName = `${docId}_${idSolicitante}_${codigoAsesoria}_${timestamp}`
+    const cloudinaryFolder = `doc_users/doc_${idUsuario}`
 
     const formDataCloud = new FormData()
     formDataCloud.append("file", file)
@@ -1023,10 +1426,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (dropAreaContent) {
       dropAreaContent.innerHTML = `
-        <div class="flex items-center justify-center text-blue-600">
-            <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-            <p class="text-sm font-medium break-all">Subiendo ${file.name}...</p>
-        </div>`
+     <div class="flex items-center justify-center text-blue-600">
+         <svg class="animate-spin -ml-1 mr-2 h-5 w-5 border-b-2 border-white"></div><span>Subiendo ${file.name}...</p>
+     </div>`
       dropAreaContent.classList.remove("space-y-1", "text-center")
       dropAreaContent.classList.add("items-center", "justify-center", "flex", "flex-col")
     }
@@ -1041,17 +1443,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (data.secure_url) {
         if (dropAreaContent) {
           dropAreaContent.innerHTML = `
-            <svg class="mx-auto h-10 w-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            <p class="text-sm font-medium text-green-700 break-all">${file.name} subido.</p>
-            <p class="text-xs text-gray-500">¡Listo!</p>`
+         <svg class="mx-auto h-10 w-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+         <p class="text-sm font-medium text-green-700 break-all">${file.name} subido.</p>
+         <p class="text-xs text-gray-500">¡Listo!</p>`
         }
         return { docId, url: data.secure_url }
       } else {
         if (dropAreaContent) {
           dropAreaContent.innerHTML = `
-            <svg class="mx-auto h-10 w-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <p class="text-sm font-medium text-red-700 break-all">Error al subir ${file.name}.</p>
-            <p class="text-xs text-red-500">${data.error ? data.error.message : "Intente de nuevo"}</p>`
+         <svg class="mx-auto h-10 w-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+         <p class="text-sm font-medium text-red-700 break-all">Error al subir ${file.name}.</p>
+         <p class="text-xs text-red-500">${data.error ? data.error.message : "Intente de nuevo"}</p>`
         }
         console.error("Cloudinary upload error for", docId, data)
         throw new Error(
@@ -1061,9 +1463,9 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       if (dropAreaContent) {
         dropAreaContent.innerHTML = `
-            <svg class="mx-auto h-10 w-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <p class="text-sm font-medium text-red-700 break-all">Error de conexión al subir.</p>
-            <p class="text-xs text-red-500">Verifique su conexión e intente de nuevo.</p>`
+        <svg class="mx-auto h-10 w-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <p class="text-sm font-medium text-red-700 break-all">Error de conexión al subir.</p>
+        <p class="text-xs text-red-500">Verifique su conexión e intente de nuevo.</p>`
       }
       console.error("Network error during Cloudinary upload for", docId, error)
       throw new Error(`Error de red al subir ${docId}: ${error.message}`)
@@ -1180,6 +1582,14 @@ document.addEventListener("DOMContentLoaded", () => {
         showStep(totalSteps)
         showNotification("¡Formulario enviado exitosamente! Su información ha sido procesada correctamente.", "success")
         cargarAsesoriasPagadas()
+
+        // Clear saved data from localStorage on successful submission
+        const codigoAsesoria = document.getElementById("codigoAsesoria").value
+        if (codigoAsesoria) {
+          localStorage.removeItem(`form_data_${codigoAsesoria}`)
+          console.log(`Form data for ${codigoAsesoria} cleared from localStorage.`)
+        }
+
         setTimeout(() => cerrarModalFormulario(), 5000)
       } else {
         showNotification("Error al enviar el formulario: " + (result.message || "Error desconocido."), "error")
@@ -1191,5 +1601,236 @@ document.addEventListener("DOMContentLoaded", () => {
       submitButton.disabled = false
       submitButton.innerHTML = originalButtonContent
     }
+  }
+
+  // --- Lógica para el nuevo modal de documentos faltantes ---
+  window.abrirModalDocumentosFaltantes = async (buttonElement, codigoAsesoria, motivoViaje) => {
+    const originalButtonContent = buttonElement.innerHTML
+    buttonElement.disabled = true
+    buttonElement.innerHTML = `<div class="relative flex items-center justify-center"><div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div><span>Cargando...</span></div>`
+
+    currentCodigoAsesoria = codigoAsesoria
+    filesToUploadGlobally = {} // Limpiar archivos para el nuevo modal
+    fileUrlsFromUpload = {} // Limpiar URLs
+
+    try {
+      // Crear el modal si no existe
+      if (!documentosModal) {
+        documentosModal = document.createElement("div")
+        documentosModal.id = "documentosFaltantesModal"
+        documentosModal.className = "fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50"
+        documentosModal.innerHTML = `
+          <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-3xl animate-scale-in max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-xl font-bold text-gray-900 font-roboto">Adjuntar Documentos Faltantes</h2>
+              <button id="cerrarDocumentosModal" class="text-gray-500 hover:text-gray-700 cursor-pointer transition-colors duration-300">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+            <div class="space-y-6">
+              <div class="bg-gradient-to-r from-primary-50 to-white p-4 rounded-xl border-l-4 border-primary-500 mb-5 animate-fade-in">
+                  <h3 class="text-base font-medium text-primary-800 flex items-center">
+                      <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                      </svg>
+                      Documentos Requeridos para <span id="modalMotivoViaje" class="font-semibold ml-1"></span>
+                  </h3>
+                  <p class="text-sm text-gray-600">Adjunte los documentos que le faltan para completar su formulario.</p>
+              </div>
+              <div id="documentosModalContent" class="space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                <!-- Documentos faltantes se renderizarán aquí -->
+              </div>
+            </div>
+            <div class="flex justify-end mt-8 pt-4 border-t border-gray-200">
+              <button id="submitDocumentosModal" class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer">
+                <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                <div class="relative flex items-center justify-center">
+                  <span>Actualizar Documentos</span>
+                  <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                  </svg>
+                </div>
+              </button>
+            </div>
+          </div>
+        `
+        document.body.appendChild(documentosModal)
+
+        document.getElementById("cerrarDocumentosModal").addEventListener("click", cerrarModalDocumentosFaltantes)
+        documentosModal.addEventListener("click", (e) => {
+          if (e.target === documentosModal) {
+            cerrarModalDocumentosFaltantes()
+          }
+        })
+        document.getElementById("submitDocumentosModal").addEventListener("click", enviarDocumentosFaltantes)
+      }
+
+      // Obtener documentos faltantes y renderizarlos
+      const { documentos_faltantes, motivo_viaje } = await verificarEstadoDocumentos(codigoAsesoria)
+      document.getElementById("modalMotivoViaje").textContent = motivo_viaje
+      const modalContentContainer = document.getElementById("documentosModalContent")
+      modalContentContainer.innerHTML = "" // Limpiar contenido previo
+
+      if (documentos_faltantes.length === 0) {
+        modalContentContainer.innerHTML = `
+          <div class="col-span-full text-center py-12 text-gray-500">
+              <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <h3 class="text-lg font-medium text-gray-900 mb-2">¡Todos los documentos requeridos están adjuntos!</h3>
+              <p class="text-sm">Puede cerrar esta ventana.</p>
+          </div>
+        `
+        document.getElementById("submitDocumentosModal").classList.add("hidden")
+      } else {
+        document.getElementById("submitDocumentosModal").classList.remove("hidden")
+        for (let i = 0; i < documentos_faltantes.length; i += 2) {
+          const fila = document.createElement("div")
+          fila.className = "grid grid-cols-1 lg:grid-cols-2 gap-4"
+          fila.appendChild(crearElementoDocumentoSimplificado(documentos_faltantes[i], i, true))
+          if (i + 1 < documentos_faltantes.length)
+            fila.appendChild(crearElementoDocumentoSimplificado(documentos_faltantes[i + 1], i + 1, true))
+          modalContentContainer.appendChild(fila)
+        }
+        // Asegurarse de que los select de estado estén en "Disponible" por defecto para los faltantes
+        documentos_faltantes.forEach((doc) => {
+          const select = modalContentContainer.querySelector(`#${doc.name}_estado`)
+          if (select) {
+            select.value = "Disponible"
+            select.dispatchEvent(new Event("change")) // Trigger change to show upload area
+          }
+        })
+      }
+
+      documentosModal.classList.remove("hidden")
+      documentosModal.classList.add("flex")
+      document.body.style.overflow = "hidden"
+      const modalContent = documentosModal.querySelector(".bg-white")
+      if (modalContent) modalContent.classList.add("animate-scale-in")
+    } catch (error) {
+      console.error("Error al abrir modal de documentos faltantes:", error)
+      showNotification("Error al cargar los documentos faltantes.", "error")
+    } finally {
+      buttonElement.disabled = false
+      buttonElement.innerHTML = originalButtonContent
+    }
+  }
+
+  function cerrarModalDocumentosFaltantes() {
+    const modalContent = documentosModal.querySelector(".bg-white")
+    if (modalContent) modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+    setTimeout(() => {
+      documentosModal.classList.remove("flex")
+      documentosModal.classList.add("hidden")
+      document.body.style.overflow = "auto"
+      // Limpiar el contenido del modal y resetear estados
+      document.getElementById("documentosModalContent").innerHTML = ""
+      filesToUploadGlobally = {}
+      fileUrlsFromUpload = {}
+      currentCodigoAsesoria = null
+      if (modalContent) modalContent.classList.remove("opacity-0", "scale-95", "transition-all", "duration-300")
+    }, 300)
+  }
+
+  async function enviarDocumentosFaltantes() {
+    const submitButton = document.getElementById("submitDocumentosModal")
+    const originalButtonContent = submitButton.innerHTML
+    submitButton.disabled = true
+    submitButton.innerHTML = `<div class="relative flex items-center justify-center"><div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div><span>Procesando...</span></div>`
+
+    try {
+      const uploadPromises = []
+      const documentosAActualizar = {}
+
+      // Obtén los datos necesarios del DOM o de variables globales
+      const idUsuarioElement = document.getElementById("id_usuario")
+      const idUsuario = idUsuarioElement ? idUsuarioElement.value : "unknown_user"
+      const asesoria = allAsesorias.find(a => a.codigo_asesoria == currentCodigoAsesoria)
+      const idSolicitante = asesoria ? asesoria.id_solicitante : "unknown_sol"
+      const codigoAsesoria = currentCodigoAsesoria
+
+      const allDocElements = document.querySelectorAll("#documentosModalContent [data-doc-id]")
+      for (const docElement of allDocElements) {
+        const docId = docElement.getAttribute("data-doc-id")
+        const estadoSelect = docElement.querySelector(`#${docId}_estado`)
+        const fileInput = docElement.querySelector(`#${docId}_file_input`)
+
+        if (estadoSelect && estadoSelect.value === "Disponible" && filesToUploadGlobally[docId]) {
+          // Pasa los datos explícitamente
+          uploadPromises.push(
+            uploadSingleFileToCloudinary(docId, filesToUploadGlobally[docId], {
+              idUsuario,
+              idSolicitante,
+              codigoAsesoria,
+            })
+          )
+        } else if (estadoSelect && estadoSelect.value === "No disponible") {
+          documentosAActualizar[docId] = null // Marcar como nulo si el usuario lo pone como no disponible
+        }
+      }
+
+      if (uploadPromises.length > 0) {
+        submitButton.innerHTML = `<div class="relative flex items-center justify-center"><div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div><span>Subiendo documentos... (${uploadPromises.length})</span></div>`
+        const uploadResults = await Promise.all(uploadPromises)
+        uploadResults.forEach((result) => {
+          if (result && result.url) {
+            documentosAActualizar[result.docId] = result.url
+          }
+        })
+      }
+
+      if (Object.keys(documentosAActualizar).length === 0) {
+        showNotification("No hay documentos para actualizar.", "warning")
+        return
+      }
+
+      submitButton.innerHTML = `<div class="relative flex items-center justify-center"><div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div><span>Actualizando formulario...</span></div>`
+
+      const response = await fetch("/formularios/actualizar_documentos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          codigo_asesoria: currentCodigoAsesoria,
+          ...documentosAActualizar,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: response.statusText }))
+        throw new Error(`Error ${response.status}: ${errorData.message || "Error desconocido del servidor"}`)
+      }
+      const result = await response.json()
+
+      if (result.success) {
+        showNotification("¡Documentos actualizados exitosamente!", "success")
+        cargarAsesoriasPagadas() // Recargar las tarjetas para reflejar el nuevo estado
+        cerrarModalDocumentosFaltantes()
+      } else {
+        showNotification("Error al actualizar documentos: " + (result.message || "Error desconocido."), "error")
+      }
+    } catch (error) {
+      console.error("Error detallado en enviarDocumentosFaltantes:", error)
+      showNotification(`Error al procesar la actualización: ${error.message}`, "error")
+    } finally {
+      submitButton.disabled = false
+      submitButton.innerHTML = originalButtonContent
+    }
+  }
+
+  function getTipoVisaClave() {
+    // Usa el valor real guardado en el dataset
+    const motivoViajeInput = document.getElementById("motivoViaje")
+    return motivoViajeInput && motivoViajeInput.dataset.realValue
+      ? motivoViajeInput.dataset.realValue
+      : (motivoViajeInput ? motivoViajeInput.value.trim() : "")
+  }
+
+  // Llama a esta función cada vez que debas renderizar los documentos (por ejemplo, al mostrar el paso 4)
+  function renderDocumentosPaso4() {
+    const tipoVisaClave = getTipoVisaClave()
+    console.log("Clave real para documentos:", tipoVisaClave)
+    renderDocumentosPorVisa(tipoVisaClave)
   }
 })

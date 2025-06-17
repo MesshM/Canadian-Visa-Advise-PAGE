@@ -14,22 +14,22 @@ let reservationId = null
 
 // Definir precios por tipo de visa (para usar en el frontend)
 const PRECIOS_VISA = {
-  "Visa de Trabajo": 150,
-  "Visa de Estudio": 100,
-  "Residencia Permanente": 200,
-  "Ciudadanía": 250,
-  "Otro": 150,
+  Turismo: 100,
+  Estudios: 100,
+  "Trabajo Temporal": 100,
+  Negocios: 100,
+  "Residencia Permanente": 100,
 }
 
 // Función para formatear fechas en un formato legible
 function formatDate(dateString) {
   const options = {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+}
   return new Date(dateString).toLocaleDateString("es-ES", options)
 }
 
@@ -106,29 +106,29 @@ function showNotification(message, type = "success") {
 
   // Agregar el mensaje
   notification.innerHTML = `
-      <div class="flex items-center">
-          <div class="flex-shrink-0">
-              ${
-                type === "success"
-                  ? '<svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
-                  : type === "error"
-                    ? '<svg class="h-5 w-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>'
-                    : type === "warning"
-                      ? '<svg class="h-5 w-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>'
-                      : '<svg class="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
-              }
-          </div>
-          <div class="ml-3">
-              <p class="text-sm">${message}</p>
-          </div>
-          <div class="ml-auto pl-3">
-              <button class="inline-flex text-gray-400 hover:text-gray-500 focus:outline-none cursor-pointer">
-                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-              </button>
-          </div>
-      </div>
-  `
+    <div class="flex items-center">
+        <div class="flex-shrink-0">
+            ${
+              type === "success"
+                ? '<svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
+                : type === "error"
+                  ? '<svg class="h-5 w-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>'
+                  : type === "warning"
+                    ? '<svg class="h-5 w-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>'
+                    : '<svg class="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+            }
+        </div>
+        <div class="ml-3">
+            <p class="text-sm">${message}</p>
+        </div>
+        <div class="ml-auto pl-3">
+            <button class="inline-flex text-gray-400 hover:text-gray-500 focus:outline-none cursor-pointer">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+    </div>
+`
 
   // Agregar al DOM
   document.body.appendChild(notification)
@@ -180,42 +180,42 @@ function showTipsTooltip(event) {
 
   // Contenido del tooltip
   tooltip.innerHTML = `
-    <div class="flex justify-between items-start mb-3">
-      <h4 class="text-sm font-medium text-gray-900">Consejos útiles</h4>
-      <button id="close-tooltip" class="text-gray-400 hover:text-gray-600">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-      </button>
+  <div class="flex justify-between items-start mb-3">
+    <h4 class="text-sm font-medium text-gray-900">Consejos útiles</h4>
+    <button id="close-tooltip" class="text-gray-400 hover:text-gray-600">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
+  </div>
+  <p class="text-sm text-blue-700 mb-3">Seleccione una fecha y hora para su asesoría. Las citas están disponibles de lunes a viernes en horario laboral. Recuerde que debe completar el proceso de pago dentro de los 5 minutos siguientes a la reserva.</p>
+  <div class="grid grid-cols-1 gap-2">
+    <div class="bg-green-50 p-2 rounded-xl border border-green-200 flex items-center">
+      <svg class="w-4 h-4 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+      </svg>
+      <p class="text-xs text-green-700">Los horarios se muestran en su zona horaria local.</p>
     </div>
-    <p class="text-sm text-blue-700 mb-3">Seleccione una fecha y hora para su asesoría. Las citas están disponibles de lunes a viernes en horario laboral. Recuerde que debe completar el proceso de pago dentro de los 5 minutos siguientes a la reserva.</p>
-    <div class="grid grid-cols-1 gap-2">
-      <div class="bg-green-50 p-2 rounded-xl border border-green-200 flex items-center">
-        <svg class="w-4 h-4 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-        </svg>
-        <p class="text-xs text-green-700">Los horarios se muestran en su zona horaria local.</p>
-      </div>
-      <div class="bg-purple-50 p-2 rounded-xl border border-purple-200 flex items-center">
-        <svg class="w-4 h-4 text-purple-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <p class="text-xs text-purple-700">Puede reprogramar su cita hasta 24 horas antes.</p>
-      </div>
-      <div class="bg-amber-50 p-2 rounded-xl border border-amber-200 flex items-center">
-        <svg class="w-4 h-4 text-amber-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <p class="text-xs text-amber-700">Las asesorías tienen una duración de 60 minutos.</p>
-      </div>
-      <div class="bg-sky-50 p-2 rounded-xl border border-sky-200 flex items-center">
-        <svg class="w-4 h-4 text-sky-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
-        </svg>
-        <p class="text-xs text-sky-700">Las asesorías virtuales se realizan por Zoom o Teams.</p>
-      </div>
+    <div class="bg-purple-50 p-2 rounded-xl border border-purple-200 flex items-center">
+      <svg class="w-4 h-4 text-purple-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <p class="text-xs text-purple-700">Puede reprogramar su cita hasta 24 horas antes.</p>
     </div>
-  `
+    <div class="bg-amber-50 p-2 rounded-xl border border-amber-200 flex items-center">
+      <svg class="w-4 h-4 text-amber-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <p class="text-xs text-amber-700">Las asesorías tienen una duración de 60 minutos.</p>
+    </div>
+    <div class="bg-sky-50 p-2 rounded-xl border border-sky-200 flex items-center">
+      <svg class="w-4 h-4 text-sky-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+      </svg>
+      <p class="text-xs text-sky-700">Las asesorías virtuales se realizan por Zoom o Teams.</p>
+    </div>
+  </div>
+`
 
   // Posicionar el tooltip cerca del botón que lo activó
   const buttonRect = event.target.closest("button").getBoundingClientRect()
@@ -506,11 +506,11 @@ function toggleDetails(asesoriaId) {
       if (detailsContent) {
         // Mostrar un indicador de carga mientras se obtienen los detalles completos
         detailsContent.innerHTML = `
-          <div class="flex justify-center items-center py-8">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-t-2 border-primary-600"></div>
-            <p class="ml-3 text-primary-600 text-sm">Cargando detalles...</p>
-          </div>
-        `
+        <div class="flex justify-center items-center py-8">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-t-2 border-primary-600"></div>
+          <p class="ml-3 text-primary-600 text-sm">Cargando detalles...</p>
+        </div>
+      `
 
         // Cargar los detalles completos de la asesoría
         fetch(`/asesorias/obtener_detalles_asesoria/${asesoriaId}`)
@@ -526,197 +526,197 @@ function toggleDetails(asesoriaId) {
 
               // Actualizar el contenido con los datos completos
               detailsContent.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <!-- Tarjeta de Detalles del Asesor -->
-                  <div class="bg-white p-5 rounded-xl shadow-lg border border-gray-100 transform transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
-                    <div class="flex items-center mb-4">
-                      <div class="w-12 h-12 rounded-full ${getRandomColor()} flex items-center justify-center text-lg font-bold mr-3">
-                        ${generateAvatar(asesor)}
-                      </div>
-                      <div>
-                        <h4 class="font-medium text-gray-900 text-lg">Detalles del Asesor</h4>
-                        <p class="text-sm text-gray-500">Información de contacto</p>
-                      </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Tarjeta de Detalles del Asesor -->
+                <div class="bg-white p-5 rounded-xl shadow-lg border border-gray-100 transform transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
+                  <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 rounded-full ${getRandomColor()} flex items-center justify-center text-lg font-bold mr-3">
+                      ${generateAvatar(asesor)}
                     </div>
-                    
-                    <div class="space-y-3">
-                      <div class="flex items-center">
-                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                        </svg>
-                        <div>
-                          <p class="text-sm text-gray-700"><span class="font-medium">Nombre:</span> ${asesor}</p>
-                        </div>
-                      </div>
-                      
-                      <div class="flex items-center">
-                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                        </svg>
-                        <div>
-                          <p class="text-sm text-gray-700"><span class="font-medium">Especialidad:</span> ${asesoria.especialidad || "Inmigración Canadiense"}</p>
-                        </div>
-                      </div>
-                      
-                      <div class="flex items-center">
-                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                        </svg>
-                        <div>
-                          <p class="text-sm text-gray-700"><span class="font-medium">Contacto:</span> ${asesoria.correo || "No disponible"} </p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    
-                  </div>
-
-                  <!-- Tarjeta de Detalles de la Asesoría -->
-                  <div class="bg-white p-5 rounded-xl shadow-lg border border-gray-100 transform transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
-                    <div class="flex items-center mb-4">
-                      <div class="w-12 h-12 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center mr-3">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                        </svg>
-                      </div>
-                      <div>
-                        <h4 class="font-medium text-gray-900 text-lg">Detalles de la Asesoría</h4>
-                        <p class="text-sm text-gray-500">Información de la cita</p>
-                      </div>
-                    </div>
-                    
-                    <div class="space-y-3">
-                      <div class="flex items-center">
-                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
-                        </svg>
-                        <div>
-                          <p class="text-sm text-gray-700"><span class="font-medium">Código:</span> <span class="font-mono">#${asesoriaId}</span></p>
-                        </div>
-                      </div>
-                      
-                      <div class="flex items-center">
-                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        <div>
-                          <p class="text-sm text-gray-700"><span class="font-medium">Tipo de Visa:</span> ${asesoria.tipo_asesoria}</p>
-                        </div>
-                      </div>
-                      
-                      <div class="flex items-center">
-                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <div class="flex items-center">
-                          <p class="text-sm text-gray-700"><span class="font-medium">Precio:</span> $${asesoria.precio || PRECIOS_VISA[asesoria.tipo_asesoria] || "150"} USD</p>
-                          ${
-                            asesoria.estado === "Pagada"
-                              ? `
-                            <svg class="w-4 h-4 ml-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                          `
-                              : ""
-                          }
-                        </div>
-                      </div>
-                      
-                      <div class="flex items-center">
-                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                        </svg>
-                        <div>
-                          <p class="text-sm text-gray-700"><span class="font-medium">Fecha:</span> ${fecha}</p>
-                        </div>
-                      </div>
-                      
-                      <div class="flex items-center">
-                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <div>
-                          <p class="text-sm text-gray-700"><span class="font-medium">Hora:</span> ${hora}</p>
-                        </div>
-                      </div>
-                      
+                    <div>
+                      <h4 class="font-medium text-gray-900 text-lg">Detalles del Asesor</h4>
+                      <p class="text-sm text-gray-500">Información de contacto</p>
                     </div>
                   </div>
-
-                  <!-- Tarjeta de Información Adicional -->
-                  <div class="bg-white p-5 rounded-xl shadow-lg border border-gray-100 transform transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
-                    <div class="flex items-center mb-4">
-                      <div class="w-12 h-12 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center mr-3">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                      </div>
+                  
+                  <div class="space-y-3">
+                    <div class="flex items-center">
+                      <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                      </svg>
                       <div>
-                        <h4 class="font-medium text-gray-900 text-lg">Información Adicional</h4>
-                        <p class="text-sm text-gray-500">Detalles complementarios</p>
+                        <p class="text-sm text-gray-700"><span class="font-medium">Nombre:</span> ${asesor}</p>
                       </div>
                     </div>
                     
-                    <div class="space-y-3">
-                      <div class="flex items-center">
-                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        </svg>
-                        <div>
-                          <p class="text-sm text-gray-700"><span class="font-medium">Lugar:</span> ${asesoria.lugar || "Virtual (Zoom)"}</p>
-                        </div>
+                    <div class="flex items-center">
+                      <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                      </svg>
+                      <div>
+                        <p class="text-sm text-gray-700"><span class="font-medium">Especialidad:</span> ${asesoria.especialidad || "Inmigración Canadiense"}</p>
                       </div>
-                      
-                      <div class="flex items-center">
-                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-                        </svg>
-                        <div>
-                          <p class="text-sm text-gray-700"><span class="font-medium">Método de Pago:</span> ${asesoria.metodo_pago_stripe || asesoria.metodo_pago || "Tarjeta de Crédito"}</p>
-                        </div>
-                      </div>
-                      
-                      <div class="flex items-center">
-                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <div>
-                          <p class="text-sm text-gray-700"><span class="font-medium">Duración:</span> 60 minutos</p>
-                        </div>
-                      </div>
-                      
-                      <div class="flex items-center">
-                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path>
-                        </svg>
-                        <div>
-                          <p class="text-sm text-gray-700"><span class="font-medium">Documento:</span> ${asesoria.tipo_documento || "C.C"} ${asesoria.numero_documento || ""}</p>
-                        </div>
-                      </div>
-                      
-                      ${
-                        asesoria.descripcion
-                          ? `
-                        <div class="mt-3 pt-3 border-t border-gray-100">
-                          <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Descripción:</span></p>
-                          <div class="bg-gray-50 p-3 rounded-xl text-sm text-gray-700">
-                            ${asesoria.descripcion}
-                          </div>
-                        </div>
-                      `
-                          : ""
-                      }
                     </div>
+                    
+                    <div class="flex items-center">
+                      <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                      </svg>
+                      <div>
+                        <p class="text-sm text-gray-700"><span class="font-medium">Contacto:</span> ${asesoria.correo || "No disponible"} </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  
+                </div>
+
+                <!-- Tarjeta de Detalles de la Asesoría -->
+                <div class="bg-white p-5 rounded-xl shadow-lg border border-gray-100 transform transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
+                  <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center mr-3">
+                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 class="font-medium text-gray-900 text-lg">Detalles de la Asesoría</h4>
+                      <p class="text-sm text-gray-500">Información de la cita</p>
+                    </div>
+                  </div>
+                  
+                  <div class="space-y-3">
+                    <div class="flex items-center">
+                      <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                      </svg>
+                      <div>
+                        <p class="text-sm text-gray-700"><span class="font-medium">Código:</span> <span class="font-mono">#${asesoriaId}</span></p>
+                      </div>
+                    </div>
+                    
+                    <div class="flex items-center">
+                      <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                      </svg>
+                      <div>
+                        <p class="text-sm text-gray-700"><span class="font-medium">Tipo de Visa:</span> ${asesoria.tipo_asesoria}</p>
+                      </div>
+                    </div>
+                    
+                    <div class="flex items-center">
+                      <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                      <div class="flex items-center">
+                        <p class="text-sm text-gray-700"><span class="font-medium">Precio:</span> $100.00 USD</p>
+                        ${
+                          asesoria.estado === "Pagada"
+                            ? `
+                          <svg class="w-4 h-4 ml-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        `
+                            : ""
+                        }
+                      </div>
+                    </div>
+                    
+                    <div class="flex items-center">
+                      <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                      </svg>
+                      <div>
+                        <p class="text-sm text-gray-700"><span class="font-medium">Fecha:</span> ${fecha}</p>
+                      </div>
+                    </div>
+                    
+                    <div class="flex items-center">
+                      <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                      <div>
+                        <p class="text-sm text-gray-700"><span class="font-medium">Hora:</span> ${hora}</p>
+                      </div>
+                    </div>
+                    
                   </div>
                 </div>
-              `
+
+                <!-- Tarjeta de Información Adicional -->
+                <div class="bg-white p-5 rounded-xl shadow-lg border border-gray-100 transform transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
+                  <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center mr-3">
+                      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 class="font-medium text-gray-900 text-lg">Información Adicional</h4>
+                      <p class="text-sm text-gray-500">Detalles complementarios</p>
+                    </div>
+                  </div>
+                  
+                  <div class="space-y-3">
+                    <div class="flex items-center">
+                      <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                      </svg>
+                      <div>
+                        <p class="text-sm text-gray-700"><span class="font-medium">Lugar:</span> ${asesoria.lugar || "Virtual (Zoom)"}</p>
+                      </div>
+                    </div>
+                    
+                    <div class="flex items-center">
+                      <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                      </svg>
+                      <div>
+                        <p class="text-sm text-gray-700"><span class="font-medium">Método de Pago:</span> ${asesoria.metodo_pago_stripe || asesoria.metodo_pago || "Tarjeta de Crédito"}</p>
+                      </div>
+                    </div>
+                    
+                    <div class="flex items-center">
+                      <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                      <div>
+                        <p class="text-sm text-gray-700"><span class="font-medium">Duración:</span> 60 minutos</p>
+                      </div>
+                    </div>
+                    
+                    <div class="flex items-center">
+                      <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path>
+                      </svg>
+                      <div>
+                        <p class="text-sm text-gray-700"><span class="font-medium">Documento:</span> ${asesoria.tipo_documento || "C.C"} ${asesoria.numero_documento || ""}</p>
+                      </div>
+                    </div>
+                    
+                    ${
+                      asesoria.descripcion
+                        ? `
+                      <div class="mt-3 pt-3 border-t border-gray-100">
+                        <p class="text-sm text-gray-700 mb-1"><span class="font-medium">Descripción:</span></p>
+                        <div class="bg-gray-50 p-3 rounded-xl text-sm text-gray-700">
+                          ${asesoria.descripcion}
+                        </div>
+                      </div>
+                    `
+                        : ""
+                    }
+                  </div>
+                </div>
+              </div>
+            `
             } else {
               // Si no se pueden cargar los detalles completos, mostrar un mensaje de error
               detailsContent.innerHTML = `
-                <div class="p-4 bg-red-50 rounded-xl text-red-600 text-center">
-                  <p>No se pudieron cargar los detalles completos. Por favor, intente nuevamente.</p>
-                </div>
-              `
+              <div class="p-4 bg-red-50 rounded-xl text-red-600 text-center">
+                <p>No se pudieron cargar los detalles completos. Por favor, intente nuevamente.</p>
+              </div>
+            `
             }
 
             // Animar la apertura
@@ -726,10 +726,10 @@ function toggleDetails(asesoriaId) {
             console.error("Error al cargar detalles:", error)
             // Mostrar un mensaje de error
             detailsContent.innerHTML = `
-              <div class="p-4 bg-red-50 rounded-xl text-red-600 text-center">
-                <p>Error al cargar los detalles. Por favor, intente nuevamente.</p>
-              </div>
-            `
+            <div class="p-4 bg-red-50 rounded-xl text-red-600 text-center">
+              <p>Error al cargar los detalles. Por favor, intente nuevamente.</p>
+            </div>
+          `
             detailsContent.classList.add("animate-fade-in")
           })
       }
@@ -789,110 +789,110 @@ function updateSummary() {
 
   // Actualizar el resumen con un diseño mejorado
   summaryContainer.innerHTML = `
-    <div class="bg-white rounded-xl shadow-md overflow-hidden">
-      <!-- Encabezado con animación sutil -->
-      <div class="mb-4 bg-gradient-to-r from-primary-50 to-white p-3 rounded-xl border-l-4 border-primary-500 animate-fade-in">
-        <h3 class="text-base font-medium text-primary-800">Resumen de la Asesoría</h3>
-          <p class="text-sm text-gray-600">Revisa los detalles antes de confirmar</p>
+  <div class="bg-white rounded-xl shadow-md overflow-hidden">
+    <!-- Encabezado con animación sutil -->
+    <div class="mb-4 bg-gradient-to-r from-primary-50 to-white p-3 rounded-xl border-l-4 border-primary-500 animate-fade-in">
+      <h3 class="text-base font-medium text-primary-800">Resumen de la Asesoría</h3>
+        <p class="text-sm text-gray-600">Revisa los detalles antes de confirmar</p>
+    </div>
+
+    <!-- Contenido principal -->
+    <div class="p-5">
+      <!-- Tarjeta de fecha y hora destacada -->
+      <div class="bg-primary-50 rounded-xl p-4 mb-5 flex items-center justify-between border border-primary-100 shadow-sm">
+        <div class="flex items-center">
+          <div class="bg-primary-100 p-2 rounded-full mr-3">
+            <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-primary-800">${fechaFormateada}</p>
+            <p class="text-xs text-primary-600">${horaFormateada} (60 minutos)</p>
+          </div>
+        </div>
+        <div class="bg-white px-3 py-1 rounded-full text-sm font-medium text-primary-700 border border-primary-200">
+          ${lugar ? lugar.options[lugar.selectedIndex].text : "Virtual (Zoom)"}
+        </div>
       </div>
 
-      <!-- Contenido principal -->
-      <div class="p-5">
-        <!-- Tarjeta de fecha y hora destacada -->
-        <div class="bg-primary-50 rounded-xl p-4 mb-5 flex items-center justify-between border border-primary-100 shadow-sm">
-          <div class="flex items-center">
-            <div class="bg-primary-100 p-2 rounded-full mr-3">
-              <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-              </svg>
-            </div>
-            <div>
-              <p class="text-sm font-medium text-primary-800">${fechaFormateada}</p>
-              <p class="text-xs text-primary-600">${horaFormateada} (60 minutos)</p>
-            </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <!-- Detalles de la Asesoría -->
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
+            <h4 class="font-medium text-gray-700">Detalles de la Asesoría</h4>
           </div>
-          <div class="bg-white px-3 py-1 rounded-full text-sm font-medium text-primary-700 border border-primary-200">
-            ${lugar ? lugar.options[lugar.selectedIndex].text : "Virtual (Zoom)"}
+          <div class="p-4">
+            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+              <span class="text-gray-600 text-sm">Tipo:</span>
+              <span class="text-sm font-medium">${tipoAsesoria ? tipoAsesoria.options[tipoAsesoria.selectedIndex].text.split(" - ")[0] : ""}</span>
+            </div>
+            
+            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+              <span class="text-gray-600 text-sm">Precio:</span>
+              <span class="text-sm font-medium text-primary-600">$100.00 USD</span>
+            </div>
+
+            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+              <span class="text-gray-600 text-sm">Documento:</span>
+              <span class="text-sm">${tipoDocumento ? tipoDocumento.value : ""} ${numeroDocumento ? numeroDocumento.value : ""}</span>
+            </div>
+            
+            
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <!-- Detalles de la Asesoría -->
-          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
-              <h4 class="font-medium text-gray-700">Detalles de la Asesoría</h4>
-            </div>
-            <div class="p-4">
-              <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                <span class="text-gray-600 text-sm">Tipo:</span>
-                <span class="text-sm font-medium">${tipoAsesoria ? tipoAsesoria.options[tipoAsesoria.selectedIndex].text.split(" - ")[0] : ""}</span>
-              </div>
-              
-              <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                <span class="text-gray-600 text-sm">Precio:</span>
-                <span class="text-sm font-medium text-primary-600">$${precio.toFixed(2)} USD</span>
-              </div>
-
-              <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                <span class="text-gray-600 text-sm">Documento:</span>
-                <span class="text-sm">${tipoDocumento ? tipoDocumento.value : ""} ${numeroDocumento ? numeroDocumento.value : ""}</span>
-              </div>
-              
-              
-            </div>
+        <!-- Detalles del Asesor -->
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
+            <h4 class="font-medium text-gray-700">Información del Asesor</h4>
           </div>
-
-          <!-- Detalles del Asesor -->
-          <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
-              <h4 class="font-medium text-gray-700">Información del Asesor</h4>
+          <div class="p-4">
+            <div class="flex items-center mb-3">
+              <div class="w-10 h-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-medium mr-3">
+                ${selectedAsesorName ? selectedAsesorName.substring(0, 2).toUpperCase() : "AS"}
+              </div>
+              <div>
+                <p class="font-medium text-gray-800">${selectedAsesorName || "Asesor Asignado"}</p>
+                <p class="text-xs text-gray-500">${selectedAsesorEspecialidad || "Especialista en Inmigración"}</p>
+              </div>
             </div>
-            <div class="p-4">
-              <div class="flex items-center mb-3">
-                <div class="w-10 h-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-medium mr-3">
-                  ${selectedAsesorName ? selectedAsesorName.substring(0, 2).toUpperCase() : "AS"}
-                </div>
-                <div>
-                  <p class="font-medium text-gray-800">${selectedAsesorName || "Asesor Asignado"}</p>
-                  <p class="text-xs text-gray-500">${selectedAsesorEspecialidad || "Especialista en Inmigración"}</p>
-                </div>
+            
+            
+            <div class="mt-3">
+              <div class="flex items-center text-xs text-gray-500">
+                <svg class="w-4 h-4 mr-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                Asesor disponible en el horario seleccionado
               </div>
-              
-              
-              <div class="mt-3">
-                <div class="flex items-center text-xs text-gray-500">
-                  <svg class="w-4 h-4 mr-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  Asesor disponible en el horario seleccionado
-                </div>
-              </div>
-              ${
-                descripcion && descripcion.value
-                  ? `
-              <div class="mt-3 pt-2">
-                <span class="text-gray-600 text-sm block mb-1">Descripción:</span>
-                <p class="text-sm text-gray-700 bg-gray-50 p-2 rounded">${descripcion.value}</p>
-              </div>
-              `
-                  : ""
-              }
             </div>
+            ${
+              descripcion && descripcion.value
+                ? `
+            <div class="mt-3 pt-2">
+              <span class="text-gray-600 text-sm block mb-1">Descripción:</span>
+              <p class="text-sm text-gray-700 bg-gray-50 p-2 rounded">${descripcion.value}</p>
+            </div>
+            `
+                : ""
+            }
           </div>
         </div>
-        
-        <!-- Nota informativa -->
-        <div class="mt-5 bg-yellow-50 border border-yellow-100 rounded-xl p-3 flex items-start">
-          <svg class="w-5 h-5 text-yellow-500 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <p class="text-sm text-yellow-700">
-            Recuerda que tienes 5 minutos para completar el pago una vez agendada la cita, de lo contrario la reserva se cancelará automáticamente.
-          </p>
-        </div>
+      </div>
+      
+      <!-- Nota informativa -->
+      <div class="mt-5 bg-yellow-50 border border-yellow-100 rounded-xl p-3 flex items-start">
+        <svg class="w-5 h-5 text-yellow-500 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <p class="text-sm text-yellow-700">
+          Recuerda que tienes 5 minutos para completar el pago una vez agendada la cita, de lo contrario la reserva se cancelará automáticamente.
+        </p>
       </div>
     </div>
-  `
+  </div>
+`
 }
 
 // Función para mostrar el indicador de carga durante el agendamiento
@@ -902,12 +902,12 @@ function showLoadingIndicator() {
 
   // Cambiar el texto del botón y mostrar el indicador de carga
   submitBtn.innerHTML = `
-    <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
-    <div class="relative flex items-center justify-center">
-      <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-      <span>Agendando...</span>
-    </div>
-  `
+  <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+  <div class="relative flex items-center justify-center">
+    <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+    <span>Agendando...</span>
+  </div>
+`
   submitBtn.disabled = true
 }
 
@@ -918,18 +918,18 @@ function hideLoadingIndicator() {
 
   // Restaurar el texto original del botón
   submitBtn.innerHTML = `
-    <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
-    <div class="relative flex items-center justify-center">
-      <span>Agendar Cita</span>
-      <svg xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200"
-          viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd"
-              d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-              clip-rule="evenodd" />
-      </svg>
-    </div>
-  `
+  <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+  <div class="relative flex items-center justify-center">
+    <span>Agendar Cita</span>
+    <svg xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-200"
+        viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd"
+            d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+            clip-rule="evenodd" />
+    </svg>
+  </div>
+`
   submitBtn.disabled = false
 }
 
@@ -939,8 +939,7 @@ function updateAppointmentPrice() {
   const precioAsesoriaElement = document.getElementById("precio-asesoria")
 
   if (tipoAsesoriaSelect && precioAsesoriaElement) {
-    const precioAsesoria = tipoAsesoriaSelect.options[tipoAsesoriaSelect.selectedIndex].getAttribute("data-precio")
-    precioAsesoriaElement.textContent = `$${precioAsesoria} USD`
+    precioAsesoriaElement.textContent = `$100.00 USD`
   } else if (tipoAsesoriaSelect) {
     // Si no existe el elemento de precio pero sí el selector, actualizar los detalles completos
     updateAppointmentDetails()
@@ -985,22 +984,7 @@ function pagarAsesoria(asesoriaId, tipoAsesoria) {
   // Actualizar monto según el tipo de asesoría
   const montoInput = document.getElementById("monto")
   if (montoInput) {
-    switch (tipoAsesoria) {
-      case "Visa de Trabajo":
-        montoInput.value = "150.00"
-        break
-      case "Visa de Estudio":
-        montoInput.value = "100.00"
-        break
-      case "Residencia Permanente":
-        montoInput.value = "200.00"
-        break
-      case "Ciudadanía":
-        montoInput.value = "250.00"
-        break
-      default:
-        montoInput.value = "150.00"
-    }
+    montoInput.value = "100.00"
   }
 
   // Mostrar el modal
@@ -1172,12 +1156,12 @@ function reiniciarPasarelaPago() {
         appearance: {
           theme: "flat",
           variables: {
-            colorPrimary: "#dc2626",         // Rojo principal (Tailwind red-600)
-            colorBackground: "#ffffff",      // Fondo blanco
-            colorText: "#1f2937",            // Gris oscuro para texto
-            colorDanger: "#b91c1c",          // Rojo oscuro para errores (Tailwind red-700)
-            colorSuccess: "#16a34a",         // Verde para éxito (opcional)
-            colorWarning: "#f59e42",         // Naranja para advertencias (opcional)
+            colorPrimary: "#dc2626", // Rojo principal (Tailwind red-600)
+            colorBackground: "#ffffff", // Fondo blanco
+            colorText: "#1f2937", // Gris oscuro para texto
+            colorDanger: "#b91c1c", // Rojo oscuro para errores (Tailwind red-700)
+            colorSuccess: "#16a34a", // Verde para éxito (opcional)
+            colorWarning: "#f59e42", // Naranja para advertencias (opcional)
             fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
             spacingUnit: "4px",
             borderRadius: "4px",
@@ -1284,10 +1268,10 @@ function reiniciarPasarelaPago() {
       const paymentElement = document.getElementById("payment-element")
       if (paymentElement) {
         paymentElement.innerHTML = `
-      <div class="p-4 bg-red-100 text-red-700 rounded-xl">
-        <p>Error al inicializar el pago: ${error.message}</p>
-      </div>
-    `
+    <div class="p-4 bg-red-100 text-red-700 rounded-xl">
+      <p>Error al inicializar el pago: ${error.message}</p>
+    </div>
+  `
       }
     })
 }
@@ -1332,7 +1316,6 @@ function closeNewAdvisoryModal() {
     modal.classList.remove("flex")
     modal.classList.add("hidden")
     modalContent.classList.remove("opacity-0", "scale-95")
-
   }, 300)
 }
 
@@ -1774,18 +1757,18 @@ function loadCalendar() {
   const calendarHeader = document.createElement("div")
   calendarHeader.className = "flex justify-between items-center mb-4 bg-primary-50 p-3 rounded-xl shadow-sm"
   calendarHeader.innerHTML = `
-    <button id="prev-month" class="p-2 rounded-full hover:bg-primary-100 transition-colors text-primary-600 hover:shadow-sm">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-      </svg>
-    </button>
-    <h3 id="calendar-month" class="text-base font-medium text-primary-800"></h3>
-    <button id="next-month" class="p-2 rounded-full hover:bg-primary-100 transition-colors text-primary-600 hover:shadow-sm">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-      </svg>
-    </button>
-  `
+  <button id="prev-month" class="p-2 rounded-full hover:bg-primary-100 transition-colors text-primary-600 hover:shadow-sm">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+    </svg>
+  </button>
+  <h3 id="calendar-month" class="text-base font-medium text-primary-800"></h3>
+  <button id="next-month" class="p-2 rounded-full hover:bg-primary-100 transition-colors text-primary-600 hover:shadow-sm">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+    </svg>
+  </button>
+`
   calendarContainer.appendChild(calendarHeader)
 
   // Crear la estructura del calendario
@@ -2003,11 +1986,11 @@ function loadAvailableTimes(date) {
 
   // Mostrar mensaje de carga con animación mejorada
   timeContainer.innerHTML = `
-    <div class="flex flex-col justify-center items-center h-24 space-y-3">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-t-2 border-primary-600"></div>
-      <p class="text-primary-600 text-sm animate-pulse">Cargando horarios disponibles...</p>
-    </div>
-  `
+  <div class="flex flex-col justify-center items-center h-24 space-y-3">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-t-2 border-primary-600"></div>
+    <p class="text-primary-600 text-sm animate-pulse">Cargando horarios disponibles...</p>
+  </div>
+`
 
   // Formatear la fecha para mostrarla
   const dateObj = new Date(date)
@@ -2032,10 +2015,10 @@ function loadAvailableTimes(date) {
 
       // Añadir un título con la fecha
       timeContainer.innerHTML = `
-        <div class="bg-primary-50 p-3 rounded-xl mb-4 text-center">
-          <p class="text-primary-700 font-medium">${formattedDate}</p>
-        </div>
-      `
+      <div class="bg-primary-50 p-3 rounded-xl mb-4 text-center">
+        <p class="text-primary-700 font-medium">${formattedDate}</p>
+      </div>
+    `
 
       if (data.horarios && data.horarios.length > 0) {
         // Crear lista de horarios en columna
@@ -2055,11 +2038,11 @@ function loadAvailableTimes(date) {
 
           // Añadir icono de reloj junto a la hora
           timeButton.innerHTML = `
-            <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span>${hora}</span>
-          `
+          <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span>${hora}</span>
+        `
 
           // Agregar evento de clic con efectos visuales mejorados
           timeButton.addEventListener("click", () => {
@@ -2088,27 +2071,27 @@ function loadAvailableTimes(date) {
         timeContainer.appendChild(timeList)
       } else {
         timeContainer.innerHTML += `
-          <div class="flex flex-col items-center justify-center h-24 text-center bg-gray-50 rounded-xl p-4">
-            <svg class="w-10 h-10 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <p class="text-gray-500 text-base">No hay horarios disponibles para esta fecha</p>
-            <p class="text-primary-600 text-sm mt-2">Por favor, seleccione otra fecha</p>
-          </div>
-        `
+        <div class="flex flex-col items-center justify-center h-24 text-center bg-gray-50 rounded-xl p-4">
+          <svg class="w-10 h-10 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <p class="text-gray-500 text-base">No hay horarios disponibles para esta fecha</p>
+          <p class="text-primary-600 text-sm mt-2">Por favor, seleccione otra fecha</p>
+        </div>
+      `
       }
     })
     .catch((error) => {
       console.error("Error al cargar horarios:", error)
       timeContainer.innerHTML = `
-        <div class="flex flex-col items-center justify-center h-24 text-center bg-red-50 rounded-xl p-4">
-          <svg class="w-10 h-10 text-red-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <p class="text-red-500 text-base">Error al cargar horarios disponibles</p>
-          <p class="text-gray-600 text-sm mt-2">Intente nuevamente más tarde</p>
-        </div>
-      `
+      <div class="flex flex-col items-center justify-center h-24 text-center bg-red-50 rounded-xl p-4">
+        <svg class="w-10 h-10 text-red-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <p class="text-red-500 text-base">Error al cargar horarios disponibles</p>
+        <p class="text-gray-600 text-sm mt-2">Intente nuevamente más tarde</p>
+      </div>
+    `
     })
 }
 

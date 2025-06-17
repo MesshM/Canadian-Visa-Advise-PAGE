@@ -469,6 +469,9 @@
   .order-none {
     order: 0;
   }
+  .col-12 {
+    grid-column: 12;
+  }
   .col-auto {
     grid-column: auto;
   }
@@ -1101,6 +1104,10 @@
   .translate-full {
     --tw-translate-x: 100%;
     --tw-translate-y: 100%;
+    translate: var(--tw-translate-x) var(--tw-translate-y);
+  }
+  .-translate-x-full {
+    --tw-translate-x: -100%;
     translate: var(--tw-translate-x) var(--tw-translate-y);
   }
   .translate-x-0 {
@@ -2064,6 +2071,9 @@
   }
   .bg-gray-400 {
     background-color: var(--color-gray-400);
+  }
+  .bg-gray-500 {
+    background-color: var(--color-gray-500);
   }
   .bg-gray-600 {
     background-color: var(--color-gray-600);
