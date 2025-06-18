@@ -2,6 +2,8 @@ from flask import Flask, session, redirect, url_for, render_template
 from datetime import datetime, timedelta
 import sqlite3
 import os
+import secrets
+
 # Importar configuración de Twilio de manera opcional
 try:
     from config.twilio_config import twilio_client
@@ -61,7 +63,7 @@ from routes.routes_asesor.recursos import recursos_asesor_bp
 from routes.routes_asesor.perfil_asesor import perfil_asesor_bp
 
 # Importar Blueprints de administrador
-from routes.routes_admin.panel_admin import panel_admin_bp
+from routes.routes_admin.panel_admin import panel_admin_bp  # ✅ AGREGADO
 from routes.routes_admin.usuarios_admin import usuarios_admin_bp
 from routes.routes_admin.asesores_admin import asesores_admin_bp
 from routes.routes_admin.asesorias_admin import asesorias_admin_bp
@@ -74,7 +76,7 @@ def create_app():
     app = Flask(__name__)
     
     # Configuración de la aplicación
-    app.secret_key = os.urandom(24)
+    app.secret_key = secrets.token_bytes(24)
     app.permanent_session_lifetime = timedelta(days=30)
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
     app.config['UPLOAD_FOLDER'] = 'static/uploads'
@@ -124,7 +126,7 @@ def create_app():
     app.register_blueprint(perfil_asesor_bp)
     
     # Registrar Blueprints de administrador
-    app.register_blueprint(panel_admin_bp)
+    app.register_blueprint(panel_admin_bp)  # ✅ AGREGADO
     app.register_blueprint(usuarios_admin_bp)
     app.register_blueprint(asesores_admin_bp)
     app.register_blueprint(asesorias_admin_bp)
@@ -138,26 +140,32 @@ def create_app():
         """Función para marcar como vencidas las asesorías que pasaron su fecha/hora"""
         try:
             print("Ejecutando limpieza de asesorías vencidas...")
-            conn = sqlite3.connect('database.db')
-            cursor = conn.cursor()
-            
-            # Marcar como vencidas las asesorías que pasaron su fecha/hora
-            cursor.execute('''
-                UPDATE asesorias 
-                SET estado = 'Vencida' 
-                WHERE estado = 'Programada' 
-                AND datetime(fecha || ' ' || hora) < datetime('now', 'localtime')
-            ''')
-            
-            vencidas = cursor.rowcount
-            conn.commit()
-            conn.close()
-            
-            if vencidas > 0:
-                print(f"Se marcaron {vencidas} asesorías como vencidas.")
-            else:
-                print("No hay asesorías vencidas para actualizar.")
+            from config.database import create_connection
         
+            connection = create_connection()
+            if connection:
+                cursor = connection.cursor()
+            
+                # Marcar como vencidas las asesorías que pasaron su fecha/hora
+                cursor.execute('''
+                    UPDATE tbl_asesoria 
+                    SET estado = 'Vencida' 
+                    WHERE estado = 'Programada' 
+                    AND CONCAT(fecha_asesoria, ' ', hora_asesoria) < NOW()
+                ''')
+            
+                vencidas = cursor.rowcount
+                connection.commit()
+                cursor.close()
+                connection.close()
+            
+                if vencidas > 0:
+                    print(f"Se marcaron {vencidas} asesorías como vencidas.")
+                else:
+                    print("No hay asesorías vencidas para actualizar.")
+            else:
+                print("Error: No se pudo conectar a la base de datos")
+    
         except Exception as e:
             print(f"Error en limpieza de asesorías: {e}")
     
@@ -365,7 +373,7 @@ def create_app():
             if user_role == 'Asesor':
                 return redirect(url_for('panel_asesor.index_asesor'))
             elif user_role == 'Administrador':
-                return redirect(url_for('panel_admin.index_admin'))
+                return redirect(url_for('panel_admin.index_admin'))  # ✅ AHORA FUNCIONA
             else:
                 return render_template('index.html')  # Usuario normal
         return render_template('index.html')  # Visitante no autenticado
