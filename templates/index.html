@@ -1,216 +1,828 @@
 <!-- index.html -->
 {% extends 'base.html' %}
 
-{% block title %}CVA | Inicio{% endblock %}
+{% block title %}CVA | Asesoría Migratoria Profesional{% endblock %}
 
 {% block main %}
-    <!-- Header with notification icon -->
-    <div class="flex justify-between items-center mb-8 ">
-        <h1 class="text-3xl font-bold text-gray-900 font-roboto animate-fade-in">Inicio</h1>
-        {% include 'includes/_notification.html' %}
-    </div>
-
-    <!-- News Tabs -->
-    <div class="mb-8 animate-fade-in delay-100">
-        <ul class="flex flex-wrap -mb-px text-sm font-medium text-center border-b border-gray-200" id="newsTabs" role="tablist">
-            <li class="mr-2" role="presentation">
-                <button class="inline-block p-4 border-b-2 border-primary-600 text-primary-600 rounded-t-lg active font-inter" id="platform-tab" data-tab="platform" type="button" role="tab" aria-selected="true">
-                    Noticias de la Plataforma
-                </button>
-            </li>
-            <li class="mr-2" role="presentation">
-                <button class="inline-block p-4 border-b-2 border-transparent hover:text-primary-600 hover:border-primary-300 rounded-t-lg font-inter" id="canada-tab" data-tab="canada" type="button" role="tab" aria-selected="false">
-                    Noticias de Canadá
-                </button>
-            </li>
-        </ul>
-    </div>
-
-    <!-- Platform News Tab Content -->
-    <div id="platform-content" class="tab-content active">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-            <!-- Featured News -->
-            <div class="col-span-1 md:col-span-2 bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1 animate-fade-in delay-200">
-                <div class="md:flex">
-                    <div class="md:flex-shrink-0 overflow-hidden">
-                        <img class="h-48 w-full object-cover md:w-48 transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/news-featured.jpg" alt="Actualización de la plataforma" onerror="this.src='../static/img/placeholder.jpg'">
+    <!-- Hero Section -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-primary-50 via-white to-primary-25 rounded-3xl mb-12 opacity-0 animate-fade-in-smooth transition-all duration-800 ease-out translate-y-[30px]">
+        <div class="absolute inset-0 bg-gradient-to-r from-primary-600/5 to-transparent"></div>
+        <div class="relative px-8 py-16 lg:py-20">
+            <div class="flex justify-between items-start mb-8">
+                <div class="flex-1">
+                    <div class="inline-flex items-center px-3 py-1.5 bg-primary-100 text-primary-700 rounded-full text-sm font-medium mb-6 opacity-0 animate-slide-in-left transition-all duration-600 ease-out -translate-x-[30px]">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Asesoría Migratoria Especializada
                     </div>
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <span class="bg-primary-100 text-primary-600 text-xs px-2 py-1 rounded-full uppercase font-semibold tracking-wide">Destacado</span>
-                            <p class="ml-2 text-xs text-gray-500">Marzo 10, 2025</p>
-                        </div>
-                        <a href="#" class="block mt-2 group">
-                            <h3 class="text-xl font-semibold text-gray-900 font-roboto group-hover:text-primary-600 transition-colors duration-300">Actualización importante de la plataforma CVA</h3>
-                            <p class="mt-3 text-gray-600">Hemos actualizado nuestra plataforma con nuevas funcionalidades para mejorar tu experiencia en el proceso de solicitud de visa canadiense.</p>
-                        </a>
-                        <div class="mt-4">
-                            <a href="#" class="text-primary-600 hover:text-primary-700 font-medium text-sm inline-flex items-center group">
-                                Leer más
-                                <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    <h1 class="text-4xl lg:text-6xl font-bold text-gray-900 font-roboto mb-6 leading-tight opacity-0 animate-fade-in-up transition-all duration-600 ease-out translate-y-[40px]" style="animation-delay: 0.2s;">
+                        Tu camino hacia
+                        <span class="text-primary-600 relative">
+                            Canadá
+                            <svg class="absolute -bottom-2 left-0 w-full h-3 text-primary-200" viewBox="0 0 200 12" fill="currentColor">
+                                <path d="M0,8 Q50,2 100,8 T200,8 L200,12 L0,12 Z" />
+                            </svg>
+                        </span>
+                        comienza aquí
+                    </h1>
+                    <p class="text-xl text-gray-600 mb-8 max-w-2xl leading-relaxed opacity-0 animate-fade-in-up transition-all duration-600 ease-out translate-y-[40px]" style="animation-delay: 0.4s;">
+                        Expertos certificados en inmigración canadiense desde Colombia te acompañan en cada paso del proceso. Asesoría personalizada con profesionales especializados.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 opacity-0 animate-fade-in-up transition-all duration-600 ease-out translate-y-[40px]" style="animation-delay: 0.6s;">
+                        <a href="/asesorias" class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer">
+                            <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                            <div class="relative flex items-center justify-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4h3a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2h3z"></path>
                                 </svg>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Regular News Items -->
-            <div class="bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1 animate-fade-in delay-300">
-                <div class="overflow-hidden">
-                    <img class="h-48 w-full object-cover transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/news-1.jpg" alt="Nuevos formularios" onerror="this.src='../static/img/placeholder.jpg'">
-                </div>
-                <div class="p-6">
-                    <div class="flex items-center">
-                        <span class="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full uppercase font-semibold tracking-wide">Formularios</span>
-                        <p class="ml-2 text-xs text-gray-500">Marzo 8, 2025</p>
-                    </div>
-                    <a href="#" class="block mt-2 group">
-                        <h3 class="text-lg font-semibold text-gray-900 font-roboto group-hover:text-primary-600 transition-colors duration-300">Nuevos formularios disponibles</h3>
-                        <p class="mt-3 text-gray-600">Hemos añadido nuevos formularios para facilitar el proceso de solicitud de visa de trabajo.</p>
-                    </a>
-                    <div class="mt-4">
-                        <a href="#" class="text-primary-600 hover:text-primary-700 font-medium text-sm inline-flex items-center group">
-                            Leer más
-                            <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                            </svg>
+                                <span class="font-semibold">Agendar Asesoría - $100 USD</span>
+                            </div>
                         </a>
                     </div>
                 </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1 animate-fade-in delay-400">
-                <div class="overflow-hidden">
-                    <img class="h-48 w-full object-cover transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/news-2.jpg" alt="Asesorías virtuales" onerror="this.src='../static/img/placeholder.jpg'">
-                </div>
-                <div class="p-6">
-                    <div class="flex items-center">
-                        <span class="bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full uppercase font-semibold tracking-wide">Asesorías</span>
-                        <p class="ml-2 text-xs text-gray-500">Marzo 5, 2025</p>
-                    </div>
-                    <a href="#" class="block mt-2 group">
-                        <h3 class="text-lg font-semibold text-gray-900 font-roboto group-hover:text-primary-600 transition-colors duration-300">Asesorías virtuales disponibles</h3>
-                        <p class="mt-3 text-gray-600">Ahora puedes programar asesorías virtuales con nuestros expertos en inmigración canadiense.</p>
-                    </a>
-                    <div class="mt-4">
-                        <a href="#" class="text-primary-600 hover:text-primary-700 font-medium text-sm inline-flex items-center group">
-                            Leer más
-                            <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                            </svg>
-                        </a>
-                    </div>
-                </div>
+                {% include 'includes/_notification.html' %}
             </div>
         </div>
+        
+        <!-- Floating Elements -->
+        <div class="absolute top-20 right-20 w-20 h-20 bg-primary-100 rounded-full opacity-60 animate-float"></div>
+        <div class="absolute bottom-20 left-20 w-16 h-16 bg-primary-200 rounded-full opacity-40 animate-float" style="animation-delay: 1s;"></div>
+        <div class="absolute top-1/2 right-1/3 w-12 h-12 bg-primary-300 rounded-full opacity-30 animate-float" style="animation-delay: 2s;"></div>
+    </div>
 
-    <!-- Canada News Tab Content -->
-    <div id="canada-content" class="tab-content hidden">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-            <!-- Featured Canada News -->
-            <div class="col-span-1 md:col-span-2 bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1">
-                <div class="md:flex">
-                    <div class="md:flex-shrink-0 overflow-hidden">
-                        <img class="h-48 w-full object-cover md:w-48 transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/canada-news-featured.jpg" alt="Nuevas políticas de inmigración" onerror="this.src='../static/img/placeholder.jpg'">
-                    </div>
-                    <div class="p-6">
-                        <div class="flex items-center">
-                            <span class="bg-primary-100 text-primary-600 text-xs px-2 py-1 rounded-full uppercase font-semibold tracking-wide">Destacado</span>
-                            <p class="ml-2 text-xs text-gray-500">Marzo 12, 2025</p>
-                        </div>
-                        <a href="#" class="block mt-2 group">
-                            <h3 class="text-xl font-semibold text-gray-900 font-roboto group-hover:text-primary-600 transition-colors duration-300">Canadá anuncia nuevas políticas de inmigración para 2025</h3>
-                            <p class="mt-3 text-gray-600">El gobierno canadiense ha anunciado cambios significativos en sus políticas de inmigración que facilitarán el proceso para trabajadores calificados.</p>
-                        </a>
-                        <div class="mt-4">
-                            <a href="#" class="text-primary-600 hover:text-primary-700 font-medium text-sm inline-flex items-center group">
-                                Leer más
-                                <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
+    <!-- Stats Section -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-16 opacity-0 animate-fade-in-smooth transition-all duration-800 ease-out translate-y-[30px]" style="animation-delay: 0.8s;">
+        <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                </div>
+                <span class="text-2xl font-bold text-primary-600">+500</span>
+            </div>
+            <h3 class="font-semibold text-gray-900 mb-1">Clientes Exitosos</h3>
+            <p class="text-sm text-gray-600">Procesos aprobados</p>
+        </div>
+        
+        <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <span class="text-2xl font-bold text-green-600">95%</span>
+            </div>
+            <h3 class="font-semibold text-gray-900 mb-1">Tasa de Éxito</h3>
+            <p class="text-sm text-gray-600">Aprobaciones logradas</p>
+        </div>
+        
+        <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <span class="text-2xl font-bold text-blue-600">5+</span>
+            </div>
+            <h3 class="font-semibold text-gray-900 mb-1">Años de Experiencia</h3>
+            <p class="text-sm text-gray-600">En inmigración canadiense</p>
+        </div>
+        
+        <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                </div>
+                <span class="text-lg font-bold text-purple-600">Especializados</span>
+            </div>
+            <h3 class="font-semibold text-gray-900 mb-1">Asesores Especializados</h3>
+            <p class="text-sm text-gray-600">Por tipo de visa</p>
+        </div>
+    </div>
+
+    <!-- What Makes Us Stand Out Section -->
+    <div class="mt-24 mb-16 opacity-0 animate-fade-in-smooth transition-all duration-800 ease-out translate-y-[30px]" style="animation-delay: 1s;">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 font-roboto mb-4">
+                Lo que nos destaca como asesores
+            </h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                Nuestra experiencia, metodología y compromiso nos posicionan como líderes en asesoría migratoria hacia Canadá
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 flex items-start space-x-4 group">
+                <div class="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:shadow-lg transition-all duration-300">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 font-roboto">Asesores Certificados</h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        Nuestro equipo cuenta con certificaciones oficiales en inmigración canadiense y años de experiencia comprobada.
+                    </p>
                 </div>
             </div>
 
-            <!-- Regular Canada News Items -->
-            <div class="bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1">
-                <div class="overflow-hidden">
-                    <img class="h-48 w-full object-cover transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/canada-news-1.jpg" alt="Express Entry" onerror="this.src='../static/img/placeholder.jpg'">
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 flex items-start space-x-4 group">
+                <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:shadow-lg transition-all duration-300">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
                 </div>
-                <div class="p-6">
-                    <div class="flex items-center">
-                        <span class="bg-purple-100 text-purple-600 text-xs px-2 py-1 rounded-full uppercase font-semibold tracking-wide">Express Entry</span>
-                        <p class="ml-2 text-xs text-gray-500">Marzo 9, 2025</p>
-                    </div>
-                    <a href="#" class="block mt-2 group">
-                        <h3 class="text-lg font-semibold text-gray-900 font-roboto group-hover:text-primary-600 transition-colors duration-300">Nuevos sorteos de Express Entry</h3>
-                        <p class="mt-3 text-gray-600">Canadá ha realizado un nuevo sorteo de Express Entry con puntajes mínimos más bajos que en meses anteriores.</p>
-                    </a>
-                    <div class="mt-4">
-                        <a href="#" class="text-primary-600 hover:text-primary-700 font-medium text-sm inline-flex items-center group">
-                            Leer más
-                            <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                            </svg>
-                        </a>
-                    </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 font-roboto">Respuesta Rápida</h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        Garantizamos respuesta en menos de 24 horas y seguimiento constante durante todo el proceso migratorio.
+                    </p>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1">
-                <div class="overflow-hidden">
-                    <img class="h-48 w-full object-cover transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/canada-news-2.jpg" alt="Visas de trabajo" onerror="this.src='../static/img/placeholder.jpg'">
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 flex items-start space-x-4 group">
+                <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:shadow-lg transition-all duration-300">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
                 </div>
-                <div class="p-6">
-                    <div class="flex items-center">
-                        <span class="bg-yellow-100 text-yellow-600 text-xs px-2 py-1 rounded-full uppercase font-semibold tracking-wide">Visas</span>
-                        <p class="ml-2 text-xs text-gray-500">Marzo 7, 2025</p>
-                    </div>
-                    <a href="#" class="block mt-2 group">
-                        <h3 class="text-lg font-semibold text-gray-900 font-roboto group-hover:text-primary-600 transition-colors duration-300">Cambios en visas de trabajo temporales</h3>
-                        <p class="mt-3 text-gray-600">El gobierno canadiense ha implementado cambios en el programa de visas de trabajo temporales para ciertos sectores.</p>
-                    </a>
-                    <div class="mt-4">
-                        <a href="#" class="text-primary-600 hover:text-primary-700 font-medium text-sm inline-flex items-center group">
-                            Leer más
-                            <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                            </svg>
-                        </a>
-                    </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 font-roboto">Metodología Probada</h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        Utilizamos un sistema estructurado y probado que maximiza las posibilidades de éxito en cada aplicación.
+                    </p>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-2xl hover:shadow-2xl-hover overflow-hidden transition-all duration-500 ease-in-out hover:-translate-y-1">
-                <div class="overflow-hidden">
-                    <img class="h-48 w-full object-cover transition-all duration-700 ease-in-out hover:scale-105" src="../static/img/canada-news-3.jpg" alt="Provincias canadienses" onerror="this.src='../static/img/placeholder.jpg'">
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 flex items-start space-x-4 group">
+                <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:shadow-lg transition-all duration-300">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
                 </div>
-                <div class="p-6">
-                    <div class="flex items-center">
-                        <span class="bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full uppercase font-semibold tracking-wide">Provincial</span>
-                        <p class="ml-2 text-xs text-gray-500">Marzo 4, 2025</p>
-                    </div>
-                    <a href="#" class="block mt-2 group">
-                        <h3 class="text-lg font-semibold text-gray-900 font-roboto group-hover:text-primary-600 transition-colors duration-300">Ontario amplía su programa provincial</h3>
-                        <p class="mt-3 text-gray-600">La provincia de Ontario ha anunciado la ampliación de su Programa de Nominación Provincial con nuevas categorías.</p>
-                    </a>
-                    <div class="mt-4">
-                        <a href="#" class="text-primary-600 hover:text-primary-700 font-medium text-sm inline-flex items-center group">
-                            Leer más
-                            <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                            </svg>
-                        </a>
-                    </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 font-roboto">Confidencialidad Total</h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        Manejamos toda tu información con los más altos estándares de seguridad y confidencialidad profesional.
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 flex items-start space-x-4 group">
+                <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:shadow-lg transition-all duration-300">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 font-roboto">Conocimiento Actualizado</h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        Nos mantenemos al día con todos los cambios en las políticas migratorias canadienses para ofrecerte la mejor asesoría.
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 flex items-start space-x-4 group">
+                <div class="w-16 h-16 bg-gradient-to-br from-pink-500 to-pink-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:shadow-lg transition-all duration-300">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 font-roboto">Acompañamiento Integral</h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        Te acompañamos desde la evaluación inicial hasta la obtención exitosa de tu visa, sin dejarte solo en ningún momento.
+                    </p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- JavaScript for tabs and notification dropdown -->
-    <script src="../static/js/index.js"></script>
+    <!-- Our Specialized Advisors Section -->
+    <div class="mt-24 mb-16 opacity-0 animate-fade-in-smooth transition-all duration-800 ease-out translate-y-[30px]" style="animation-delay: 1.1s;">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 font-roboto mb-4">
+                Nuestros Asesores Especializados
+            </h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                Cada tipo de visa requiere conocimientos específicos. Por eso contamos con asesores especializados 
+                en cada área para brindarte la mejor asesoría personalizada desde Colombia.
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 text-center flex flex-col items-center max-w-xs mx-auto h-full">
+                <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-6 border border-gray-200 group-hover:border-primary-600 transition-all duration-300">
+                    <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3 font-roboto">Especialista en Turismo</h3>
+                <p class="text-gray-600 leading-relaxed mb-4 flex-grow">
+                    Experto en visas de visitante, itinerarios turísticos y documentación para viajes de placer y negocios.
+                </p>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 text-center flex flex-col items-center max-w-xs mx-auto h-full">
+                <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-6 border border-gray-200 group-hover:border-primary-600 transition-all duration-300">
+                    <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3 font-roboto">Especialista en Estudios</h3>
+                <p class="text-gray-600 leading-relaxed mb-4 flex-grow">
+                    Asesor certificado en permisos de estudio, selección de instituciones y planificación académica.
+                </p>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 text-center flex flex-col items-center max-w-xs mx-auto h-full">
+                <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-6 border border-gray-200 group-hover:border-primary-600 transition-all duration-300">
+                    <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0H8m8 0v2a2 2 0 01-2 2H10a2 2 0 01-2-2V6m8 0H8m0 0H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V8a2 2 0 00-2-2h-4"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3 font-roboto">Especialista en Trabajo</h3>
+                <p class="text-gray-600 leading-relaxed mb-4 flex-grow">
+                    Experto en permisos de trabajo, LMIA y procesos de transición a residencia permanente.
+                </p>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-3xl mx-auto">
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 text-center flex flex-col items-center max-w-xs mx-auto h-full">
+                <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-6 border border-gray-200 group-hover:border-primary-600 transition-all duration-300">
+                    <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3 font-roboto">Especialista en Negocios</h3>
+                <p class="text-gray-600 leading-relaxed mb-4 flex-grow">
+                    Asesor especializado en visas de inversionista, empresarios y oportunidades comerciales.
+                </p>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 text-center flex flex-col items-center max-w-xs mx-auto h-full">
+                <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-6 border border-gray-200 group-hover:border-primary-600 transition-all duration-300">
+                    <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3 font-roboto">Especialista en Residencia</h3>
+                <p class="text-gray-600 leading-relaxed mb-4 flex-grow">
+                    Experto en Express Entry, programas provinciales y todas las vías hacia la residencia permanente.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Services Section -->
+    <div class="mb-16 opacity-0 animate-fade-in-smooth transition-all duration-800 ease-out translate-y-[30px]" style="animation-delay: 1.2s;">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 font-roboto mb-4">
+                Servicios de Asesoría Especializada
+            </h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                Ofrecemos asesoría integral para todos los tipos de visa canadiense, 
+                con metodología personalizada y seguimiento completo del proceso.
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+            <!-- Turismo -->
+            <div class="group bg-white rounded-2xl p-8 shadow-lg border border-gray-100 hover:border-primary-600 hover:shadow-2xl transition-all duration-500 flex flex-col max-w-sm mx-auto">
+                <div class="w-14 h-14 bg-gray-100 rounded-lg flex items-center justify-center mb-6 border border-gray-200 group-hover:border-primary-600 transition-all duration-300">
+                    <svg class="w-7 h-7 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-3 font-roboto">Visa de Turismo</h3>
+                <p class="text-gray-600 mb-6 leading-relaxed flex-grow">
+                    Asesoría completa para visa de visitante, incluyendo documentación, 
+                    itinerarios y estrategias para maximizar las posibilidades de aprobación.
+                </p>
+                <a href="/asesorias#turismo" class="inline-flex items-center text-primary-600 font-medium group-hover:text-primary-700 transition-colors duration-300 mt-auto">
+                    <span>Agendar Asesoría</span>
+                    <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Estudios -->
+            <div class="group bg-white rounded-2xl p-8 shadow-lg border border-gray-100 hover:border-primary-600 hover:shadow-2xl transition-all duration-500 flex flex-col max-w-sm mx-auto">
+                <div class="w-14 h-14 bg-gray-100 rounded-lg flex items-center justify-center mb-6 border border-gray-200 group-hover:border-primary-600 transition-all duration-300">
+                    <svg class="w-7 h-7 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-3 font-roboto">Visa de Estudios</h3>
+                <p class="text-gray-600 mb-6 leading-relaxed flex-grow">
+                    Acompañamiento integral desde la selección de institución hasta 
+                    la obtención del permiso de estudio y planificación del futuro profesional.
+                </p>
+                <a href="/asesorias#estudios" class="inline-flex items-center text-primary-600 font-medium group-hover:text-primary-700 transition-colors duration-300 mt-auto">
+                    <span>Agendar Asesoría</span>
+                    <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Trabajo -->
+            <div class="group bg-white rounded-2xl p-8 shadow-lg border border-gray-100 hover:border-primary-600 hover:shadow-2xl transition-all duration-500 flex flex-col max-w-sm mx-auto">
+                <div class="w-14 h-14 bg-gray-100 rounded-lg flex items-center justify-center mb-6 border border-gray-200 group-hover:border-primary-600 transition-all duration-300">
+                    <svg class="w-7 h-7 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0H8m8 0v2a2 2 0 01-2 2H10a2 2 0 01-2-2V6m8 0H8m0 0H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V8a2 2 0 00-2-2h-4"></path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-3 font-roboto">Visa de Trabajo</h3>
+                <p class="text-gray-600 mb-6 leading-relaxed flex-grow">
+                    Estrategias especializadas para permisos de trabajo temporal, 
+                    LMIA, y transición hacia residencia permanente.
+                </p>
+                <a href="/asesorias#trabajo" class="inline-flex items-center text-primary-600 font-medium group-hover:text-primary-700 transition-colors duration-300 mt-auto">
+                    <span>Agendar Asesoría</span>
+                    <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-3xl mx-auto">
+            <!-- Negocios -->
+            <div class="group bg-white rounded-2xl p-8 shadow-lg border border-gray-100 hover:border-primary-600 hover:shadow-2xl transition-all duration-500 flex flex-col max-w-sm mx-auto">
+                <div class="w-14 h-14 bg-gray-100 rounded-lg flex items-center justify-center mb-6 border border-gray-200 group-hover:border-primary-600 transition-all duration-300">
+                    <svg class="w-7 h-7 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-3 font-roboto">Visa de Negocios</h3>
+                <p class="text-gray-600 mb-6 leading-relaxed flex-grow">
+                    Asesoría especializada para empresarios, inversionistas y 
+                    profesionales que buscan oportunidades comerciales en Canadá.
+                </p>
+                <a href="/asesorias#negocios" class="inline-flex items-center text-primary-600 font-medium group-hover:text-primary-700 transition-colors duration-300 mt-auto">
+                    <span>Agendar Asesoría</span>
+                    <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Residencia Permanente -->
+            <div class="group bg-white rounded-2xl p-8 shadow-lg border border-gray-100 hover:border-primary-600 hover:shadow-2xl transition-all duration-500 flex flex-col max-w-sm mx-auto">
+                <div class="w-14 h-14 bg-gray-100 rounded-lg flex items-center justify-center mb-6 border border-gray-200 group-hover:border-primary-600 transition-all duration-300">
+                    <svg class="w-7 h-7 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-3 font-roboto">Residencia Permanente</h3>
+                <p class="text-gray-600 mb-6 leading-relaxed flex-grow">
+                    Estrategia integral para Express Entry, programas provinciales 
+                    y otras vías hacia la residencia permanente canadiense.
+                </p>
+                <a href="/asesorias#residencia" class="inline-flex items-center text-primary-600 font-medium group-hover:text-primary-700 transition-colors duration-300 mt-auto">
+                    <span>Agendar Asesoría</span>
+                    <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Process Section -->
+    <div class="bg-gradient-to-br from-gray-50 to-white rounded-3xl p-8 lg:p-12 mb-16 opacity-0 animate-fade-in-smooth transition-all duration-800 ease-out translate-y-[30px]" style="animation-delay: 1.4s;">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 font-roboto mb-4">
+                Nuestro Proceso de Asesoría
+            </h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                Metodología estructurada y probada que garantiza el mejor resultado para tu proceso migratorio
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div class="text-center group">
+                <div class="relative mb-6">
+                    <div class="w-20 h-20 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto group-hover:shadow-lg transition-all duration-300 shadow-lg">
+                        <span class="text-2xl font-bold text-white">1</span>
+                    </div>
+                    <div class="absolute -top-2 -right-2 w-6 h-6 bg-primary-200 rounded-full animate-pulse"></div>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-3 font-roboto">Pago y Agendamiento</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    Pago de asesoría ($100 USD) y agendamiento de cita con asesor especializado en tu tipo de visa.
+                </p>
+            </div>
+            
+            <div class="text-center group">
+                <div class="relative mb-6">
+                    <div class="w-20 h-20 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto group-hover:shadow-lg transition-all duration-300 shadow-lg">
+                        <span class="text-2xl font-bold text-white">2</span>
+                    </div>
+                    <div class="absolute -top-2 -right-2 w-6 h-6 bg-primary-200 rounded-full animate-pulse" style="animation-delay: 0.5s;"></div>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-3 font-roboto">Formulario de Solicitud</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    Completas nuestro formulario detallado con toda tu información personal y objetivos migratorios.
+                </p>
+            </div>
+            
+            <div class="text-center group">
+                <div class="relative mb-6">
+                    <div class="w-20 h-20 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto group-hover:shadow-lg transition-all duration-300 shadow-lg">
+                        <span class="text-2xl font-bold text-white">3</span>
+                    </div>
+                    <div class="absolute -top-2 -right-2 w-6 h-6 bg-primary-200 rounded-full animate-pulse" style="animation-delay: 1s;"></div>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-3 font-roboto">Asesoría Personalizada</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    Sesión con tu asesor especializado (virtual o presencial) donde recibes tu plan de acción personalizado.
+                </p>
+            </div>
+            
+            <div class="text-center group">
+                <div class="relative mb-6">
+                    <div class="w-20 h-20 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto group-hover:shadow-lg transition-all duration-300 shadow-lg">
+                        <span class="text-2xl font-bold text-white">4</span>
+                    </div>
+                    <div class="absolute -top-2 -right-2 w-6 h-6 bg-primary-200 rounded-full animate-pulse" style="animation-delay: 1.5s;"></div>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-3 font-roboto">Seguimiento Continuo</h3>
+                <p class="text-gray-600 leading-relaxed">
+                    Contacto directo con tu asesor vía texto en horario laboral y posibilidad de llamadas adicionales.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- How Our Service Works Section -->
+    <div class="mb-16 opacity-0 animate-fade-in-smooth transition-all duration-800 ease-out translate-y-[30px]" style="animation-delay: 1.5s;">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 font-roboto mb-4">
+                ¿Cómo funciona nuestro servicio?
+            </h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                Un proceso claro y estructurado para colombianos que buscan emigrar a Canadá
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div class="space-y-6">
+                <div class="flex items-start space-x-4">
+                    <div class="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <span class="text-white font-bold">1</span>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2 font-roboto">Pago y Agendamiento</h3>
+                        <p class="text-gray-600 leading-relaxed">
+                            Realiza el pago de $100 USD y agenda tu cita con el asesor especializado en tu tipo de visa. 
+                            Puedes elegir modalidad virtual o presencial.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start space-x-4">
+                    <div class="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <span class="text-white font-bold">2</span>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2 font-roboto">Formulario de Solicitud</h3>
+                        <p class="text-gray-600 leading-relaxed">
+                            Después del pago, accede a nuestro formulario detallado donde proporcionas toda la información 
+                            necesaria sobre tu perfil y objetivos migratorios.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start space-x-4">
+                    <div class="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <span class="text-white font-bold">3</span>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2 font-roboto">Asesoría Personalizada</h3>
+                        <p class="text-gray-600 leading-relaxed">
+                            Sesión de asesoría con tu asesor especializado donde podrás hacer todas las preguntas necesarias 
+                            y recibir un plan detallado para maximizar tus posibilidades de éxito.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start space-x-4">
+                    <div class="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <span class="text-white font-bold">4</span>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2 font-roboto">Seguimiento Continuo</h3>
+                        <p class="text-gray-600 leading-relaxed">
+                            Mantén contacto directo con tu asesor vía texto durante horario laboral. 
+                            También puedes solicitar llamadas adicionales cuando lo necesites.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gradient-to-br from-primary-50 to-white rounded-3xl p-8">
+                <div class="text-center mb-6">
+                    <div class="w-24 h-24 bg-primary-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2 font-roboto">Inversión en tu futuro</h3>
+                    <div class="text-4xl font-bold text-primary-600 mb-2">$100 USD</div>
+                    <p class="text-gray-600">Asesoría completa con asesor especializado</p>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="flex items-center text-gray-700">
+                        <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Asesor especializado en tu tipo de visa
+                    </div>
+                    <div class="flex items-center text-gray-700">
+                        <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Modalidad virtual o presencial
+                    </div>
+                    <div class="flex items-center text-gray-700">
+                        <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Contacto directo con tu asesor
+                    </div>
+                    <div class="flex items-center text-gray-700">
+                        <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Plan personalizado de acción
+                    </div>
+                    <div class="flex items-center text-gray-700">
+                        <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Seguimiento en horario laboral
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Testimonials Section -->
+    <div class="mb-16 opacity-0 animate-fade-in-smooth transition-all duration-800 ease-out translate-y-[30px]" style="animation-delay: 1.6s;">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 font-roboto mb-4">
+                Lo que dicen nuestros clientes colombianos
+            </h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                Testimonios reales de colombianos que lograron su sueño canadiense con nuestra asesoría
+            </p>
+        </div>
+        
+        <div class="relative overflow-hidden" data-carousel>
+            <div class="flex transition-transform duration-800 ease-in-out" data-carousel-track>
+                <!-- Original Testimonials -->
+                <div class="flex-none w-full md:w-1/2 lg:w-1/3 px-4" data-carousel-item>
+                    <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 h-full flex flex-col">
+                        <div class="flex items-center mb-4">
+                            <div class="flex text-yellow-400">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                            </div>
+                            <span class="ml-2 text-sm text-gray-500">4.0</span>
+                        </div>
+                        <p class="text-gray-700 leading-relaxed mb-4 flex-grow">
+                            "Gracias a CVA, mi proceso de visa de estudios fue increíblemente sencillo. Su asesor especializado me guió en cada paso, y hoy estoy estudiando en Vancouver. ¡Totalmente recomendados!"
+                        </p>
+                        <div class="flex items-center mt-auto">
+                            <img class="w-10 h-10 rounded-full mr-4" src="/placeholder.svg?height=40&width=40" alt="Avatar de cliente">
+                            <div>
+                                <p class="font-semibold text-gray-900">Ana María G.</p>
+                                <p class="text-sm text-gray-500">Estudiante, Bogotá, Colombia</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-none w-full md:w-1/2 lg:w-1/3 px-4" data-carousel-item>
+                    <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 h-full flex flex-col">
+                        <div class="flex items-center mb-4">
+                            <div class="flex text-yellow-400">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                            </div>
+                            <span class="ml-2 text-sm text-gray-500">5.0</span>
+                        </div>
+                        <p class="text-gray-700 leading-relaxed mb-4 flex-grow">
+                            "El equipo de CVA es excepcional. Me ayudaron con mi permiso de trabajo y la transición fue muy fluida. Su conocimiento y apoyo son invaluables. ¡Ahora estoy trabajando en Toronto!"
+                        </p>
+                        <div class="flex items-center mt-auto">
+                            <img class="w-10 h-10 rounded-full mr-4" src="/placeholder.svg?height=40&width=40" alt="Avatar de cliente">
+                            <div>
+                                <p class="font-semibold text-gray-900">Carlos R.</p>
+                                <p class="text-sm text-gray-500">Ingeniero, Medellín, Colombia</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-none w-full md:w-1/2 lg:w-1/3 px-4" data-carousel-item>
+                    <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 h-full flex flex-col">
+                        <div class="flex items-center mb-4">
+                            <div class="flex text-yellow-400">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                            </div>
+                            <span class="ml-2 text-sm text-gray-500">5.0</span>
+                        </div>
+                        <p class="text-gray-700 leading-relaxed mb-4 flex-grow">
+                            "Mi familia y yo estamos muy agradecidos con CVA. Nos ayudaron a obtener la residencia permanente en Canadá. Su profesionalismo y dedicación son inigualables. ¡Un sueño hecho realidad!"
+                        </p>
+                        <div class="flex items-center mt-auto">
+                            <img class="w-10 h-10 rounded-full mr-4" src="/placeholder.svg?height=40&width=40" alt="Avatar de cliente">
+                            <div>
+                                <p class="font-semibold text-gray-900">Familia Pérez</p>
+                                <p class="text-sm text-gray-500">Residentes Permanentes, Cali, Colombia</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Duplicated Testimonials for seamless loop -->
+                <div class="flex-none w-full md:w-1/2 lg:w-1/3 px-4" data-carousel-item>
+                    <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 h-full flex flex-col">
+                        <div class="flex items-center mb-4">
+                            <div class="flex text-yellow-400">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                            </div>
+                            <span class="ml-2 text-sm text-gray-500">4.0</span>
+                        </div>
+                        <p class="text-gray-700 leading-relaxed mb-4 flex-grow">
+                            "Gracias a CVA, mi proceso de visa de estudios fue increíblemente sencillo. Su asesor especializado me guió en cada paso, y hoy estoy estudiando en Vancouver. ¡Totalmente recomendados!"
+                        </p>
+                        <div class="flex items-center mt-auto">
+                            <img class="w-10 h-10 rounded-full mr-4" src="/placeholder.svg?height=40&width=40" alt="Avatar de cliente">
+                            <div>
+                                <p class="font-semibold text-gray-900">Ana María G.</p>
+                                <p class="text-sm text-gray-500">Estudiante, Bogotá, Colombia</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-none w-full md:w-1/2 lg:w-1/3 px-4" data-carousel-item>
+                    <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 h-full flex flex-col">
+                        <div class="flex items-center mb-4">
+                            <div class="flex text-yellow-400">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                            </div>
+                            <span class="ml-2 text-sm text-gray-500">5.0</span>
+                        </div>
+                        <p class="text-gray-700 leading-relaxed mb-4 flex-grow">
+                            "Mi familia y yo estamos muy agradecidos con CVA. Nos ayudaron a obtener la residencia permanente en Canadá. Su profesionalismo y dedicación son inigualables. ¡Un sueño hecho realidad!"
+                        </p>
+                        <div class="flex items-center mt-auto">
+                            <img class="w-10 h-10 rounded-full mr-4" src="/placeholder.svg?height=40&width=40" alt="Avatar de cliente">
+                            <div>
+                                <p class="font-semibold text-gray-900">Familia Pérez</p>
+                                <p class="text-sm text-gray-500">Residentes Permanentes, Cali, Colombia</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-none w-full md:w-1/2 lg:w-1/3 px-4" data-carousel-item>
+                    <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 h-full flex flex-col">
+                        <div class="flex items-center mb-4">
+                            <div class="flex text-yellow-400">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                            </div>
+                            <span class="ml-2 text-sm text-gray-500">5.0</span>
+                        </div>
+                        <p class="text-gray-700 leading-relaxed mb-4 flex-grow">
+                            "Mi familia y yo estamos muy agradecidos con CVA. Nos ayudaron a obtener la residencia permanente en Canadá. Su profesionalismo y dedicación son inigualables. ¡Un sueño hecho realidad!"
+                        </p>
+                        <div class="flex items-center mt-auto">
+                            <img class="w-10 h-10 rounded-full mr-4" src="/placeholder.svg?height=40&width=40" alt="Avatar de cliente">
+                            <div>
+                                <p class="font-semibold text-gray-900">Familia Pérez</p>
+                                <p class="text-sm text-gray-500">Residentes Permanentes, Cali, Colombia</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action Section -->
+    <div class="bg-primary-600 text-white rounded-3xl p-8 lg:p-12 text-center opacity-0 animate-fade-in-smooth transition-all duration-800 ease-out translate-y-[30px]" style="animation-delay: 1.8s;">
+        <h2 class="text-3xl lg:text-4xl font-bold font-roboto mb-4">
+            Comienza tu camino hacia Canadá hoy
+        </h2>
+        <p class="text-xl mb-8 max-w-3xl mx-auto">
+            Agenda tu asesoría personalizada con nuestros expertos y da el primer paso hacia tu futuro en Canadá.
+        </p>
+        <a href="/asesorias" class="relative overflow-hidden group bg-white text-primary-600 font-roboto py-3 px-8 rounded-xl shadow-lg hover:shadow-primary-200/30 transition-all duration-300 inline-flex items-center justify-center cursor-pointer">
+            <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-primary-600 group-hover:-translate-x-40"></span>
+            <div class="relative flex items-center justify-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4h3a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2h3z"></path>
+                </svg>
+                <span class="font-semibold">Agendar Asesoría - $100 USD</span>
+            </div>
+        </a>
+    </div>
+    <script src="/static/js/index.js"></script>
 {% endblock %}
