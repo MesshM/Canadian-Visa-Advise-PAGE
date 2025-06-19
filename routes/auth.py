@@ -15,13 +15,14 @@ import re
 auth_bp = Blueprint('auth', __name__)
 
 def registrar_ultimo_acceso(user_id):
-    """Registra la fecha y hora del último acceso de un usuario"""
+    """Registra la fecha y hora del último acceso de un usuario en hora Colombia"""
     try:
         conn = create_connection()
         if conn:
             cursor = conn.cursor()
             cursor.execute(
-                'UPDATE tbl_usuario SET ultimo_acceso = NOW() WHERE id_usuario = %s',
+                # Cambiar NOW() por la hora de Colombia
+                "UPDATE tbl_usuario SET ultimo_acceso = CONVERT_TZ(NOW(), 'UTC', 'America/Bogota') WHERE id_usuario = %s",
                 (user_id,)
             )
             conn.commit()

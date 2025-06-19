@@ -31,91 +31,71 @@ def get_db_connection():
 @asesores_admin_bp.route('/')
 @admin_required
 def listar_asesores():
-    """Listar todos los asesores del sistema"""
+    """Listar todos los asesores del sistema - Solo datos de tbl_asesor"""
     try:
         conn = get_db_connection()
         if not conn:
             flash('Error de conexión a la base de datos', 'error')
-            return render_template('admin/asesores_admin.html', asesores=[])
+            # Asegura que total_paginas siempre esté definido
+            return render_template('admin/asesores_admin.html', asesores=[], total_paginas=1, pagina_actual=1, buscar='', total_asesores=0, asesores_activos=0)
         
         cursor = conn.cursor(dictionary=True)
         
         # Obtener parámetros de filtro
         buscar = request.args.get('buscar', '').strip()
-        estado_filtro = request.args.get('estado', '')
         pagina = int(request.args.get('pagina', 1))
         por_pagina = 20
         
-        # Construir consulta con filtros
+        # Consulta simplificada - solo tabla tbl_asesor
         query = '''
-            SELECT a.id_asesor, a.nombre, a.apellidos, a.correo, a.especialidad,
-                   u.correo_verificado,
-                   COUNT(DISTINCT ase.codigo_asesoria) as total_asesorias,
-                   COUNT(DISTINCT CASE WHEN ase.estado = 'Completada' THEN ase.codigo_asesoria END) as asesorias_completadas,
+            SELECT a.id_asesor, a.nombre, a.apellidos, a.correo, a.especialidad, a.telefono,
                    CASE WHEN u.correo_verificado = 1 THEN 'Activo' ELSE 'Inactivo' END as estado,
-                   4.5 as calificacion
+                   u.correo_verificado
             FROM tbl_asesor a
             LEFT JOIN tbl_usuario u ON a.id_usuario = u.id_usuario
-            LEFT JOIN tbl_asesoria ase ON a.id_asesor = ase.id_asesor
             WHERE 1=1
         '''
         params = []
         
-        # Filtro de búsqueda por nombre
+        # Filtro de búsqueda por nombre o correo
         if buscar:
-            query += ' AND (a.nombre LIKE %s OR a.apellidos LIKE %s OR a.correo LIKE %s OR CONCAT(a.nombre, " ", a.apellidos) LIKE %s)'
+            query += ''' AND (a.nombre LIKE %s OR a.apellidos LIKE %s OR a.correo LIKE %s 
+                        OR CONCAT(a.nombre, " ", a.apellidos) LIKE %s)'''
             search_param = f'%{buscar}%'
             params.extend([search_param, search_param, search_param, search_param])
         
-        # Filtro de estado
-        if estado_filtro:
-            if estado_filtro == 'Activo':
-                query += ' AND u.correo_verificado = 1'
-            else:
-                query += ' AND u.correo_verificado = 0'
-        
-        # Contar total de asesores
-        count_query = f"SELECT COUNT(DISTINCT a.id_asesor) as total FROM tbl_asesor a LEFT JOIN tbl_usuario u ON a.id_usuario = u.id_usuario WHERE 1=1"
+        # Contar total de asesores para paginación
+        count_query = f"SELECT COUNT(*) as total FROM tbl_asesor a LEFT JOIN tbl_usuario u ON a.id_usuario = u.id_usuario WHERE 1=1"
         count_params = []
         
         if buscar:
-            count_query += ' AND (a.nombre LIKE %s OR a.apellidos LIKE %s OR a.correo LIKE %s OR CONCAT(a.nombre, " ", a.apellidos) LIKE %s)'
+            count_query += ''' AND (a.nombre LIKE %s OR a.apellidos LIKE %s OR a.correo LIKE %s 
+                              OR CONCAT(a.nombre, " ", a.apellidos) LIKE %s)'''
             count_params.extend([search_param, search_param, search_param, search_param])
         
-        if estado_filtro:
-            if estado_filtro == 'Activo':
-                count_query += ' AND u.correo_verificado = 1'
-            else:
-                count_query += ' AND u.correo_verificado = 0'
-        
         cursor.execute(count_query, count_params)
-        total_asesores = cursor.fetchone()['total']
+        total_asesores_row = cursor.fetchone()
+        total_asesores = total_asesores_row['total'] if total_asesores_row and 'total' in total_asesores_row else 0
         
-        # Agregar agrupación y paginación
-        query += ' GROUP BY a.id_asesor ORDER BY a.id_asesor DESC LIMIT %s OFFSET %s'
+        # Agregar ordenación y paginación
+        query += ' ORDER BY a.id_asesor DESC LIMIT %s OFFSET %s'
         params.extend([por_pagina, (pagina - 1) * por_pagina])
         
         cursor.execute(query, params)
         asesores = cursor.fetchall()
         
-        # Obtener estadísticas generales
+        # Obtener estadísticas básicas
         cursor.execute('SELECT COUNT(*) as total FROM tbl_asesor')
-        total_asesores_stat = cursor.fetchone()['total']
+        total_asesores_stat_row = cursor.fetchone()
+        total_asesores_stat = total_asesores_stat_row['total'] if total_asesores_stat_row and 'total' in total_asesores_stat_row else 0
         
         cursor.execute('''
             SELECT COUNT(*) as total FROM tbl_asesor a 
             JOIN tbl_usuario u ON a.id_usuario = u.id_usuario 
             WHERE u.correo_verificado = 1
         ''')
-        asesores_activos = cursor.fetchone()['total']
-        
-        # Asesorías del mes actual
-        cursor.execute('''
-            SELECT COUNT(*) as count FROM tbl_asesoria 
-            WHERE MONTH(fecha_asesoria) = MONTH(CURDATE()) 
-            AND YEAR(fecha_asesoria) = YEAR(CURDATE())
-        ''')
-        asesorias_mes = cursor.fetchone()['count']
+        asesores_activos_row = cursor.fetchone()
+        asesores_activos = asesores_activos_row['total'] if asesores_activos_row and 'total' in asesores_activos_row else 0
         
         cursor.close()
         conn.close()
@@ -126,15 +106,15 @@ def listar_asesores():
                              asesores=asesores,
                              total_asesores=total_asesores_stat,
                              asesores_activos=asesores_activos,
-                             asesorias_mes=asesorias_mes,
-                             promedio_calificacion="4.8",
                              pagina_actual=pagina,
-                             total_paginas=total_paginas)
+                             total_paginas=total_paginas,
+                             buscar=buscar)
                              
     except Error as e:
         print(f"Error en listar_asesores: {str(e)}")
         flash(f'Error al cargar asesores: {str(e)}', 'error')
-        return render_template('admin/asesores_admin.html', asesores=[])
+        # Asegura que total_paginas siempre esté definido en caso de error
+        return render_template('admin/asesores_admin.html', asesores=[], total_paginas=1, pagina_actual=1, buscar='', total_asesores=0, asesores_activos=0)
 
 @asesores_admin_bp.route('/<int:id>/datos', methods=['GET'])
 @admin_required
@@ -149,8 +129,7 @@ def obtener_datos_asesor(id):
         
         # Obtener datos del asesor
         cursor.execute('''
-            SELECT a.id_asesor, a.nombre, a.apellidos, a.correo, a.especialidad,
-                   a.telefono
+            SELECT a.id_asesor, a.nombre, a.apellidos, a.correo, a.especialidad, a.telefono
             FROM tbl_asesor a
             WHERE a.id_asesor = %s
         ''', (id,))
@@ -182,18 +161,14 @@ def editar_asesor(id):
         # Obtener datos JSON del request
         if request.is_json:
             data = request.get_json()
-            nombre = data.get('nombre', '').strip()
-            apellidos = data.get('apellidos', '').strip()
-            correo = data.get('correo', '').strip().lower()
-            especialidad = data.get('especialidad', '').strip()
-            telefono = data.get('telefono', '').strip()
         else:
-            # Fallback para form data
-            nombre = request.form.get('nombre', '').strip()
-            apellidos = request.form.get('apellidos', '').strip()
-            correo = request.form.get('correo', '').strip().lower()
-            especialidad = request.form.get('especialidad', '').strip()
-            telefono = request.form.get('telefono', '').strip()
+            data = request.form.to_dict()
+            
+        nombre = data.get('nombre', '').strip()
+        apellidos = data.get('apellidos', '').strip()
+        correo = data.get('correo', '').strip().lower()
+        especialidad = data.get('especialidad', '').strip()
+        telefono = data.get('telefono', '').strip()
         
         # Validaciones
         if not nombre or not apellidos or not correo:
@@ -217,8 +192,7 @@ def editar_asesor(id):
         # Actualizar asesor
         cursor.execute('''
             UPDATE tbl_asesor 
-            SET nombre = %s, apellidos = %s, correo = %s, especialidad = %s, 
-                telefono = %s
+            SET nombre = %s, apellidos = %s, correo = %s, especialidad = %s, telefono = %s
             WHERE id_asesor = %s
         ''', (nombre, apellidos, correo, especialidad, telefono, id))
         
@@ -235,27 +209,72 @@ def editar_asesor(id):
         print(f"Error en editar_asesor: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@asesores_admin_bp.route('/<int:id>/eliminar', methods=['POST'])
+@admin_required
+def eliminar_asesor(id):
+    """Eliminar un asesor del sistema"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Verificar si el asesor existe
+        cursor.execute('SELECT nombre, apellidos, id_usuario FROM tbl_asesor WHERE id_asesor = %s', (id,))
+        asesor = cursor.fetchone()
+        
+        if not asesor:
+            return jsonify({'success': False, 'error': 'Asesor no encontrado'}), 404
+        
+        # Verificar si tiene asesorías asociadas
+        cursor.execute('SELECT COUNT(*) as count FROM tbl_asesoria WHERE id_asesor = %s', (id,))
+        asesorias_count = cursor.fetchone()['count']
+        
+        if asesorias_count > 0:
+            return jsonify({
+                'success': False, 
+                'error': f'No se puede eliminar el asesor porque tiene {asesorias_count} asesorías asociadas'
+            })
+        
+        # Eliminar asesor
+        cursor.execute('DELETE FROM tbl_asesor WHERE id_asesor = %s', (id,))
+        
+        # Si tiene usuario asociado, también eliminarlo
+        if asesor['id_usuario']:
+            cursor.execute('DELETE FROM tbl_usuario WHERE id_usuario = %s', (asesor['id_usuario'],))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'mensaje': f'Asesor {asesor["nombre"]} {asesor["apellidos"]} eliminado exitosamente'
+        })
+        
+    except Error as e:
+        print(f"Error en eliminar_asesor: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @asesores_admin_bp.route('/<int:id>/toggle-status', methods=['POST'])
 @admin_required
 def toggle_asesor_status(id):
     """Cambiar estado de un asesor"""
     try:
         conn = get_db_connection()
-        if not conn:
-            return jsonify({'success': False, 'error': 'Error de conexión a la base de datos'}), 500
-        
         cursor = conn.cursor(dictionary=True)
         
         cursor.execute('''
             SELECT u.correo_verificado, a.id_usuario, a.nombre, a.apellidos 
             FROM tbl_asesor a 
-            JOIN tbl_usuario u ON a.id_usuario = u.id_usuario 
+            LEFT JOIN tbl_usuario u ON a.id_usuario = u.id_usuario 
             WHERE a.id_asesor = %s
         ''', (id,))
         asesor = cursor.fetchone()
         
         if not asesor:
             return jsonify({'success': False, 'error': 'Asesor no encontrado'}), 404
+        
+        if not asesor['id_usuario']:
+            return jsonify({'success': False, 'error': 'Asesor no tiene usuario asociado'}), 400
         
         nuevo_estado = 0 if asesor['correo_verificado'] == 1 else 1
         
@@ -279,75 +298,6 @@ def toggle_asesor_status(id):
         
     except Error as e:
         print(f"Error en toggle_asesor_status: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@asesores_admin_bp.route('/<int:id>/detalles')
-@admin_required
-def ver_detalles_asesor(id):
-    """Ver detalles completos de un asesor"""
-    try:
-        conn = get_db_connection()
-        if not conn:
-            return jsonify({'success': False, 'error': 'Error de conexión a la base de datos'}), 500
-        
-        cursor = conn.cursor(dictionary=True)
-        
-        # Obtener información del asesor
-        cursor.execute('''
-            SELECT a.*, u.correo_verificado, u.fecha_nacimiento,
-                   CASE WHEN u.correo_verificado = 1 THEN 'Activo' ELSE 'Inactivo' END as estado
-            FROM tbl_asesor a
-            JOIN tbl_usuario u ON a.id_usuario = u.id_usuario
-            WHERE a.id_asesor = %s
-        ''', (id,))
-        asesor = cursor.fetchone()
-        
-        if not asesor:
-            return jsonify({'success': False, 'error': 'Asesor no encontrado'}), 404
-        
-        # Obtener asesorías recientes
-        cursor.execute('''
-            SELECT codigo_asesoria, tipo_asesoria, fecha_asesoria, estado,
-                   (SELECT CONCAT(u.nombres, ' ', u.apellidos) 
-                    FROM tbl_usuario u 
-                    JOIN tbl_solicitante s ON u.id_usuario = s.id_usuario 
-                    WHERE s.id_solicitante = ase.id_solicitante) as cliente
-            FROM tbl_asesoria ase
-            WHERE ase.id_asesor = %s
-            ORDER BY fecha_asesoria DESC
-            LIMIT 10
-        ''', (id,))
-        asesorias = cursor.fetchall()
-        
-        # Obtener estadísticas
-        cursor.execute('''
-            SELECT 
-                COUNT(*) as total_asesorias,
-                COUNT(CASE WHEN estado = 'Completada' THEN 1 END) as asesorias_completadas,
-                COUNT(CASE WHEN estado = 'Pendiente' THEN 1 END) as asesorias_pendientes
-            FROM tbl_asesoria WHERE id_asesor = %s
-        ''', (id,))
-        stats_result = cursor.fetchone()
-        
-        stats = {
-            'total_asesorias': stats_result['total_asesorias'],
-            'asesorias_completadas': stats_result['asesorias_completadas'],
-            'asesorias_pendientes': stats_result['asesorias_pendientes'],
-            'calificacion_promedio': 4.5  # Placeholder
-        }
-        
-        cursor.close()
-        conn.close()
-        
-        return jsonify({
-            'success': True,
-            'asesor': dict(asesor),
-            'asesorias': [dict(a) for a in asesorias],
-            'estadisticas': stats
-        })
-        
-    except Error as e:
-        print(f"Error en ver_detalles_asesor: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @asesores_admin_bp.route('/crear', methods=['GET', 'POST'])
@@ -428,47 +378,3 @@ def crear_asesor():
             return render_template('admin/crear_asesor.html')
     
     return render_template('admin/crear_asesor.html')
-
-@asesores_admin_bp.route('/buscar')
-@admin_required
-def buscar_asesores():
-    """Buscar asesores para autocompletado"""
-    try:
-        termino = request.args.get('q', '').strip()
-        
-        if len(termino) < 2:
-            return jsonify([])
-        
-        conn = get_db_connection()
-        if not conn:
-            return jsonify({'error': 'Error de conexión'}), 500
-        
-        cursor = conn.cursor(dictionary=True)
-        
-        cursor.execute('''
-            SELECT a.id_asesor, a.nombre, a.apellidos, a.correo, a.especialidad
-            FROM tbl_asesor a
-            JOIN tbl_usuario u ON a.id_usuario = u.id_usuario
-            WHERE (a.nombre LIKE %s OR a.apellidos LIKE %s OR a.correo LIKE %s OR CONCAT(a.nombre, " ", a.apellidos) LIKE %s)
-            AND u.correo_verificado = 1
-            LIMIT 10
-        ''', (f'%{termino}%', f'%{termino}%', f'%{termino}%', f'%{termino}%'))
-        
-        asesores = cursor.fetchall()
-        cursor.close()
-        conn.close()
-        
-        resultados = []
-        for asesor in asesores:
-            resultados.append({
-                'id': asesor['id_asesor'],
-                'nombre': f"{asesor['nombre']} {asesor['apellidos']}",
-                'correo': asesor['correo'],
-                'especialidad': asesor['especialidad']
-            })
-        
-        return jsonify(resultados)
-        
-    except Error as e:
-        print(f"Error en buscar_asesores: {str(e)}")
-        return jsonify({'error': str(e)}), 500

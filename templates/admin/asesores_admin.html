@@ -16,7 +16,7 @@
         </div>
 
         <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
                 <div class="flex justify-between items-start">
                     <div>
@@ -44,50 +44,14 @@
                     </div>
                 </div>
             </div>
-            
-            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-sm text-gray-500">Asesorías del Mes</p>
-                        <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ asesorias_mes or 0 }}</h3>
-                    </div>
-                    <div class="p-2 bg-yellow-100 rounded-lg">
-                        <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-sm text-gray-500">Promedio Calificación</p>
-                        <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ promedio_calificacion or '4.8' }}</h3>
-                    </div>
-                    <div class="p-2 bg-purple-100 rounded-lg">
-                        <svg class="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Search Filter -->
         <div class="bg-white p-4 rounded-lg shadow mb-6">
             <form id="filtrosForm" method="GET" class="flex items-end space-x-4">
                 <div class="flex-1">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Buscar por nombre</label>
-                    <input type="text" id="searchName" name="buscar" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Nombre del asesor" value="{{ request.args.get('buscar', '') }}">
-                </div>
-                <div class="flex-1">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Estado</label>
-                    <select id="filterStatus" name="estado" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
-                        <option value="">Todos los estados</option>
-                        <option value="Activo" {{ 'selected' if request.args.get('estado') == 'Activo' }}>Activo</option>
-                        <option value="Inactivo" {{ 'selected' if request.args.get('estado') == 'Inactivo' }}>Inactivo</option>
-                    </select>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Buscar por nombre o correo</label>
+                    <input type="text" id="searchName" name="buscar" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Nombre o correo del asesor" value="{{ buscar or '' }}">
                 </div>
                 <div class="flex space-x-2">
                     <button type="submit" id="btnFiltrar" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors duration-300">
@@ -108,8 +72,7 @@
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asesor</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Especialidad</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asesorías</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Calificación</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                         </tr>
@@ -119,7 +82,7 @@
                         <tr class="hover:bg-gray-50" data-asesor-id="{{ asesor.id_asesor }}">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
-                                    <div class="h-10 w-10 flex-shrink-0 bg-gray-200 rounded-full text-gray-500 flex items-center justify-center">
+                                    <div class="h-10 w-10 flex-shrink-0 bg-primary-100 rounded-full text-primary-600 flex items-center justify-center font-medium">
                                         {{ asesor.nombre[0] if asesor.nombre else 'A' }}{{ asesor.apellidos[0] if asesor.apellidos else '' }}
                                     </div>
                                     <div class="ml-4">
@@ -129,52 +92,33 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ asesor.especialidad or 'Inmigración Canadiense' }}
+                                {{ asesor.especialidad or 'No especificada' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ asesor.total_asesorias or 0 }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <div class="flex text-yellow-400">
-                                        {% for i in range(5) %}
-                                            {% if i < (asesor.calificacion or 4.5)|int %}
-                                                <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-                                                </svg>
-                                            {% else %}
-                                                <svg class="w-4 h-4 text-gray-300 fill-current" viewBox="0 0 20 20">
-                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-                                                </svg>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
-                                    <span class="ml-2 text-sm text-gray-600">{{ asesor.calificacion or '4.5' }}</span>
-                                </div>
+                                {{ asesor.telefono or 'No registrado' }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                     {% if asesor.estado == 'Activo' %}bg-green-100 text-green-800
                                     {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                    {{ asesor.estado or 'Activo' }}
+                                    {{ asesor.estado or 'Inactivo' }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex justify-end space-x-2">
-                                    <button onclick="editarAsesor({{ asesor.id_asesor }})" class="text-primary-600 hover:text-primary-900" title="Editar asesor">
+                                    <button onclick="editarAsesor({{ asesor.id_asesor }})" class="text-primary-600 hover:text-primary-900 p-1 rounded" title="Editar asesor">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                         </svg>
                                     </button>
-                                    <button onclick="verDetallesAsesor({{ asesor.id_asesor }})" class="text-blue-600 hover:text-blue-900" title="Ver detalles">
+                                    <button onclick="toggleAsesorStatus({{ asesor.id_asesor }})" class="text-yellow-600 hover:text-yellow-900 p-1 rounded" title="Cambiar estado">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path>
                                         </svg>
                                     </button>
-                                    <button onclick="toggleAsesorStatus({{ asesor.id_asesor }})" class="text-yellow-600 hover:text-yellow-900" title="Cambiar estado">
+                                    <button onclick="eliminarAsesor({{ asesor.id_asesor }})" class="text-red-600 hover:text-red-900 p-1 rounded" title="Eliminar asesor">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                         </svg>
                                     </button>
                                 </div>
@@ -182,18 +126,76 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="6" class="px-6 py-4 text-center text-gray-500">No hay asesores registrados</td>
+                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">No hay asesores registrados</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
+
+        <!-- Paginación -->
+        {% if total_paginas > 1 %}
+        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-lg shadow">
+            <div class="flex-1 flex justify-between sm:hidden">
+                {% if pagina_actual > 1 %}
+                <a href="?pagina={{ pagina_actual - 1 }}{% if buscar %}&buscar={{ buscar }}{% endif %}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Anterior
+                </a>
+                {% endif %}
+                {% if pagina_actual < total_paginas %}
+                <a href="?pagina={{ pagina_actual + 1 }}{% if buscar %}&buscar={{ buscar }}{% endif %}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Siguiente
+                </a>
+                {% endif %}
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">
+                        Página <span class="font-medium">{{ pagina_actual }}</span> de <span class="font-medium">{{ total_paginas }}</span>
+                    </p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        {% if pagina_actual > 1 %}
+                        <a href="?pagina={{ pagina_actual - 1 }}{% if buscar %}&buscar={{ buscar }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Anterior</span>
+                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                        {% endif %}
+                        
+                        {% for num in range(1, total_paginas + 1) %}
+                            {% if num == pagina_actual %}
+                            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-primary-50 text-sm font-medium text-primary-600">
+                                {{ num }}
+                            </span>
+                            {% else %}
+                            <a href="?pagina={{ num }}{% if buscar %}&buscar={{ buscar }}{% endif %}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                {{ num }}
+                            </a>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if pagina_actual < total_paginas %}
+                        <a href="?pagina={{ pagina_actual + 1 }}{% if buscar %}&buscar={{ buscar }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Siguiente</span>
+                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                        {% endif %}
+                    </nav>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Modal de confirmación -->
     <div id="confirmModal" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
-        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md animate-scale-in">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md">
             <div class="mt-3 text-center">
                 <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
                     <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -205,10 +207,10 @@
                     <p class="text-sm text-gray-500" id="modalMessage">¿Estás seguro de que quieres realizar esta acción?</p>
                 </div>
                 <div class="flex justify-center space-x-3 mt-6">
-                    <button id="cancelBtn" class="px-6 py-2 bg-gray-300 text-gray-700 text-base font-medium rounded-xl hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all duration-300">
+                    <button id="cancelBtn" class="px-6 py-2 bg-gray-300 text-gray-700 text-base font-medium rounded-xl hover:bg-gray-400 transition-all duration-300">
                         Cancelar
                     </button>
-                    <button id="confirmBtn" class="px-6 py-2 bg-yellow-500 text-white text-base font-medium rounded-xl hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-300 transition-all duration-300">
+                    <button id="confirmBtn" class="px-6 py-2 bg-red-500 text-white text-base font-medium rounded-xl hover:bg-red-600 transition-all duration-300">
                         Confirmar
                     </button>
                 </div>
@@ -218,87 +220,57 @@
 
     <!-- Modal de edición de asesor -->
     <div id="editAsesorModal" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
-        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl animate-scale-in max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
                 <div>
-                    <h2 class="text-xl font-bold text-gray-900 font-roboto">Editar Asesor</h2>
+                    <h2 class="text-xl font-bold text-gray-900">Editar Asesor</h2>
                     <p class="text-sm text-gray-600 mt-1">Modifique la información del asesor</p>
                 </div>
-                <button onclick="hideEditModal()" class="text-gray-500 hover:text-gray-700 cursor-pointer transition-colors duration-300">
+                <button onclick="hideEditModal()" class="text-gray-500 hover:text-gray-700 transition-colors duration-300">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
 
-            <div class="bg-gradient-to-r from-primary-50 to-white p-4 rounded-xl border-l-4 border-primary-500 mb-6 animate-fade-in">
-                <h3 class="text-base font-medium text-primary-800 flex items-center">
-                    <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                    </svg>
-                    Información del Asesor
-                </h3>
-                <p class="text-sm text-gray-600">Complete todos los campos requeridos</p>
-            </div>
-
             <form id="editAsesorForm" class="space-y-6">
                 <input type="hidden" id="editAsesorId" name="asesor_id">
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-                        <h4 class="text-sm font-medium text-gray-800 mb-4 flex items-center">
-                            <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
-                            Datos Personales
-                        </h4>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Nombres <span class="text-red-500">*</span></label>
-                                <input type="text" id="editNombre" name="nombre" required 
-                                       class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Apellidos <span class="text-red-500">*</span></label>
-                                <input type="text" id="editApellidos" name="apellidos" required 
-                                       class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm">
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Correo Electrónico <span class="text-red-500">*</span></label>
-                                <input type="email" id="editCorreo" name="correo" required 
-                                       class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm">
-                            </div>
-                        </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nombres <span class="text-red-500">*</span></label>
+                        <input type="text" id="editNombre" name="nombre" required 
+                               class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Apellidos <span class="text-red-500">*</span></label>
+                        <input type="text" id="editApellidos" name="apellidos" required 
+                               class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Correo Electrónico <span class="text-red-500">*</span></label>
+                        <input type="email" id="editCorreo" name="correo" required 
+                               class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
                     </div>
 
-                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-                        <h4 class="text-sm font-medium text-gray-800 mb-4 flex items-center">
-                            <svg class="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                            </svg>
-                            Información Profesional
-                        </h4>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Especialidad</label>
-                                <select id="editEspecialidad" name="especialidad" 
-                                        class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm">
-                                    <option value="">Seleccionar especialidad</option>
-                                    <option value="Inmigración Canadiense">Inmigración Canadiense</option>
-                                    <option value="Visa de Trabajo">Visa de Trabajo</option>
-                                    <option value="Visa de Estudiante">Visa de Estudiante</option>
-                                    <option value="Residencia Permanente">Residencia Permanente</option>
-                                </select>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
-                                <input type="tel" id="editTelefono" name="telefono" 
-                                       class="w-full py-3 px-4 border border-gray-200 bg-white rounded-xl text-sm transition-all duration-300 focus:outline-none focus:border-primary-600 focus:ring-2 focus:ring-primary-600/10 shadow-sm">
-                            </div>
-                        </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Especialidad</label>
+                        <select id="editEspecialidad" name="especialidad" 
+                                class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            <option value="">Seleccionar especialidad</option>
+                            <option value="Inmigración Canadiense">Inmigración Canadiense</option>
+                            <option value="Visa de Trabajo">Visa de Trabajo</option>
+                            <option value="Visa de Estudiante">Visa de Estudiante</option>
+                            <option value="Residencia Permanente">Residencia Permanente</option>
+                        </select>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
+                        <input type="tel" id="editTelefono" name="telefono" 
+                               class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
                     </div>
                 </div>
                 
@@ -306,14 +278,8 @@
                     <button type="button" onclick="hideEditModal()" class="px-6 py-3 bg-gray-300 text-gray-700 rounded-xl hover:bg-gray-400 transition-all duration-300 font-medium">
                         Cancelar
                     </button>
-                    <button type="submit" id="saveAsesorBtn" class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer">
-                        <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
-                        <div class="relative flex items-center justify-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            <span>Guardar Cambios</span>
-                        </div>
+                    <button type="submit" id="saveAsesorBtn" class="px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all duration-300 font-medium">
+                        Guardar Cambios
                     </button>
                 </div>
             </form>
@@ -323,38 +289,5 @@
     <!-- Toast notifications container -->
     <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
 
-    <!-- Estilos CSS adicionales -->
-    <style>
-        @keyframes scale-in {
-            0% {
-                opacity: 0;
-                transform: scale(0.9);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        @keyframes fade-in {
-            0% {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .animate-scale-in {
-            animation: scale-in 0.3s ease-out;
-        }
-
-        .animate-fade-in {
-            animation: fade-in 0.5s ease-out;
-        }
-    </style>
-
-    <script src="{{ url_for('static', filename='js/administrador/asesores_admin.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/asesores_admin.js') }}"></script>
 {% endblock %}
