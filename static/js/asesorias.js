@@ -792,7 +792,7 @@ function updateSummary() {
   <div class="bg-white rounded-xl shadow-md overflow-hidden">
     <!-- Encabezado con animación sutil -->
     <div class="mb-4 bg-gradient-to-r from-primary-50 to-white p-3 rounded-xl border-l-4 border-primary-500 animate-fade-in">
-      <h3 class="text-base font-medium text-primary-800">Resumen de la Asesoría</h3>
+      <h3 class="text-base font-medium text-primary-800">Resumen
         <p class="text-sm text-gray-600">Revisa los detalles antes de confirmar</p>
     </div>
 
@@ -1505,6 +1505,7 @@ function prevStep() {
   setTimeout(() => {
     if (activeIndex > 0 && activeIndex - 1 < connectors.length) {
       // Añadir transición a la barra conectora
+     
       connectors[activeIndex - 1].classList.add("transition-all", "duration-700")
       // Cambiar el color de la barra conectora
       connectors[activeIndex - 1].classList.remove("bg-primary-600")
@@ -1984,16 +1985,35 @@ function loadAvailableTimes(date) {
   const timeContainer = document.getElementById("time-container")
   if (!timeContainer || !selectedAsesorId) return
 
-  // Mostrar mensaje de carga con animación mejorada
+  // Mostrar spinner de carga antes de cualquier validación
   timeContainer.innerHTML = `
-  <div class="flex flex-col justify-center items-center h-24 space-y-3">
-    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-t-2 border-primary-600"></div>
-    <p class="text-primary-600 text-sm animate-pulse">Cargando horarios disponibles...</p>
-  </div>
-`
+    <div class="flex flex-col justify-center items-center h-24 space-y-3">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-t-2 border-primary-600"></div>
+      <p class="text-primary-600 text-sm animate-pulse">Cargando horarios disponibles...</p>
+    </div>
+  `
+  // Verifica si la fecha seleccionada es hoy
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const [year, month, day] = date.split("-")
+  const selected = new Date(Number(year), Number(month) - 1, Number(day))
+  selected.setHours(0, 0, 0, 0)
 
+  if (selected.getTime() === today.getTime()) {
+    // Mostrar mensaje personalizado para hoy
+    timeContainer.innerHTML = `
+      <div class="flex flex-col items-center justify-center h-24 text-center bg-yellow-50 rounded-xl p-4">
+        <svg class="w-10 h-12 text-yellow-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <p class="text-yellow-700 text-base">No es posible agendar citas para el día de hoy.</p>
+        <p class="text-primary-600 text-sm mt-2">Por favor, seleccione una fecha futura.</p>
+      </div>
+    `
+    return
+  }
   // Formatear la fecha para mostrarla
-  const dateObj = new Date(date)
+  const dateObj = new Date(Number(year), Number(month) - 1, Number(day))
   const formattedDate = dateObj.toLocaleDateString("es-ES", {
     weekday: "long",
     year: "numeric",
