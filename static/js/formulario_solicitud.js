@@ -1,26 +1,3 @@
-/**
- * Formulario de Solicitud con Stepper - JavaScript MODIFICADO
- * Cambios:
- * - Eliminado botón de subida individual de documentos.
- * - Implementada subida en lote al enviar formulario final.
- * - Nueva estructura de carpetas y nombres en Cloudinary.
- * - Corregido el ID para obtener el id_usuario.
- * - Nombre de archivo reemplaza texto en drop-area.
- * - Animación de error para drop-area.
- * - **NUEVO: Implementación de paginación para las tarjetas de asesorías.**
- * - **CORREGIDO: Orden de las asesorías para que la más reciente (mayor código) sea la primera y se numere como #1.**
- * - **NUEVO: Verificación de documentos y modal para documentos faltantes.**
- * - **MEJORA: Carga de tarjetas de formularios en paralelo para mejor rendimiento.**
- * - **CORREGIDO: Eliminado el estado 'Pagada' de la visualización de la tarjeta.**
- * - **MEJORA: Añadido spinner de carga al botón 'Adjuntar Documentos Faltantes'.**
- * - **MEJORA: Conexión del spinner 'Cargando formularios' con la carga completa de las cards.**
- * - **CORREGIDO: El primer paso del stepper ahora se muestra en color primario (rojo) al inicio.**
- * - **MEJORA: Implementación de auto-guardado y restauración de datos del formulario (excluyendo documentos).**
- * - **MEJORA: Los datos guardados se borran solo al enviar el formulario exitosamente.**
- * - **ACTUALIZADO: Tipos de visa y requisitos de documentos.**
- * - **NUEVO: Autoselección del tipo de visa en el formulario y campo deshabilitado.**
- */
-
 // Add these functions outside the DOMContentLoaded listener, but within the script scope
 function saveFormData(codigoAsesoria) {
   const form = document.getElementById("formularioElegibilidad")
@@ -253,23 +230,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (e.target.value === "Si") {
         trabajoActualDiv.style.display = ""
+        trabajoActualDiv.classList.add("animate-fade-in")
         trabajoActualInput.setAttribute("required", "required")
         empleoExtranjeroDiv.style.display = "none"
+        empleoExtranjeroDiv.classList.remove("animate-fade-in") // quitar animación al ocultar
         trabajoActualExtranjeroDiv.style.display = "none"
         trabajoActualExtranjeroInput.removeAttribute("required")
         trabajoActualExtranjeroInput.value = ""
         motivoNoTrabajoDiv.style.display = "none"
+        motivoNoTrabajoDiv.classList.remove("animate-fade-in") // quitar animación al ocultar
         motivoNoTrabajoInput.removeAttribute("required")
         motivoNoTrabajoInput.value = ""
       } else {
         trabajoActualDiv.style.display = "none"
+        trabajoActualDiv.classList.remove("animate-fade-in")
         trabajoActualInput.removeAttribute("required")
         trabajoActualInput.value = ""
         empleoExtranjeroDiv.style.display = ""
+        empleoExtranjeroDiv.classList.add("animate-fade-in") // animación agregada
         trabajoActualExtranjeroDiv.style.display = "none"
         trabajoActualExtranjeroInput.removeAttribute("required")
         trabajoActualExtranjeroInput.value = ""
         motivoNoTrabajoDiv.style.display = "none"
+        motivoNoTrabajoDiv.classList.remove("animate-fade-in")
         motivoNoTrabajoInput.removeAttribute("required")
         motivoNoTrabajoInput.value = ""
       }
@@ -283,44 +266,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (e.target.value === "Si") {
         trabajoActualExtranjeroDiv.style.display = ""
+        trabajoActualExtranjeroDiv.classList.add("animate-fade-in")
         trabajoActualExtranjeroInput.setAttribute("required", "required")
         motivoNoTrabajoDiv.style.display = "none"
+        motivoNoTrabajoDiv.classList.remove("animate-fade-in")
         motivoNoTrabajoInput.removeAttribute("required")
         motivoNoTrabajoInput.value = ""
       } else if (e.target.value === "No") {
         trabajoActualExtranjeroDiv.style.display = "none"
+        trabajoActualExtranjeroDiv.classList.remove("animate-fade-in")
         trabajoActualExtranjeroInput.removeAttribute("required")
         trabajoActualExtranjeroInput.value = ""
         motivoNoTrabajoDiv.style.display = ""
+        motivoNoTrabajoDiv.classList.add("animate-fade-in") // animación agregada
         motivoNoTrabajoInput.setAttribute("required", "required")
-      }
-    }
-
-    if (e.target.name === "tiene_pasaporte") {
-      const numeroPasaporteDiv = document.getElementById("numeroPasaporteDiv")
-      const numeroPasaporteInput = document.getElementById("numeroPasaporte")
-      const advertenciaPasaporte = document.getElementById("advertenciaPasaporte")
-
-      if (e.target.value === "Si") {
-        numeroPasaporteDiv.style.display = ""
-        numeroPasaporteInput.setAttribute("required", "required")
-        advertenciaPasaporte.classList.add("hidden")
-        numeroPasaporteInput.value = ""
-      } else {
-        numeroPasaporteDiv.style.display = "none"
-        numeroPasaporteInput.removeAttribute("required")
-        numeroPasaporteInput.value = ""
-        advertenciaPasaporte.classList.remove("hidden")
-      }
-    }
-
-    if (e.target.name === "empleo_origen") {
-      const empleoExtranjeroRadios = document.getElementsByName("empleo_extranjero")
-      if (e.target.value === "No") {
-        empleoExtranjeroRadios.forEach((radio) => radio.setAttribute("required", "required"))
-      } else {
-        empleoExtranjeroRadios.forEach((radio) => radio.removeAttribute("required"))
-        empleoExtranjeroRadios.forEach((radio) => (radio.checked = false))
       }
     }
 
@@ -329,9 +288,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const descripcionNegociosInput = document.getElementById("descripcionNegociosActuales")
       if (e.target.value === "Si") {
         descripcionNegociosDiv.style.display = ""
+        descripcionNegociosDiv.classList.add("animate-fade-in")
         descripcionNegociosInput.setAttribute("required", "required")
       } else {
         descripcionNegociosDiv.style.display = "none"
+        descripcionNegociosDiv.classList.remove("animate-fade-in")
         descripcionNegociosInput.removeAttribute("required")
         descripcionNegociosInput.value = ""
       }
@@ -342,11 +303,45 @@ document.addEventListener("DOMContentLoaded", () => {
       const relacionInput = document.getElementById("relacionAcompanaFamiliar")
       if (e.target.value === "Si") {
         relacionDiv.classList.remove("hidden")
+        relacionDiv.classList.add("animate-fade-in")
         relacionInput.setAttribute("required", "required")
       } else {
         relacionDiv.classList.add("hidden")
+        relacionDiv.classList.remove("animate-fade-in")
         relacionInput.removeAttribute("required")
         relacionInput.value = ""
+      }
+    }
+
+    if (e.target.name === "tiene_pasaporte") {
+      const numeroPasaporteDiv = document.getElementById("numeroPasaporteDiv")
+      const numeroPasaporteInput = document.getElementById("numeroPasaporte")
+      const advertenciaPasaporte = document.getElementById("advertenciaPasaporte")
+
+      if (e.target.value === "Si") {
+        numeroPasaporteDiv.style.display = ""
+        numeroPasaporteDiv.classList.add("animate-fade-in")
+        numeroPasaporteInput.setAttribute("required", "required")
+        advertenciaPasaporte.classList.add("hidden")
+        advertenciaPasaporte.classList.remove("animate-fade-in")
+        numeroPasaporteInput.value = ""
+      } else {
+        numeroPasaporteDiv.style.display = "none"
+        numeroPasaporteDiv.classList.remove("animate-fade-in")
+        numeroPasaporteInput.removeAttribute("required")
+        numeroPasaporteInput.value = ""
+        advertenciaPasaporte.classList.remove("hidden")
+        advertenciaPasaporte.classList.add("animate-fade-in") // animación agregada
+      }
+    }
+
+    // Animación para el campo numeroDocumento
+    if (e.target.id === "numeroDocumento") {
+      const numeroDocumentoInput = document.getElementById("numeroDocumento")
+      if (numeroDocumentoInput && numeroDocumentoInput.value !== "") {
+        numeroDocumentoInput.classList.add("animate-fade-in")
+      } else if (numeroDocumentoInput) {
+        numeroDocumentoInput.classList.remove("animate-fade-in")
       }
     }
   })

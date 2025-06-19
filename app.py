@@ -36,6 +36,10 @@ app.permanent_session_lifetime = timedelta(days=30)
 # Asegúrate de que esta función se ejecute antes de renderizar la plantilla base
 app.context_processor(inject_stripe_key)
 
+@app.context_processor
+def inject_usuario_logeado():
+    return dict(usuario_logeado=('user_id' in session))
+
 # Registrar filtro personalizado para split
 @app.template_filter('split')
 def split_filter(value, delimiter=' '):

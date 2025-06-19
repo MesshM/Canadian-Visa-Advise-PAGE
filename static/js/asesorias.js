@@ -335,11 +335,11 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.removeItem("payment_processing")
 
     // Mostrar la notificación de pago exitoso con el nuevo mensaje
-    showNotification("Pago procesado exitosamente, dirigirte a Formulario de elegibilidad", "success")
+    showNotification("Pago procesado exitosamente", "success")
 
     // Opcional: redirigir al formulario de elegibilidad después de un breve retraso
     setTimeout(() => {
-      window.location.href = "/formularios/solicitud"
+      window.location.href = "/formularios_solicitud"
     }, 3000) // Redirigir después de 3 segundos
   }
 })
@@ -1094,7 +1094,6 @@ function closeCancelarAsesoriaModal() {
 
 // Función para reiniciar la pasarela de pago con Stripe
 function reiniciarPasarelaPago() {
-  // Obtener la clave pública de Stripe del meta tag
   const stripePublicKey = document.querySelector('meta[name="stripe-public-key"]')?.content
 
   if (!stripePublicKey) {
@@ -1102,7 +1101,17 @@ function reiniciarPasarelaPago() {
     return
   }
 
-  // Inicializar Stripe con la clave pública
+  // Mostrar círculo de carga en el contenedor de Stripe antes de la petición
+  const paymentElementContainer = document.getElementById("payment-element")
+  if (paymentElementContainer) {
+    paymentElementContainer.innerHTML = `
+      <div id="stripe-loading-indicator" class="flex flex-col justify-center items-center h-24 space-y-3">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-t-2 border-primary-600"></div>
+        <p class="ml-3 text-primary-600 text-sm">Cargando pasarela de pago...</p>
+      </div>
+    `
+  }
+
   stripe = Stripe(stripePublicKey)
 
   const asesoriaId = document.getElementById("pago_codigo_asesoria")?.value
@@ -1113,7 +1122,6 @@ function reiniciarPasarelaPago() {
     return
   }
 
-  // Crear un PaymentIntent en el servidor
   fetch("/pagos/crear_payment_intent", {
     method: "POST",
     headers: {
@@ -1135,33 +1143,18 @@ function reiniciarPasarelaPago() {
     .then((data) => {
       clientSecret = data.clientSecret
 
-      // Configurar un listener para detectar cuando el pago se completa exitosamente
-      const paymentForm = document.getElementById("payment-form")
-      if (paymentForm) {
-        // Verificar si ya existe un listener para evitar duplicados
-        if (!paymentForm.hasAttribute("data-payment-listener")) {
-          paymentForm.setAttribute("data-payment-listener", "true")
-
-          // Escuchar el evento de envío del formulario
-          paymentForm.addEventListener("submit", (e) => {
-            // Almacenar en localStorage que estamos procesando un pago
-            localStorage.setItem("payment_processing", "true")
-          })
-        }
-      }
-
       // Configurar Stripe Elements
       const options = {
         clientSecret: clientSecret,
         appearance: {
           theme: "flat",
           variables: {
-            colorPrimary: "#dc2626", // Rojo principal (Tailwind red-600)
-            colorBackground: "#ffffff", // Fondo blanco
-            colorText: "#1f2937", // Gris oscuro para texto
-            colorDanger: "#b91c1c", // Rojo oscuro para errores (Tailwind red-700)
-            colorSuccess: "#16a34a", // Verde para éxito (opcional)
-            colorWarning: "#f59e42", // Naranja para advertencias (opcional)
+            colorPrimary: "#dc2626",
+            colorBackground: "#ffffff",
+            colorText: "#1f2937",
+            colorDanger: "#b91c1c",
+            colorSuccess: "#16a34a",
+            colorWarning: "#f59e42",
             fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
             spacingUnit: "4px",
             borderRadius: "4px",
@@ -1204,21 +1197,28 @@ function reiniciarPasarelaPago() {
               borderRadius: "12px",
             },
           },
-          labels: "floating", // Opcional: etiquetas flotantes
+          labels: "floating",
         },
         layout: {
-          type: "tabs", // Mostrar tabs para métodos de pago
+          type: "tabs",
         },
       }
 
-      // Crear elementos de Stripe
       elements = stripe.elements(options)
 
-      // Crear y montar el elemento de pago
+      // Montar el elemento de pago y ocultar el círculo de carga cuando termine
       paymentElement = elements.create("payment", { layout: "tabs" })
       paymentElement.mount("#payment-element")
 
-      // Configurar el formulario de pago
+      // Ocultar el círculo de carga cuando Stripe Elements esté listo
+      paymentElement.on("ready", () => {
+        const loadingIndicator = document.getElementById("stripe-loading-indicator")
+        if (loadingIndicator) {
+          loadingIndicator.style.display = "none"
+        }
+      })
+
+      // Configuración del formulario de pago (igual que antes)
       const form = document.getElementById("payment-form")
       const submitButton = document.getElementById("submit-button")
       const buttonText = document.getElementById("button-text")
@@ -1233,12 +1233,10 @@ function reiniciarPasarelaPago() {
             return
           }
 
-          // Deshabilitar el botón y mostrar spinner
           if (submitButton) submitButton.disabled = true
           if (buttonText) buttonText.classList.add("hidden")
           if (spinner) spinner.classList.remove("hidden")
 
-          // Confirmar el pago
           const { error } = await stripe.confirmPayment({
             elements,
             confirmParams: {
@@ -1247,19 +1245,15 @@ function reiniciarPasarelaPago() {
           })
 
           if (error) {
-            // Mostrar mensaje de error
             if (paymentMessage) {
               paymentMessage.classList.remove("hidden")
               paymentMessage.classList.add("bg-red-100", "text-red-700")
               paymentMessage.textContent = error.message
             }
-
-            // Restaurar botón
             if (submitButton) submitButton.disabled = false
             if (buttonText) buttonText.classList.remove("hidden")
             if (spinner) spinner.classList.add("hidden")
           }
-          // Si no hay error, el usuario será redirigido a la URL de retorno
         })
       }
     })
@@ -1505,7 +1499,6 @@ function prevStep() {
   setTimeout(() => {
     if (activeIndex > 0 && activeIndex - 1 < connectors.length) {
       // Añadir transición a la barra conectora
-     
       connectors[activeIndex - 1].classList.add("transition-all", "duration-700")
       // Cambiar el color de la barra conectora
       connectors[activeIndex - 1].classList.remove("bg-primary-600")
@@ -1544,7 +1537,7 @@ function nextStep() {
   const nextBtn = document.getElementById("stepper-next-btn")
   const submitBtn = document.getElementById("stepper-submit-btn")
 
-  // Find the active step index
+  // Find the active step
   let activeIndex = -1
   steps.forEach((step, index) => {
     if (step.classList.contains("active")) {

@@ -1604,10 +1604,10 @@ def verificar_codigo_correo():
             session.pop('email_verification_email', None)
             session.pop('email_verification_expiry', None)
             return jsonify({'error': 'El código ha expirado'}), 400
-        
+        print(f"OTP: {otp}, Session OTP: {session_otp}, Email: {email}, Session Email: {session_email}")
         if otp != session_otp or email != session_email:
             return jsonify({'error': 'Código incorrecto o correo electrónico no coincide'}), 400
-        
+        print("Código verificado correctamente")
         # Código correcto, marcar el correo como verificado
         connection = create_connection()
         if connection:
@@ -1729,8 +1729,8 @@ def enviar_verificacion_telefono():
     
     except Exception as e:
         # Registrar la excepción completa para depuración
-        import traceback
         print(f"Error al enviar código de verificación al teléfono: {str(e)}")
+        import traceback
         print(traceback.format_exc())
         return jsonify({'error': 'Error interno del servidor. Por favor, inténtalo de nuevo más tarde.'}), 500
 
@@ -1840,7 +1840,7 @@ def verificar_codigo_telefono():
 def verificar_cooldown_telefono():
     if 'user_id' not in session:
         return jsonify({'error': 'No autorizado'}), 401
-    
+
     try:
         current_time = datetime.now().timestamp()
         cooldown_key = f'phone_verification_cooldown_{session["user_id"]}'
@@ -1865,8 +1865,6 @@ def verificar_cooldown_telefono():
     except Exception as e:
         print(f"Error al verificar cooldown de teléfono: {str(e)}")
         return jsonify({'error': str(e)}), 500
-
-# Agregar estas nuevas rutas al final del archivo perfil_bp
 
 @perfil_bp.route('/api/notificaciones')
 @role_required('Usuario')
@@ -1976,4 +1974,25 @@ def marcar_todas_leidas():
             return jsonify({'error': 'Error de conexión a la base de datos'}), 500
     except Exception as e:
         print(f"Error al marcar todas las notificaciones como leídas: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@perfil_bp.route('/api/notificaciones/eliminar-todas', methods=['POST'])
+@role_required('Usuario')
+def eliminar_todas_notificaciones():
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+
+    try:
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor()
+            cursor.execute("DELETE FROM tbl_notificaciones WHERE id_usuario = %s", (session['user_id'],))
+            connection.commit()
+            cursor.close()
+            connection.close()
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al eliminar todas las notificaciones: {str(e)}")
         return jsonify({'error': str(e)}), 500

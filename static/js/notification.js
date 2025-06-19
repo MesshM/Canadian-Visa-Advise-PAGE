@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Función para renderizar las notificaciones
+    // Función para renderizar las notificaciones (modificada para animación)
     function renderNotifications() {
         // Limpiar la lista actual (excepto el mensaje de vacío)
         const children = Array.from(notificationsList.children);
@@ -59,19 +59,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 notificationsList.removeChild(child);
             }
         }
-        
+
         if (notifications.length === 0) {
             emptyNotifications.classList.remove('hidden');
             return;
         }
-        
+
         emptyNotifications.classList.add('hidden');
-        
+
         // Renderizar cada notificación
         notifications.forEach(notification => {
             const notifElement = document.createElement('div');
-            notifElement.className = `p-4 border-b border-gray-200 ${notification.leida ? 'bg-white' : 'bg-blue-50'}`;
-            
+            notifElement.className = `p-4 border-b border-gray-200 ${notification.leida ? 'bg-white' : 'bg-blue-50'} notification-item`;
+
             // Formatear la fecha
             const date = new Date(notification.fecha_creacion);
             const formattedDate = date.toLocaleDateString('es-ES', {
@@ -81,8 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 hour: '2-digit',
                 minute: '2-digit'
             });
-            
-            // Crear el contenido HTML de la notificación
+
             notifElement.innerHTML = `
                 <div class="flex items-start">
                     <div class="flex-shrink-0 mr-3">
@@ -94,24 +93,19 @@ document.addEventListener('DOMContentLoaded', function() {
                             <span class="text-xs text-gray-500">${formattedDate}</span>
                         </div>
                         <p class="mt-1 text-sm text-gray-600">${notification.mensaje}</p>
-                        ${notification.enlace ? `<a href="${notification.enlace}" class="mt-2 inline-block text-xs text-primary-600 hover:text-primary-800">Ver detalles</a>` : ''}
                     </div>
                 </div>
             `;
-            
-            // Agregar evento para marcar como leída al hacer clic
+
             notifElement.addEventListener('click', () => {
                 if (!notification.leida) {
                     markAsRead(notification.id);
                 }
-                
-                // Si hay un enlace, navegar a él
                 if (notification.enlace) {
                     window.location.href = notification.enlace;
                 }
             });
-            
-            // Insertar antes del mensaje de "no hay notificaciones"
+
             notificationsList.insertBefore(notifElement, emptyNotifications);
         });
     }
@@ -163,6 +157,60 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Nuevo: función para eliminar todas las notificaciones (sin confirmación)
+    async function deleteAllNotifications() {
+        try {
+            // Selecciona todos los elementos de notificación actuales
+            const notifElements = notificationsList.querySelectorAll('.notification-item');
+            if (notifElements.length > 0) {
+                notifElements.forEach((el, idx) => {
+                    // Agrega la clase de animación
+                    el.style.transition = 'transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.5s cubic-bezier(0.4,0,0.2,1)';
+                    el.style.transform = 'translateX(100%)';
+                    el.style.opacity = '0';
+                });
+                // Espera la animación antes de limpiar el frontend
+                await new Promise(res => setTimeout(res, 500));
+            }
+
+            const response = await fetch('/perfil/api/notificaciones/eliminar-todas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (response.ok) {
+                notifications = [];
+                updateNotificationBadge();
+                renderNotifications();
+            } else {
+                alert('Error al eliminar las notificaciones.');
+            }
+        } catch (error) {
+            console.error('Error al eliminar todas las notificaciones:', error);
+            alert('Error al eliminar las notificaciones.');
+        }
+    }
+
+    // Cambia el evento del enlace "Ver todas las notificaciones"
+    const verTodasBtn = document.querySelector('#notification-panel a[href="/notificaciones"]');
+    if (verTodasBtn) {
+        verTodasBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            deleteAllNotifications();
+        });
+    }
+
+    // Evento para eliminar todas las notificaciones
+    const deleteAllBtn = document.getElementById('delete-all-notifications');
+    if (deleteAllBtn) {
+        deleteAllBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            deleteAllNotifications();
+        });
+    }
+
     // Evento para mostrar/ocultar el panel de notificaciones
     notificationButton.addEventListener('click', function(event) {
         event.stopPropagation();
