@@ -1,11 +1,13 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from werkzeug.security import generate_password_hash
 from functools import wraps
-import sqlite3
+import mysql.connector
+from mysql.connector import Error
 import re
 from datetime import datetime
+from config.database import create_connection
 
-usuarios_admin_bp = Blueprint('usuarios_admin', __name__)
+usuarios_admin_bp = Blueprint('usuarios_admin', __name__, url_prefix='/admin/usuarios')
 
 def admin_required(f):
     """Decorador para verificar que el usuario sea administrador"""
@@ -17,75 +19,95 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def get_db_connection():
-    """Obtener conexión a la base de datos"""
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row
-    return conn
-
 def validar_email(email):
     """Validar formato de email"""
     patron = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(patron, email) is not None
 
-@usuarios_admin_bp.route('/admin/usuarios')
+def get_db_connection():
+    """Obtener conexión a la base de datos"""
+    return create_connection()
+
+def actualizar_ultimo_acceso(user_id):
+    """Actualizar la fecha de último acceso de un usuario"""
+    try:
+        conn = get_db_connection()
+        if conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                'UPDATE tbl_usuario SET ultimo_acceso = NOW() WHERE id_usuario = %s',
+                (user_id,)
+            )
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return True
+    except Error as e:
+        print(f"Error al actualizar último acceso: {str(e)}")
+    return False
+
+@usuarios_admin_bp.route('/')
 @admin_required
 def listar_usuarios():
     """Listar todos los usuarios del sistema"""
     try:
         conn = get_db_connection()
+        if not conn:
+            flash('Error de conexión a la base de datos', 'error')
+            return render_template('admin/usuarios_admin.html', usuarios=[])
+        
+        cursor = conn.cursor(dictionary=True)
         
         # Obtener parámetros de filtro
-        buscar = request.args.get('buscar', '')
-        rol_filtro = request.args.get('rol', '')
-        estado_filtro = request.args.get('estado', '')
+        buscar = request.args.get('buscar', '').strip()
         pagina = int(request.args.get('pagina', 1))
         por_pagina = 20
         
         # Construir consulta con filtros
         query = '''
-            SELECT id_usuario, nombres, apellidos, correo, rol, estado, 
-                   fecha_registro, ultimo_acceso
-            FROM usuarios 
+            SELECT u.id_usuario, u.nombres, u.apellidos, u.correo, u.celular,
+                   u.fecha_nacimiento, u.correo_verificado,
+                   u.fecha_nacimiento as fecha_registro, u.ultimo_acceso
+            FROM tbl_usuario u
             WHERE 1=1
         '''
         params = []
         
+        # Filtro de búsqueda por nombre
         if buscar:
-            query += ' AND (nombres LIKE ? OR apellidos LIKE ? OR correo LIKE ?)'
-            params.extend([f'%{buscar}%', f'%{buscar}%', f'%{buscar}%'])
-        
-        if rol_filtro:
-            query += ' AND rol = ?'
-            params.append(rol_filtro)
-        
-        if estado_filtro:
-            query += ' AND estado = ?'
-            params.append(estado_filtro)
+            query += ' AND (u.nombres LIKE %s OR u.apellidos LIKE %s OR u.correo LIKE %s OR CONCAT(u.nombres, " ", u.apellidos) LIKE %s)'
+            search_param = f'%{buscar}%'
+            params.extend([search_param, search_param, search_param, search_param])
         
         # Contar total de usuarios
-        count_query = query.replace('SELECT id_usuario, nombres, apellidos, correo, rol, estado, fecha_registro, ultimo_acceso', 'SELECT COUNT(*)')
-        total_usuarios = conn.execute(count_query, params).fetchone()[0]
+        count_query = f"SELECT COUNT(*) as total FROM ({query}) as subquery"
+        cursor.execute(count_query, params)
+        total_usuarios = cursor.fetchone()['total']
         
         # Agregar paginación
-        query += ' ORDER BY fecha_registro DESC LIMIT ? OFFSET ?'
+        query += ' ORDER BY u.id_usuario DESC LIMIT %s OFFSET %s'
         params.extend([por_pagina, (pagina - 1) * por_pagina])
         
-        usuarios = conn.execute(query, params).fetchall()
+        cursor.execute(query, params)
+        usuarios = cursor.fetchall()
         
+        cursor.close()
         conn.close()
+        
+        total_paginas = (total_usuarios + por_pagina - 1) // por_pagina if total_usuarios > 0 else 1
         
         return render_template('admin/usuarios_admin.html',
                              usuarios=usuarios,
                              total_usuarios=total_usuarios,
                              pagina_actual=pagina,
-                             total_paginas=(total_usuarios + por_pagina - 1) // por_pagina)
+                             total_paginas=total_paginas)
                              
-    except Exception as e:
+    except Error as e:
+        print(f"Error en listar_usuarios: {str(e)}")
         flash(f'Error al cargar usuarios: {str(e)}', 'error')
         return render_template('admin/usuarios_admin.html', usuarios=[])
 
-@usuarios_admin_bp.route('/admin/usuarios/crear', methods=['GET', 'POST'])
+@usuarios_admin_bp.route('/crear', methods=['GET', 'POST'])
 @admin_required
 def crear_usuario():
     """Crear un nuevo usuario"""
@@ -101,7 +123,6 @@ def crear_usuario():
             password = request.form.get('password', '')
             confirm_password = request.form.get('confirm_password', '')
             correo_verificado = 'correo_verificado' in request.form
-            enviar_credenciales = 'enviar_credenciales' in request.form
             
             # Validaciones
             if not nombres or not apellidos or not correo or not password:
@@ -121,186 +142,205 @@ def crear_usuario():
                 return render_template('admin/crear_usuario.html')
             
             conn = get_db_connection()
+            if not conn:
+                flash('Error de conexión a la base de datos', 'error')
+                return render_template('admin/crear_usuario.html')
+            
+            cursor = conn.cursor()
             
             # Verificar si el correo ya existe
-            usuario_existente = conn.execute(
-                'SELECT id_usuario FROM usuarios WHERE correo = ?', (correo,)
-            ).fetchone()
+            cursor.execute('SELECT id_usuario FROM tbl_usuario WHERE correo = %s', (correo,))
+            usuario_existente = cursor.fetchone()
             
             if usuario_existente:
                 flash('Ya existe un usuario con este correo electrónico.', 'error')
+                cursor.close()
                 conn.close()
                 return render_template('admin/crear_usuario.html')
             
             # Crear el usuario
             password_hash = generate_password_hash(password)
-            fecha_registro = datetime.now()
             
-            cursor = conn.execute('''
-                INSERT INTO usuarios (nombres, apellidos, correo, celular, fecha_nacimiento, 
-                                    rol, password_hash, estado, fecha_registro, correo_verificado)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (nombres, apellidos, correo, celular, fecha_nacimiento, rol, 
-                  password_hash, 'Activo', fecha_registro, correo_verificado))
+            cursor.execute('''
+                INSERT INTO tbl_usuario (nombres, apellidos, correo, celular, fecha_nacimiento, 
+                                       contrasena, correo_verificado)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            ''', (nombres, apellidos, correo, celular, fecha_nacimiento, 
+                  password_hash, correo_verificado))
             
             usuario_id = cursor.lastrowid
             
-            # Si es un asesor, crear registro en tabla asesores
+            # Crear registro específico según el rol
             if rol == 'Asesor':
-                conn.execute('''
-                    INSERT INTO asesores (id_usuario, nombre, apellidos, correo, estado, fecha_registro)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                ''', (usuario_id, nombres, apellidos, correo, 'Activo', fecha_registro))
+                cursor.execute('''
+                    INSERT INTO tbl_asesor (id_usuario, nombre, apellidos, correo, password)
+                    VALUES (%s, %s, %s, %s, %s)
+                ''', (usuario_id, nombres, apellidos, correo, password_hash))
+            elif rol == 'Administrador':
+                cursor.execute('''
+                    INSERT INTO tbl_administrador (id_usuario, nombre, apellidos, correo, password)
+                    VALUES (%s, %s, %s, %s, %s)
+                ''', (usuario_id, nombres, apellidos, correo, password_hash))
+            else:  # Cliente
+                cursor.execute('''
+                    INSERT INTO tbl_solicitante (id_usuario)
+                    VALUES (%s)
+                ''', (usuario_id,))
             
             conn.commit()
+            cursor.close()
             conn.close()
-            
-            # TODO: Enviar credenciales por correo si está marcado
-            if enviar_credenciales:
-                # Implementar envío de correo
-                pass
             
             flash(f'Usuario {nombres} {apellidos} creado exitosamente.', 'success')
             return redirect(url_for('usuarios_admin.listar_usuarios'))
             
-        except Exception as e:
+        except Error as e:
+            print(f"Error en crear_usuario: {str(e)}")
             flash(f'Error al crear usuario: {str(e)}', 'error')
             return render_template('admin/crear_usuario.html')
     
     return render_template('admin/crear_usuario.html')
 
-@usuarios_admin_bp.route('/admin/usuarios/<int:id>/editar', methods=['GET', 'POST'])
+@usuarios_admin_bp.route('/<int:id>/datos', methods=['GET'])
+@admin_required
+def obtener_datos_usuario(id):
+    """Obtener datos de un usuario para edición"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'success': False, 'error': 'Error de conexión a la base de datos'}), 500
+        
+        cursor = conn.cursor(dictionary=True)
+        
+        # Obtener datos del usuario
+        cursor.execute('''
+            SELECT u.id_usuario, u.nombres, u.apellidos, u.correo, u.celular,
+                   u.fecha_nacimiento
+            FROM tbl_usuario u
+            WHERE u.id_usuario = %s
+        ''', (id,))
+        
+        usuario = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        if not usuario:
+            return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
+        
+        return jsonify({
+            'success': True,
+            'usuario': usuario
+        })
+        
+    except Error as e:
+        print(f"Error en obtener_datos_usuario: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@usuarios_admin_bp.route('/<int:id>/editar', methods=['POST'])
 @admin_required
 def editar_usuario(id):
     """Editar un usuario existente"""
     try:
         conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
         
-        if request.method == 'POST':
-            # Obtener datos del formulario
+        # Obtener datos JSON del request
+        if request.is_json:
+            data = request.get_json()
+            nombres = data.get('nombres', '').strip()
+            apellidos = data.get('apellidos', '').strip()
+            correo = data.get('correo', '').strip().lower()
+            celular = data.get('celular', '').strip()
+            fecha_nacimiento = data.get('fecha_nacimiento')
+        else:
+            # Fallback para form data
             nombres = request.form.get('nombres', '').strip()
             apellidos = request.form.get('apellidos', '').strip()
             correo = request.form.get('correo', '').strip().lower()
             celular = request.form.get('celular', '').strip()
             fecha_nacimiento = request.form.get('fecha_nacimiento')
-            rol = request.form.get('rol')
-            estado = request.form.get('estado')
-            
-            # Validaciones
-            if not nombres or not apellidos or not correo:
-                flash('Los campos nombres, apellidos y correo son obligatorios.', 'error')
-                return redirect(url_for('usuarios_admin.editar_usuario', id=id))
-            
-            if not validar_email(correo):
-                flash('El formato del correo electrónico no es válido.', 'error')
-                return redirect(url_for('usuarios_admin.editar_usuario', id=id))
-            
-            # Verificar si el correo ya existe (excluyendo el usuario actual)
-            usuario_existente = conn.execute(
-                'SELECT id_usuario FROM usuarios WHERE correo = ? AND id_usuario != ?', 
-                (correo, id)
-            ).fetchone()
-            
-            if usuario_existente:
-                flash('Ya existe otro usuario con este correo electrónico.', 'error')
-                return redirect(url_for('usuarios_admin.editar_usuario', id=id))
-            
-            # Actualizar usuario
-            conn.execute('''
-                UPDATE usuarios 
-                SET nombres = ?, apellidos = ?, correo = ?, celular = ?, 
-                    fecha_nacimiento = ?, rol = ?, estado = ?
-                WHERE id_usuario = ?
-            ''', (nombres, apellidos, correo, celular, fecha_nacimiento, 
-                  rol, estado, id))
-            
-            conn.commit()
-            conn.close()
-            
-            flash('Usuario actualizado exitosamente.', 'success')
-            return redirect(url_for('usuarios_admin.listar_usuarios'))
         
-        # GET - Mostrar formulario de edición
-        usuario = conn.execute(
-            'SELECT * FROM usuarios WHERE id_usuario = ?', (id,)
-        ).fetchone()
+        # Validaciones
+        if not nombres or not apellidos or not correo:
+            return jsonify({'success': False, 'error': 'Los campos nombres, apellidos y correo son obligatorios'})
         
-        conn.close()
+        if not validar_email(correo):
+            return jsonify({'success': False, 'error': 'El formato del correo electrónico no es válido'})
         
-        if not usuario:
-            flash('Usuario no encontrado.', 'error')
-            return redirect(url_for('usuarios_admin.listar_usuarios'))
-        
-        return render_template('admin/editar_usuario.html', usuario=usuario)
-        
-    except Exception as e:
-        flash(f'Error al editar usuario: {str(e)}', 'error')
-        return redirect(url_for('usuarios_admin.listar_usuarios'))
-
-@usuarios_admin_bp.route('/admin/usuarios/<int:id>/toggle-status', methods=['POST'])
-@admin_required
-def toggle_usuario_status(id):
-    """Cambiar estado de un usuario (Activo/Inactivo)"""
-    try:
-        conn = get_db_connection()
-        
-        usuario = conn.execute(
-            'SELECT estado FROM usuarios WHERE id_usuario = ?', (id,)
-        ).fetchone()
-        
-        if not usuario:
-            return jsonify({'error': 'Usuario no encontrado'}), 404
-        
-        nuevo_estado = 'Inactivo' if usuario['estado'] == 'Activo' else 'Activo'
-        
-        conn.execute(
-            'UPDATE usuarios SET estado = ? WHERE id_usuario = ?',
-            (nuevo_estado, id)
+        # Verificar si el correo ya existe (excluyendo el usuario actual)
+        cursor.execute(
+            'SELECT id_usuario FROM tbl_usuario WHERE correo = %s AND id_usuario != %s', 
+            (correo, id)
         )
+        usuario_existente = cursor.fetchone()
+        
+        if usuario_existente:
+            cursor.close()
+            conn.close()
+            return jsonify({'success': False, 'error': 'Ya existe otro usuario con este correo electrónico'})
+        
+        # Actualizar usuario
+        cursor.execute('''
+            UPDATE tbl_usuario 
+            SET nombres = %s, apellidos = %s, correo = %s, celular = %s, 
+                fecha_nacimiento = %s
+            WHERE id_usuario = %s
+        ''', (nombres, apellidos, correo, celular, fecha_nacimiento, id))
+        
         conn.commit()
+        cursor.close()
         conn.close()
         
         return jsonify({
             'success': True,
-            'nuevo_estado': nuevo_estado,
-            'mensaje': f'Usuario {nuevo_estado.lower()} exitosamente'
+            'mensaje': 'Usuario actualizado exitosamente'
         })
         
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    except Error as e:
+        print(f"Error en editar_usuario: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-@usuarios_admin_bp.route('/admin/usuarios/<int:id>/eliminar', methods=['POST'])
+@usuarios_admin_bp.route('/<int:id>/eliminar', methods=['DELETE'])
 @admin_required
 def eliminar_usuario(id):
-    """Eliminar un usuario (soft delete)"""
+    """Eliminar un usuario permanentemente de la base de datos"""
     try:
         conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
         
         # Verificar que el usuario existe
-        usuario = conn.execute(
-            'SELECT nombres, apellidos FROM usuarios WHERE id_usuario = ?', (id,)
-        ).fetchone()
+        cursor.execute(
+            'SELECT nombres, apellidos FROM tbl_usuario WHERE id_usuario = %s', (id,)
+        )
+        usuario = cursor.fetchone()
         
         if not usuario:
-            return jsonify({'error': 'Usuario no encontrado'}), 404
+            cursor.close()
+            conn.close()
+            return jsonify({'success': False, 'error': 'Usuario no encontrado'}), 404
         
-        # Soft delete - cambiar estado a "Eliminado"
-        conn.execute(
-            'UPDATE usuarios SET estado = ?, fecha_eliminacion = ? WHERE id_usuario = ?',
-            ('Eliminado', datetime.now(), id)
-        )
+        # Eliminar de las tablas de roles primero (por las foreign keys)
+        cursor.execute('DELETE FROM tbl_administrador WHERE id_usuario = %s', (id,))
+        cursor.execute('DELETE FROM tbl_asesor WHERE id_usuario = %s', (id,))
+        cursor.execute('DELETE FROM tbl_solicitante WHERE id_usuario = %s', (id,))
+        
+        # Eliminar el usuario principal
+        cursor.execute('DELETE FROM tbl_usuario WHERE id_usuario = %s', (id,))
+        
         conn.commit()
+        cursor.close()
         conn.close()
         
         return jsonify({
             'success': True,
-            'mensaje': f'Usuario {usuario["nombres"]} {usuario["apellidos"]} eliminado exitosamente'
+            'mensaje': f'Usuario {usuario["nombres"]} {usuario["apellidos"]} eliminado permanentemente'
         })
         
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    except Error as e:
+        print(f"Error en eliminar_usuario: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-@usuarios_admin_bp.route('/admin/usuarios/buscar')
+@usuarios_admin_bp.route('/buscar')
 @admin_required
 def buscar_usuarios():
     """Buscar usuarios para autocompletado"""
@@ -311,15 +351,21 @@ def buscar_usuarios():
             return jsonify([])
         
         conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Error de conexión'}), 500
         
-        usuarios = conn.execute('''
-            SELECT id_usuario, nombres, apellidos, correo, rol
-            FROM usuarios 
-            WHERE (nombres LIKE ? OR apellidos LIKE ? OR correo LIKE ?)
-            AND estado = 'Activo'
+        cursor = conn.cursor(dictionary=True)
+        
+        cursor.execute('''
+            SELECT u.id_usuario, u.nombres, u.apellidos, u.correo
+            FROM tbl_usuario u
+            WHERE (u.nombres LIKE %s OR u.apellidos LIKE %s OR u.correo LIKE %s OR CONCAT(u.nombres, " ", u.apellidos) LIKE %s)
+            AND u.correo_verificado = 1
             LIMIT 10
-        ''', (f'%{termino}%', f'%{termino}%', f'%{termino}%')).fetchall()
+        ''', (f'%{termino}%', f'%{termino}%', f'%{termino}%', f'%{termino}%'))
         
+        usuarios = cursor.fetchall()
+        cursor.close()
         conn.close()
         
         resultados = []
@@ -327,11 +373,30 @@ def buscar_usuarios():
             resultados.append({
                 'id': usuario['id_usuario'],
                 'nombre': f"{usuario['nombres']} {usuario['apellidos']}",
-                'correo': usuario['correo'],
-                'rol': usuario['rol']
+                'correo': usuario['correo']
             })
         
         return jsonify(resultados)
         
-    except Exception as e:
+    except Error as e:
+        print(f"Error en buscar_usuarios: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+# Función para registrar el inicio de sesión de un usuario
+def registrar_inicio_sesion(user_id):
+    """Registra la fecha y hora del inicio de sesión de un usuario"""
+    try:
+        conn = get_db_connection()
+        if conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                'UPDATE tbl_usuario SET ultimo_acceso = NOW() WHERE id_usuario = %s',
+                (user_id,)
+            )
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return True
+    except Error as e:
+        print(f"Error al registrar inicio de sesión: {str(e)}")
+    return False

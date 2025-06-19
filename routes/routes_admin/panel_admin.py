@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, session, redirect, url_for, flash, jsonify
-import sqlite3
+import mysql.connector
+from config.database import create_connection
+from mysql.connector import Error
 from datetime import datetime, timedelta
-import os
 
 panel_admin_bp = Blueprint('panel_admin', __name__, url_prefix='/admin')
 
@@ -15,22 +16,13 @@ def admin_required(f):
     decorated_function.__name__ = f.__name__
     return decorated_function
 
-def get_db_connection():
-    """Crear conexión a la base de datos MySQL"""
-    try:
-        from config.database import create_connection
-        return create_connection()
-    except Exception as e:
-        print(f"Error conectando a la base de datos: {e}")
-        return None
-
 @panel_admin_bp.route('/')
 @panel_admin_bp.route('/dashboard')
 @admin_required
 def index_admin():
     """Panel principal de administración"""
     try:
-        conn = get_db_connection()
+        conn = create_connection()
         if not conn:
             flash('Error de conexión a la base de datos', 'error')
             return render_template('admin/index_admin.html', stats={})
@@ -57,7 +49,7 @@ def index_admin():
         stats['asesorias_pendientes'] = cursor.fetchone()['total']
         
         # Usuarios registrados hoy
-        cursor.execute("SELECT COUNT(*) as total FROM tbl_usuario WHERE DATE(fecha_registro) = CURDATE()")
+        cursor.execute("SELECT COUNT(*) as total FROM tbl_usuario WHERE DATE(id_usuario) = CURDATE()")
         stats['usuarios_hoy'] = cursor.fetchone()['total']
         
         # Asesorías de hoy
@@ -67,13 +59,13 @@ def index_admin():
         # Últimas actividades
         cursor.execute("""
             SELECT 'usuario' as tipo, CONCAT(nombres, ' ', apellidos) as descripcion, 
-                   fecha_registro as fecha FROM tbl_usuario 
-            WHERE fecha_registro >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                   id_usuario as fecha FROM tbl_usuario 
+            ORDER BY id_usuario DESC LIMIT 5
             UNION ALL
             SELECT 'asesoria' as tipo, 'Asesoría programada' as descripcion, 
                    fecha_asesoria as fecha FROM tbl_asesoria 
             WHERE fecha_asesoria >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-            ORDER BY fecha DESC LIMIT 10
+            ORDER BY fecha_asesoria DESC LIMIT 5
         """)
         
         actividades = []
@@ -92,76 +84,28 @@ def index_admin():
                              actividades=actividades,
                              admin_name=session.get('user_name', 'Administrador'))
         
-    except Exception as e:
+    except Error as e:
         print(f"Error en index_admin: {e}")
         flash('Error al cargar el panel de administración', 'error')
         return render_template('admin/index_admin.html', stats={})
-
-@panel_admin_bp.route('/api/stats')
-@admin_required
-def api_stats():
-    """API para obtener estadísticas en tiempo real"""
-    try:
-        conn = get_db_connection()
-        if not conn:
-            return jsonify({'error': 'Error de conexión'}), 500
-        
-        cursor = conn.cursor()
-        
-        # Estadísticas por mes (últimos 6 meses)
-        cursor.execute("""
-            SELECT strftime('%Y-%m', fecha_registro) as mes, COUNT(*) as usuarios
-            FROM tbl_usuario 
-            WHERE fecha_registro >= date('now', '-6 months')
-            GROUP BY strftime('%Y-%m', fecha_registro)
-            ORDER BY mes
-        """)
-        usuarios_por_mes = [dict(row) for row in cursor.fetchall()]
-        
-        # Asesorías por estado
-        cursor.execute("""
-            SELECT estado, COUNT(*) as cantidad
-            FROM tbl_asesoria
-            GROUP BY estado
-        """)
-        asesorias_por_estado = [dict(row) for row in cursor.fetchall()]
-        
-        # Asesores más activos
-        cursor.execute("""
-            SELECT a.nombre || ' ' || a.apellidos as asesor, COUNT(ase.id_asesoria) as asesorias
-            FROM tbl_asesor a
-            LEFT JOIN tbl_asesoria ase ON a.id_asesor = ase.id_asesor
-            GROUP BY a.id_asesor
-            ORDER BY asesorias DESC
-            LIMIT 5
-        """)
-        asesores_activos = [dict(row) for row in cursor.fetchall()]
-        
-        conn.close()
-        
-        return jsonify({
-            'usuarios_por_mes': usuarios_por_mes,
-            'asesorias_por_estado': asesorias_por_estado,
-            'asesores_activos': asesores_activos
-        })
-        
-    except Exception as e:
-        print(f"Error en api_stats: {e}")
-        return jsonify({'error': 'Error interno del servidor'}), 500
 
 @panel_admin_bp.route('/perfil')
 @admin_required
 def perfil_admin():
     """Perfil del administrador"""
     try:
-        conn = get_db_connection()
+        conn = create_connection()
         if not conn:
             flash('Error de conexión a la base de datos', 'error')
             return redirect(url_for('panel_admin.index_admin'))
         
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM tbl_administrador WHERE id_administrador = ?", 
-                      (session['user_id'],))
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT a.*, u.nombres, u.apellidos, u.correo, u.celular, u.fecha_nacimiento
+            FROM tbl_administrador a
+            JOIN tbl_usuario u ON a.id_usuario = u.id_usuario
+            WHERE a.id_administrador = %s
+        """, (session['user_id'],))
         admin = cursor.fetchone()
         conn.close()
         
@@ -171,59 +115,7 @@ def perfil_admin():
         
         return render_template('admin/perfil_admin.html', admin=dict(admin))
         
-    except Exception as e:
+    except Error as e:
         print(f"Error en perfil_admin: {e}")
         flash('Error al cargar el perfil', 'error')
         return redirect(url_for('panel_admin.index_admin'))
-
-@panel_admin_bp.route('/sistema/info')
-@admin_required
-def sistema_info():
-    """Información del sistema"""
-    try:
-        # Información del sistema
-        info = {
-            'version_python': os.sys.version,
-            'directorio_trabajo': os.getcwd(),
-            'espacio_disco': get_disk_usage(),
-            'base_datos_size': get_database_size(),
-            'uptime': get_system_uptime()
-        }
-        
-        return render_template('admin/sistema_info.html', info=info)
-        
-    except Exception as e:
-        print(f"Error en sistema_info: {e}")
-        flash('Error al obtener información del sistema', 'error')
-        return redirect(url_for('panel_admin.index_admin'))
-
-def get_disk_usage():
-    """Obtener uso del disco"""
-    try:
-        import shutil
-        total, used, free = shutil.disk_usage('.')
-        return {
-            'total': round(total / (1024**3), 2),  # GB
-            'used': round(used / (1024**3), 2),    # GB
-            'free': round(free / (1024**3), 2)     # GB
-        }
-    except:
-        return {'total': 0, 'used': 0, 'free': 0}
-
-def get_database_size():
-    """Obtener tamaño de la base de datos"""
-    try:
-        size = os.path.getsize('database.db')
-        return round(size / (1024**2), 2)  # MB
-    except:
-        return 0
-
-def get_system_uptime():
-    """Obtener tiempo de actividad del sistema"""
-    try:
-        import psutil
-        boot_time = psutil.boot_time()
-        uptime = datetime.now() - datetime.fromtimestamp(boot_time)
-        return str(uptime).split('.')[0]  # Sin microsegundos
-    except:
-        return "No disponible"

@@ -1,284 +1,243 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
-import sqlite3
-from datetime import datetime
-import os
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
+from functools import wraps
+import mysql.connector
+from mysql.connector import Error
+from datetime import datetime, timedelta
+from config.database import create_connection
 
 pagos_admin_bp = Blueprint('pagos_admin', __name__)
 
-def verificar_admin():
-    """Verificar si el usuario actual es administrador"""
-    return session.get('user_role') == 'Administrador'
-
-def get_db_connection():
-    """Obtener conexión a la base de datos"""
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row
-    return conn
+def admin_required(f):
+    """Decorador para verificar que el usuario sea administrador"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session or session.get('user_role') != 'Administrador':
+            flash('Acceso denegado. Se requieren permisos de administrador.', 'error')
+            return redirect(url_for('auth.login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @pagos_admin_bp.route('/admin/pagos')
+@admin_required
 def listar_pagos():
-    """Listar todos los pagos"""
-    if not verificar_admin():
-        flash('No tienes permisos para acceder a esta sección.', 'danger')
-        return redirect(url_for('auth.login'))
-    
+    """Listar todos los pagos del sistema"""
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        conn = create_connection()
+        if not conn:
+            flash('Error de conexión a la base de datos', 'error')
+            return render_template('admin/pagos_admin.html', pagos=[])
         
-        # Obtener filtros
-        estado = request.args.get('estado', '')
-        fecha_inicio = request.args.get('fecha_inicio', '')
-        fecha_fin = request.args.get('fecha_fin', '')
-        cliente_id = request.args.get('cliente_id', '')
+        cursor = conn.cursor(dictionary=True)
+        
+        # Obtener parámetros de filtro
+        buscar = request.args.get('buscar', '')
+        estado_filtro = request.args.get('estado', '')
+        metodo_filtro = request.args.get('metodo', '')
+        fecha_desde = request.args.get('fecha_desde', '')
+        fecha_hasta = request.args.get('fecha_hasta', '')
+        pagina = int(request.args.get('pagina', 1))
+        por_pagina = 20
         
         # Construir consulta con filtros
         query = '''
-            SELECT p.*, u.nombre as cliente_nombre, u.email as cliente_email
-            FROM pagos p
-            LEFT JOIN usuarios u ON p.usuario_id = u.id
+            SELECT p.id_pago, p.codigo_asesoria, p.monto, p.metodo_pago, 
+                   p.estado_pago, p.fecha_pago, p.referencia_pago,
+                   CONCAT(u.nombres, ' ', u.apellidos) as cliente_nombre,
+                   u.correo as cliente_correo,
+                   a.tipo_asesoria
+            FROM tbl_pago_asesoria p
+            LEFT JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
+            LEFT JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
+            LEFT JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
             WHERE 1=1
         '''
         params = []
         
-        if estado:
-            query += ' AND p.estado = ?'
-            params.append(estado)
+        if buscar:
+            query += ' AND (u.nombres LIKE %s OR u.apellidos LIKE %s OR p.referencia_pago LIKE %s)'
+            params.extend([f'%{buscar}%', f'%{buscar}%', f'%{buscar}%'])
         
-        if fecha_inicio:
-            query += ' AND p.fecha >= ?'
-            params.append(fecha_inicio)
+        if estado_filtro:
+            query += ' AND p.estado_pago = %s'
+            params.append(estado_filtro)
         
-        if fecha_fin:
-            query += ' AND p.fecha <= ?'
-            params.append(fecha_fin)
+        if metodo_filtro:
+            query += ' AND p.metodo_pago = %s'
+            params.append(metodo_filtro)
         
-        if cliente_id:
-            query += ' AND p.usuario_id = ?'
-            params.append(cliente_id)
+        if fecha_desde:
+            query += ' AND DATE(p.fecha_pago) >= %s'
+            params.append(fecha_desde)
         
-        query += ' ORDER BY p.fecha DESC'
+        if fecha_hasta:
+            query += ' AND DATE(p.fecha_pago) <= %s'
+            params.append(fecha_hasta)
+        
+        # Contar total de pagos
+        count_query = f"SELECT COUNT(*) as total FROM ({query}) as subquery"
+        cursor.execute(count_query, params)
+        total_pagos = cursor.fetchone()['total']
+        
+        # Agregar paginación
+        query += ' ORDER BY p.fecha_pago DESC LIMIT %s OFFSET %s'
+        params.extend([por_pagina, (pagina - 1) * por_pagina])
         
         cursor.execute(query, params)
         pagos = cursor.fetchall()
         
-        # Obtener lista de clientes para el filtro
-        cursor.execute('SELECT id, nombre FROM usuarios WHERE rol = "Cliente"')
-        clientes = cursor.fetchall()
+        # Obtener estadísticas
+        cursor.execute("SELECT COUNT(*) as total FROM tbl_pago_asesoria")
+        stats_total = cursor.fetchone()['total']
+        
+        cursor.execute("SELECT COUNT(*) as total FROM tbl_pago_asesoria WHERE estado_pago = 'Pendiente'")
+        stats_pendientes = cursor.fetchone()['total']
+        
+        cursor.execute("SELECT COUNT(*) as total FROM tbl_pago_asesoria WHERE estado_pago = 'Completado'")
+        stats_completados = cursor.fetchone()['total']
+        
+        cursor.execute("SELECT SUM(monto) as total FROM tbl_pago_asesoria WHERE estado_pago = 'Completado'")
+        ingresos_result = cursor.fetchone()
+        stats_ingresos = ingresos_result['total'] if ingresos_result['total'] else 0
         
         conn.close()
         
-        return render_template('admin/pagos_admin.html', 
-                             pagos=pagos, 
-                             clientes=clientes,
-                             filtros={
-                                 'estado': estado,
-                                 'fecha_inicio': fecha_inicio,
-                                 'fecha_fin': fecha_fin,
-                                 'cliente_id': cliente_id
+        return render_template('admin/pagos_admin.html',
+                             pagos=pagos,
+                             total_pagos=total_pagos,
+                             pagina_actual=pagina,
+                             total_paginas=(total_pagos + por_pagina - 1) // por_pagina,
+                             stats={
+                                 'total': stats_total,
+                                 'pendientes': stats_pendientes,
+                                 'completados': stats_completados,
+                                 'ingresos': stats_ingresos
                              })
-    
-    except Exception as e:
-        flash(f'Error al cargar los pagos: {str(e)}', 'danger')
-        return redirect(url_for('panel_admin.index_admin'))
+                             
+    except Error as e:
+        flash(f'Error al cargar pagos: {str(e)}', 'error')
+        return render_template('admin/pagos_admin.html', pagos=[])
 
-@pagos_admin_bp.route('/admin/pagos/crear', methods=['GET', 'POST'])
-def crear_pago():
-    """Crear un nuevo pago"""
-    if not verificar_admin():
-        flash('No tienes permisos para acceder a esta sección.', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    if request.method == 'POST':
-        try:
-            # Obtener datos del formulario
-            usuario_id = request.form.get('usuario_id')
-            monto = float(request.form.get('monto'))
-            descripcion = request.form.get('descripcion')
-            estado = request.form.get('estado', 'Pendiente')
-            fecha = request.form.get('fecha') or datetime.now().strftime('%Y-%m-%d')
-            
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                INSERT INTO pagos (usuario_id, monto, descripcion, estado, fecha, fecha_creacion)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (usuario_id, monto, descripcion, estado, fecha, datetime.now()))
-            
-            conn.commit()
-            conn.close()
-            
-            flash('Pago creado exitosamente.', 'success')
-            return redirect(url_for('pagos_admin.listar_pagos'))
-        
-        except Exception as e:
-            flash(f'Error al crear el pago: {str(e)}', 'danger')
-    
-    # Obtener lista de clientes
+@pagos_admin_bp.route('/admin/pagos/<int:id>/cambiar-estado', methods=['POST'])
+@admin_required
+def cambiar_estado_pago(id):
+    """Cambiar estado de un pago"""
     try:
-        conn = get_db_connection()
+        nuevo_estado = request.json.get('estado')
+        
+        if nuevo_estado not in ['Pendiente', 'Completado', 'Cancelado']:
+            return jsonify({'error': 'Estado no válido'}), 400
+        
+        conn = create_connection()
+        if not conn:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+        
         cursor = conn.cursor()
-        cursor.execute('SELECT id, nombre, email FROM usuarios WHERE rol = "Cliente"')
-        clientes = cursor.fetchall()
+        
+        cursor.execute(
+            'UPDATE tbl_pago_asesoria SET estado_pago = %s WHERE id_pago = %s',
+            (nuevo_estado, id)
+        )
+        
+        if cursor.rowcount == 0:
+            return jsonify({'error': 'Pago no encontrado'}), 404
+        
+        conn.commit()
         conn.close()
-    except Exception as e:
-        clientes = []
-        flash(f'Error al cargar clientes: {str(e)}', 'warning')
-    
-    return render_template('admin/crear_pago.html', clientes=clientes)
+        
+        return jsonify({
+            'success': True,
+            'mensaje': f'Estado del pago cambiado a {nuevo_estado} exitosamente'
+        })
+        
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
 
-@pagos_admin_bp.route('/admin/pagos/editar/<int:id>', methods=['GET', 'POST'])
-def editar_pago(id):
-    """Editar un pago existente"""
-    if not verificar_admin():
-        flash('No tienes permisos para acceder a esta sección.', 'danger')
-        return redirect(url_for('auth.login'))
-    
+@pagos_admin_bp.route('/admin/pagos/<int:id>/detalles')
+@admin_required
+def ver_detalles_pago(id):
+    """Ver detalles completos de un pago"""
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        conn = create_connection()
+        if not conn:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
         
-        if request.method == 'POST':
-            # Actualizar pago
-            monto = float(request.form.get('monto'))
-            descripcion = request.form.get('descripcion')
-            estado = request.form.get('estado')
-            fecha = request.form.get('fecha')
-            
-            cursor.execute('''
-                UPDATE pagos 
-                SET monto = ?, descripcion = ?, estado = ?, fecha = ?
-                WHERE id = ?
-            ''', (monto, descripcion, estado, fecha, id))
-            
-            conn.commit()
-            conn.close()
-            
-            flash('Pago actualizado exitosamente.', 'success')
-            return redirect(url_for('pagos_admin.listar_pagos'))
+        cursor = conn.cursor(dictionary=True)
         
-        # Obtener datos del pago
+        # Obtener información del pago
         cursor.execute('''
-            SELECT p.*, u.nombre as cliente_nombre, u.email as cliente_email
-            FROM pagos p
-            LEFT JOIN usuarios u ON p.usuario_id = u.id
-            WHERE p.id = ?
+            SELECT p.*, 
+                   CONCAT(u.nombres, ' ', u.apellidos) as cliente_nombre,
+                   u.correo as cliente_correo, u.celular as cliente_celular,
+                   a.tipo_asesoria, a.fecha_asesoria, a.estado as estado_asesoria
+            FROM tbl_pago_asesoria p
+            LEFT JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
+            LEFT JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
+            LEFT JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+            WHERE p.id_pago = %s
         ''', (id,))
+        
         pago = cursor.fetchone()
         
         if not pago:
-            flash('Pago no encontrado.', 'danger')
-            return redirect(url_for('pagos_admin.listar_pagos'))
-        
-        # Obtener lista de clientes
-        cursor.execute('SELECT id, nombre, email FROM usuarios WHERE rol = "Cliente"')
-        clientes = cursor.fetchall()
-        
-        conn.close()
-        
-        return render_template('admin/editar_pago.html', pago=pago, clientes=clientes)
-    
-    except Exception as e:
-        flash(f'Error al cargar el pago: {str(e)}', 'danger')
-        return redirect(url_for('pagos_admin.listar_pagos'))
-
-@pagos_admin_bp.route('/admin/pagos/eliminar/<int:id>')
-def eliminar_pago(id):
-    """Eliminar un pago"""
-    if not verificar_admin():
-        flash('No tienes permisos para acceder a esta sección.', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute('DELETE FROM pagos WHERE id = ?', (id,))
-        
-        if cursor.rowcount > 0:
-            conn.commit()
-            flash('Pago eliminado exitosamente.', 'success')
-        else:
-            flash('Pago no encontrado.', 'danger')
-        
-        conn.close()
-    
-    except Exception as e:
-        flash(f'Error al eliminar el pago: {str(e)}', 'danger')
-    
-    return redirect(url_for('pagos_admin.listar_pagos'))
-
-@pagos_admin_bp.route('/admin/pagos/procesar/<int:id>')
-def procesar_pago(id):
-    """Procesar un pago (marcar como completado)"""
-    if not verificar_admin():
-        flash('No tienes permisos para acceder a esta sección.', 'danger')
-        return redirect(url_for('auth.login'))
-    
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            UPDATE pagos 
-            SET estado = 'Completado', fecha_procesamiento = ?
-            WHERE id = ?
-        ''', (datetime.now(), id))
-        
-        if cursor.rowcount > 0:
-            conn.commit()
-            flash('Pago procesado exitosamente.', 'success')
-        else:
-            flash('Pago no encontrado.', 'danger')
-        
-        conn.close()
-    
-    except Exception as e:
-        flash(f'Error al procesar el pago: {str(e)}', 'danger')
-    
-    return redirect(url_for('pagos_admin.listar_pagos'))
-
-@pagos_admin_bp.route('/admin/pagos/api/estadisticas')
-def api_estadisticas_pagos():
-    """API para obtener estadísticas de pagos"""
-    if not verificar_admin():
-        return jsonify({'error': 'No autorizado'}), 403
-    
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # Estadísticas generales
-        cursor.execute('SELECT COUNT(*) as total FROM pagos')
-        total_pagos = cursor.fetchone()['total']
-        
-        cursor.execute('SELECT SUM(monto) as total FROM pagos WHERE estado = "Completado"')
-        total_ingresos = cursor.fetchone()['total'] or 0
-        
-        cursor.execute('SELECT COUNT(*) as total FROM pagos WHERE estado = "Pendiente"')
-        pagos_pendientes = cursor.fetchone()['total']
-        
-        # Pagos por mes (últimos 6 meses)
-        cursor.execute('''
-            SELECT strftime('%Y-%m', fecha) as mes, 
-                   COUNT(*) as cantidad,
-                   SUM(monto) as total
-            FROM pagos 
-            WHERE fecha >= date('now', '-6 months')
-            GROUP BY strftime('%Y-%m', fecha)
-            ORDER BY mes
-        ''')
-        pagos_por_mes = cursor.fetchall()
+            return jsonify({'error': 'Pago no encontrado'}), 404
         
         conn.close()
         
         return jsonify({
-            'total_pagos': total_pagos,
-            'total_ingresos': total_ingresos,
-            'pagos_pendientes': pagos_pendientes,
-            'pagos_por_mes': [dict(row) for row in pagos_por_mes]
+            'success': True,
+            'pago': dict(pago)
         })
-    
-    except Exception as e:
+        
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
+
+@pagos_admin_bp.route('/admin/pagos/estadisticas')
+@admin_required
+def estadisticas_pagos():
+    """Obtener estadísticas de pagos"""
+    try:
+        conn = create_connection()
+        if not conn:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+        
+        cursor = conn.cursor(dictionary=True)
+        
+        # Ingresos por mes (últimos 6 meses)
+        cursor.execute('''
+            SELECT DATE_FORMAT(fecha_pago, '%Y-%m') as mes, 
+                   SUM(monto) as ingresos
+            FROM tbl_pago_asesoria 
+            WHERE fecha_pago >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+            AND estado_pago = 'Completado'
+            GROUP BY DATE_FORMAT(fecha_pago, '%Y-%m')
+            ORDER BY mes
+        ''')
+        ingresos_por_mes = cursor.fetchall()
+        
+        # Pagos por método
+        cursor.execute('''
+            SELECT metodo_pago, COUNT(*) as cantidad, SUM(monto) as total
+            FROM tbl_pago_asesoria
+            WHERE estado_pago = 'Completado'
+            GROUP BY metodo_pago
+        ''')
+        pagos_por_metodo = cursor.fetchall()
+        
+        # Pagos por estado
+        cursor.execute('''
+            SELECT estado_pago, COUNT(*) as cantidad
+            FROM tbl_pago_asesoria
+            GROUP BY estado_pago
+        ''')
+        pagos_por_estado = cursor.fetchall()
+        
+        conn.close()
+        
+        return jsonify({
+            'ingresos_por_mes': [dict(row) for row in ingresos_por_mes],
+            'pagos_por_metodo': [dict(row) for row in pagos_por_metodo],
+            'pagos_por_estado': [dict(row) for row in pagos_por_estado]
+        })
+        
+    except Error as e:
         return jsonify({'error': str(e)}), 500
