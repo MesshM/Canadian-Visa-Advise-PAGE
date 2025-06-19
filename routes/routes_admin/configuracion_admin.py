@@ -403,4 +403,3 @@ def inicializar_configuraciones():
             'success': False, 
             'message': f'Error al inicializar configuraciones: {str(e)}'
         }), 500
- 

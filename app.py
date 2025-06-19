@@ -16,6 +16,7 @@ from routes.routes_asesor.recursos import recursos_asesor_bp
 from routes.routes_asesor.perfil_asesor import perfil_asesor_bp
 
 # Importa otros blueprints de administrador si los tienes
+from routes.routes_admin.panel_admin import panel_admin_bp
 from routes.routes_admin.usuarios_admin import usuarios_admin_bp
 from routes.routes_admin.asesores_admin import asesores_admin_bp
 from routes.routes_admin.asesorias_admin import asesorias_admin_bp
@@ -62,6 +63,7 @@ app.register_blueprint(recursos_asesor_bp)
 app.register_blueprint(perfil_asesor_bp)
 
 # Registrar los blueprints de administrador
+app.register_blueprint(panel_admin_bp)
 app.register_blueprint(usuarios_admin_bp)
 app.register_blueprint(asesores_admin_bp)
 app.register_blueprint(asesorias_admin_bp)
@@ -146,6 +148,10 @@ def asesor_perfil_redirect():
     return redirect(url_for('perfil_asesor.perfil_asesor'))
 
 # Rutas de redirección para admin
+@app.route('/admin')
+def admin_redirect():
+    return redirect(url_for('panel_admin.index_admin'))
+
 @app.route('/admin/usuarios')
 def usuarios_admin_redirect():
     return redirect(url_for('usuarios_admin.listar_usuarios'))
@@ -176,7 +182,7 @@ def documentos_admin_redirect():
 
 @app.route('/admin/documentos/subir')
 def documentos_subir_redirect():
-    return redirect(url_for('documentos_admin.subir_documento'))
+    return redirect(url_for('documentos_admin.nuevo_documento'))
 
 @app.route('/admin/pagos')
 def pagos_admin_redirect():
@@ -184,7 +190,7 @@ def pagos_admin_redirect():
 
 @app.route('/admin/pagos/procesar')
 def pagos_procesar_redirect():
-    return redirect(url_for('pagos_admin.procesar_pago'))
+    return redirect(url_for('pagos_admin.cambiar_estado_pago'))
 
 @app.route('/admin/reportes')
 def reportes_admin_redirect():
@@ -243,10 +249,10 @@ def inject_urls():
         'url_for_admin_asesorias_ver': lambda id: url_for('asesorias_admin.ver_asesoria', id=id),
         
         'url_for_admin_documentos': lambda: url_for('documentos_admin.listar_documentos'),
-        'url_for_admin_documentos_subir': lambda: url_for('documentos_admin.subir_documento'),
+        'url_for_admin_documentos_subir': lambda: url_for('documentos_admin.nuevo_documento'),
         
         'url_for_admin_pagos': lambda: url_for('pagos_admin.listar_pagos'),
-        'url_for_admin_pagos_procesar': lambda id: url_for('pagos_admin.procesar_pago', id=id),
+        'url_for_admin_pagos_procesar': lambda id: url_for('pagos_admin.cambiar_estado_pago', id=id),
         
         'url_for_admin_reportes': lambda: url_for('reportes_admin.panel_reportes'),
         'url_for_admin_reportes_generar': lambda: url_for('reportes_admin.generar_reporte'),
@@ -276,4 +282,3 @@ if __name__ == '__main__':
     if not os.path.exists('static/uploads'):
         os.makedirs('static/uploads')
     app.run(debug=True, host="0.0.0.0", port=os.getenv('PORT', default=5000))
-

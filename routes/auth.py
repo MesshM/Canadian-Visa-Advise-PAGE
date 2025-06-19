@@ -14,6 +14,24 @@ import re
 
 auth_bp = Blueprint('auth', __name__)
 
+def registrar_ultimo_acceso(user_id):
+    """Registra la fecha y hora del último acceso de un usuario"""
+    try:
+        conn = create_connection()
+        if conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                'UPDATE tbl_usuario SET ultimo_acceso = NOW() WHERE id_usuario = %s',
+                (user_id,)
+            )
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return True
+    except Error as e:
+        print(f"Error al registrar último acceso: {str(e)}")
+    return False
+
 # Modificar la función cargar_imagen_perfil_en_sesion para que sea más eficiente
 def cargar_imagen_perfil_en_sesion(user_id):
     try:
@@ -82,6 +100,14 @@ def login():
                     session['user_role'] = 'Administrador'
                     session['is_admin'] = True
                     session.permanent = True if remember_me else False
+                    
+                    # Registrar último acceso para administrador
+                    # Buscar el id_usuario correspondiente al administrador
+                    cursor.execute("SELECT id_usuario FROM tbl_administrador WHERE id_administrador = %s", (admin['id_administrador'],))
+                    admin_user = cursor.fetchone()
+                    if admin_user:
+                        registrar_ultimo_acceso(admin_user['id_usuario'])
+                    
                     cursor.close()
                     connection.close()
                     return redirect(url_for('panel_admin.index_admin'))
@@ -107,6 +133,14 @@ def login():
                     session['user_name'] = f"{asesor['nombre']} {asesor['apellidos']}"
                     session['user_role'] = 'Asesor'
                     session.permanent = True if remember_me else False
+                    
+                    # Registrar último acceso para asesor
+                    # Buscar el id_usuario correspondiente al asesor
+                    cursor.execute("SELECT id_usuario FROM tbl_asesor WHERE id_asesor = %s", (asesor['id_asesor'],))
+                    asesor_user = cursor.fetchone()
+                    if asesor_user:
+                        registrar_ultimo_acceso(asesor_user['id_usuario'])
+                    
                     # Si tienes fotos de perfil para asesores, llama aquí a cargar_imagen_perfil_en_sesion(asesor['id_asesor'])
                     cursor.close()
                     connection.close()
@@ -159,6 +193,9 @@ def login():
                         session.permanent = True
                     else:
                         session.permanent = False
+                    
+                    # Registrar último acceso para usuario regular
+                    registrar_ultimo_acceso(user['id_usuario'])
                     
                     # Cargar la imagen de perfil en la sesión
                     cargar_imagen_perfil_en_sesion(user['id_usuario'])
@@ -235,6 +272,9 @@ def verify_2fa():
             session.permanent = True
         else:
             session.permanent = False
+        
+        # Registrar último acceso después de verificación 2FA exitosa
+        registrar_ultimo_acceso(user_id)
         
         # Cargar la imagen de perfil en la sesión
         cargar_imagen_perfil_en_sesion(user_id)
