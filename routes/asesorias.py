@@ -498,66 +498,67 @@ def nueva_asesoria():
 
 @asesorias_bp.route('/obtener_horarios_disponibles', methods=['GET'])
 def obtener_horarios_disponibles():
-  if 'user_id' not in session:
-      return jsonify({'error': 'No autorizado'}), 401
-  
-  try:
-      id_asesor = request.args.get('id_asesor')
-      fecha = request.args.get('fecha')
-      
-      if not id_asesor or not fecha:
-          return jsonify({'error': 'Faltan parámetros requeridos'}), 400
-      
-      connection = create_connection()
-      if connection:
-          cursor = connection.cursor(dictionary=True)
-          
-          # Convertir la fecha a día de la semana (0-6, donde 0 es domingo)
-          fecha_obj = datetime.strptime(fecha, '%Y-%m-%d')
-          dia_semana = fecha_obj.weekday() + 1  # +1 porque en la BD 1 es lunes
-          
-          # Obtener los horarios disponibles del asesor para ese día de la semana
-          cursor.execute("""
-              SELECT TIME_FORMAT(hora_inicio, '%H:%i') as hora
-              FROM tbl_horarios_asesores
-              WHERE id_asesor = %s AND dia_semana = %s AND disponible = 1
-              ORDER BY hora_inicio
-          """, (id_asesor, dia_semana))
-          
-          horarios_disponibles = cursor.fetchall()
-          
-          # Obtener las citas ya programadas para ese asesor en esa fecha (tanto pagadas como pendientes)
-          cursor.execute("""
-              SELECT TIME_FORMAT(TIME(fecha_asesoria), '%H:%i') as hora
-              FROM tbl_asesoria
-              WHERE id_asesor = %s AND DATE(fecha_asesoria) = %s AND estado IN ('Pendiente', 'Pagada')
-          """, (id_asesor, fecha))
-          
-          citas_programadas = cursor.fetchall()
-          citas_horas = [cita['hora'] for cita in citas_programadas]
-          
-          # Obtener las reservas temporales activas
-          cursor.execute("""
-              SELECT TIME_FORMAT(TIME(fecha), '%H:%i') as hora
-              FROM tbl_reservas_temporales
-              WHERE id_asesor = %s AND DATE(fecha) = %s AND expiracion > NOW()
-          """, (id_asesor, fecha))
-          
-          reservas_temporales = cursor.fetchall()
-          reservas_horas = [reserva['hora'] for reserva in reservas_temporales]
-          
-          # Filtrar los horarios disponibles
-          horarios = [h['hora'] for h in horarios_disponibles if h['hora'] not in citas_horas and h['hora'] not in reservas_horas]
-          
-          cursor.close()
-          connection.close()
-          
-          return jsonify({'horarios': horarios})
-      else:
-          return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-  except Exception as e:
-      print(f"Error al obtener horarios disponibles: {str(e)}")
-      return jsonify({'error': str(e)}), 500
+    if 'user_id' not in session:
+        return jsonify({'error': 'No autorizado'}), 401
+
+    try:
+        id_asesor = request.args.get('id_asesor')
+        fecha = request.args.get('fecha')
+
+        if not id_asesor or not fecha:
+            return jsonify({'error': 'Faltan parámetros requeridos'}), 400
+
+        connection = create_connection()
+        if connection:
+            cursor = connection.cursor(dictionary=True)
+
+            fecha_obj = datetime.strptime(fecha, '%Y-%m-%d')
+            dia_semana = fecha_obj.weekday() + 1  # 1=Lunes, 7=Domingo
+            mes = fecha_obj.month
+            anio = fecha_obj.year
+
+            # Cambia la consulta para filtrar por mes y año
+            cursor.execute("""
+                SELECT TIME_FORMAT(hora_inicio, '%H:%i') as hora
+                FROM tbl_horarios_asesores
+                WHERE id_asesor = %s AND dia_semana = %s AND mes = %s AND anio = %s AND disponible = 1
+                ORDER BY hora_inicio
+            """, (id_asesor, dia_semana, mes, anio))
+
+            horarios_disponibles = cursor.fetchall()
+
+            # Obtener las citas ya programadas para ese asesor en esa fecha (tanto pagadas como pendientes)
+            cursor.execute("""
+                SELECT TIME_FORMAT(TIME(fecha_asesoria), '%H:%i') as hora
+                FROM tbl_asesoria
+                WHERE id_asesor = %s AND DATE(fecha_asesoria) = %s AND estado IN ('Pendiente', 'Pagada')
+            """, (id_asesor, fecha))
+
+            citas_programadas = cursor.fetchall()
+            citas_horas = [cita['hora'] for cita in citas_programadas]
+
+            # Obtener las reservas temporales activas
+            cursor.execute("""
+                SELECT TIME_FORMAT(TIME(fecha), '%H:%i') as hora
+                FROM tbl_reservas_temporales
+                WHERE id_asesor = %s AND DATE(fecha) = %s AND expiracion > NOW()
+            """, (id_asesor, fecha))
+
+            reservas_temporales = cursor.fetchall()
+            reservas_horas = [reserva['hora'] for reserva in reservas_temporales]
+
+            # Filtrar los horarios disponibles
+            horarios = [h['hora'] for h in horarios_disponibles if h['hora'] not in citas_horas and h['hora'] not in reservas_horas]
+
+            cursor.close()
+            connection.close()
+
+            return jsonify({'horarios': horarios})
+        else:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+    except Exception as e:
+        print(f"Error al obtener horarios disponibles: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @asesorias_bp.route('/cancelar_asesoria', methods=['POST'])
 @role_required('Usuario')
@@ -680,3 +681,4 @@ def obtener_detalles_asesoria(codigo_asesoria):
   except Exception as e:
       print(f"Error al obtener detalles de asesoría: {str(e)}")
       return jsonify({'error': str(e)}), 500
+

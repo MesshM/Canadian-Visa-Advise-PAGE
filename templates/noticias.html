@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}CVA | Noticias{% endblock %}
+
+{% block main %}
+<div class="container mx-auto px-4 py-12">
+    <div class="text-center mb-12 opacity-0 animate-fade-in-smooth transition-all duration-800 ease-out translate-y-[30px]">
+        <h1 class="text-4xl lg:text-5xl font-bold text-gray-900 font-roboto mb-4">
+            Últimas Noticias y Actualizaciones
+        </h1>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            Mantente informado sobre las novedades en procesos migratorios, noticias de Canadá y actualizaciones de nuestra plataforma.
+        </p>
+    </div>
+
+    <div class="flex justify-center mb-8 opacity-0 animate-fade-in-smooth transition-all duration-800 ease-out translate-y-[30px]" style="animation-delay: 0.2s;">
+        <div class="flex border-b border-gray-200">
+            <button data-tab="visa-news" class="py-3 px-6 text-lg font-medium border-b-2 border-primary-600 text-primary-600 hover:text-primary-600 hover:border-primary-300 transition-colors duration-300 focus:outline-none" aria-selected="true">
+                Noticias sobre el proceso de mi visa
+            </button>
+            <button data-tab="canada-news" class="py-3 px-6 text-lg font-medium border-b-2 border-transparent text-gray-600 hover:text-primary-600 hover:border-primary-300 transition-colors duration-300 focus:outline-none" aria-selected="false">
+                Noticias de Canadá
+            </button>
+            <button data-tab="platform-news" class="py-3 px-6 text-lg font-medium border-b-2 border-transparent text-gray-600 hover:text-primary-600 hover:border-primary-300 transition-colors duration-300 focus:outline-none" aria-selected="false">
+                Noticias de la plataforma
+            </button>
+        </div>
+    </div>
+
+    <div id="visa-news-content" class="tab-content active opacity-0 animate-fade-in-smooth transition-all duration-800 ease-out translate-y-[30px]" style="animation-delay: 0.4s;">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Noticia 1: Proceso de Visa -->
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 flex flex-col news-card opacity-0 translate-y-[30px]">
+                <img src="/placeholder.svg?height=200&width=300" alt="Imagen de Noticia" class="rounded-lg mb-4 object-cover w-full h-48">
+                <h3 class="text-xl font-bold text-gray-900 mb-2 font-roboto">Nuevos requisitos para la visa de estudios en 2024</h3>
+                <p class="text-sm text-gray-500 mb-3">Fecha: 15/05/2024</p>
+                <p class="text-gray-600 leading-relaxed flex-grow">
+                    Descubre los cambios más recientes en los requisitos para aplicar a la visa de estudios en Canadá y cómo prepararte.
+                </p>
+                <a href="#" class="inline-flex items-center text-primary-600 font-medium hover:text-primary-700 transition-colors duration-300 mt-4">
+                    <span>Leer más</span>
+                    <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                    </svg>
+                </a>
+            </div>
+            <!-- Noticia 2: Proceso de Visa -->
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 flex flex-col news-card opacity-0 translate-y-[30px]">
+                <img src="/placeholder.svg?height=200&width=300" alt="Imagen de Noticia" class="rounded-lg mb-4 object-cover w-full h-48">
+                <h3 class="text-xl font-bold text-gray-900 mb-2 font-roboto">Consejos para una entrevista de visa exitosa</h3>
+                <p class="text-sm text-gray-500 mb-3">Fecha: 10/05/2024</p>
+                <p class="text-gray-600 leading-relaxed flex-grow">
+                    Prepara tu entrevista con estos consejos clave de nuestros expertos para aumentar tus posibilidades de aprobación.
+                </p>
+                <a href="#" class="inline-flex items-center text-primary-600 font-medium hover:text-primary-700 transition-colors duration-300 mt-4">
+                    <span>Leer más</span>
+                    <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                    </svg>
+                </a>
+            </div>
+            <!-- Noticia 3: Proceso de Visa -->
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 flex flex-col news-card opacity-0 translate-y-[30px]">
+                <img src="/placeholder.svg?height=200&width=300" alt="Imagen de Noticia" class="rounded-lg mb-4 object-cover w-full h-48">
+                <h3 class="text-xl font-bold text-gray-900 mb-2 font-roboto">Guía completa para la reunificación familiar en Canadá</h3>
+                <p class="text-sm text-gray-500 mb-3">Fecha: 01/05/2024</p>
+                <p class="text-gray-600 leading-relaxed flex-grow">
+                    Todo lo que necesitas saber para traer a tus seres queridos a Canadá a través de los programas de reunificación familiar.
+                </p>
+                <a href="#" class="inline-flex items-center text-primary-600 font-medium hover:text-primary-700 transition-colors duration-300 mt-4">
+                    <span>Leer más</span>
+                    <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div id="canada-news-content" class="tab-content hidden opacity-0 animate-fade-in-smooth transition-all duration-800 ease-out translate-y-[30px]" style="animation-delay: 0.4s;">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Noticia 1: Canadá -->
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 flex flex-col news-card opacity-0 translate-y-[30px]">
+                <img src="/placeholder.svg?height=200&width=300" alt="Imagen de Noticia" class="rounded-lg mb-4 object-cover w-full h-48">
+                <h3 class="text-xl font-bold text-gray-900 mb-2 font-roboto">Canadá anuncia nuevas oportunidades laborales para inmigrantes</h3>
+                <p class="text-sm text-gray-500 mb-3">Fecha: 20/05/2024</p>
+                <p class="text-gray-600 leading-relaxed flex-grow">
+                    El gobierno canadiense ha revelado iniciativas para atraer talento extranjero en sectores clave.
+                </p>
+                <a href="#" class="inline-flex items-center text-primary-600 font-medium hover:text-primary-700 transition-colors duration-300 mt-4">
+                    <span>Leer más</span>
+                    <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                    </svg>
+                </a>
+            </div>
+            <!-- Noticia 2: Canadá -->
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 flex flex-col news-card opacity-0 translate-y-[30px]">
+                <img src="/placeholder.svg?height=200&width=300" alt="Imagen de Noticia" class="rounded-lg mb-4 object-cover w-full h-48">
+                <h3 class="text-xl font-bold text-gray-900 mb-2 font-roboto">Las mejores ciudades de Canadá para vivir y trabajar</h3>
+                <p class="text-sm text-gray-500 mb-3">Fecha: 18/05/2024</p>
+                <p class="text-gray-600 leading-relaxed flex-grow">
+                    Un análisis de las ciudades canadienses con mejor calidad de vida y oportunidades para inmigrantes.
+                </p>
+                <a href="#" class="inline-flex items-center text-primary-600 font-medium hover:text-primary-700 transition-colors duration-300 mt-4">
+                    <span>Leer más</span>
+                    <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                    </svg>
+                </a>
+            </div>
+            <!-- Noticia 3: Canadá -->
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 flex flex-col news-card opacity-0 translate-y-[30px]">
+                <img src="/placeholder.svg?height=200&width=300" alt="Imagen de Noticia" class="rounded-lg mb-4 object-cover w-full h-48">
+                <h3 class="text-xl font-bold text-gray-900 mb-2 font-roboto">Impacto de la economía canadiense en la inmigración</h3>
+                <p class="text-sm text-gray-500 mb-3">Fecha: 05/05/2024</p>
+                <p class="text-gray-600 leading-relaxed flex-grow">
+                    Cómo las tendencias económicas actuales de Canadá influyen en las políticas migratorias y oportunidades.
+                </p>
+                <a href="#" class="inline-flex items-center text-primary-600 font-medium hover:text-primary-700 transition-colors duration-300 mt-4">
+                    <span>Leer más</span>
+                    <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div id="platform-news-content" class="tab-content hidden opacity-0 animate-fade-in-smooth transition-all duration-800 ease-out translate-y-[30px]" style="animation-delay: 0.4s;">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Noticia 1: Plataforma -->
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 flex flex-col news-card opacity-0 translate-y-[30px]">
+                <img src="/placeholder.svg?height=200&width=300" alt="Imagen de Noticia" class="rounded-lg mb-4 object-cover w-full h-48">
+                <h3 class="text-xl font-bold text-gray-900 mb-2 font-roboto">Nueva función: Seguimiento de tu caso en tiempo real</h3>
+                <p class="text-sm text-gray-500 mb-3">Fecha: 25/05/2024</p>
+                <p class="text-gray-600 leading-relaxed flex-grow">
+                    Hemos lanzado una nueva herramienta para que puedas monitorear el estado de tu aplicación migratoria directamente desde tu perfil.
+                </p>
+                <a href="#" class="inline-flex items-center text-primary-600 font-medium hover:text-primary-700 transition-colors duration-300 mt-4">
+                    <span>Leer más</span>
+                    <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                    </svg>
+                </a>
+            </div>
+            <!-- Noticia 2: Plataforma -->
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 flex flex-col news-card opacity-0 translate-y-[30px]">
+                <img src="/placeholder.svg?height=200&width=300" alt="Imagen de Noticia" class="rounded-lg mb-4 object-cover w-full h-48">
+                <h3 class="text-xl font-bold text-gray-900 mb-2 font-roboto">Mejoras en la interfaz de usuario para una experiencia más fluida</h3>
+                <p class="text-sm text-gray-500 mb-3">Fecha: 12/05/2024</p>
+                <p class="text-gray-600 leading-relaxed flex-grow">
+                    Hemos actualizado el diseño de nuestra plataforma para que sea más intuitiva y fácil de usar.
+                </p>
+                <a href="#" class="inline-flex items-center text-primary-600 font-medium hover:text-primary-700 transition-colors duration-300 mt-4">
+                    <span>Leer más</span>
+                    <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                    </svg>
+                </a>
+            </div>
+            <!-- Noticia 3: Plataforma -->
+            <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 flex flex-col news-card opacity-0 translate-y-[30px]">
+                <img src="/placeholder.svg?height=200&width=300" alt="Imagen de Noticia" class="rounded-lg mb-4 object-cover w-full h-48">
+                <h3 class="text-xl font-bold text-gray-900 mb-2 font-roboto">Webinar gratuito: Preguntas y respuestas con nuestros asesores</h3>
+                <p class="text-sm text-gray-500 mb-3">Fecha: 08/05/2024</p>
+                <p class="text-gray-600 leading-relaxed flex-grow">
+                    Únete a nuestro próximo webinar en vivo para resolver todas tus dudas sobre el proceso migratorio a Canadá.
+                </p>
+                <a href="#" class="inline-flex items-center text-primary-600 font-medium hover:text-primary-700 transition-colors duration-300 mt-4">
+                    <span>Leer más</span>
+                    <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="/static/js/noticias.js"></script>
+{% endblock %}

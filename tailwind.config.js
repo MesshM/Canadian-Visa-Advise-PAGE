@@ -156,6 +156,25 @@ module.exports = {
           "0%": { transform: "scale(0.5)", opacity: "0" },
           "100%": { transform: "scale(1)", opacity: "1" },
         },
+        // Nuevas keyframes para animaciones de scroll y ripple
+        "fade-in-smooth-kf": {
+          "0%": { opacity: "0", transform: "translateY(30px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "fade-in-up-kf": {
+          "0%": { opacity: "0", transform: "translateY(40px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "slide-in-left-kf": {
+          "0%": { opacity: "0", transform: "translateX(-30px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
+        },
+        "ripple-animation-kf": {
+          to: {
+            transform: "scale(4)",
+            opacity: "0",
+          },
+        },
       },
       animation: {
         "fade-in": "fadeIn 0.5s ease-out forwards",
@@ -173,11 +192,23 @@ module.exports = {
         glow: "glow 1.5s ease-in-out infinite",
         "tab-hover": "tabHover 0.3s ease-out forwards",
         "initials-appear": "initialsAppear 0.4s ease-out forwards",
+        // Nuevas animaciones para scroll y ripple
+        "fade-in-smooth": "fade-in-smooth-kf 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards",
+        "fade-in-up": "fade-in-up-kf 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards",
+        "slide-in-left": "slide-in-left-kf 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards",
+        "ripple-animation": "ripple-animation-kf 0.6s linear",
       },
       transitionProperty: {
         width: "width",
         height: "height",
         spacing: "margin, padding",
+        all: "all", // Asegura que 'all' esté disponible para transiciones
+      },
+      transitionDuration: {
+        800: "800ms", // Duración personalizada para animaciones de scroll
+      },
+      transitionTimingFunction: {
+        "ease-out": "cubic-bezier(0.4, 0, 0.2, 1)", // Función de temporización personalizada
       },
       boxShadow: {
         btn: "0 4px 6px -1px rgba(234, 88, 88, 0.1), 0 2px 4px -1px rgba(234, 88, 88, 0.06)",

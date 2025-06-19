@@ -232,7 +232,6 @@ def inject_urls():
         'url_for_asesor_perfil': lambda: url_for('perfil_asesor.perfil_asesor'),
 
         # Rutas de admin
-        'url_for_admin_panel': lambda: url_for('panel_admin.index_admin'),
         'url_for_admin_usuarios': lambda: url_for('usuarios_admin.listar_usuarios'),
         'url_for_admin_usuarios_crear': lambda: url_for('usuarios_admin.crear_usuario'),
         'url_for_admin_usuarios_editar': lambda id: url_for('usuarios_admin.editar_usuario', id=id),
@@ -257,9 +256,7 @@ def inject_urls():
         'url_for_admin_configuracion': lambda: url_for('configuracion_admin.configuracion_general'),
         'url_for_admin_configuracion_actualizar': lambda: url_for('configuracion_admin.actualizar_configuracion'),
 
-        'now': lambda: datetime.now(),
-        'current_year': datetime.now().year,
-        'app_name': 'Canadian Visa Advise'
+        'now': lambda: datetime.now()
     }
 
 # Ruta principal

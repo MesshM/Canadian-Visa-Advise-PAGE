@@ -430,18 +430,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function cargarAsesoriasPagadas() {
     try {
-      mostrarSpinner(true) // Spinner shown here
+      mostrarSpinner(true)
       const response = await fetch("/formularios/asesorias_pagadas")
       const data = await response.json()
       if (data.success) {
-        // Ordenar las asesorías de forma descendente por codigo_asesoria
         allAsesorias = data.asesorias.sort((a, b) => b.codigo_asesoria - a.codigo_asesoria)
-        // Asignar números secuenciales después de ordenar (1 para la más reciente)
         const totalAsesorias = allAsesorias.length
         allAsesorias.forEach((asesoria, idx) => {
           asesoria.numero_secuencial = totalAsesorias - idx
         })
-        await renderPaginatedAsesorias() // Await the rendering of paginated cards
+        renderedCardsByPage = {} // <--- Limpia el cache aquí
+        await renderPaginatedAsesorias()
       } else {
         showNotification("Error al cargar las asesorías: " + data.message, "error")
       }
@@ -481,48 +480,53 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  let renderedCardsByPage = {} // Nuevo: cache de cards por página
+
+  // Cambia la función renderPaginatedAsesorias para precargar todas las páginas la primera vez
   async function renderPaginatedAsesorias() {
-    // Made async
-    asesoriasContainer.innerHTML = "" // Limpia las tarjetas existentes
+    asesoriasContainer.innerHTML = ""
 
     if (allAsesorias.length === 0) {
       asesoriasContainer.innerHTML = `
-    <div class="col-span-full text-center py-12 animate-fade-in">
-        <div class="text-gray-500 text-lg">
-            <svg class="w-20 h-20 mx-auto mb-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-            <h3 class="text-xl font-medium text-gray-900 mb-2">No hay asesorías pagadas disponibles</h3>
-            <p class="text-gray-600">Una vez que tenga asesorías pagadas, aparecerán aquí para completar el formulario de elegibilidad.</p>
-        </div>
-    </div>
-  `
-      paginationContainer.innerHTML = "" // Limpia la paginación si no hay tarjetas
+      <div class="col-span-full text-center py-12 animate-fade-in">
+          <div class="text-gray-500 text-lg">
+              <svg class="w-20 h-20 mx-auto mb-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              <h3 class="text-xl font-medium text-gray-900 mb-2">No hay asesorías pagadas disponibles</h3>
+              <p class="text-gray-600">Una vez que tenga asesorías pagadas, aparecerán aquí para completar el formulario de elegibilidad.</p>
+          </div>
+      </div>
+    `
+      paginationContainer.innerHTML = ""
       paginationContainer.classList.add("hidden")
       return
     }
 
-    const startIndex = (currentPage - 1) * itemsPerPage
-    const endIndex = startIndex + itemsPerPage
-    const asesoriasToDisplay = allAsesorias.slice(startIndex, endIndex)
+    const totalPages = Math.ceil(allAsesorias.length / itemsPerPage)
 
-    await renderCardsForPage(asesoriasToDisplay) // Await this call
-    renderPaginationButtons() // Renderiza los botones de paginación
+    // Precarga todas las páginas solo si el cache está vacío
+    if (Object.keys(renderedCardsByPage).length === 0) {
+      for (let page = 1; page <= totalPages; page++) {
+        const startIndex = (page - 1) * itemsPerPage
+        const endIndex = startIndex + itemsPerPage
+        const asesoriasToDisplay = allAsesorias.slice(startIndex, endIndex)
+        const cardElements = await renderCardsForPage(asesoriasToDisplay)
+        renderedCardsByPage[page] = cardElements
+      }
+    }
+
+    // Muestra solo las cards de la página actual
+    renderedCardsByPage[currentPage].forEach(card => asesoriasContainer.appendChild(card))
+
+    renderPaginationButtons()
   }
 
   async function renderCardsForPage(asesoriasToDisplay) {
-    asesoriasContainer.innerHTML = "" // Asegura que el contenedor esté vacío antes de añadir
-
-    // Crear un array de promesas para todas las tarjetas
+    // No limpiar el contenedor aquí, solo retorna las cards
     const cardPromises = asesoriasToDisplay.map((asesoria, i) => crearCardAsesoria(asesoria, i))
-
-    // Esperar a que todas las promesas se resuelvan
     const cardElements = await Promise.all(cardPromises)
-
-    // Añadir todos los elementos de tarjeta al DOM de una vez
-    cardElements.forEach((card) => {
-      asesoriasContainer.appendChild(card)
-    })
+    return cardElements
   }
 
   function renderPaginationButtons() {
@@ -612,14 +616,13 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         estadoFormularioTexto = "Pendiente (Documentos)"
         colorEstado = "bg-red-100 text-red-800"
-        actionButtonHtml = `<button onclick="abrirModalDocumentosFaltantes(this, ${asesoria.codigo_asesoria}, '${motivo_viaje}')" class="w-full relative overflow-hidden group bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-red-500/30 transition-all duration-300 cursor-pointer transform hover:scale-[1.02]"><span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span><div class="relative flex items-center justify-center"><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><span>Adjuntar Documentos Faltantes</span></div></button>`
+        actionButtonHtml = `<button onclick="abrirModalDocumentosFaltantes(this, ${asesoria.codigo_asesoria}, '${motivo_viaje}')" class="w-full relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer transform hover:scale-[1.02]"><span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span><div class="relative flex items-center justify-center"><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><span>Adjuntar Documentos Faltantes</span></div></button>`
       }
     } else {
       estadoFormularioTexto = "Pendiente (Formulario)"
       colorEstado = "bg-yellow-100 text-yellow-800"
       actionButtonHtml = `<button onclick="abrirFormularioElegibilidad(${asesoria.codigo_asesoria}, ${asesoria.id_solicitante})" class="w-full relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer transform hover:scale-[1.02]"><span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span><div class="relative flex items-center justify-center"><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><span>Llenar Formulario de Elegibilidad</span></div></button>`
     }
-    let tipoVisaMostrar = asesoria.tipo_asesoria === "Turismo" ? "Turismo / Visita Familiar" : asesoria.tipo_asesoria
     card.innerHTML = `
   <div class="p-6">
       <div class="flex justify-between items-start mb-6">
@@ -627,7 +630,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <h3 class="text-xl font-bold text-gray-900 font-roboto">
                   Formulario #${asesoria.numero_secuencial}
               </h3>
-              <p class="text-sm text-primary-600 font-medium">Visa de ${tipoVisaMostrar}</p>
+              <p class="text-sm text-primary-600 font-medium">Visa de ${asesoria.tipo_asesoria}</p>
           </div>
           <!-- Eliminado el span de asesoria.estado -->
       </div>
@@ -672,14 +675,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const asesoria = allAsesorias.find((a) => a.codigo_asesoria === codigoAsesoria)
     if (asesoria && asesoria.tipo_asesoria) {
       let tipoVisa = asesoria.tipo_asesoria.trim()
-      // Mostrar "Turismo / Visita Familiar" pero usar "Turismo" como clave real
-      if (tipoVisa.toLowerCase() === "turismo") {
-        motivoViajeInput.value = "Turismo / Visita Familiar"
-        motivoViajeInput.dataset.realValue = "Turismo"
-      } else {
-        motivoViajeInput.value = tipoVisa
-        motivoViajeInput.dataset.realValue = tipoVisa
-      }
+      motivoViajeInput.value = tipoVisa
+      motivoViajeInput.dataset.realValue = tipoVisa
     } else {
       motivoViajeInput.value = ""
       motivoViajeInput.dataset.realValue = ""
@@ -1335,6 +1332,7 @@ document.addEventListener("DOMContentLoaded", () => {
         uploadArea.classList.remove("hidden")
       } else {
         uploadArea.classList.add("hidden")
+       
         if (filesToUploadGlobally[docId]) {
           delete filesToUploadGlobally[docId]
           fileInput.value = null
@@ -1443,6 +1441,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (data.secure_url) {
         if (dropAreaContent) {
           dropAreaContent.innerHTML = `
+
          <svg class="mx-auto h-10 w-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
          <p class="text-sm font-medium text-green-700 break-all">${file.name} subido.</p>
          <p class="text-xs text-gray-500">¡Listo!</p>`
@@ -1451,6 +1450,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         if (dropAreaContent) {
           dropAreaContent.innerHTML = `
+
          <svg class="mx-auto h-10 w-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
          <p class="text-sm font-medium text-red-700 break-all">Error al subir ${file.name}.</p>
          <p class="text-xs text-red-500">${data.error ? data.error.message : "Intente de nuevo"}</p>`
@@ -1463,6 +1463,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       if (dropAreaContent) {
         dropAreaContent.innerHTML = `
+
         <svg class="mx-auto h-10 w-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         <p class="text-sm font-medium text-red-700 break-all">Error de conexión al subir.</p>
         <p class="text-xs text-red-500">Verifique su conexión e intente de nuevo.</p>`
@@ -1483,17 +1484,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const uploadPromises = []
+      // Obtén los datos necesarios del DOM o de variables globales
+      const idUsuarioElement = document.getElementById("id_usuario")
+      const idUsuario = idUsuarioElement ? idUsuarioElement.value : "unknown_user"
+      const idSolicitante = formularioElegibilidad.dataset.idSolicitante || "unknown_sol"
+      const codigoAsesoria = document.getElementById("codigoAsesoria").value
+
       for (const docId in filesToUploadGlobally) {
         if (filesToUploadGlobally.hasOwnProperty(docId)) {
           const file = filesToUploadGlobally[docId]
           const estadoSelect = document.getElementById(`${docId}_estado`)
           if (estadoSelect && estadoSelect.value === "Disponible" && file) {
-            // Solo añadir a promesas si no tiene ya una URL (evitar resubir)
             if (
               !fileUrlsFromUpload[docId] &&
               !(document.getElementById(docId) && document.getElementById(docId).value)
             ) {
-              uploadPromises.push(uploadSingleFileToCloudinary(docId, file))
+              uploadPromises.push(
+                uploadSingleFileToCloudinary(docId, file, {
+                  idUsuario,
+                  idSolicitante,
+                  codigoAsesoria,
+                })
+              )
             }
           }
         }
@@ -1747,9 +1759,8 @@ document.addEventListener("DOMContentLoaded", () => {
       // Obtén los datos necesarios del DOM o de variables globales
       const idUsuarioElement = document.getElementById("id_usuario")
       const idUsuario = idUsuarioElement ? idUsuarioElement.value : "unknown_user"
-      const asesoria = allAsesorias.find(a => a.codigo_asesoria == currentCodigoAsesoria)
-      const idSolicitante = asesoria ? asesoria.id_solicitante : "unknown_sol"
-      const codigoAsesoria = currentCodigoAsesoria
+      const idSolicitante = formularioElegibilidad.dataset.idSolicitante || "unknown_sol"
+      const codigoAsesoria = document.getElementById("codigoAsesoria").value
 
       const allDocElements = document.querySelectorAll("#documentosModalContent [data-doc-id]")
       for (const docElement of allDocElements) {
