@@ -172,19 +172,6 @@ function eliminarAsesor(asesorId) {
   showModal("Eliminar Asesor", "¿Estás seguro de que quieres eliminar este asesor? Esta acción no se puede deshacer.")
 }
 
-// Cambiar estado del asesor
-function toggleAsesorStatus(asesorId) {
-  if (!asesorId) {
-    showNotification("Error: ID de asesor no válido", "error")
-    return
-  }
-
-  currentAsesorId = asesorId
-  currentAction = "toggle_status"
-
-  showModal("Cambiar Estado del Asesor", "¿Estás seguro de que quieres cambiar el estado de este asesor?")
-}
-
 // Mostrar modal de confirmación
 function showModal(title, message) {
   const modal = document.getElementById("confirmModal")
@@ -324,9 +311,7 @@ async function handleConfirmAction() {
 
   try {
     let endpoint = ""
-    if (currentAction === "toggle_status") {
-      endpoint = `/admin/asesores/${currentAsesorId}/toggle-status`
-    } else if (currentAction === "eliminar") {
+    if (currentAction === "eliminar") {
       endpoint = `/admin/asesores/${currentAsesorId}/eliminar`
     }
 

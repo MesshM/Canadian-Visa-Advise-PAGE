@@ -71,9 +71,7 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asesor</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Especialidad</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo</th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
@@ -87,33 +85,17 @@
                                     </div>
                                     <div class="ml-4">
                                         <div class="text-sm font-medium text-gray-900">{{ asesor.nombre }} {{ asesor.apellidos }}</div>
-                                        <div class="text-sm text-gray-500">{{ asesor.correo }}</div>
                                     </div>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ asesor.especialidad or 'No especificada' }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ asesor.telefono or 'No registrado' }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                    {% if asesor.estado == 'Activo' %}bg-green-100 text-green-800
-                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                    {{ asesor.estado or 'Inactivo' }}
-                                </span>
+                                {{ asesor.correo }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex justify-end space-x-2">
                                     <button onclick="editarAsesor({{ asesor.id_asesor }})" class="text-primary-600 hover:text-primary-900 p-1 rounded" title="Editar asesor">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                        </svg>
-                                    </button>
-                                    <button onclick="toggleAsesorStatus({{ asesor.id_asesor }})" class="text-yellow-600 hover:text-yellow-900 p-1 rounded" title="Cambiar estado">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path>
                                         </svg>
                                     </button>
                                     <button onclick="eliminarAsesor({{ asesor.id_asesor }})" class="text-red-600 hover:text-red-900 p-1 rounded" title="Eliminar asesor">
@@ -126,7 +108,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">No hay asesores registrados</td>
+                            <td colspan="3" class="px-6 py-4 text-center text-gray-500">No hay asesores registrados</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -182,7 +164,7 @@
                         <a href="?pagina={{ pagina_actual + 1 }}{% if buscar %}&buscar={{ buscar }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                             <span class="sr-only">Siguiente</span>
                             <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4-4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
                             </svg>
                         </a>
                         {% endif %}
@@ -249,27 +231,9 @@
                                class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
                     </div>
                     
-                    <div>
+                    <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Correo Electrónico <span class="text-red-500">*</span></label>
                         <input type="email" id="editCorreo" name="correo" required 
-                               class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Especialidad</label>
-                        <select id="editEspecialidad" name="especialidad" 
-                                class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
-                            <option value="">Seleccionar especialidad</option>
-                            <option value="Inmigración Canadiense">Inmigración Canadiense</option>
-                            <option value="Visa de Trabajo">Visa de Trabajo</option>
-                            <option value="Visa de Estudiante">Visa de Estudiante</option>
-                            <option value="Residencia Permanente">Residencia Permanente</option>
-                        </select>
-                    </div>
-                    
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
-                        <input type="tel" id="editTelefono" name="telefono" 
                                class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
                     </div>
                 </div>

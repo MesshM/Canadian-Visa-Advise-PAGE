@@ -36,59 +36,49 @@ def listar_asesores():
         conn = get_db_connection()
         if not conn:
             flash('Error de conexión a la base de datos', 'error')
-            # Asegura que total_paginas siempre esté definido
             return render_template('admin/asesores_admin.html', asesores=[], total_paginas=1, pagina_actual=1, buscar='', total_asesores=0, asesores_activos=0)
         
         cursor = conn.cursor(dictionary=True)
         
-        # Obtener parámetros de filtro
         buscar = request.args.get('buscar', '').strip()
         pagina = int(request.args.get('pagina', 1))
         por_pagina = 20
-        
-        # Consulta simplificada - solo tabla tbl_asesor
+
+        # Solo columnas existentes: id_asesor, nombre, apellidos, correo
         query = '''
-            SELECT a.id_asesor, a.nombre, a.apellidos, a.correo, a.especialidad, a.telefono,
-                   CASE WHEN u.correo_verificado = 1 THEN 'Activo' ELSE 'Inactivo' END as estado,
-                   u.correo_verificado
+            SELECT a.id_asesor, a.nombre, a.apellidos, a.correo,
+                   CASE WHEN u.correo_verificado = 1 THEN 'Activo' ELSE 'Inactivo' END as estado
             FROM tbl_asesor a
             LEFT JOIN tbl_usuario u ON a.id_usuario = u.id_usuario
             WHERE 1=1
         '''
         params = []
-        
-        # Filtro de búsqueda por nombre o correo
         if buscar:
             query += ''' AND (a.nombre LIKE %s OR a.apellidos LIKE %s OR a.correo LIKE %s 
                         OR CONCAT(a.nombre, " ", a.apellidos) LIKE %s)'''
             search_param = f'%{buscar}%'
             params.extend([search_param, search_param, search_param, search_param])
-        
-        # Contar total de asesores para paginación
+
         count_query = f"SELECT COUNT(*) as total FROM tbl_asesor a LEFT JOIN tbl_usuario u ON a.id_usuario = u.id_usuario WHERE 1=1"
         count_params = []
-        
         if buscar:
             count_query += ''' AND (a.nombre LIKE %s OR a.apellidos LIKE %s OR a.correo LIKE %s 
                               OR CONCAT(a.nombre, " ", a.apellidos) LIKE %s)'''
             count_params.extend([search_param, search_param, search_param, search_param])
-        
+
         cursor.execute(count_query, count_params)
         total_asesores_row = cursor.fetchone()
         total_asesores = total_asesores_row['total'] if total_asesores_row and 'total' in total_asesores_row else 0
-        
-        # Agregar ordenación y paginación
+
         query += ' ORDER BY a.id_asesor DESC LIMIT %s OFFSET %s'
         params.extend([por_pagina, (pagina - 1) * por_pagina])
-        
         cursor.execute(query, params)
         asesores = cursor.fetchall()
-        
-        # Obtener estadísticas básicas
+
         cursor.execute('SELECT COUNT(*) as total FROM tbl_asesor')
         total_asesores_stat_row = cursor.fetchone()
         total_asesores_stat = total_asesores_stat_row['total'] if total_asesores_stat_row and 'total' in total_asesores_stat_row else 0
-        
+
         cursor.execute('''
             SELECT COUNT(*) as total FROM tbl_asesor a 
             JOIN tbl_usuario u ON a.id_usuario = u.id_usuario 
@@ -96,12 +86,12 @@ def listar_asesores():
         ''')
         asesores_activos_row = cursor.fetchone()
         asesores_activos = asesores_activos_row['total'] if asesores_activos_row and 'total' in asesores_activos_row else 0
-        
+
         cursor.close()
         conn.close()
-        
+
         total_paginas = (total_asesores + por_pagina - 1) // por_pagina if total_asesores > 0 else 1
-        
+
         return render_template('admin/asesores_admin.html',
                              asesores=asesores,
                              total_asesores=total_asesores_stat,
@@ -113,7 +103,6 @@ def listar_asesores():
     except Error as e:
         print(f"Error en listar_asesores: {str(e)}")
         flash(f'Error al cargar asesores: {str(e)}', 'error')
-        # Asegura que total_paginas siempre esté definido en caso de error
         return render_template('admin/asesores_admin.html', asesores=[], total_paginas=1, pagina_actual=1, buscar='', total_asesores=0, asesores_activos=0)
 
 @asesores_admin_bp.route('/<int:id>/datos', methods=['GET'])
@@ -126,14 +115,11 @@ def obtener_datos_asesor(id):
             return jsonify({'success': False, 'error': 'Error de conexión a la base de datos'}), 500
         
         cursor = conn.cursor(dictionary=True)
-        
-        # Obtener datos del asesor
         cursor.execute('''
-            SELECT a.id_asesor, a.nombre, a.apellidos, a.correo, a.especialidad, a.telefono
+            SELECT a.id_asesor, a.nombre, a.apellidos, a.correo
             FROM tbl_asesor a
             WHERE a.id_asesor = %s
         ''', (id,))
-        
         asesor = cursor.fetchone()
         cursor.close()
         conn.close()
@@ -157,54 +143,40 @@ def editar_asesor(id):
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        
-        # Obtener datos JSON del request
         if request.is_json:
             data = request.get_json()
         else:
             data = request.form.to_dict()
-            
         nombre = data.get('nombre', '').strip()
         apellidos = data.get('apellidos', '').strip()
         correo = data.get('correo', '').strip().lower()
-        especialidad = data.get('especialidad', '').strip()
-        telefono = data.get('telefono', '').strip()
-        
+        # especialidad y telefono eliminados
         # Validaciones
         if not nombre or not apellidos or not correo:
             return jsonify({'success': False, 'error': 'Los campos nombre, apellidos y correo son obligatorios'})
-        
         if not validar_email(correo):
             return jsonify({'success': False, 'error': 'El formato del correo electrónico no es válido'})
-        
-        # Verificar si el correo ya existe (excluyendo el asesor actual)
         cursor.execute(
             'SELECT id_asesor FROM tbl_asesor WHERE correo = %s AND id_asesor != %s', 
             (correo, id)
         )
         asesor_existente = cursor.fetchone()
-        
         if asesor_existente:
             cursor.close()
             conn.close()
             return jsonify({'success': False, 'error': 'Ya existe otro asesor con este correo electrónico'})
-        
-        # Actualizar asesor
         cursor.execute('''
             UPDATE tbl_asesor 
-            SET nombre = %s, apellidos = %s, correo = %s, especialidad = %s, telefono = %s
+            SET nombre = %s, apellidos = %s, correo = %s
             WHERE id_asesor = %s
-        ''', (nombre, apellidos, correo, especialidad, telefono, id))
-        
+        ''', (nombre, apellidos, correo, id))
         conn.commit()
         cursor.close()
         conn.close()
-        
         return jsonify({
             'success': True,
             'mensaje': 'Asesor actualizado exitosamente'
         })
-        
     except Error as e:
         print(f"Error en editar_asesor: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -310,8 +282,6 @@ def crear_asesor():
             nombre = request.form.get('nombre', '').strip()
             apellidos = request.form.get('apellidos', '').strip()
             correo = request.form.get('correo', '').strip().lower()
-            especialidad = request.form.get('especialidad', '').strip()
-            telefono = request.form.get('telefono', '').strip()
             password = request.form.get('password', '')
             confirm_password = request.form.get('confirm_password', '')
             
@@ -361,9 +331,9 @@ def crear_asesor():
             
             # Crear el asesor
             cursor.execute('''
-                INSERT INTO tbl_asesor (id_usuario, nombre, apellidos, correo, especialidad, telefono, password)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ''', (usuario_id, nombre, apellidos, correo, especialidad, telefono, password_hash))
+                INSERT INTO tbl_asesor (id_usuario, nombre, apellidos, correo)
+                VALUES (%s, %s, %s, %s)
+            ''', (usuario_id, nombre, apellidos, correo))
             
             conn.commit()
             cursor.close()
