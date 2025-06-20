@@ -39,7 +39,9 @@ def listar_asesorias():
         
         # Construir consulta con filtros
         query = '''
-            SELECT a.codigo_asesoria, a.fecha_asesoria, a.tipo_asesoria, a.estado,
+            SELECT a.codigo_asesoria, a.fecha_asesoria, a.tipo_asesoria, 
+                   COALESCE(p.estado_pago, 'Pendiente') AS estado_pago, 
+                   a.estado_proceso,
                    a.lugar, a.descripcion, a.asesor_asignado,
                    CONCAT(u.nombres, ' ', u.apellidos) as cliente_nombre,
                    u.correo as cliente_correo,
@@ -48,6 +50,7 @@ def listar_asesorias():
             LEFT JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
             LEFT JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
             LEFT JOIN tbl_asesor ase ON a.id_asesor = ase.id_asesor
+            LEFT JOIN tbl_pago_asesoria p ON a.codigo_asesoria = p.codigo_asesoria
             WHERE 1=1
         '''
         params = []
@@ -80,32 +83,13 @@ def listar_asesorias():
         cursor.execute(query, params)
         asesorias = cursor.fetchall()
         
-        # Obtener estadísticas
-        cursor.execute("SELECT COUNT(*) as total FROM tbl_asesoria")
-        stats_total = cursor.fetchone()['total']
-        
-        cursor.execute("SELECT COUNT(*) as total FROM tbl_asesoria WHERE estado = 'Pendiente'")
-        stats_pendientes = cursor.fetchone()['total']
-        
-        cursor.execute("SELECT COUNT(*) as total FROM tbl_asesoria WHERE estado = 'Completada'")
-        stats_completadas = cursor.fetchone()['total']
-        
-        cursor.execute("SELECT COUNT(*) as total FROM tbl_asesoria WHERE DATE(fecha_asesoria) = CURDATE()")
-        stats_hoy = cursor.fetchone()['total']
-        
         conn.close()
         
         return render_template('admin/asesorias_admin.html',
                              asesorias=asesorias,
                              total_asesorias=total_asesorias,
                              pagina_actual=pagina,
-                             total_paginas=(total_asesorias + por_pagina - 1) // por_pagina,
-                             stats={
-                                 'total': stats_total,
-                                 'pendientes': stats_pendientes,
-                                 'completadas': stats_completadas,
-                                 'hoy': stats_hoy
-                             })
+                             total_paginas=(total_asesorias + por_pagina - 1) // por_pagina)
                              
     except Error as e:
         flash(f'Error al cargar asesorías: {str(e)}', 'error')

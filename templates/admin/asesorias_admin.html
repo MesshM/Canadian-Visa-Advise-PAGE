@@ -8,77 +8,18 @@
         <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow">
             <h1 class="text-2xl font-bold text-gray-900 font-roboto">Gestión de Asesorías</h1>
             <div class="flex space-x-3">
-                <a href="{{ url_for('asesorias_admin.crear_asesoria') }}" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-300">
+                <button id="btnAbrirCrearAsesoria" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-300">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
                     Nueva Asesoría
-                </a>
+                </button>
                 <button onclick="exportAsesorias()" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-300">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
                     Exportar
                 </button>
-            </div>
-        </div>
-
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-sm text-gray-500">Total Asesorías</p>
-                        <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ total_asesorias or 0 }}</h3>
-                    </div>
-                    <div class="p-2 bg-blue-100 rounded-lg">
-                        <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-sm text-gray-500">Pendientes</p>
-                        <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ asesorias_pendientes or 0 }}</h3>
-                    </div>
-                    <div class="p-2 bg-yellow-100 rounded-lg">
-                        <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-sm text-gray-500">Completadas</p>
-                        <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ asesorias_completadas or 0 }}</h3>
-                    </div>
-                    <div class="p-2 bg-green-100 rounded-lg">
-                        <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="text-sm text-gray-500">Canceladas</p>
-                        <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ asesorias_canceladas or 0 }}</h3>
-                    </div>
-                    <div class="p-2 bg-red-100 rounded-lg">
-                        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -131,8 +72,8 @@
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asesor</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pago</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado Formulario</th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
@@ -161,45 +102,37 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                    {% if asesoria.estado == 'Completada' %}bg-green-100 text-green-800
-                                    {% elif asesoria.estado == 'Pendiente' %}bg-yellow-100 text-yellow-800
-                                    {% elif asesoria.estado == 'En Proceso' %}bg-blue-100 text-blue-800
-                                    {% elif asesoria.estado == 'Cancelada' %}bg-red-100 text-red-800
-                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                    {{ asesoria.estado or 'Pendiente' }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                     {% if asesoria.estado_pago == 'Completado' %}bg-green-100 text-green-800
                                     {% elif asesoria.estado_pago == 'Pendiente' %}bg-yellow-100 text-yellow-800
                                     {% else %}bg-red-100 text-red-800{% endif %}">
                                     {{ asesoria.estado_pago or 'Pendiente' }}
                                 </span>
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                    {% if asesoria.estado_proceso == 'Terminado' %}bg-green-100 text-green-800
+                                    {% elif asesoria.estado_proceso == 'Proceso activo' %}bg-blue-100 text-blue-800
+                                    {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                    {{ asesoria.estado_proceso or 'Pendiente' }}
+                                </span>
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex justify-end space-x-2">
-                                    <a href="{{ url_for('asesorias_admin.ver_asesoria', id=asesoria.codigo_asesoria) }}" class="text-blue-600 hover:text-blue-900">
+                                    <button class="text-blue-600 hover:text-blue-900" title="Ver detalles"
+                                        onclick="abrirModalVerAsesoria({{ asesoria.codigo_asesoria }})">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                         </svg>
-                                    </a>
-                                    <a href="{{ url_for('asesorias_admin.editar_asesoria', id=asesoria.codigo_asesoria) }}" class="text-primary-600 hover:text-primary-900">
+                                    </button>
+                                    <button class="text-primary-600 hover:text-primary-900" title="Editar"
+                                        onclick="abrirModalEditarAsesoria({{ asesoria.codigo_asesoria }})">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                         </svg>
-                                    </a>
-                                    <button data-asesoria-id="{{ asesoria.codigo_asesoria }}" 
-                                        data-action="reasignar" 
-                                        class="btn-action text-yellow-600 hover:text-yellow-900">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                                        </svg>
                                     </button>
-                                    <button data-asesoria-id="{{ asesoria.codigo_asesoria }}" 
-                                        data-action="cancelar" 
-                                        class="btn-action text-red-600 hover:text-red-900">
+                                    <button class="text-red-600 hover:text-red-900" title="Eliminar"
+                                        onclick="abrirModalEliminarAsesoria({{ asesoria.codigo_asesoria }})">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                         </svg>
@@ -218,6 +151,107 @@
         </div>
     </div>
 
+    <!-- MODAL CREAR ASESORIA -->
+    <div id="modalCrearAsesoria" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Crear Nueva Asesoría</h2>
+                <button onclick="cerrarModalCrearAsesoria()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form id="formCrearAsesoria">
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-700">Nombre del Cliente</label>
+                    <input type="text" name="cliente_nombre" required class="w-full border rounded px-3 py-2 mt-1" />
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-700">Tipo de Asesoría</label>
+                    <input type="text" name="tipo_asesoria" required class="w-full border rounded px-3 py-2 mt-1" />
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-700">Fecha</label>
+                    <input type="datetime-local" name="fecha_asesoria" class="w-full border rounded px-3 py-2 mt-1" />
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-700">Estado Proceso</label>
+                    <select name="estado_proceso" class="w-full border rounded px-3 py-2 mt-1">
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Proceso activo">Proceso activo</option>
+                        <option value="Terminado">Terminado</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2 mt-4">
+                    <button type="button" onclick="cerrarModalCrearAsesoria()" class="px-4 py-2 bg-gray-500 text-white rounded">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded">Crear</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL VER ASESORIA -->
+    <div id="modalVerAsesoria" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Detalles de Asesoría</h2>
+                <button onclick="cerrarModalVerAsesoria()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="contenidoVerAsesoria">
+                <!-- Aquí se cargan los datos por JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR ASESORIA -->
+    <div id="modalEditarAsesoria" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Editar Asesoría</h2>
+                <button onclick="cerrarModalEditarAsesoria()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form id="formEditarAsesoria">
+                <div id="contenidoEditarAsesoria">
+                    <!-- Aquí se cargan los datos por JS -->
+                </div>
+                <div class="flex justify-end space-x-2 mt-4">
+                    <button type="button" onclick="cerrarModalEditarAsesoria()" class="px-4 py-2 bg-gray-500 text-white rounded">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL ELIMINAR ASESORIA -->
+    <div id="modalEliminarAsesoria" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-sm p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-red-600">Eliminar Asesoría</h2>
+                <button onclick="cerrarModalEliminarAsesoria()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="mb-4 text-gray-700">
+                ¿Estás seguro de que deseas eliminar esta asesoría? Esta acción no se puede deshacer.
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="button" onclick="cerrarModalEliminarAsesoria()" class="px-4 py-2 bg-gray-500 text-white rounded">Cancelar</button>
+                <button type="button" id="btnConfirmarEliminarAsesoria" class="px-4 py-2 bg-red-600 text-white rounded">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Pasar datos de forma segura al JavaScript -->
     <script id="asesorias-data" type="application/json">
     {
@@ -228,7 +262,7 @@
                 "cliente": "{{ asesoria.cliente_nombre|e }}",
                 "estado": "{{ asesoria.estado|e }}",
                 "asesor_id": {{ asesoria.asesor_id or 'null' }}
-            }{% if not loop.last %},{% endif %}
+            }{% if not loop.last %},{% endif %},
             {% endfor %}
         ],
         "asesores": [
@@ -236,12 +270,11 @@
             {
                 "id": {{ asesor.id_asesor }},
                 "nombre": "{{ asesor.nombre|e }} {{ asesor.apellidos|e }}"
-            }{% if not loop.last %},{% endif %}
+            }{% if not loop.last %},{% endif %},
             {% endfor %}
         ]
     }
     </script>
 
     <script src="/static/js/administrador/asesorias_admin.js"></script>
-    <script src="/static/js/admin/asesorias_admin.js"></script>
 {% endblock %}
