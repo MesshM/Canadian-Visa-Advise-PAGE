@@ -1,4 +1,4 @@
-// Administrador - Gestión de Asesores Mejorado
+// Administrador - Gestión de Asesores
 let currentAsesorId = null
 let currentAction = null
 
@@ -50,6 +50,12 @@ function initializeEventListeners() {
   const editAsesorForm = document.getElementById("editAsesorForm")
   if (editAsesorForm) {
     editAsesorForm.addEventListener("submit", handleEditAsesorSubmit)
+  }
+
+  // Formulario de creación de asesor
+  const createAsesorForm = document.getElementById("createAsesorForm")
+  if (createAsesorForm) {
+    createAsesorForm.addEventListener("submit", handleCreateAsesorSubmit)
   }
 }
 
@@ -114,17 +120,35 @@ function initModals() {
   }
 }
 
+function showButtonSpinner(btn) {
+  if (!btn) return
+  btn.dataset.originalContent = btn.innerHTML
+  btn.innerHTML = `
+    <span class="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600"></span>
+  `
+  btn.disabled = true
+}
+
+function hideButtonSpinner(btn) {
+  if (!btn || !btn.dataset.originalContent) return
+  btn.innerHTML = btn.dataset.originalContent
+  btn.disabled = false
+  delete btn.dataset.originalContent
+}
+
 // Función para editar asesor
 function editarAsesor(asesorId) {
   if (!asesorId) {
     showNotification("Error: ID de asesor no válido", "error")
     return
   }
-  cargarDatosAsesor(asesorId)
+  const btn = document.getElementById(`btn-editar-${asesorId}`)
+  showButtonSpinner(btn)
+  cargarDatosAsesor(asesorId, btn)
 }
 
 // Cargar datos del asesor para edición
-async function cargarDatosAsesor(asesorId) {
+async function cargarDatosAsesor(asesorId, btn) {
   try {
     const response = await fetch(`/admin/asesores/${asesorId}/datos`, {
       method: "GET",
@@ -135,19 +159,16 @@ async function cargarDatosAsesor(asesorId) {
     })
 
     if (!response.ok) {
-      throw new Error("Error al cargar datos del asesor")
+      throw new Error(`Error HTTP: ${response.status}`)
     }
 
     const data = await response.json()
 
     if (data.success) {
-      // Llenar el formulario del modal
       document.getElementById("editAsesorId").value = data.asesor.id_asesor
       document.getElementById("editNombre").value = data.asesor.nombre || ""
       document.getElementById("editApellidos").value = data.asesor.apellidos || ""
       document.getElementById("editCorreo").value = data.asesor.correo || ""
-      document.getElementById("editEspecialidad").value = data.asesor.especialidad || ""
-      document.getElementById("editTelefono").value = data.asesor.telefono || ""
 
       showEditModal()
     } else {
@@ -156,6 +177,9 @@ async function cargarDatosAsesor(asesorId) {
   } catch (error) {
     console.error("Error:", error)
     showNotification("Error de conexión al cargar datos del asesor", "error")
+  } finally {
+    // Oculta el spinner cuando el modal aparece o hay error
+    if (btn) hideButtonSpinner(btn)
   }
 }
 
@@ -165,15 +189,19 @@ function eliminarAsesor(asesorId) {
     showNotification("Error: ID de asesor no válido", "error")
     return
   }
-
+  const btn = document.getElementById(`btn-eliminar-${asesorId}`)
+  showButtonSpinner(btn)
   currentAsesorId = asesorId
   currentAction = "eliminar"
-
-  showModal("Eliminar Asesor", "¿Estás seguro de que quieres eliminar este asesor? Esta acción no se puede deshacer.")
+  showModal(
+    "Eliminar Asesor",
+    "¿Estás seguro de que quieres eliminar este asesor? Esta acción no se puede deshacer y se verificará que no tenga asesorías asociadas.",
+    btn
+  )
 }
 
 // Mostrar modal de confirmación
-function showModal(title, message) {
+function showModal(title, message, btn) {
   const modal = document.getElementById("confirmModal")
   const modalTitle = document.getElementById("modalTitle")
   const modalMessage = document.getElementById("modalMessage")
@@ -184,6 +212,9 @@ function showModal(title, message) {
     modal.classList.remove("hidden")
     modal.classList.add("flex")
     document.body.style.overflow = "hidden"
+
+    // Oculta el spinner cuando el modal aparece
+    if (btn) hideButtonSpinner(btn)
 
     const cancelBtn = document.getElementById("cancelBtn")
     if (cancelBtn) {
@@ -227,7 +258,12 @@ function hideEditModal() {
     modal.classList.remove("flex")
     modal.classList.add("hidden")
     document.body.style.overflow = "auto"
-    document.getElementById("editAsesorForm").reset()
+
+    // Limpiar formulario
+    const form = document.getElementById("editAsesorForm")
+    if (form) {
+      form.reset()
+    }
   }
 }
 
@@ -256,8 +292,29 @@ async function handleEditAsesorSubmit(e) {
       nombre: formData.get("nombre"),
       apellidos: formData.get("apellidos"),
       correo: formData.get("correo"),
-      especialidad: formData.get("especialidad"),
-      telefono: formData.get("telefono"),
+    }
+
+    // Si se ingresa una nueva contraseña, agregarla
+    const password = formData.get("password")
+    if (password && password.length > 0) {
+      if (password.length < 8) {
+        showNotification("La contraseña debe tener al menos 8 caracteres", "error")
+        return
+      }
+      asesorData.password = password
+    }
+
+    // Validaciones del lado del cliente
+    if (!asesorData.nombre || !asesorData.apellidos || !asesorData.correo) {
+      showNotification("Todos los campos son obligatorios", "error")
+      return
+    }
+
+    // Validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(asesorData.correo)) {
+      showNotification("El formato del correo electrónico no es válido", "error")
+      return
     }
 
     const response = await fetch(`/admin/asesores/${asesorId}/editar`, {
@@ -269,12 +326,16 @@ async function handleEditAsesorSubmit(e) {
       body: JSON.stringify(asesorData),
     })
 
+    if (!response.ok) {
+      throw new Error(`Error HTTP: ${response.status}`)
+    }
+
     const data = await response.json()
 
     if (data.success) {
       showNotification(data.mensaje, "success")
       hideEditModal()
-      setTimeout(() => window.location.reload(), 1000)
+      setTimeout(() => window.location.reload(), 1500)
     } else {
       showNotification(data.error || "Error al actualizar asesor", "error")
     }
@@ -323,13 +384,17 @@ async function handleConfirmAction() {
       },
     })
 
+    if (!response.ok) {
+      throw new Error(`Error HTTP: ${response.status}`)
+    }
+
     const data = await response.json()
 
     if (data.success) {
       showNotification(data.mensaje, "success")
       setTimeout(() => {
         window.location.reload()
-      }, 1000)
+      }, 1500)
     } else {
       showNotification(data.error || "Error al procesar la acción", "error")
     }
@@ -346,10 +411,13 @@ async function handleConfirmAction() {
   }
 }
 
-// Sistema de notificaciones
+// Sistema de notificaciones mejorado
 function showNotification(message, type = "info") {
   const container = document.getElementById("toast-container")
-  if (!container) return
+  if (!container) {
+    console.warn("Toast container not found")
+    return
+  }
 
   const notification = document.createElement("div")
   notification.className = `max-w-sm w-full bg-white shadow-lg rounded-2xl pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-500 translate-x-full`
@@ -369,10 +437,17 @@ function showNotification(message, type = "info") {
       borderColor = "border-l-4 border-red-500"
       icon = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>'
       break
-    default:
+    case "info":
       bgColor = "bg-blue-50"
       iconColor = "text-blue-400"
       borderColor = "border-l-4 border-blue-500"
+      icon =
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+      break
+    default:
+      bgColor = "bg-gray-50"
+      iconColor = "text-gray-400"
+      borderColor = "border-l-4 border-gray-500"
       icon =
         '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
   }
@@ -392,7 +467,7 @@ function showNotification(message, type = "info") {
                     <button class="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500" onclick="this.closest('.max-w-sm').remove()">
                         <span class="sr-only">Cerrar</span>
                         <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414z" clip-rule="evenodd"></path>
                         </svg>
                     </button>
                 </div>
@@ -402,11 +477,13 @@ function showNotification(message, type = "info") {
 
   container.appendChild(notification)
 
+  // Mostrar notificación
   setTimeout(() => {
     notification.classList.remove("translate-x-full")
     notification.classList.add("translate-x-0")
   }, 100)
 
+  // Auto-ocultar después de 5 segundos
   setTimeout(() => {
     notification.classList.remove("translate-x-0")
     notification.classList.add("translate-x-full")
@@ -418,10 +495,121 @@ function showNotification(message, type = "info") {
   }, 5000)
 }
 
+// Función para mostrar modal de crear asesor
+function mostrarModalCrearAsesor() {
+  const modal = document.getElementById("createAsesorModal")
+  if (modal) {
+    modal.classList.remove("hidden")
+    modal.classList.add("flex")
+    document.body.style.overflow = "hidden"
+
+    const firstInput = document.getElementById("createNombre")
+    if (firstInput) {
+      setTimeout(() => firstInput.focus(), 300)
+    }
+  }
+}
+
+// Función para ocultar modal de crear asesor
+function hideCreateModal() {
+  const modal = document.getElementById("createAsesorModal")
+  if (modal) {
+    modal.classList.remove("flex")
+    modal.classList.add("hidden")
+    document.body.style.overflow = "auto"
+
+    // Limpiar formulario
+    const form = document.getElementById("createAsesorForm")
+    if (form) {
+      form.reset()
+    }
+  }
+}
+
+// Manejar envío del formulario de crear asesor
+async function handleCreateAsesorSubmit(e) {
+  e.preventDefault()
+
+  const saveBtn = document.getElementById("createAsesorBtn")
+  const originalButtonContent = saveBtn.innerHTML
+
+  if (saveBtn) {
+    saveBtn.disabled = true
+    saveBtn.innerHTML = `
+            <div class="flex items-center justify-center">
+                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                <span>Creando...</span>
+            </div>
+        `
+  }
+
+  try {
+    const formData = new FormData(e.target)
+
+    const asesorData = {
+      nombre: formData.get("nombre"),
+      apellidos: formData.get("apellidos"),
+      correo: formData.get("correo"),
+      password: formData.get("password"),
+    }
+
+    // Validaciones del lado del cliente
+    if (!asesorData.nombre || !asesorData.apellidos || !asesorData.correo || !asesorData.password) {
+      showNotification("Todos los campos son obligatorios", "error")
+      return
+    }
+
+    // Validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(asesorData.correo)) {
+      showNotification("El formato del correo electrónico no es válido", "error")
+      return
+    }
+
+    // Validar contraseña
+    if (asesorData.password.length < 8) {
+      showNotification("La contraseña debe tener al menos 8 caracteres", "error")
+      return
+    }
+
+    const response = await fetch("/admin/asesores/crear", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      body: JSON.stringify(asesorData),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Error HTTP: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    if (data.success) {
+      showNotification(data.mensaje, "success")
+      hideCreateModal()
+      setTimeout(() => window.location.reload(), 1500)
+    } else {
+      showNotification(data.error || "Error al crear asesor", "error")
+    }
+  } catch (error) {
+    console.error("Error:", error)
+    showNotification("Error de conexión al crear asesor", "error")
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false
+      saveBtn.innerHTML = originalButtonContent
+    }
+  }
+}
+
 // Manejar tecla Escape para cerrar modales
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     hideModal()
     hideEditModal()
+    hideCreateModal()
   }
 })

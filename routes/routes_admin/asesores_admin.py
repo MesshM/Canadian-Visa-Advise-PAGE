@@ -31,7 +31,7 @@ def get_db_connection():
 @asesores_admin_bp.route('/')
 @admin_required
 def listar_asesores():
-    """Listar todos los asesores del sistema - Solo datos de tbl_asesor"""
+    """Listar todos los asesores del sistema"""
     try:
         conn = get_db_connection()
         if not conn:
@@ -44,22 +44,23 @@ def listar_asesores():
         pagina = int(request.args.get('pagina', 1))
         por_pagina = 20
 
-        # Solo columnas existentes: id_asesor, nombre, apellidos, correo
+        # Query principal - solo tbl_asesor ya que no hay relación con usuarios
         query = '''
             SELECT a.id_asesor, a.nombre, a.apellidos, a.correo,
-                   CASE WHEN u.correo_verificado = 1 THEN 'Activo' ELSE 'Inactivo' END as estado
+                   'Activo' as estado
             FROM tbl_asesor a
-            LEFT JOIN tbl_usuario u ON a.id_usuario = u.id_usuario
             WHERE 1=1
         '''
         params = []
+        
         if buscar:
             query += ''' AND (a.nombre LIKE %s OR a.apellidos LIKE %s OR a.correo LIKE %s 
                         OR CONCAT(a.nombre, " ", a.apellidos) LIKE %s)'''
             search_param = f'%{buscar}%'
             params.extend([search_param, search_param, search_param, search_param])
 
-        count_query = f"SELECT COUNT(*) as total FROM tbl_asesor a LEFT JOIN tbl_usuario u ON a.id_usuario = u.id_usuario WHERE 1=1"
+        # Contar total de registros - solo tbl_asesor
+        count_query = f"SELECT COUNT(*) as total FROM tbl_asesor a WHERE 1=1"
         count_params = []
         if buscar:
             count_query += ''' AND (a.nombre LIKE %s OR a.apellidos LIKE %s OR a.correo LIKE %s 
@@ -68,24 +69,21 @@ def listar_asesores():
 
         cursor.execute(count_query, count_params)
         total_asesores_row = cursor.fetchone()
-        total_asesores = total_asesores_row['total'] if total_asesores_row and 'total' in total_asesores_row else 0
+        total_asesores = total_asesores_row['total'] if total_asesores_row else 0
 
+        # Agregar paginación
         query += ' ORDER BY a.id_asesor DESC LIMIT %s OFFSET %s'
         params.extend([por_pagina, (pagina - 1) * por_pagina])
         cursor.execute(query, params)
         asesores = cursor.fetchall()
 
+        # Estadísticas - solo contar asesores
         cursor.execute('SELECT COUNT(*) as total FROM tbl_asesor')
         total_asesores_stat_row = cursor.fetchone()
-        total_asesores_stat = total_asesores_stat_row['total'] if total_asesores_stat_row and 'total' in total_asesores_stat_row else 0
+        total_asesores_stat = total_asesores_stat_row['total'] if total_asesores_stat_row else 0
 
-        cursor.execute('''
-            SELECT COUNT(*) as total FROM tbl_asesor a 
-            JOIN tbl_usuario u ON a.id_usuario = u.id_usuario 
-            WHERE u.correo_verificado = 1
-        ''')
-        asesores_activos_row = cursor.fetchone()
-        asesores_activos = asesores_activos_row['total'] if asesores_activos_row and 'total' in asesores_activos_row else 0
+        # Todos los asesores están activos por defecto
+        asesores_activos = total_asesores_stat
 
         cursor.close()
         conn.close()
@@ -150,8 +148,7 @@ def editar_asesor(id):
         nombre = data.get('nombre', '').strip()
         apellidos = data.get('apellidos', '').strip()
         correo = data.get('correo', '').strip().lower()
-        # especialidad y telefono eliminados
-        # Validaciones
+        password = data.get('password', '').strip() if 'password' in data else ''
         if not nombre or not apellidos or not correo:
             return jsonify({'success': False, 'error': 'Los campos nombre, apellidos y correo son obligatorios'})
         if not validar_email(correo):
@@ -165,11 +162,24 @@ def editar_asesor(id):
             cursor.close()
             conn.close()
             return jsonify({'success': False, 'error': 'Ya existe otro asesor con este correo electrónico'})
-        cursor.execute('''
-            UPDATE tbl_asesor 
-            SET nombre = %s, apellidos = %s, correo = %s
-            WHERE id_asesor = %s
-        ''', (nombre, apellidos, correo, id))
+        # Actualizar con o sin contraseña
+        if password:
+            if len(password) < 8:
+                cursor.close()
+                conn.close()
+                return jsonify({'success': False, 'error': 'La contraseña debe tener al menos 8 caracteres'})
+            password_hash = generate_password_hash(password)
+            cursor.execute('''
+                UPDATE tbl_asesor 
+                SET nombre = %s, apellidos = %s, correo = %s, password = %s
+                WHERE id_asesor = %s
+            ''', (nombre, apellidos, correo, password_hash, id))
+        else:
+            cursor.execute('''
+                UPDATE tbl_asesor 
+                SET nombre = %s, apellidos = %s, correo = %s
+                WHERE id_asesor = %s
+            ''', (nombre, apellidos, correo, id))
         conn.commit()
         cursor.close()
         conn.close()
@@ -188,163 +198,92 @@ def eliminar_asesor(id):
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        
-        # Verificar si el asesor existe
-        cursor.execute('SELECT nombre, apellidos, id_usuario FROM tbl_asesor WHERE id_asesor = %s', (id,))
+        cursor.execute('SELECT nombre, apellidos FROM tbl_asesor WHERE id_asesor = %s', (id,))
         asesor = cursor.fetchone()
-        
         if not asesor:
+            cursor.close()
+            conn.close()
             return jsonify({'success': False, 'error': 'Asesor no encontrado'}), 404
-        
-        # Verificar si tiene asesorías asociadas
         cursor.execute('SELECT COUNT(*) as count FROM tbl_asesoria WHERE id_asesor = %s', (id,))
         asesorias_count = cursor.fetchone()['count']
-        
         if asesorias_count > 0:
+            cursor.close()
+            conn.close()
             return jsonify({
                 'success': False, 
                 'error': f'No se puede eliminar el asesor porque tiene {asesorias_count} asesorías asociadas'
             })
-        
-        # Eliminar asesor
         cursor.execute('DELETE FROM tbl_asesor WHERE id_asesor = %s', (id,))
-        
-        # Si tiene usuario asociado, también eliminarlo
-        if asesor['id_usuario']:
-            cursor.execute('DELETE FROM tbl_usuario WHERE id_usuario = %s', (asesor['id_usuario'],))
-        
         conn.commit()
         cursor.close()
         conn.close()
-        
         return jsonify({
             'success': True,
             'mensaje': f'Asesor {asesor["nombre"]} {asesor["apellidos"]} eliminado exitosamente'
         })
-        
     except Error as e:
         print(f"Error en eliminar_asesor: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@asesores_admin_bp.route('/<int:id>/toggle-status', methods=['POST'])
+@asesores_admin_bp.route('/crear', methods=['POST'])
 @admin_required
-def toggle_asesor_status(id):
-    """Cambiar estado de un asesor"""
+def crear_asesor():
+    """Crear un nuevo asesor via modal"""
     try:
+        # Obtener datos del request JSON o form
+        if request.is_json:
+            data = request.get_json()
+        else:
+            data = request.form.to_dict()
+            
+        nombre = data.get('nombre', '').strip()
+        apellidos = data.get('apellidos', '').strip()
+        correo = data.get('correo', '').strip().lower()
+        password = data.get('password', '')
+        
+        # Validaciones
+        if not nombre or not apellidos or not correo or not password:
+            return jsonify({'success': False, 'error': 'Todos los campos son obligatorios'})
+        
+        if not validar_email(correo):
+            return jsonify({'success': False, 'error': 'El formato del correo electrónico no es válido'})
+        
+        if len(password) < 8:
+            return jsonify({'success': False, 'error': 'La contraseña debe tener al menos 8 caracteres'})
+        
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        if not conn:
+            return jsonify({'success': False, 'error': 'Error de conexión a la base de datos'})
         
+        cursor = conn.cursor()
+        
+        # Verificar si el correo ya existe
+        cursor.execute('SELECT id_asesor FROM tbl_asesor WHERE correo = %s', (correo,))
+        asesor_existente = cursor.fetchone()
+        
+        if asesor_existente:
+            cursor.close()
+            conn.close()
+            return jsonify({'success': False, 'error': 'Ya existe un asesor con este correo electrónico'})
+        
+        # Hashear la contraseña
+        password_hash = generate_password_hash(password)
+        
+        # Crear solo el asesor
         cursor.execute('''
-            SELECT u.correo_verificado, a.id_usuario, a.nombre, a.apellidos 
-            FROM tbl_asesor a 
-            LEFT JOIN tbl_usuario u ON a.id_usuario = u.id_usuario 
-            WHERE a.id_asesor = %s
-        ''', (id,))
-        asesor = cursor.fetchone()
-        
-        if not asesor:
-            return jsonify({'success': False, 'error': 'Asesor no encontrado'}), 404
-        
-        if not asesor['id_usuario']:
-            return jsonify({'success': False, 'error': 'Asesor no tiene usuario asociado'}), 400
-        
-        nuevo_estado = 0 if asesor['correo_verificado'] == 1 else 1
-        
-        # Actualizar estado en usuarios
-        cursor.execute(
-            'UPDATE tbl_usuario SET correo_verificado = %s WHERE id_usuario = %s',
-            (nuevo_estado, asesor['id_usuario'])
-        )
+            INSERT INTO tbl_asesor (nombre, apellidos, correo, password)
+            VALUES (%s, %s, %s, %s)
+        ''', (nombre, apellidos, correo, password_hash))
         
         conn.commit()
         cursor.close()
         conn.close()
         
-        estado_texto = 'activado' if nuevo_estado == 1 else 'desactivado'
-        
         return jsonify({
             'success': True,
-            'nuevo_estado': 'Activo' if nuevo_estado == 1 else 'Inactivo',
-            'mensaje': f'Asesor {asesor["nombre"]} {asesor["apellidos"]} {estado_texto} exitosamente'
+            'mensaje': f'Asesor {nombre} {apellidos} creado exitosamente'
         })
         
     except Error as e:
-        print(f"Error en toggle_asesor_status: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@asesores_admin_bp.route('/crear', methods=['GET', 'POST'])
-@admin_required
-def crear_asesor():
-    """Crear un nuevo asesor"""
-    if request.method == 'POST':
-        try:
-            # Obtener datos del formulario
-            nombre = request.form.get('nombre', '').strip()
-            apellidos = request.form.get('apellidos', '').strip()
-            correo = request.form.get('correo', '').strip().lower()
-            password = request.form.get('password', '')
-            confirm_password = request.form.get('confirm_password', '')
-            
-            # Validaciones
-            if not nombre or not apellidos or not correo or not password:
-                flash('Todos los campos obligatorios deben ser completados.', 'error')
-                return render_template('admin/crear_asesor.html')
-            
-            if not validar_email(correo):
-                flash('El formato del correo electrónico no es válido.', 'error')
-                return render_template('admin/crear_asesor.html')
-            
-            if len(password) < 8:
-                flash('La contraseña debe tener al menos 8 caracteres.', 'error')
-                return render_template('admin/crear_asesor.html')
-            
-            if password != confirm_password:
-                flash('Las contraseñas no coinciden.', 'error')
-                return render_template('admin/crear_asesor.html')
-            
-            conn = get_db_connection()
-            if not conn:
-                flash('Error de conexión a la base de datos', 'error')
-                return render_template('admin/crear_asesor.html')
-            
-            cursor = conn.cursor()
-            
-            # Verificar si el correo ya existe
-            cursor.execute('SELECT id_asesor FROM tbl_asesor WHERE correo = %s', (correo,))
-            asesor_existente = cursor.fetchone()
-            
-            if asesor_existente:
-                flash('Ya existe un asesor con este correo electrónico.', 'error')
-                cursor.close()
-                conn.close()
-                return render_template('admin/crear_asesor.html')
-            
-            # Crear el usuario primero
-            password_hash = generate_password_hash(password)
-            
-            cursor.execute('''
-                INSERT INTO tbl_usuario (nombres, apellidos, correo, contrasena, correo_verificado)
-                VALUES (%s, %s, %s, %s, %s)
-            ''', (nombre, apellidos, correo, password_hash, 1))
-            
-            usuario_id = cursor.lastrowid
-            
-            # Crear el asesor
-            cursor.execute('''
-                INSERT INTO tbl_asesor (id_usuario, nombre, apellidos, correo)
-                VALUES (%s, %s, %s, %s)
-            ''', (usuario_id, nombre, apellidos, correo))
-            
-            conn.commit()
-            cursor.close()
-            conn.close()
-            
-            flash(f'Asesor {nombre} {apellidos} creado exitosamente.', 'success')
-            return redirect(url_for('asesores_admin.listar_asesores'))
-            
-        except Error as e:
-            print(f"Error en crear_asesor: {str(e)}")
-            flash(f'Error al crear asesor: {str(e)}', 'error')
-            return render_template('admin/crear_asesor.html')
-    
-    return render_template('admin/crear_asesor.html')
+        print(f"Error en crear_asesor: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
