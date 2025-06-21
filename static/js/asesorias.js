@@ -1420,6 +1420,12 @@ function resetStepper() {
   selectedDate = null
   selectedTime = null
   reservationId = null
+
+  // Actualizar indicador móvil
+  const mobileStepNumber = document.getElementById('current-step-number');
+  const mobileStepText = document.getElementById('current-step-text');
+  if (mobileStepNumber) mobileStepNumber.textContent = '1';
+  if (mobileStepText) mobileStepText.textContent = 'Paso 1 de 3';
 }
 
 // Modificar la función prevStep para mostrar números en lugar de checks en los pasos activos
@@ -1526,6 +1532,12 @@ function prevStep() {
 
   nextBtn.classList.remove("hidden")
   submitBtn.classList.add("hidden")
+
+  // Actualizar indicador móvil
+  const mobileStepNumber = document.getElementById('current-step-number');
+  const mobileStepText = document.getElementById('current-step-text');
+  if (mobileStepNumber) mobileStepNumber.textContent = activeIndex.toString();
+  if (mobileStepText) mobileStepText.textContent = `Paso ${activeIndex} de 3`;
 }
 
 // Modificar la función nextStep para mostrar checks solo en pasos completados
@@ -1639,6 +1651,12 @@ function nextStep() {
     nextBtn.classList.add("hidden")
     submitBtn.classList.remove("hidden")
   }
+
+  // Actualizar indicador móvil
+  const mobileStepNumber = document.getElementById('current-step-number');
+  const mobileStepText = document.getElementById('current-step-text');
+  if (mobileStepNumber) mobileStepNumber.textContent = (activeIndex + 2).toString();
+  if (mobileStepText) mobileStepText.textContent = `Paso ${activeIndex + 2} de 3`;
 }
 
 function validateStep(stepIndex) {

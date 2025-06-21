@@ -1,304 +1,738 @@
-// noticias.js
+// Base de datos simulada de noticias
+const noticiasData = [
+  // Noticias Importantes
+  {
+    id: 1,
+    categoria: "importante",
+    titulo: "Nuevos Cambios en Express Entry 2024: Requisitos Actualizados",
+    resumen:
+      "El gobierno canadiense anuncia modificaciones significativas en el sistema Express Entry que afectarán a todos los aplicantes a partir de enero 2024.",
+    contenido: `
+            <p>El Ministerio de Inmigración, Refugiados y Ciudadanía de Canadá (IRCC) ha anunciado cambios importantes en el sistema Express Entry que entrarán en vigor el 1 de enero de 2024.</p>
+            
+            <h3>Principales Cambios:</h3>
+            <ul>
+                <li><strong>Nuevos criterios de puntuación:</strong> Se otorgarán puntos adicionales por experiencia laboral en sectores prioritarios como salud, tecnología y oficios especializados.</li>
+                <li><strong>Requisitos de idioma actualizados:</strong> Se requiere un mínimo de CLB 7 en inglés o francés para todas las categorías.</li>
+                <li><strong>Educación credencial:</strong> Todos los diplomas extranjeros deben ser evaluados por organizaciones designadas.</li>
+                <li><strong>Experiencia laboral canadiense:</strong> Se valorará más la experiencia previa en Canadá.</li>
+            </ul>
+            
+            <h3>Impacto para Aplicantes Colombianos:</h3>
+            <p>Los ciudadanos colombianos que planean aplicar a través de Express Entry deben prepararse con anticipación. Recomendamos:</p>
+            <ul>
+                <li>Mejorar el nivel de inglés o francés</li>
+                <li>Obtener la evaluación de credenciales educativas</li>
+                <li>Considerar programas de nominación provincial</li>
+                <li>Buscar asesoría especializada</li>
+            </ul>
+            
+            <p>En CVA, nuestros asesores especializados están actualizados con todos estos cambios y pueden ayudarte a navegar el nuevo sistema exitosamente.</p>
+        `,
+    imagen: "/static/uploads/notice/1_urgente.jpg",
+    fecha: "2024-01-15",
+    autor: "Equipo CVA",
+    fechaCreacion: new Date("2024-01-15"),
+  },
+  {
+    id: 2,
+    categoria: "importante",
+    titulo: "Suspensión Temporal de Visas de Trabajo para Ciertos Sectores",
+    resumen:
+      "IRCC anuncia suspensión temporal de permisos de trabajo en sectores específicos debido a cambios en el mercado laboral canadiense.",
+    contenido: `
+            <p>El gobierno canadiense ha anunciado una suspensión temporal de nuevos permisos de trabajo en ciertos sectores, efectiva desde el 1 de febrero de 2024.</p>
+            
+            <h3>Sectores Afectados:</h3>
+            <ul>
+                <li>Servicios de alimentos de bajo nivel</li>
+                <li>Retail general</li>
+                <li>Algunos servicios de limpieza</li>
+            </ul>
+            
+            <h3>Sectores Priorizados:</h3>
+            <ul>
+                <li>Salud y cuidado</li>
+                <li>Tecnología</li>
+                <li>Oficios especializados</li>
+                <li>Agricultura</li>
+                <li>Transporte</li>
+            </ul>
+            
+            <p>Esta medida busca equilibrar el mercado laboral y priorizar sectores con mayor demanda de trabajadores especializados.</p>
+        `,
+    imagen: "/static/uploads/notice/2_urgente.jpg",
+    fecha: "2024-01-20",
+    autor: "Departamento de Inmigración CVA",
+    fechaCreacion: new Date("2024-01-20"),
+  },
+
+  // Noticias Medianas
+  {
+    id: 3,
+    categoria: "mediana",
+    titulo: "Ontario Lanza Nuevo Programa de Nominación Provincial 2024",
+    resumen:
+      "La provincia de Ontario introduce nuevas categorías en su Programa de Nominación Provincial con oportunidades específicas para profesionales latinos.",
+    contenido: `
+            <p>Ontario ha lanzado nuevas categorías dentro de su Programa de Nominación Provincial (OINP) para 2024, con oportunidades específicas para profesionales internacionales.</p>
+            
+            <h3>Nuevas Categorías:</h3>
+            <ul>
+                <li><strong>Tech Draw:</strong> Para profesionales en tecnología</li>
+                <li><strong>Healthcare Stream:</strong> Para trabajadores de la salud</li>
+                <li><strong>Skilled Trades:</strong> Para oficios especializados</li>
+                <li><strong>French-Speaking Stream:</strong> Para francófonos</li>
+            </ul>
+            
+            <h3>Requisitos Generales:</h3>
+            <ul>
+                <li>Experiencia laboral mínima de 2 años</li>
+                <li>Nivel de inglés CLB 6 o superior</li>
+                <li>Oferta de trabajo válida en Ontario</li>
+                <li>Educación post-secundaria</li>
+            </ul>
+            
+            <p>Los profesionales colombianos con experiencia en estos sectores tienen excelentes oportunidades de ser nominados.</p>
+        `,
+    imagen: "/static/uploads/notice/1_importante.jpg",
+    fecha: "2024-01-18",
+    autor: "Especialista en PNP - CVA",
+    fechaCreacion: new Date("2024-01-18"),
+  },
+  {
+    id: 4,
+    categoria: "mediana",
+    titulo: "Aumento en Tarifas de Aplicación para Visas Canadienses",
+    resumen:
+      "IRCC anuncia incremento en las tarifas de procesamiento para diferentes tipos de visa, efectivo a partir de abril 2024.",
+    contenido: `
+            <p>El gobierno canadiense ha anunciado un aumento en las tarifas de procesamiento para diversas aplicaciones de inmigración, efectivo a partir del 30 de abril de 2024.</p>
+            
+            <h3>Nuevas Tarifas:</h3>
+            <ul>
+                <li><strong>Express Entry:</strong> $1,365 CAD (antes $1,325)</li>
+                <li><strong>Visa de Visitante:</strong> $100 CAD (antes $85)</li>
+                <li><strong>Permiso de Trabajo:</strong> $155 CAD (antes $155)</li>
+                <li><strong>Permiso de Estudio:</strong> $150 CAD (antes $150)</li>
+                <li><strong>Biométricos:</strong> $85 CAD (sin cambio)</li>
+            </ul>
+            
+            <h3>Recomendaciones:</h3>
+            <p>Si estás planeando aplicar, considera hacerlo antes del 30 de abril para aprovechar las tarifas actuales.</p>
+            
+            <p>En CVA te ayudamos a preparar tu aplicación de manera eficiente para evitar retrasos y costos adicionales.</p>
+        `,
+    imagen: "/static/uploads/notice/2_importante.jpg",
+    fecha: "2024-01-22",
+    autor: "Departamento Financiero CVA",
+    fechaCreacion: new Date("2024-01-22"),
+  },
+  {
+    id: 5,
+    categoria: "mediana",
+    titulo: "British Columbia Actualiza Lista de Ocupaciones Prioritarias",
+    resumen:
+      "La provincia de BC actualiza su lista de ocupaciones con alta demanda, incluyendo nuevas profesiones en el sector tecnológico y de salud.",
+    contenido: `
+            <p>British Columbia ha actualizado su lista de ocupaciones prioritarias para el Programa de Nominación Provincial, agregando nuevas profesiones y eliminando otras.</p>
+            
+            <h3>Ocupaciones Agregadas:</h3>
+            <ul>
+                <li>Desarrolladores de software especializado</li>
+                <li>Enfermeros especializados</li>
+                <li>Técnicos en energías renovables</li>
+                <li>Especialistas en ciberseguridad</li>
+            </ul>
+            
+            <h3>Ocupaciones Removidas:</h3>
+            <ul>
+                <li>Algunos puestos administrativos generales</li>
+                <li>Ciertos roles en servicios básicos</li>
+            </ul>
+            
+            <p>Esta actualización refleja las necesidades actuales del mercado laboral de BC y las prioridades económicas de la provincia.</p>
+        `,
+    imagen: "/static/uploads/notice/3_importante.jpg",
+    fecha: "2024-01-25",
+    autor: "Especialista BC PNP - CVA",
+    fechaCreacion: new Date("2024-01-25"),
+  },
+
+  // Noticias Generales
+  {
+    id: 6,
+    categoria: "general",
+    titulo: "Consejos para Preparar tu Entrevista de Visa Canadiense",
+    resumen: "Guía completa con los mejores consejos para tener éxito en tu entrevista de visa canadiense.",
+    contenido: `
+            <p>La entrevista de visa es un paso crucial en tu proceso de inmigración. Aquí te compartimos los mejores consejos para prepararte.</p>
+            
+            <h3>Antes de la Entrevista:</h3>
+            <ul>
+                <li>Revisa todos tus documentos</li>
+                <li>Practica respuestas comunes</li>
+                <li>Investiga sobre Canadá</li>
+                <li>Prepara preguntas para hacer</li>
+            </ul>
+            
+            <h3>Durante la Entrevista:</h3>
+            <ul>
+                <li>Sé honesto y directo</li>
+                <li>Mantén contacto visual</li>
+                <li>Habla con confianza</li>
+                <li>Proporciona documentos cuando se soliciten</li>
+            </ul>
+            
+            <p>En CVA te preparamos completamente para tu entrevista con simulacros y asesoría personalizada.</p>
+        `,
+    imagen: "/static/uploads/notice/1_informativo.jpg",
+    fecha: "2024-01-12",
+    autor: "Consejero CVA",
+    fechaCreacion: new Date("2024-01-12"),
+  },
+  {
+    id: 7,
+    categoria: "general",
+    titulo: "Documentos Esenciales para tu Aplicación de Residencia",
+    resumen: "Lista completa de documentos necesarios para aplicar a residencia permanente en Canadá.",
+    contenido: `
+            <p>Preparar la documentación correcta es fundamental para el éxito de tu aplicación de residencia permanente.</p>
+            
+            <h3>Documentos Personales:</h3>
+            <ul>
+                <li>Pasaporte vigente</li>
+                <li>Certificados de nacimiento</li>
+                <li>Certificados de matrimonio/divorcio</li>
+                <li>Certificados de antecedentes penales</li>
+            </ul>
+            
+            <h3>Documentos Educativos:</h3>
+            <ul>
+                <li>Diplomas y certificados</li>
+                <li>Evaluación de credenciales (ECA)</li>
+                <li>Transcripciones académicas</li>
+            </ul>
+            
+            <h3>Documentos Laborales:</h3>
+            <ul>
+                <li>Cartas de referencia laboral</li>
+                <li>Contratos de trabajo</li>
+                <li>Certificados profesionales</li>
+            </ul>
+            
+            <p>Nuestro equipo en CVA te ayuda a preparar y organizar todos estos documentos correctamente.</p>
+        `,
+    imagen: "/static/uploads/notice/2_informativo.jpg",
+    fecha: "2024-01-10",
+    autor: "Documentalista CVA",
+    fechaCreacion: new Date("2024-01-10"),
+  },
+  {
+    id: 8,
+    categoria: "general",
+    titulo: "Cómo Mejorar tu Puntaje en el Examen IELTS",
+    resumen: "Estrategias efectivas para obtener el puntaje de inglés necesario para tu aplicación canadiense.",
+    contenido: `
+            <p>El IELTS es crucial para tu aplicación de inmigración. Aquí te compartimos estrategias para mejorar tu puntaje.</p>
+            
+            <h3>Preparación General:</h3>
+            <ul>
+                <li>Establece un horario de estudio consistente</li>
+                <li>Practica las 4 habilidades diariamente</li>
+                <li>Usa materiales oficiales de IELTS</li>
+                <li>Toma exámenes de práctica</li>
+            </ul>
+            
+            <h3>Consejos por Sección:</h3>
+            <ul>
+                <li><strong>Listening:</strong> Practica con diferentes acentos</li>
+                <li><strong>Reading:</strong> Mejora tu velocidad de lectura</li>
+                <li><strong>Writing:</strong> Aprende estructuras de ensayo</li>
+                <li><strong>Speaking:</strong> Practica con hablantes nativos</li>
+            </ul>
+            
+            <p>En CVA ofrecemos preparación especializada para IELTS con instructores certificados.</p>
+        `,
+    imagen: "/static/uploads/notice/3_informativo.jpg",
+    fecha: "2024-01-08",
+    autor: "Instructor IELTS - CVA",
+    fechaCreacion: new Date("2024-01-08"),
+  },
+  {
+    id: 9,
+    categoria: "general",
+    titulo: "Vida en Canadá: Guía para Nuevos Inmigrantes",
+    resumen: "Todo lo que necesitas saber sobre la vida en Canadá: cultura, clima, sistema de salud y más.",
+    contenido: `
+            <p>Adaptarse a la vida en Canadá puede ser emocionante y desafiante. Esta guía te ayudará en tu transición.</p>
+            
+            <h3>Primeros Pasos:</h3>
+            <ul>
+                <li>Obtén tu SIN (Social Insurance Number)</li>
+                <li>Abre una cuenta bancaria</li>
+                <li>Solicita tu tarjeta de salud provincial</li>
+                <li>Busca alojamiento temporal</li>
+            </ul>
+            
+            <h3>Sistema de Salud:</h3>
+            <ul>
+                <li>Cada provincia tiene su propio sistema</li>
+                <li>La atención básica es gratuita</li>
+                <li>Necesitas registrarte en tu provincia</li>
+                <li>Considera seguro privado adicional</li>
+            </ul>
+            
+            <h3>Cultura Canadiense:</h3>
+            <ul>
+                <li>Multiculturalismo y diversidad</li>
+                <li>Puntualidad es importante</li>
+                <li>Respeto por el espacio personal</li>
+                <li>Dos idiomas oficiales</li>
+            </ul>
+            
+            <p>CVA te acompaña no solo en el proceso de inmigración, sino también en tu adaptación a la vida canadiense.</p>
+        `,
+    imagen: "/static/uploads/notice/4_informativo.jpg",
+    fecha: "2024-01-05",
+    autor: "Consejero de Integración CVA",
+    fechaCreacion: new Date("2024-01-05"),
+  },
+]
+
+// Variables globales
+let currentPage = 1
+const itemsPerPage = 12
+let filteredNoticias = [...noticiasData]
+let currentNoticiaId = null
+
+// Inicialización
 document.addEventListener("DOMContentLoaded", () => {
-  const tabs = document.querySelectorAll("[data-tab]")
-  const tabContents = document.querySelectorAll(".tab-content")
-  const featuredNewsSection = document.getElementById("featured-news-section")
-  const featuredNewsContainer = document.getElementById("featured-news-container")
-  const minorNewsSection = document.getElementById("minor-news-section")
-  const minorNewsContainer = document.getElementById("minor-news-container")
+  initializeNoticias()
+  setupEventListeners()
+})
 
-  const newsGrids = {
-    "visa-news": document.getElementById("news-grid-visa-news"),
-    "canada-news": document.getElementById("news-grid-canada-news"),
-    "platform-news": document.getElementById("news-grid-platform-news"),
-  }
-  const loadingSpinners = {
-    "visa-news": document.getElementById("loading-spinner-visa-news"),
-    "canada-news": document.getElementById("loading-spinner-canada-news"),
-    "platform-news": document.getElementById("loading-spinner-platform-news"),
-    featured: featuredNewsContainer.querySelector("p"), // Usar el p de carga dentro del contenedor
-    minor: minorNewsContainer.querySelector("p"), // Usar el p de carga dentro del contenedor
-  }
+function initializeNoticias() {
+  renderNoticias()
+  setupPagination()
+}
 
-  // Función para crear un elemento HTML de tarjeta de noticia normal
-  function createNewsCard(newsItem, index) {
-    const card = document.createElement("div")
-    card.classList.add(
-      "bg-white",
-      "rounded-2xl",
-      "p-6",
-      "shadow-lg",
-      "border",
-      "border-gray-100",
-      "hover:shadow-xl",
-      "transition-all",
-      "duration-300",
-      "flex",
-      "flex-col",
-      "news-card",
-      "opacity-0", // Estado inicial para la animación
-      "translate-y-[30px]", // Estado inicial para la animación
-    )
-    card.style.animationDelay = `${0.1 * index}s` // Retraso escalonado para la animación
+function setupEventListeners() {
+  // Búsqueda
+  const searchInput = document.getElementById("search-input")
+  searchInput.addEventListener("input", debounce(handleSearch, 300))
 
-    card.innerHTML = `
-            <img src="${newsItem.imageUrl}" alt="${newsItem.title}" class="rounded-lg mb-4 object-cover w-full h-48">
-            <h3 class="text-xl font-bold text-gray-900 mb-2 font-roboto">${newsItem.title}</h3>
-            <p class="text-sm text-gray-500 mb-3">Fecha: ${newsItem.date}</p>
-            <p class="text-gray-600 leading-relaxed flex-grow">${newsItem.description}</p>
-            <a href="#" class="inline-flex items-center text-primary-600 font-medium hover:text-primary-700 transition-colors duration-300 mt-4">
-                <span>Leer más</span>
-                <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
-                </svg>
-            </a>
-        `
-    return card
-  }
+  // Filtros
+  const categoryFilter = document.getElementById("filter-category")
+  const dateFilter = document.getElementById("filter-date")
 
-  // Función para crear la tarjeta de noticia destacada
-  function createFeaturedNewsCard(newsItem) {
-    const cardContent = `
-            <img src="${newsItem.imageUrl}" alt="${newsItem.title}" class="rounded-2xl mb-6 lg:mb-0 lg:mr-8 object-cover w-full lg:w-1/2 h-64 lg:h-auto max-h-96">
-            <div class="flex-1">
-                <span class="inline-flex items-center px-3 py-1.5 bg-primary-100 text-primary-700 rounded-full text-sm font-medium mb-4">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.519 4.674c.3.921-.755 1.688-1.54 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.785.57-1.838-.197-1.539-1.118l1.519-4.674a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h4.915a1 1 0 00.95-.69l1.519-4.674z"></path>
-                    </svg>
-                    Noticia Destacada
-                </span>
-                <h3 class="text-3xl lg:text-4xl font-bold text-gray-900 font-roboto mb-4 leading-tight">${newsItem.title}</h3>
-                <p class="text-lg text-gray-700 mb-6 leading-relaxed">${newsItem.description}</p>
-                <p class="text-sm text-gray-500 mb-4">Fecha: ${newsItem.date}</p>
-                <a href="#" class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer inline-flex items-center justify-center">
-                    <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
-                    <div class="relative flex items-center justify-center">
-                        <span>Leer Noticia Completa</span>
-                        <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
-                        </svg>
-                    </div>
-                </a>
-            </div>
-        `
-    featuredNewsContainer.innerHTML = cardContent
-    featuredNewsSection.classList.remove("hidden")
-  }
+  categoryFilter.addEventListener("change", handleFilters)
+  dateFilter.addEventListener("change", handleFilters)
+}
 
-  // Función para crear un elemento de noticia rápida
-  function createMinorNewsItem(newsItem, index) {
-    const item = document.createElement("div")
-    item.classList.add(
-      "bg-gray-50",
-      "rounded-xl",
-      "p-4",
-      "border",
-      "border-gray-200",
-      "hover:shadow-md",
-      "transition-all",
-      "duration-300",
-      "flex",
-      "flex-col",
-      "minor-news-item",
-      "opacity-0", // Estado inicial para la animación
-      "translate-y-[30px]", // Estado inicial para la animación
-    )
-    item.style.animationDelay = `${0.1 * index}s` // Retraso escalonado para la animación
+function renderNoticias() {
+  const importantesContainer = document.getElementById("importantes-container")
+  const medianasContainer = document.getElementById("medianas-container")
+  const generalesContainer = document.getElementById("generales-container")
 
-    item.innerHTML = `
-            <h4 class="text-lg font-semibold text-gray-900 mb-2">${newsItem.title}</h4>
-            <p class="text-sm text-gray-600 mb-3 flex-grow">${newsItem.description}</p>
-            <p class="text-xs text-gray-500">Fecha: ${newsItem.date}</p>
-        `
-    return item
-  }
+  // Limpiar contenedores
+  importantesContainer.innerHTML = ""
+  medianasContainer.innerHTML = ""
+  generalesContainer.innerHTML = ""
 
-  // Función para obtener y mostrar noticias para una categoría dada
-  async function loadNews(category) {
-    const newsGrid = newsGrids[category]
-    const spinner = loadingSpinners[category]
+  // Filtrar noticias por categoría
+  const importantes = filteredNoticias.filter((n) => n.categoria === "importante")
+  const medianas = filteredNoticias.filter((n) => n.categoria === "mediana")
+  const generales = filteredNoticias.filter((n) => n.categoria === "general")
 
-    // Limpia y muestra spinner para la sección principal de noticias
-    newsGrid.innerHTML = ""
-    spinner.classList.remove("hidden")
+  // Renderizar cada categoría
+  renderCategoriaNoticias(importantes, importantesContainer, "importante")
+  renderCategoriaNoticias(medianas, medianasContainer, "mediana")
+  renderCategoriaNoticias(generales, generalesContainer, "general")
 
-    // Limpia y muestra spinner para la sección de noticias destacadas y rápidas
-    if (category === "visa-news") {
-      // Solo cargamos destacadas y rápidas con la primera categoría
-      featuredNewsContainer.innerHTML = `
-                <div class="flex justify-center items-center py-8 w-full">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-t-2 border-primary-600"></div>
-                    <p class="ml-3 text-primary-600 text-sm">Cargando noticia destacada...</p>
-                </div>
-            `
-      minorNewsContainer.innerHTML = `
-                <div class="flex justify-center items-center py-8 w-full md:col-span-2">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-t-2 border-primary-600"></div>
-                    <p class="ml-3 text-primary-600 text-sm">Cargando noticias rápidas...</p>
-                </div>
-            `
-      featuredNewsSection.classList.add("hidden")
-      minorNewsSection.classList.add("hidden")
-    }
+  // Mostrar/ocultar secciones según contenido
+  toggleSectionVisibility("noticias-importantes", importantes.length > 0)
+  toggleSectionVisibility("noticias-medianas", medianas.length > 0)
+  toggleSectionVisibility("noticias-generales", generales.length > 0)
+}
 
-    try {
-      const response = await fetch(`/user/api/news?category=${category}`)
-      if (!response.ok) {
-        throw new Error(`Error HTTP! estado: ${response.status}`)
-      }
-      const allNewsData = await response.json()
-
-      const featuredNews = allNewsData.find((item) => item.priority === "featured")
-      const normalNews = allNewsData.filter((item) => item.priority === "normal")
-      const minorNews = allNewsData.filter((item) => item.priority === "minor")
-
-      // Renderizar Noticia Destacada
-      if (featuredNews && category === "visa-news") {
-        // Solo una noticia destacada para la primera carga
-        createFeaturedNewsCard(featuredNews)
-      } else if (category === "visa-news") {
-        featuredNewsContainer.innerHTML = `<p class="text-gray-500 text-center w-full">No hay noticia destacada disponible.</p>`
-      }
-
-      // Renderizar Noticias Principales
-      if (normalNews.length === 0) {
-        newsGrid.innerHTML = `<p class="text-gray-500 text-center col-span-full">No hay noticias disponibles en esta categoría.</p>`
-      } else {
-        normalNews.forEach((newsItem, index) => {
-          const card = createNewsCard(newsItem, index)
-          newsGrid.appendChild(card)
-        })
-        // Activa la animación para las tarjetas recién añadidas
-        const newsCards = newsGrid.querySelectorAll(".news-card")
-        newsCards.forEach((card) => {
-          card.classList.remove("opacity-0", "translate-y-[30px]")
-          card.classList.add("opacity-100", "translate-y-0")
-        })
-      }
-
-      // Renderizar Noticias Rápidas
-      if (minorNews.length > 0 && category === "visa-news") {
-        // Solo cargamos noticias rápidas con la primera categoría
-        minorNewsContainer.innerHTML = "" // Limpiar el spinner
-        minorNews.forEach((newsItem, index) => {
-          const item = createMinorNewsItem(newsItem, index)
-          minorNewsContainer.appendChild(item)
-        })
-        minorNewsSection.classList.remove("hidden")
-        // Activa la animación para los elementos recién añadidos
-        const minorNewsItems = minorNewsContainer.querySelectorAll(".minor-news-item")
-        minorNewsItems.forEach((item) => {
-          item.classList.remove("opacity-0", "translate-y-[30px]")
-          item.classList.add("opacity-100", "translate-y-0")
-        })
-      } else if (category === "visa-news") {
-        minorNewsContainer.innerHTML = `<p class="text-gray-500 text-center w-full md:col-span-2">No hay noticias rápidas disponibles.</p>`
-      }
-    } catch (error) {
-      console.error("Error al cargar noticias:", error)
-      newsGrid.innerHTML = `<p class="text-red-500 text-center col-span-full">Error al cargar las noticias. Por favor, intente de nuevo más tarde.</p>`
-      if (category === "visa-news") {
-        featuredNewsContainer.innerHTML = `<p class="text-red-500 text-center w-full">Error al cargar la noticia destacada.</p>`
-        minorNewsContainer.innerHTML = `<p class="text-red-500 text-center w-full md:col-span-2">Error al cargar las noticias rápidas.</p>`
-      }
-    } finally {
-      spinner.classList.add("hidden") // Oculta el spinner de la sección principal
-      // Ocultar spinners de destacadas y rápidas si no hay contenido o si ya se cargó
-      if (category === "visa-news") {
-        featuredNewsContainer.querySelector(".animate-spin")?.parentElement.classList.add("hidden")
-        minorNewsContainer.querySelector(".animate-spin")?.parentElement.classList.add("hidden")
-      }
-    }
-  }
-
-  // Funcionalidad de pestañas para la sección de noticias
-  tabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
-      const tabId = tab.getAttribute("data-tab")
-
-      // Remueve la clase activa de todas las pestañas
-      tabs.forEach((t) => {
-        t.classList.remove("border-primary-600", "text-primary-600")
-        t.classList.add("border-transparent", "text-gray-600", "hover:text-primary-600", "hover:border-primary-300")
-        t.setAttribute("aria-selected", "false")
-      })
-
-      // Añade la clase activa a la pestaña clicada
-      tab.classList.add("border-primary-600", "text-primary-600")
-      tab.classList.remove("border-transparent", "text-gray-600", "hover:text-primary-600", "hover:border-primary-300")
-      tab.setAttribute("aria-selected", "true")
-
-      // Oculta todos los contenidos de las pestañas
-      tabContents.forEach((content) => {
-        content.classList.add("hidden")
-        content.classList.remove("active")
-      })
-
-      // Muestra el contenido de la pestaña seleccionada
-      const activeContent = document.getElementById(`${tabId}-content`)
-      activeContent.classList.remove("hidden")
-      activeContent.classList.add("active")
-
-      // Carga las noticias para la pestaña activa
-      loadNews(tabId)
-    })
+function renderCategoriaNoticias(noticias, container, categoria) {
+  noticias.forEach((noticia, index) => {
+    const noticiaElement = createNoticiaElement(noticia, categoria, index)
+    container.appendChild(noticiaElement)
   })
+}
 
-  // Animaciones suaves mejoradas para el scroll (lógica existente, aseguramos que siga funcionando)
-  const observerOptions = {
-    threshold: 0.1,
-    rootMargin: "0px 0px -50px 0px",
+function createNoticiaElement(noticia, categoria, index) {
+  const article = document.createElement("article")
+  article.className = `bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 cursor-pointer group animate-fade-in-up`
+  article.style.animationDelay = `${index * 100}ms`
+  article.onclick = () => openNoticiaModal(noticia.id)
+
+  const categoriaStyles = {
+    importante: "bg-red-100 text-red-700 border-red-200",
+    mediana: "bg-blue-100 text-blue-700 border-blue-200",
+    general: "bg-green-100 text-green-700 border-green-200",
   }
 
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        // Aplica clases de animación de Tailwind
-        if (entry.target.classList.contains("animate-fade-in-smooth")) {
-          entry.target.classList.remove("opacity-0", "translate-y-[30px]")
-          entry.target.classList.add("opacity-100", "translate-y-0")
-        } else if (entry.target.classList.contains("animate-fade-in-up")) {
-          entry.target.classList.remove("opacity-0", "translate-y-[40px]")
-          entry.target.classList.add("opacity-100", "translate-y-0")
-        } else if (entry.target.classList.contains("animate-slide-in-left")) {
-          entry.target.classList.remove("opacity-0", "-translate-x-[30px]")
-          entry.target.classList.add("opacity-100", "translate-x-0")
-        }
+  const categoriaLabels = {
+    importante: "Urgente",
+    mediana: "Importante",
+    general: "Informativo",
+  }
 
-        // Añade animación escalonada para elementos de cuadrícula (como tarjetas de noticias)
-        if (entry.target.classList.contains("grid")) {
-          const children = entry.target.querySelectorAll(".news-card, .minor-news-item") // Apunta a las tarjetas de noticias específicas
-          Array.from(children).forEach((child, index) => {
-            setTimeout(() => {
-              child.classList.remove("opacity-0", "translate-y-[30px]", "translate-y-[40px]", "-translate-x-[30px]")
-              child.classList.add(
-                "opacity-100",
-                "translate-y-0",
-                "translate-x-0",
-                "transition-all",
-                "duration-500",
-                "ease-out",
-              )
-            }, index * 150)
-          })
-        }
-        observer.unobserve(entry.target) // Deja de observar una vez animado
+  const imageHeight = categoria === "importante" ? "200" : categoria === "mediana" ? "160" : "120"
+
+  article.innerHTML = `
+  <div class="relative overflow-hidden rounded-t-2xl aspect-w-16 aspect-h-9 bg-gray-100">
+    <img src="${noticia.imagen}" alt="${noticia.titulo}" 
+         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    <div class="absolute top-4 left-4">
+      <span class="px-3 py-1 ${categoriaStyles[categoria]} text-xs font-semibold rounded-full border">
+        ${categoriaLabels[categoria]}
+      </span>
+    </div>
+  </div>
+  <div class="p-6">
+      <h3 class="text-${categoria === "importante" ? "xl" : "lg"} font-bold text-gray-900 mb-3 group-hover:text-primary-600 transition-colors duration-300 line-clamp-2">
+          ${noticia.titulo}
+      </h3>
+      <p class="text-gray-600 mb-4 line-clamp-3 text-sm leading-relaxed">
+          ${noticia.resumen}
+      </p>
+      <div class="flex items-center justify-between text-sm text-gray-500">
+          <div class="flex items-center">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              ${formatDate(noticia.fecha)}
+          </div>
+          <div class="flex items-center text-primary-600 group-hover:text-primary-700 transition-colors duration-300">
+              <span class="mr-2">Leer más</span>
+              <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+              </svg>
+          </div>
+      </div>
+  </div>
+`
+
+  return article
+}
+
+function toggleSectionVisibility(sectionId, show) {
+  const section = document.getElementById(sectionId)
+  if (show) {
+    section.classList.remove("hidden")
+  } else {
+    section.classList.add("hidden")
+  }
+}
+
+function openNoticiaModal(noticiaId) {
+  const noticia = noticiasData.find((n) => n.id === noticiaId)
+  if (!noticia) return
+
+  currentNoticiaId = noticiaId
+
+  const modal = document.getElementById("noticia-modal")
+  const modalCategoria = document.getElementById("modal-categoria")
+  const modalTitulo = document.getElementById("modal-titulo")
+  const modalFecha = document.getElementById("modal-fecha")
+  const modalAutor = document.getElementById("modal-autor")
+  const modalImagen = document.getElementById("modal-imagen")
+  const modalContenido = document.getElementById("modal-contenido")
+
+  // Configurar categoría con iconos
+  const categoriaStyles = {
+    importante: "bg-red-100 text-red-700 border border-red-200",
+    mediana: "bg-blue-100 text-blue-700 border border-blue-200",
+    general: "bg-green-100 text-green-700 border border-green-200",
+  }
+
+  const categoriaLabels = {
+    importante: "🚨 Noticia Urgente",
+    mediana: "📢 Noticia Importante",
+    general: "📰 Noticia Informativa",
+  }
+
+  modalCategoria.className = `inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold mb-4 shadow-sm ${categoriaStyles[noticia.categoria]}`
+  modalCategoria.textContent = categoriaLabels[noticia.categoria]
+
+  // Configurar contenido
+  modalTitulo.textContent = noticia.titulo
+  modalFecha.textContent = formatDate(noticia.fecha)
+  modalAutor.textContent = noticia.autor
+
+  // Mejorar la imagen con overlay y efectos
+  modalImagen.innerHTML = `
+    <div class="relative h-80 overflow-hidden">
+      <img src="${noticia.imagen}" alt="${noticia.titulo}" 
+           class="w-full h-full object-cover">
+      <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+      <div class="absolute bottom-4 left-6 right-6">
+        <div class="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-lg">
+          <p class="sm:text-sm text-gray-700 text-xs">${noticia.resumen}</p>
+        </div>
+      </div>
+    </div>
+  `
+
+  // Mejorar el contenido con estilos personalizados usando TailwindCSS
+  modalContenido.innerHTML = `
+  <div class="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+    ${noticia.contenido
+      .replace(/<h3>/g, '<h3 class="text-red-600 font-semibold mt-8 mb-4 text-xl">')
+      .replace(/<ul>/g, '<ul class="my-4">')
+      .replace(/<li>/g, '<li class="my-2 pl-2">')
+      .replace(/<li><strong>/g, '<li class="my-2 pl-2"><strong class="text-gray-800">')
+      .replace(/<p>/g, '<p class="my-4 leading-7">')
+    }
+  </div>
+`
+
+  // Mostrar modal con animación mejorada
+  modal.classList.remove("hidden")
+  modal.classList.add("flex")
+
+  // Animar la entrada del contenido
+  const modalContent = modal.querySelector(".bg-white")
+  if (modalContent) {
+    modalContent.classList.add("animate-scale-in")
+  }
+
+  document.body.style.overflow = "hidden"
+}
+
+function closeNoticiaModal() {
+  const modal = document.getElementById("noticia-modal")
+  if (!modal) return
+
+  // Añadir animación de cierre
+  const modalContent = modal.querySelector(".bg-white")
+  modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+
+  setTimeout(() => {
+    modal.classList.add("hidden")
+    modal.classList.remove("flex")
+    modalContent.classList.remove("opacity-0", "scale-95", "transition-all", "duration-300")
+    document.body.style.overflow = "auto"
+    currentNoticiaId = null
+  }, 300)
+}
+
+function compartirNoticia() {
+  if (!currentNoticiaId) return
+
+  const noticia = noticiasData.find((n) => n.id === currentNoticiaId)
+  if (!noticia) return
+
+  if (navigator.share) {
+    navigator.share({
+      title: noticia.titulo,
+      text: noticia.resumen,
+      url: window.location.href,
+    })
+  } else {
+    // Fallback para navegadores que no soportan Web Share API
+    const url = window.location.href
+    navigator.clipboard.writeText(`${noticia.titulo} - ${url}`).then(() => {
+      showNotification("Enlace copiado al portapapeles", "success")
+    })
+  }
+}
+
+function handleSearch(event) {
+  const searchTerm = event.target.value.toLowerCase().trim()
+
+  if (searchTerm === "") {
+    filteredNoticias = [...noticiasData]
+  } else {
+    filteredNoticias = noticiasData.filter(
+      (noticia) =>
+        noticia.titulo.toLowerCase().includes(searchTerm) ||
+        noticia.resumen.toLowerCase().includes(searchTerm) ||
+        noticia.contenido.toLowerCase().includes(searchTerm),
+    )
+  }
+
+  currentPage = 1
+  renderNoticias()
+  setupPagination()
+}
+
+function handleFilters() {
+  const categoryFilter = document.getElementById("filter-category").value
+  const dateFilter = document.getElementById("filter-date").value
+  const searchTerm = document.getElementById("search-input").value.toLowerCase().trim()
+
+  let filtered = [...noticiasData]
+
+  // Filtro de búsqueda
+  if (searchTerm) {
+    filtered = filtered.filter(
+      (noticia) =>
+        noticia.titulo.toLowerCase().includes(searchTerm) ||
+        noticia.resumen.toLowerCase().includes(searchTerm) ||
+        noticia.contenido.toLowerCase().includes(searchTerm),
+    )
+  }
+
+  // Filtro de categoría
+  if (categoryFilter) {
+    filtered = filtered.filter((noticia) => noticia.categoria === categoryFilter)
+  }
+
+  // Filtro de fecha
+  if (dateFilter) {
+    const now = new Date()
+    filtered = filtered.filter((noticia) => {
+      const noticiaDate = new Date(noticia.fecha)
+      switch (dateFilter) {
+        case "today":
+          return isSameDay(noticiaDate, now)
+        case "week":
+          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+          return noticiaDate >= weekAgo
+        case "month":
+          const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+          return noticiaDate >= monthAgo
+        default:
+          return true
       }
     })
-  }, observerOptions)
+  }
 
-  // Observa todos los elementos animados en la sección de noticias
-  const animatedElements = document.querySelectorAll(
-    ".container.mx-auto.px-4.py-12, #featured-news-section, #minor-news-section, .tab-content.active .grid, .tab-content.hidden .grid",
+  filteredNoticias = filtered
+  currentPage = 1
+  renderNoticias()
+  setupPagination()
+}
+
+function resetFilters() {
+  document.getElementById("search-input").value = ""
+  document.getElementById("filter-category").value = ""
+  document.getElementById("filter-date").value = ""
+
+  filteredNoticias = [...noticiasData]
+  currentPage = 1
+  renderNoticias()
+  setupPagination()
+}
+
+function setupPagination() {
+  const totalPages = Math.ceil(filteredNoticias.length / itemsPerPage)
+  const paginationContainer = document.getElementById("pagination-container")
+
+  if (totalPages <= 1) {
+    paginationContainer.classList.add("hidden")
+    return
+  }
+
+  paginationContainer.classList.remove("hidden")
+  paginationContainer.innerHTML = ""
+
+  // Botón anterior
+  if (currentPage > 1) {
+    const prevButton = createPaginationButton("Anterior", () => {
+      currentPage--
+      renderNoticias()
+      setupPagination()
+    })
+    paginationContainer.appendChild(prevButton)
+  }
+
+  // Números de página
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === currentPage || i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+      const pageButton = createPaginationButton(
+        i.toString(),
+        () => {
+          currentPage = i
+          renderNoticias()
+          setupPagination()
+        },
+        i === currentPage,
+      )
+      paginationContainer.appendChild(pageButton)
+    } else if (i === currentPage - 2 || i === currentPage + 2) {
+      const ellipsis = document.createElement("span")
+      ellipsis.textContent = "..."
+      ellipsis.className = "px-3 py-2 text-gray-500"
+      paginationContainer.appendChild(ellipsis)
+    }
+  }
+
+  // Botón siguiente
+  if (currentPage < totalPages) {
+    const nextButton = createPaginationButton("Siguiente", () => {
+      currentPage++
+      renderNoticias()
+      setupPagination()
+    })
+    paginationContainer.appendChild(nextButton)
+  }
+}
+
+function createPaginationButton(text, onClick, isActive = false) {
+  const button = document.createElement("button")
+  button.textContent = text
+  button.onclick = onClick
+  button.className = `px-4 py-2 mx-1 rounded-xl transition-all duration-300 ${
+    isActive
+      ? "bg-primary-600 text-white shadow-lg"
+      : "bg-white text-gray-700 border border-gray-200 hover:bg-primary-50 hover:border-primary-300"
+  }`
+  return button
+}
+
+// Funciones utilitarias
+function formatDate(dateString) {
+  const date = new Date(dateString)
+  const options = {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "America/Bogota",
+  }
+  return date.toLocaleDateString("es-CO", options)
+}
+
+function isSameDay(date1, date2) {
+  return (
+    date1.getDate() === date2.getDate() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getFullYear() === date2.getFullYear()
   )
-  animatedElements.forEach((element) => {
-    observer.observe(element)
-  })
+}
 
-  // Carga inicial para la pestaña activa (visa-news por defecto)
-  const initialActiveTab = document.querySelector(".tab-content.active")
-  if (initialActiveTab) {
-    const initialTabId = initialActiveTab.id.replace("-content", "")
-    loadNews(initialTabId)
+function debounce(func, wait) {
+  let timeout
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout)
+      func(...args)
+    }
+    clearTimeout(timeout)
+    timeout = setTimeout(later, wait)
+  }
+}
+
+function showNotification(message, type = "info") {
+  // Esta función debería integrarse con tu sistema de notificaciones existente
+  console.log(`${type.toUpperCase()}: ${message}`)
+}
+
+// Cerrar modal con tecla Escape
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeNoticiaModal()
+  }
+})
+
+// Cerrar modal al hacer clic fuera con animación
+document.getElementById("noticia-modal").addEventListener("click", function (event) {
+  if (event.target === this) {
+    closeNoticiaModal()
   }
 })

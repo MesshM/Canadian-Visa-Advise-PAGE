@@ -534,7 +534,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     paginationContainer.classList.remove("hidden")
-    paginationContainer.className = "flex justify-center items-center space-x-2 mt-8 animate-fade-in delay-300" // Asegura las clases correctas
+    paginationContainer.className = "flex flex-wrap justify-center items-center space-x-2 mt-8 animate-fade-in delay-300"
 
     // Botón "Anterior"
     const prevButton = document.createElement("button")
@@ -553,18 +553,55 @@ document.addEventListener("DOMContentLoaded", () => {
     })
     paginationContainer.appendChild(prevButton)
 
-    // Botones de número de página
-    for (let i = 1; i <= totalPages; i++) {
-      const pageButton = document.createElement("button")
-      pageButton.className = `px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
-        i === currentPage ? "bg-primary-600 text-white shadow-md" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+    // Responsive: mostrar solo 1,2,3,...,N en móvil
+    const isMobile = window.innerWidth < 640 // sm: breakpoint de Tailwind
+
+    if (isMobile && totalPages > 4) {
+      // Mostrar 1, 2, 3, ..., N
+      for (let i = 1; i <= 3; i++) {
+        const pageButton = document.createElement("button")
+        pageButton.className = `px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+          i === currentPage ? "bg-primary-600 text-white shadow-md" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+        }`
+        pageButton.textContent = i
+        pageButton.addEventListener("click", () => {
+          currentPage = i
+          renderPaginatedAsesorias()
+        })
+        paginationContainer.appendChild(pageButton)
+      }
+
+      // Puntos suspensivos
+      const dots = document.createElement("span")
+      dots.className = "px-2 text-gray-400 select-none"
+      dots.textContent = "..."
+      paginationContainer.appendChild(dots)
+
+      // Última página
+      const lastButton = document.createElement("button")
+      lastButton.className = `px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+        totalPages === currentPage ? "bg-primary-600 text-white shadow-md" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
       }`
-      pageButton.textContent = i
-      pageButton.addEventListener("click", () => {
-        currentPage = i
+      lastButton.textContent = totalPages
+      lastButton.addEventListener("click", () => {
+        currentPage = totalPages
         renderPaginatedAsesorias()
       })
-      paginationContainer.appendChild(pageButton)
+      paginationContainer.appendChild(lastButton)
+    } else {
+      // Desktop: mostrar todos los números normalmente
+      for (let i = 1; i <= totalPages; i++) {
+        const pageButton = document.createElement("button")
+        pageButton.className = `px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+          i === currentPage ? "bg-primary-600 text-white shadow-md" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+        }`
+        pageButton.textContent = i
+        pageButton.addEventListener("click", () => {
+          currentPage = i
+          renderPaginatedAsesorias()
+        })
+        paginationContainer.appendChild(pageButton)
+      }
     }
 
     // Botón "Siguiente"
@@ -721,9 +758,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 300)
   }
 
+  // Agregar estas funciones para actualizar el indicador móvil
+
+function updateMobileStepIndicator(stepNumber) {
+  const mobileStepNumber = document.getElementById('current-step-number');
+  const mobileStepText = document.getElementById('current-step-text');
+  
+  if (mobileStepNumber) mobileStepNumber.textContent = stepNumber.toString();
+  if (mobileStepText) mobileStepText.textContent = `Paso ${stepNumber} de 4`;
+}
+
   function resetStepper() {
     currentStep = 0
-    showStep(0) // This shows the content of step 0
+    showStep(0)
+
+    // Actualizar indicador móvil al resetear
+    updateMobileStepIndicator(1);
 
     const steps = document.querySelectorAll(".stepper-step")
     const stepperPrevBtn = document.getElementById("stepper-prev-btn")
@@ -848,7 +898,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }, 600)
 
-    currentStep-- // Decrement currentStep after animations are set up
+    currentStep-- // Después de decrementar currentStep
+  
+    // Actualizar indicador móvil
+    updateMobileStepIndicator(currentStep + 1);
 
     // Update buttons
     if (currentStep === 0) {
@@ -940,7 +993,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 300)
     }
 
-    currentStep++ // Increment currentStep after animations are set up
+    currentStep++ // Después de incrementar currentStep
+  
+    // Actualizar indicador móvil
+    updateMobileStepIndicator(currentStep + 1);
 
     // Update buttons
     stepperPrevBtn.classList.remove("hidden")
@@ -1612,6 +1668,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Lógica para el nuevo modal de documentos faltantes ---
   window.abrirModalDocumentosFaltantes = async (buttonElement, codigoAsesoria, motivoViaje) => {
+    const documentosModal = document.getElementById("documentosFaltantesModal")
+    const cerrarBtn = documentosModal.querySelector("#cerrarDocumentosModal")
+    const submitBtn = documentosModal.querySelector("#submitDocumentosModal")
+    const modalContentContainer = documentosModal.querySelector("#documentosModalContent")
+    const motivoViajeSpan = documentosModal.querySelector("#modalMotivoViaje")
+
     const originalButtonContent = buttonElement.innerHTML
     buttonElement.disabled = true
     buttonElement.innerHTML = `<div class="relative flex items-center justify-center"><div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div><span>Cargando...</span></div>`
@@ -1620,79 +1682,32 @@ document.addEventListener("DOMContentLoaded", () => {
     filesToUploadGlobally = {} // Limpiar archivos para el nuevo modal
     fileUrlsFromUpload = {} // Limpiar URLs
 
+    // Asigna eventos cada vez que se abre el modal
+    if (cerrarBtn) cerrarBtn.onclick = cerrarModalDocumentosFaltantes
+    if (submitBtn) submitBtn.onclick = enviarDocumentosFaltantes
+    documentosModal.onclick = (e) => {
+      if (e.target === documentosModal) cerrarModalDocumentosFaltantes()
+    }
+
     try {
-      // Crear el modal si no existe
-      if (!documentosModal) {
-        documentosModal = document.createElement("div")
-        documentosModal.id = "documentosFaltantesModal"
-        documentosModal.className = "fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50"
-        documentosModal.innerHTML = `
-          <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-3xl animate-scale-in max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-              <h2 class="text-xl font-bold text-gray-900 font-roboto">Adjuntar Documentos Faltantes</h2>
-              <button id="cerrarDocumentosModal" class="text-gray-500 hover:text-gray-700 cursor-pointer transition-colors duration-300">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
-            </div>
-            <div class="space-y-6">
-              <div class="bg-gradient-to-r from-primary-50 to-white p-4 rounded-xl border-l-4 border-primary-500 mb-5 animate-fade-in">
-                  <h3 class="text-base font-medium text-primary-800 flex items-center">
-                      <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                      </svg>
-                      Documentos Requeridos para <span id="modalMotivoViaje" class="font-semibold ml-1"></span>
-                  </h3>
-                  <p class="text-sm text-gray-600">Adjunte los documentos que le faltan para completar su formulario.</p>
-              </div>
-              <div id="documentosModalContent" class="space-y-4 max-h-96 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                <!-- Documentos faltantes se renderizarán aquí -->
-              </div>
-            </div>
-            <div class="flex justify-end mt-8 pt-4 border-t border-gray-200">
-              <button id="submitDocumentosModal" class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-roboto py-3 px-6 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer">
-                <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
-                <div class="relative flex items-center justify-center">
-                  <span>Actualizar Documentos</span>
-                  <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                  </svg>
-                </div>
-              </button>
-            </div>
-          </div>
-        `
-        document.body.appendChild(documentosModal)
-
-        document.getElementById("cerrarDocumentosModal").addEventListener("click", cerrarModalDocumentosFaltantes)
-        documentosModal.addEventListener("click", (e) => {
-          if (e.target === documentosModal) {
-            cerrarModalDocumentosFaltantes()
-          }
-        })
-        document.getElementById("submitDocumentosModal").addEventListener("click", enviarDocumentosFaltantes)
-      }
-
       // Obtener documentos faltantes y renderizarlos
       const { documentos_faltantes, motivo_viaje } = await verificarEstadoDocumentos(codigoAsesoria)
-      document.getElementById("modalMotivoViaje").textContent = motivo_viaje
-      const modalContentContainer = document.getElementById("documentosModalContent")
+      if (motivoViajeSpan) motivoViajeSpan.textContent = motivo_viaje || motivoViaje || ""
       modalContentContainer.innerHTML = "" // Limpiar contenido previo
 
       if (documentos_faltantes.length === 0) {
         modalContentContainer.innerHTML = `
-          <div class="col-span-full text-center py-12 text-gray-500">
-              <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-              <h3 class="text-lg font-medium text-gray-900 mb-2">¡Todos los documentos requeridos están adjuntos!</h3>
-              <p class="text-sm">Puede cerrar esta ventana.</p>
-          </div>
-        `
-        document.getElementById("submitDocumentosModal").classList.add("hidden")
+        <div class="col-span-full text-center py-12 text-gray-500">
+            <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">¡Todos los documentos requeridos están adjuntos!</h3>
+            <p class="text-sm">Puede cerrar esta ventana.</p>
+        </div>
+      `
+        if (submitBtn) submitBtn.classList.add("hidden")
       } else {
-        document.getElementById("submitDocumentosModal").classList.remove("hidden")
+        if (submitBtn) submitBtn.classList.remove("hidden")
         for (let i = 0; i < documentos_faltantes.length; i += 2) {
           const fila = document.createElement("div")
           fila.className = "grid grid-cols-1 lg:grid-cols-2 gap-4"
@@ -1726,6 +1741,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function cerrarModalDocumentosFaltantes() {
+    const documentosModal = document.getElementById("documentosFaltantesModal")
     const modalContent = documentosModal.querySelector(".bg-white")
     if (modalContent) modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
     setTimeout(() => {
@@ -1733,7 +1749,8 @@ document.addEventListener("DOMContentLoaded", () => {
       documentosModal.classList.add("hidden")
       document.body.style.overflow = "auto"
       // Limpiar el contenido del modal y resetear estados
-      document.getElementById("documentosModalContent").innerHTML = ""
+      const modalContentContainer = documentosModal.querySelector("#documentosModalContent")
+      if (modalContentContainer) modalContentContainer.innerHTML = ""
       filesToUploadGlobally = {}
       fileUrlsFromUpload = {}
       currentCodigoAsesoria = null

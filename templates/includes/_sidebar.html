@@ -1,12 +1,38 @@
+<!-- Botón hamburguesa para móviles con animación -->
+<button id="mobile-menu-button" class="fixed top-4 left-4 z-50 md:hidden bg-white rounded-lg shadow-lg p-3 transition-all duration-300 hover:bg-gray-50 hover:shadow-xl transform hover:scale-105 active:scale-95">
+    <div class="hamburger-icon w-5 h-4 relative flex flex-col justify-between">
+        <span class="hamburger-line w-full h-0.5 bg-gray-700 rounded-sm transition-all duration-300 ease-out origin-center"></span>
+        <span class="hamburger-line w-full h-0.5 bg-gray-700 rounded-sm transition-all duration-300 ease-out origin-center"></span>
+        <span class="hamburger-line w-full h-0.5 bg-gray-700 rounded-sm transition-all duration-300 ease-out origin-center"></span>
+    </div>
+</button>
+
+{% include 'includes/_notification.html' %}
+
+<!-- Modal Overlay con backdrop blur -->
+<div id="modal-overlay" class="fixed inset-0 z-40 md:hidden transition-all duration-300 ease-out opacity-0 invisible">
+    <div class="absolute inset-0 bg-black/50 transition-opacity duration-300 backdrop-blur-sm"></div>
+</div>
+
 <!-- Sidebar -->
-<aside class="fixed w-60 h-[calc(100vh-40px)] bg-white rounded-2xl ml-5 shadow-2xl z-10 transition-all duration-300 ease-in-out flex flex-col">
+<aside id="sidebar" class="fixed w-60 h-[calc(100vh-40px)] bg-white rounded-2xl shadow-2xl z-50 transition-all duration-300 ease-out flex flex-col
+    md:ml-5  md:translate-x-0 md:opacity-100 md:z-10
+    -translate-x-full opacity-0 ml-0 mt-0 md:h-[calc(100vh-40px)] h-full md:rounded-2xl rounded-none">
+    
     <nav class="flex-1 overflow-y-auto overflow-x-hidden py-4">
-        <div class="flex items-center pl-5 mb-10 border-b border-gray-100">
+        <div class="flex items-center justify-between pl-5 pr-4 mb-10 border-b border-gray-100">
             <div class="flex items-center font-bold text-2xl text-gray-900 font-roboto">
-                <div class="w-50 h-15 flex items-center justify-center font-bold overflow-hidden mx-auto">
-                    <img src="../static/img/logo-canadian-visa-advise.jpg" alt="logo-canadian-visa-advise" class="w-full h-full object-cover object-center scale-110">
+                <!-- Logo más pequeño en móviles -->
+                <div class="md:w-50 md:h-15 w-37 h-11 flex items-center justify-center font-bold overflow-hidden mx-auto">
+                    <img src="../static/img/logo-canadian-visa-advise.jpg" alt="logo-canadian-visa-advise" class="w-full h-full object-cover object-center scale-110 ">
                 </div>
             </div>
+            <!-- Botón cerrar solo visible en móviles -->
+            <button id="close-sidebar-button" class="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
         </div>
         
         <!-- Navegación principal -->
@@ -52,84 +78,85 @@
     </nav>
 
     <!-- Perfil de usuario en la parte inferior -->
-<div class="mt-auto border-t border-gray-100">
-    {% if session is defined and 'user_id' in session %}
-    <!-- Usuario logueado - Mostrar perfil -->
-    <div class="flex items-center p-6">
-        <a href="{{ url_for_perfil() }}" class="flex items-center w-full group">
-            <div class="flex items-center justify-center w-10 h-10 rounded-full bg-red-500 mr-3 text-white transition-all duration-300 ease-in-out shadow-sm group-hover:shadow-md group-hover:scale-110">
-                {% if session.get('profile_photo') %}
-                    <img src="{{ session.get('profile_photo') }}?t={{ now().timestamp() }}" alt="Foto de perfil" class="w-full h-full object-cover rounded-full">
-                    <!-- Iniciales ocultas cuando hay foto -->
-                    <div class="text-xl font-bold text-white select-none hidden">
-                        {% if session is defined and 'user_name' in session %}
-                            {{ session['user_name'].split()[0][0] }}{{ session['user_name'].split()[1][0] if session['user_name'].split()|length > 1 else '' }}
-                        {% else %}
-                            US
-                        {% endif %}
-                    </div>
-                {% else %}
-                    <!-- Iniciales visibles cuando no hay foto -->
-                    <div class="text-xl font-bold text-white select-none">
-                        {% if session is defined and 'user_name' in session %}
-                            {{ session['user_name'].split()[0][0] }}{{ session['user_name'].split()[1][0] if session['user_name'].split()|length > 1 else '' }}
-                        {% else %}
-                            US
-                        {% endif %}
-                    </div>
-                {% endif %}
-            </div>
-            <div class="flex-1">
-                <div class="font-medium text-gray-900 group-hover:text-red-500 transition-colors duration-300">
-                    {% if session is defined and 'user_name' in session %}
-                        {{ session['user_name'] }}
+    <div class="mt-auto border-t border-gray-100">
+        {% if session is defined and 'user_id' in session %}
+        <!-- Usuario logueado - Mostrar perfil -->
+        <div class="flex items-center p-6">
+            <a href="{{ url_for_perfil() }}" class="flex items-center w-full group">
+                <div class="flex items-center justify-center w-10 h-10 rounded-full bg-red-500 mr-3 text-white transition-all duration-300 ease-in-out shadow-sm group-hover:shadow-md group-hover:scale-110">
+                    {% if session.get('profile_photo') %}
+                        <img src="{{ session.get('profile_photo') }}?t={{ now().timestamp() }}" alt="Foto de perfil" class="w-full h-full object-cover rounded-full">
+                        <!-- Iniciales ocultas cuando hay foto -->
+                        <div class="text-xl font-bold text-white select-none hidden">
+                            {% if session is defined and 'user_name' in session %}
+                                {{ session['user_name'].split()[0][0] }}{{ session['user_name'].split()[1][0] if session['user_name'].split()|length > 1 else '' }}
+                            {% else %}
+                                US
+                            {% endif %}
+                        </div>
                     {% else %}
-                        Usuario
+                        <!-- Iniciales visibles cuando no hay foto -->
+                        <div class="text-xl font-bold text-white select-none">
+                            {% if session is defined and 'user_name' in session %}
+                                {{ session['user_name'].split()[0][0] }}{{ session['user_name'].split()[1][0] if session['user_name'].split()|length > 1 else '' }}
+                            {% else %}
+                                US
+                            {% endif %}
+                        </div>
                     {% endif %}
                 </div>
-            </div>
-        </a>
+                <div class="flex-1">
+                    <div class="font-medium text-gray-900 group-hover:text-red-500 transition-colors duration-300">
+                        {% if session is defined and 'user_name' in session %}
+                            {{ session['user_name'] }}
+                        {% else %}
+                            Usuario
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Botón de cerrar sesión -->
+        <div class="px-4 pb-4 pt-2">
+            <a href="/logout" class="relative overflow-hidden group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium py-2 px-4 rounded-xl shadow-lg hover:shadow-red-500/30 transition-all duration-300 cursor-pointer flex items-center justify-center">
+                <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                <div class="relative flex items-center justify-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                    </svg>
+                    <span>Cerrar sesión</span>
+                </div>
+            </a>
+        </div>
+
+        {% else %}
+        <!-- Usuario no logueado - Mostrar botones de inicio de sesión y registro -->
+        <div class="p-4 flex flex-col gap-3">
+            <!-- Botón de Iniciar sesión mejorado con gradiente y animación -->
+            <a href="/login" class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-medium py-2.5 px-4 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer flex items-center justify-center">
+                <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+                <div class="relative flex items-center justify-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                    </svg>
+                    <span>Iniciar sesión</span>
+                </div>
+            </a>
+            
+            <!-- Botón de Registrarse mejorado con efecto hover y animación -->
+            <a href="/registro" class="relative overflow-hidden group border border-primary-500 text-primary-600 hover:bg-primary-50 font-medium py-2.5 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer flex items-center justify-center">
+                <span class="absolute inset-0 w-0 bg-primary-50/50 transition-all duration-300 ease-in-out group-hover:w-full"></span>
+                <div class="relative flex items-center justify-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                    </svg>
+                    <span>Registrarse</span>
+                </div>
+            </a>
+        </div>
+        {% endif %}
     </div>
 
-    <!-- Botón de cerrar sesión -->
-    <div class="px-4 pb-4 pt-2">
-        <a href="/logout" class="relative overflow-hidden group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium py-2 px-4 rounded-xl shadow-lg hover:shadow-red-500/30 transition-all duration-300 cursor-pointer flex items-center justify-center">
-            <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
-            <div class="relative flex items-center justify-center">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                </svg>
-                <span>Cerrar sesión</span>
-            </div>
-        </a>
-    </div>
-
-    {% else %}
-    <!-- Usuario no logueado - Mostrar botones de inicio de sesión y registro -->
-    <div class="p-4 flex flex-col gap-3">
-        <!-- Botón de Iniciar sesión mejorado con gradiente y animación -->
-        <a href="/login" class="relative overflow-hidden group bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-600 text-white font-medium py-2.5 px-4 rounded-xl shadow-lg hover:shadow-primary-500/30 transition-all duration-300 cursor-pointer flex items-center justify-center">
-            <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
-            <div class="relative flex items-center justify-center">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
-                </svg>
-                <span>Iniciar sesión</span>
-            </div>
-        </a>
-        
-        <!-- Botón de Registrarse mejorado con efecto hover y animación -->
-        <a href="/registro" class="relative overflow-hidden group border border-primary-500 text-primary-600 hover:bg-primary-50 font-medium py-2.5 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer flex items-center justify-center">
-            <span class="absolute inset-0 w-0 bg-primary-50/50 transition-all duration-300 ease-in-out group-hover:w-full"></span>
-            <div class="relative flex items-center justify-center">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
-                </svg>
-                <span>Registrarse</span>
-            </div>
-        </a>
-    </div>
-    {% endif %}
-</div>
-<script src="../static/js/_sidebar.js"></script>
+    <script src="../static/js/_sidebar.js"></script>
 </aside>
