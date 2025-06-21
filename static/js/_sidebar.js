@@ -1,6 +1,124 @@
 document.addEventListener("DOMContentLoaded", () => {
   const currentPath = window.location.pathname
 
+  // Elementos del modal sidebar
+  const mobileMenuButton = document.getElementById('mobile-menu-button')
+  const closeSidebarButton = document.getElementById('close-sidebar-button')
+  const sidebar = document.getElementById('sidebar')
+  const modalOverlay = document.getElementById('modal-overlay')
+  const hamburgerIcon = document.querySelector('.hamburger-icon')
+  const hamburgerLines = document.querySelectorAll('.hamburger-line')
+
+  // Estado del modal
+  let isModalOpen = false
+
+  // Función para abrir el modal sidebar con animación Material Design
+  function openSidebarModal() {
+    if (isModalOpen) return
+
+    isModalOpen = true
+    
+    // Mostrar overlay con backdrop blur
+    modalOverlay.classList.remove('opacity-0', 'invisible')
+    modalOverlay.classList.add('opacity-100', 'visible')
+    
+    // Animar botón hamburguesa usando Tailwind
+    hamburgerLines[0].style.transform = 'translateY(7px) rotate(45deg)'
+    hamburgerLines[1].style.opacity = '0'
+    hamburgerLines[1].style.transform = 'scaleX(0)'
+    hamburgerLines[2].style.transform = 'translateY(-7px) rotate(-45deg)'
+    
+    // Mostrar sidebar con animación slide-in
+    setTimeout(() => {
+      sidebar.classList.remove('-translate-x-full', 'opacity-0')
+      sidebar.classList.add('translate-x-0', 'opacity-100')
+    }, 50)
+    
+    // Prevenir scroll del body
+    document.body.style.overflow = 'hidden'
+  }
+
+  // Función para cerrar el modal sidebar con animación
+  function closeSidebarModal() {
+    if (!isModalOpen) return
+
+    isModalOpen = false
+    
+    // Animar botón hamburguesa de vuelta usando Tailwind
+    hamburgerLines[0].style.transform = 'translateY(0) rotate(0deg)'
+    hamburgerLines[1].style.opacity = '1'
+    hamburgerLines[1].style.transform = 'scaleX(1)'
+    hamburgerLines[2].style.transform = 'translateY(0) rotate(0deg)'
+    
+    // Ocultar sidebar con animación slide-out
+    sidebar.classList.remove('translate-x-0', 'opacity-100')
+    sidebar.classList.add('-translate-x-full', 'opacity-0')
+    
+    // Ocultar overlay después de la animación del sidebar
+    setTimeout(() => {
+      modalOverlay.classList.remove('opacity-100', 'visible')
+      modalOverlay.classList.add('opacity-0', 'invisible')
+    }, 150)
+    
+    // Restaurar scroll del body
+    document.body.style.overflow = ''
+  }
+
+  // Event listeners para el modal
+  if (mobileMenuButton) {
+    mobileMenuButton.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      openSidebarModal()
+    })
+  }
+
+  if (closeSidebarButton) {
+    closeSidebarButton.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      closeSidebarModal()
+    })
+  }
+
+  if (modalOverlay) {
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay || e.target.classList.contains('bg-black/50')) {
+        closeSidebarModal()
+      }
+    })
+  }
+
+  // Cerrar modal al hacer clic en un enlace de navegación (solo en móviles)
+  document.querySelectorAll("nav a").forEach((link) => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth < 768 && isModalOpen) {
+        setTimeout(() => {
+          closeSidebarModal()
+        }, 200) // Pequeño delay para mejor UX
+      }
+    })
+  })
+
+  // Cerrar modal al cambiar el tamaño de ventana a desktop
+  window.addEventListener('resize', () => {
+    if (window.innerWidth >= 768 && isModalOpen) {
+      closeSidebarModal()
+    }
+  })
+
+  // Manejar tecla Escape para cerrar el modal
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isModalOpen) {
+      closeSidebarModal()
+    }
+  })
+
+  // Prevenir cierre accidental al hacer clic dentro del sidebar
+  sidebar.addEventListener('click', (e) => {
+    e.stopPropagation()
+  })
+
   // Marcar el enlace activo basado en la URL actual
   document.querySelectorAll("nav a").forEach((link) => {
     const href = link.getAttribute("href")
@@ -19,72 +137,59 @@ document.addEventListener("DOMContentLoaded", () => {
       link.classList.add("text-primary-600", "border-l-3", "border-primary-600", "font-medium", "bg-primary-50")
     })
   })
+
   // Función para actualizar el nombre de usuario en el sidebar
   function actualizarNombreUsuarioEnSidebar(nombreCompleto) {
-    // Buscar el elemento que muestra el nombre de usuario en el sidebar
     const nombreUsuarioElement = document.querySelector(".font-medium.text-gray-900.group-hover\\:text-red-500")
 
     if (nombreUsuarioElement) {
-      // Actualizar el texto con el nuevo nombre
       nombreUsuarioElement.textContent = nombreCompleto
-
-      // Actualizar también las iniciales si están visibles
       actualizarInicialesSidebar()
     }
   }
   window.actualizarNombreUsuarioEnSidebar = actualizarNombreUsuarioEnSidebar
+
   // Función para actualizar la imagen de perfil en el sidebar
   function actualizarImagenPerfilEnSidebar(imageUrl = null) {
-    // Buscar los elementos en el sidebar
     const sidebarProfileContainer = document.querySelector("aside a[href*='perfil'] .flex.items-center.justify-center")
-    const sidebarProfileImage = sidebarProfileContainer.querySelector("img")
-    const sidebarProfileInitials = sidebarProfileContainer.querySelector("div.text-xl.font-bold")
+    const sidebarProfileImage = sidebarProfileContainer?.querySelector("img")
+    const sidebarProfileInitials = sidebarProfileContainer?.querySelector("div.text-xl.font-bold")
 
-    if (imageUrl) {
-      // Si hay una URL de imagen, mostrarla y ocultar las iniciales
+    if (imageUrl && sidebarProfileContainer) {
       if (!sidebarProfileImage) {
-        // Si no existe la imagen, crearla
         const newImg = document.createElement("img")
         newImg.alt = "Foto de perfil"
         newImg.className = "w-full h-full object-cover rounded-full"
-        // Insertar la imagen antes de las iniciales
         sidebarProfileContainer.insertBefore(newImg, sidebarProfileInitials)
-        // Actualizar la referencia
-        const sidebarProfileImage = newImg
       }
 
-      // Añadir un parámetro de tiempo para evitar caché
-      sidebarProfileImage.src = imageUrl + "?t=" + new Date().getTime()
-      sidebarProfileImage.classList.remove("hidden")
+      const img = sidebarProfileContainer.querySelector("img")
+      img.src = imageUrl + "?t=" + new Date().getTime()
+      img.classList.remove("hidden")
 
-      // Ocultar las iniciales
       if (sidebarProfileInitials) {
         sidebarProfileInitials.classList.add("hidden")
       }
-    } else {
-      // Si no hay imagen, ocultar la imagen y mostrar las iniciales
+    } else if (sidebarProfileContainer) {
       if (sidebarProfileImage) {
         sidebarProfileImage.classList.add("hidden")
       }
 
-      // Mostrar las iniciales
       if (sidebarProfileInitials) {
         sidebarProfileInitials.classList.remove("hidden")
       } else {
-        // Si no existen las iniciales, crearlas
         const nombreUsuario = document
           .querySelector(".font-medium.text-gray-900.group-hover\\:text-red-500")
           ?.textContent.trim()
 
         if (nombreUsuario) {
           const nombres = nombreUsuario.split(" ")
-          let iniciales = nombres[0][0] // Primera letra del primer nombre
+          let iniciales = nombres[0][0]
 
           if (nombres.length > 1) {
-            iniciales += nombres[nombres.length - 1][0] // Primera letra del último nombre/apellido
+            iniciales += nombres[nombres.length - 1][0]
           }
 
-          // Crear el div de iniciales
           const inicialesDiv = document.createElement("div")
           inicialesDiv.className = "text-xl font-bold text-white select-none"
           inicialesDiv.textContent = iniciales
@@ -101,23 +206,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (sidebarProfileDiv) {
       if (!sidebarProfileImg || sidebarProfileImg.classList.contains("hidden")) {
-        // No hay imagen de perfil, actualizar las iniciales
         const nombreUsuario = document
           .querySelector(".font-medium.text-gray-900.group-hover\\:text-red-500")
           ?.textContent.trim()
 
         if (nombreUsuario) {
           const nombres = nombreUsuario.split(" ")
-          let iniciales = nombres[0][0] // Primera letra del primer nombre
+          let iniciales = nombres[0][0]
 
           if (nombres.length > 1) {
-            iniciales += nombres[nombres.length - 1][0] // Primera letra del último nombre/apellido
+            iniciales += nombres[nombres.length - 1][0]
           }
 
-          // Buscar o crear el div de iniciales
           let inicialesDiv = sidebarProfileDiv.querySelector("div.text-xl.font-bold")
           if (!inicialesDiv) {
-            // Si no existe el div de iniciales, eliminar el SVG y crear el div
             const svg = sidebarProfileDiv.querySelector("svg")
             if (svg) svg.remove()
 
@@ -126,7 +228,6 @@ document.addEventListener("DOMContentLoaded", () => {
             sidebarProfileDiv.appendChild(inicialesDiv)
           }
 
-          // Actualizar el contenido de las iniciales
           inicialesDiv.textContent = iniciales
         }
       }
@@ -136,9 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Actualizar iniciales en el sidebar
   actualizarInicialesSidebar()
 
-  // Exponer la función globalmente para que pueda ser llamada desde otros scripts
+  // Exponer las funciones globalmente para que puedan ser llamadas desde otros scripts
   window.actualizarInicialesSidebar = actualizarInicialesSidebar
   window.actualizarImagenPerfilEnSidebar = actualizarImagenPerfilEnSidebar
-
-  
 })

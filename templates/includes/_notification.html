@@ -1,20 +1,20 @@
 {% if usuario_logeado %}
-<div id="notification-container" class="relative z-50">
+<div id="notification-container" class="fixed top-4 right-4 z-1 md:right-5">
     <!-- Botón de notificaciones -->
-    <button id="notification-button" class="relative p-2 text-gray-600 hover:text-primary-600 transition-colors">
+    <button id="notification-button" class="relative p-3 bg-white rounded-lg shadow-lg text-gray-600 hover:text-primary-600 hover:bg-gray-50 hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
-        <span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+        <span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden animate-pulse">0</span>
     </button>
 
     <!-- Panel de notificaciones (oculto por defecto) -->
-    <div id="notification-panel" class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 hidden">
+    <div id="notification-panel" class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 hidden transform transition-all duration-300 ease-out opacity-0 scale-95">
         <div class="p-4 border-b border-gray-200">
             <div class="flex justify-between items-center">
-                <h3 class="text-lg font-roboto text-gray-800">Notificaciones</h3>
+                <h3 class="text-lg font-roboto font-semibold text-gray-800">Notificaciones</h3>
                 <div class="flex space-x-2">
-                    <button id="mark-all-read" class="text-xs text-primary-600 hover:text-primary-800">
+                    <button id="mark-all-read" class="text-xs text-primary-600 hover:text-primary-800 font-medium transition-colors duration-200">
                         Marcar todo como leído
                     </button>
                 </div>
@@ -22,18 +22,21 @@
         </div>
         
         <div id="notifications-list" class="max-h-96 overflow-y-auto">
-            <div id="empty-notifications" class="p-4 text-center text-gray-500">
-                No tienes notificaciones nuevas
+            <div id="empty-notifications" class="p-6 text-center text-gray-500">
+                <svg class="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <p class="font-medium">No tienes notificaciones nuevas</p>
             </div>
             <!-- Las notificaciones se cargarán aquí dinámicamente -->
         </div>
         
         <div class="p-3 border-t border-gray-200 bg-gray-50 rounded-b-lg">
-            <button id="delete-all-notifications" class="block w-full text-center text-sm text-primary-600 hover:text-primary-800">
+            <button id="delete-all-notifications" class="block w-full text-center text-sm text-primary-600 hover:text-primary-800 font-medium py-2 rounded-md hover:bg-primary-50 transition-colors duration-200">
                 Eliminar todas las notificaciones
             </button>
         </div>
     </div>
-    <script src="{{ url_for('static', filename='js/notification.js') }}"></script>
 </div>
+<script src="{{ url_for('static', filename='js/notification.js') }}"></script>
 {% endif %}
