@@ -25,7 +25,7 @@ def listar_asesorias():
         conn = create_connection()
         if not conn:
             flash('Error de conexión a la base de datos', 'error')
-            return render_template('admin/asesorias_admin.html', asesorias=[])
+            return render_template('admin/asesorias_admin.html', asesorias=[], asesores=[])
         
         cursor = conn.cursor(dictionary=True)
         
@@ -37,11 +37,11 @@ def listar_asesorias():
         pagina = int(request.args.get('pagina', 1))
         por_pagina = 20
         
-        # Construir consulta con filtros
+        # Construir consulta con filtros - CORREGIDO: estado viene de tbl_asesoria
         query = '''
             SELECT a.codigo_asesoria, a.fecha_asesoria, a.tipo_asesoria, 
                    COALESCE(p.estado_pago, 'Pendiente') AS estado_pago, 
-                   a.estado_proceso,
+                   a.estado_proceso, a.estado,
                    a.lugar, a.descripcion, a.asesor_asignado,
                    CONCAT(u.nombres, ' ', u.apellidos) as cliente_nombre,
                    u.correo as cliente_correo,
@@ -59,6 +59,7 @@ def listar_asesorias():
             query += ' AND (u.nombres LIKE %s OR u.apellidos LIKE %s OR a.codigo_asesoria LIKE %s)'
             params.extend([f'%{buscar}%', f'%{buscar}%', f'%{buscar}%'])
         
+        # CORREGIDO: Filtrar por estado de la asesoría (a.estado)
         if estado_filtro:
             query += ' AND a.estado = %s'
             params.append(estado_filtro)
@@ -83,17 +84,26 @@ def listar_asesorias():
         cursor.execute(query, params)
         asesorias = cursor.fetchall()
         
+        # Obtener lista de asesores para filtros
+        cursor.execute('''
+            SELECT id_asesor, nombre, apellidos
+            FROM tbl_asesor 
+            ORDER BY nombre, apellidos
+        ''')
+        asesores = cursor.fetchall()
+        
         conn.close()
         
         return render_template('admin/asesorias_admin.html',
                              asesorias=asesorias,
+                             asesores=asesores,
                              total_asesorias=total_asesorias,
                              pagina_actual=pagina,
                              total_paginas=(total_asesorias + por_pagina - 1) // por_pagina)
                              
     except Error as e:
         flash(f'Error al cargar asesorías: {str(e)}', 'error')
-        return render_template('admin/asesorias_admin.html', asesorias=[])
+        return render_template('admin/asesorias_admin.html', asesorias=[], asesores=[])
 
 @asesorias_admin_bp.route('/admin/asesorias/<int:codigo>/cambiar-estado', methods=['POST'])
 @admin_required
@@ -238,13 +248,17 @@ def ver_asesoria(codigo):
         
         cursor = conn.cursor(dictionary=True)
         
-        # Obtener información de la asesoría
+        # Obtener información completa de la asesoría
         cursor.execute('''
-            SELECT a.*, 
+            SELECT a.codigo_asesoria, a.fecha_asesoria, a.tipo_asesoria, a.descripcion,
+                   a.lugar, a.estado, a.estado_proceso, a.asesor_asignado,
+                   a.tipo_documento, a.numero_documento, a.numero_asesoria,
+                   a.nombre_asesor, a.especialidad, a.fecha_creacion,
                    CONCAT(u.nombres, ' ', u.apellidos) as cliente_nombre,
                    u.correo as cliente_correo, u.celular as cliente_telefono,
-                   ase.nombre as asesor_nombre,
-                   ase.correo as asesor_correo
+                   u.fecha_nacimiento as cliente_fecha_nacimiento,
+                   ase.nombre as asesor_nombre, ase.correo as asesor_correo,
+                   s.id_solicitante
             FROM tbl_asesoria a
             LEFT JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
             LEFT JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
@@ -255,19 +269,9 @@ def ver_asesoria(codigo):
         asesoria = cursor.fetchone()
         
         if not asesoria:
-            flash('Asesoría no encontrada.', 'error')
-            return redirect(url_for('asesorias_admin.listar_asesorias'))
+            return jsonify({'error': 'Asesoría no encontrada'}), 404
         
-        # Obtener documentos relacionados
-        cursor.execute('''
-            SELECT id_documento, tipo_documento, nombre_archivo, estado, fecha_subida
-            FROM tbl_documento
-            WHERE id_usuario = %s
-            ORDER BY fecha_subida DESC
-        ''', (asesoria['id_usuario'],))
-        documentos = cursor.fetchall()
-        
-        # Obtener pagos relacionados
+        # Obtener información de pago si existe
         cursor.execute('''
             SELECT id_pago, monto, metodo_pago, estado_pago, fecha_pago, referencia_pago
             FROM tbl_pago_asesoria
@@ -276,16 +280,20 @@ def ver_asesoria(codigo):
         ''', (codigo,))
         pagos = cursor.fetchall()
         
-        # Obtener historial de cambios (si existe tabla de auditoría)
-        historial = []
-        
         conn.close()
         
+        # Formatear fechas para mostrar
+        if asesoria['fecha_asesoria']:
+            asesoria['fecha_asesoria_formatted'] = asesoria['fecha_asesoria'].strftime('%d/%m/%Y %H:%M')
+        if asesoria['fecha_creacion']:
+            asesoria['fecha_creacion_formatted'] = asesoria['fecha_creacion'].strftime('%d/%m/%Y %H:%M')
+        if asesoria['cliente_fecha_nacimiento']:
+            asesoria['cliente_fecha_nacimiento_formatted'] = asesoria['cliente_fecha_nacimiento'].strftime('%d/%m/%Y')
+        
         return jsonify({
+            'success': True,
             'asesoria': dict(asesoria),
-            'documentos': [dict(d) for d in documentos],
-            'pagos': [dict(p) for p in pagos],
-            'historial': historial
+            'pagos': [dict(p) for p in pagos]
         })
         
     except Error as e:
@@ -317,29 +325,22 @@ def reasignar_asesoria(codigo):
         if not asesoria:
             return jsonify({'error': 'Asesoría no encontrada'}), 404
         
-        # Verificar que el asesor existe y está activo
+        # Verificar que el asesor existe
         cursor.execute(
-            'SELECT nombre, apellidos FROM tbl_asesor WHERE id_asesor = %s AND estado = "Activo"',
+            'SELECT nombre, apellidos FROM tbl_asesor WHERE id_asesor = %s',
             (nuevo_asesor_id,)
         )
         asesor = cursor.fetchone()
         
         if not asesor:
-            return jsonify({'error': 'Asesor no encontrado o inactivo'}), 400
+            return jsonify({'error': 'Asesor no encontrado'}), 400
         
         # Actualizar la asignación
         cursor.execute('''
             UPDATE tbl_asesoria 
-            SET id_asesor = %s, fecha_modificacion = %s
+            SET id_asesor = %s
             WHERE codigo_asesoria = %s
-        ''', (nuevo_asesor_id, datetime.now(), codigo))
-        
-        # Registrar el cambio en historial (si existe tabla de auditoría)
-        # cursor.execute('''
-        #     INSERT INTO tbl_historial_asesoria (codigo_asesoria, accion, detalles, usuario_admin, fecha)
-        #     VALUES (%s, %s, %s, %s, %s)
-        # ''', (codigo, 'Reasignación', f'Reasignado a {asesor["nombre"]} {asesor["apellidos"]}. Motivo: {motivo}', 
-        #       session['user_id'], datetime.now()))
+        ''', (nuevo_asesor_id, codigo))
         
         conn.commit()
         conn.close()
@@ -363,7 +364,7 @@ def cancelar_asesoria(codigo):
         if not conn:
             return jsonify({'error': 'Error de conexión a la base de datos'}), 500
         
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
         
         cursor.execute(
             'SELECT estado FROM tbl_asesoria WHERE codigo_asesoria = %s', (codigo,)
@@ -379,9 +380,9 @@ def cancelar_asesoria(codigo):
         # Cancelar la asesoría
         cursor.execute('''
             UPDATE tbl_asesoria 
-            SET estado = 'Cancelada', motivo_cancelacion = %s, fecha_modificacion = %s
+            SET estado = 'Cancelada'
             WHERE codigo_asesoria = %s
-        ''', (motivo, datetime.now(), codigo))
+        ''', (codigo,))
         
         conn.commit()
         conn.close()
@@ -407,33 +408,58 @@ def editar_asesoria(codigo):
         cursor = conn.cursor(dictionary=True)
         
         if request.method == 'POST':
-            # Obtener datos del formulario
-            tipo_asesoria = request.form.get('tipo_asesoria')
-            fecha_asesoria = request.form.get('fecha_asesoria')
-            hora_asesoria = request.form.get('hora_asesoria')
-            estado = request.form.get('estado')
-            notas = request.form.get('notas', '')
+            data = request.get_json()
             
-            # Combinar fecha y hora
-            if fecha_asesoria and hora_asesoria:
-                fecha_completa = f"{fecha_asesoria} {hora_asesoria}"
-                fecha_asesoria_dt = datetime.strptime(fecha_completa, '%Y-%m-%d %H:%M')
-            else:
-                fecha_asesoria_dt = None
+            # Verificar que la asesoría existe
+            cursor.execute('SELECT * FROM tbl_asesoria WHERE codigo_asesoria = %s', (codigo,))
+            asesoria_actual = cursor.fetchone()
             
-            # Actualizar asesoría
-            cursor.execute('''
-                UPDATE tbl_asesoria 
-                SET tipo_asesoria = %s, fecha_asesoria = %s, estado = %s, 
-                    notas = %s, fecha_modificacion = %s
-                WHERE codigo_asesoria = %s
-            ''', (tipo_asesoria, fecha_asesoria_dt, estado, notas, datetime.now(), codigo))
+            if not asesoria_actual:
+                return jsonify({'error': 'Asesoría no encontrada'}), 404
+            
+            # Preparar datos para actualizar
+            campos_actualizables = [
+                'tipo_asesoria', 'descripcion', 'lugar', 'estado', 'estado_proceso',
+                'asesor_asignado', 'tipo_documento', 'numero_documento', 'especialidad'
+            ]
+            
+            # Construir query de actualización dinámicamente
+            campos_update = []
+            valores = []
+            
+            for campo in campos_actualizables:
+                if campo in data and data[campo] is not None:
+                    campos_update.append(f'{campo} = %s')
+                    valores.append(data[campo])
+            
+            # Manejar fecha_asesoria por separado si viene en el request
+            if 'fecha_asesoria' in data and data['fecha_asesoria']:
+                try:
+                    fecha_dt = datetime.strptime(data['fecha_asesoria'], '%Y-%m-%dT%H:%M')
+                    campos_update.append('fecha_asesoria = %s')
+                    valores.append(fecha_dt)
+                except ValueError:
+                    return jsonify({'error': 'Formato de fecha inválido'}), 400
+            
+            if not campos_update:
+                return jsonify({'error': 'No hay campos para actualizar'}), 400
+            
+            # Agregar código de asesoría al final
+            valores.append(codigo)
+            
+            query = f"UPDATE tbl_asesoria SET {', '.join(campos_update)} WHERE codigo_asesoria = %s"
+            cursor.execute(query, valores)
+            
+            if cursor.rowcount == 0:
+                return jsonify({'error': 'No se pudo actualizar la asesoría'}), 400
             
             conn.commit()
             conn.close()
             
-            flash('Asesoría actualizada exitosamente.', 'success')
-            return redirect(url_for('asesorias_admin.listar_asesorias'))
+            return jsonify({
+                'success': True,
+                'mensaje': 'Asesoría actualizada exitosamente'
+            })
         
         # GET - Mostrar formulario de edición
         cursor.execute(
@@ -449,7 +475,6 @@ def editar_asesoria(codigo):
         cursor.execute('''
             SELECT id_asesor, nombre, apellidos, especialidad
             FROM tbl_asesor 
-            WHERE estado = 'Activo'
             ORDER BY nombre, apellidos
         ''')
         asesores = cursor.fetchall()
@@ -462,6 +487,55 @@ def editar_asesoria(codigo):
     except Error as e:
         flash(f'Error al editar asesoría: {str(e)}', 'error')
         return redirect(url_for('asesorias_admin.listar_asesorias'))
+
+@asesorias_admin_bp.route('/admin/asesorias/<int:codigo>/eliminar', methods=['POST'])
+@admin_required
+def eliminar_asesoria(codigo):
+    """Eliminar una asesoría (cambiar estado a Cancelada)"""
+    try:
+        data = request.get_json()
+        motivo = data.get('motivo', 'Eliminada por administrador')
+        
+        conn = create_connection()
+        if not conn:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+        
+        cursor = conn.cursor(dictionary=True)
+        
+        # Verificar que la asesoría existe
+        cursor.execute('SELECT estado FROM tbl_asesoria WHERE codigo_asesoria = %s', (codigo,))
+        asesoria = cursor.fetchone()
+        
+        if not asesoria:
+            return jsonify({'error': 'Asesoría no encontrada'}), 404
+        
+        if asesoria['estado'] == 'Cancelada':
+            return jsonify({'error': 'La asesoría ya está cancelada'}), 400
+        
+        # Cancelar la asesoría en lugar de eliminarla físicamente
+        cursor.execute('''
+            UPDATE tbl_asesoria 
+            SET estado = 'Cancelada', descripcion = CONCAT(COALESCE(descripcion, ''), ' - CANCELADA: ', %s)
+            WHERE codigo_asesoria = %s
+        ''', (motivo, codigo))
+        
+        # También cancelar pagos pendientes si existen
+        cursor.execute('''
+            UPDATE tbl_pago_asesoria 
+            SET estado_pago = 'Cancelado'
+            WHERE codigo_asesoria = %s AND estado_pago = 'Pendiente'
+        ''', (codigo,))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'mensaje': 'Asesoría eliminada (cancelada) exitosamente'
+        })
+        
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
 
 @asesorias_admin_bp.route('/admin/asesorias/crear', methods=['GET', 'POST'])
 @admin_required
@@ -496,8 +570,10 @@ def crear_asesoria():
             codigo_asesoria = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
             
             # Verificar que el código no existe
-            while cursor.execute('SELECT codigo_asesoria FROM tbl_asesoria WHERE codigo_asesoria = %s', (codigo_asesoria,)).fetchone():
+            cursor.execute('SELECT codigo_asesoria FROM tbl_asesoria WHERE codigo_asesoria = %s', (codigo_asesoria,))
+            while cursor.fetchone():
                 codigo_asesoria = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+                cursor.execute('SELECT codigo_asesoria FROM tbl_asesoria WHERE codigo_asesoria = %s', (codigo_asesoria,))
             
             # Combinar fecha y hora
             fecha_asesoria_dt = None
@@ -508,11 +584,11 @@ def crear_asesoria():
             # Crear asesoría
             cursor.execute('''
                 INSERT INTO tbl_asesoria (codigo_asesoria, id_solicitante, tipo_asesoria, 
-                                     fecha_asesoria, id_asesor, estado, notas, 
-                                     monto, fecha_creacion)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                     fecha_asesoria, id_asesor, estado, descripcion, 
+                                     fecha_creacion)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ''', (codigo_asesoria, id_usuario, tipo_asesoria, fecha_asesoria_dt,
-                  id_asesor, 'Pendiente', notas, monto, datetime.now()))
+                  id_asesor, 'Pendiente', notas, datetime.now()))
             
             conn.commit()
             conn.close()
@@ -533,20 +609,19 @@ def crear_asesoria():
         
         cursor = conn.cursor(dictionary=True)
         
-        # Obtener usuarios activos
+        # Obtener usuarios activos (solicitantes)
         cursor.execute('''
-            SELECT id_usuario, nombres, apellidos, correo
-            FROM tbl_usuario 
-            WHERE estado = 'Activo' AND rol = 'Cliente'
-            ORDER BY nombres, apellidos
+            SELECT s.id_solicitante, u.nombres, u.apellidos, u.correo
+            FROM tbl_solicitante s
+            JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+            ORDER BY u.nombres, u.apellidos
         ''')
         usuarios = cursor.fetchall()
         
-        # Obtener asesores activos
+        # Obtener asesores
         cursor.execute('''
             SELECT id_asesor, nombre, apellidos, especialidad
             FROM tbl_asesor 
-            WHERE estado = 'Activo'
             ORDER BY nombre, apellidos
         ''')
         asesores = cursor.fetchall()
@@ -573,57 +648,156 @@ def exportar_asesorias():
         
         cursor = conn.cursor(dictionary=True)
         
-        asesorias = cursor.execute('''
+        # Consulta para obtener todas las asesorías con información completa
+        cursor.execute('''
             SELECT a.codigo_asesoria, a.fecha_asesoria, a.tipo_asesoria, a.estado,
-                   a.monto, a.estado_pago,
-                   CONCAT(u.nombres, ' ', u.apellidos) as cliente,
-                   u.correo as cliente_correo,
-                   ase.nombre as asesor
+                   a.estado_proceso, a.lugar, a.descripcion, a.asesor_asignado,
+                   a.tipo_documento, a.numero_documento, a.especialidad,
+                   a.fecha_creacion,
+                   CONCAT(u.nombres, ' ', u.apellidos) as cliente_nombre,
+                   u.correo as cliente_correo, u.celular as cliente_telefono,
+                   ase.nombre as asesor_nombre,
+                   COALESCE(p.estado_pago, 'Pendiente') as estado_pago,
+                   p.monto as monto_pago, p.metodo_pago, p.fecha_pago
             FROM tbl_asesoria a
             LEFT JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
             LEFT JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
             LEFT JOIN tbl_asesor ase ON a.id_asesor = ase.id_asesor
+            LEFT JOIN tbl_pago_asesoria p ON a.codigo_asesoria = p.codigo_asesoria
             ORDER BY a.fecha_asesoria DESC
-        ''').fetchall()
+        ''')
         
+        asesorias = cursor.fetchall()
         conn.close()
         
         if formato == 'csv':
             import csv
             import io
+            from flask import Response
             
             output = io.StringIO()
             writer = csv.writer(output)
             
             # Escribir encabezados
-            writer.writerow(['Código', 'Fecha', 'Tipo', 'Estado', 'Monto', 
-                           'Estado Pago', 'Cliente', 'Correo Cliente', 'Asesor'])
+            writer.writerow([
+                'Código Asesoría', 'Fecha Asesoría', 'Tipo Asesoría', 'Estado', 
+                'Estado Proceso', 'Lugar', 'Cliente', 'Correo Cliente', 'Teléfono Cliente',
+                'Asesor Asignado', 'Asesor Nombre', 'Especialidad', 'Tipo Documento',
+                'Número Documento', 'Estado Pago', 'Monto Pago', 'Método Pago',
+                'Fecha Pago', 'Fecha Creación', 'Descripción'
+            ])
             
             # Escribir datos
             for asesoria in asesorias:
                 writer.writerow([
                     asesoria['codigo_asesoria'],
-                    asesoria['fecha_asesoria'],
-                    asesoria['tipo_asesoria'],
-                    asesoria['estado'],
-                    asesoria['monto'],
-                    asesoria['estado_pago'],
-                    asesoria['cliente'],
-                    asesoria['cliente_correo'],
-                    asesoria['asesor']
+                    asesoria['fecha_asesoria'].strftime('%d/%m/%Y %H:%M') if asesoria['fecha_asesoria'] else '',
+                    asesoria['tipo_asesoria'] or '',
+                    asesoria['estado'] or '',
+                    asesoria['estado_proceso'] or '',
+                    asesoria['lugar'] or '',
+                    asesoria['cliente_nombre'] or '',
+                    asesoria['cliente_correo'] or '',
+                    asesoria['cliente_telefono'] or '',
+                    asesoria['asesor_asignado'] or '',
+                    asesoria['asesor_nombre'] or '',
+                    asesoria['especialidad'] or '',
+                    asesoria['tipo_documento'] or '',
+                    asesoria['numero_documento'] or '',
+                    asesoria['estado_pago'] or '',
+                    asesoria['monto_pago'] or '',
+                    asesoria['metodo_pago'] or '',
+                    asesoria['fecha_pago'].strftime('%d/%m/%Y %H:%M') if asesoria['fecha_pago'] else '',
+                    asesoria['fecha_creacion'].strftime('%d/%m/%Y %H:%M') if asesoria['fecha_creacion'] else '',
+                    (asesoria['descripcion'] or '').replace('\n', ' ').replace('\r', ' ')
                 ])
             
             output.seek(0)
             
-            from flask import Response
             return Response(
                 output.getvalue(),
                 mimetype='text/csv',
-                headers={'Content-Disposition': f'attachment; filename=asesorias_{datetime.now().strftime("%Y%m%d")}.csv'}
+                headers={
+                    'Content-Disposition': f'attachment; filename=asesorias_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+                }
             )
         
-        # TODO: Implementar exportación a Excel
-        return jsonify({'error': 'Formato no soportado'}), 400
+        elif formato == 'excel':
+            try:
+                import pandas as pd
+                import io
+                from flask import Response
+                
+                # Preparar datos para DataFrame
+                data = []
+                for asesoria in asesorias:
+                    data.append({
+                        'Código Asesoría': asesoria['codigo_asesoria'],
+                        'Fecha Asesoría': asesoria['fecha_asesoria'].strftime('%d/%m/%Y %H:%M') if asesoria['fecha_asesoria'] else '',
+                        'Tipo Asesoría': asesoria['tipo_asesoria'] or '',
+                        'Estado': asesoria['estado'] or '',
+                        'Estado Proceso': asesoria['estado_proceso'] or '',
+                        'Lugar': asesoria['lugar'] or '',
+                        'Cliente': asesoria['cliente_nombre'] or '',
+                        'Correo Cliente': asesoria['cliente_correo'] or '',
+                        'Teléfono Cliente': asesoria['cliente_telefono'] or '',
+                        'Asesor Asignado': asesoria['asesor_asignado'] or '',
+                        'Asesor Nombre': asesoria['asesor_nombre'] or '',
+                        'Especialidad': asesoria['especialidad'] or '',
+                        'Tipo Documento': asesoria['tipo_documento'] or '',
+                        'Número Documento': asesoria['numero_documento'] or '',
+                        'Estado Pago': asesoria['estado_pago'] or '',
+                        'Monto Pago': asesoria['monto_pago'] or '',
+                        'Método Pago': asesoria['metodo_pago'] or '',
+                        'Fecha Pago': asesoria['fecha_pago'].strftime('%d/%m/%Y %H:%M') if asesoria['fecha_pago'] else '',
+                        'Fecha Creación': asesoria['fecha_creacion'].strftime('%d/%m/%Y %H:%M') if asesoria['fecha_creacion'] else '',
+                        'Descripción': (asesoria['descripcion'] or '').replace('\n', ' ').replace('\r', ' ')
+                    })
+                
+                # Crear DataFrame
+                df = pd.DataFrame(data)
+                
+                # Crear archivo Excel en memoria
+                output = io.BytesIO()
+                with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                    df.to_excel(writer, sheet_name='Asesorías', index=False)
+                    
+                    # Obtener el workbook y worksheet para formatear
+                    workbook = writer.book
+                    worksheet = writer.sheets['Asesorías']
+                    
+                    # Ajustar ancho de columnas
+                    for column in worksheet.columns:
+                        max_length = 0
+                        column_letter = column[0].column_letter
+                        for cell in column:
+                            try:
+                                if len(str(cell.value)) > max_length:
+                                    max_length = len(str(cell.value))
+                            except:
+                                pass
+                        adjusted_width = min(max_length + 2, 50)
+                        worksheet.column_dimensions[column_letter].width = adjusted_width
+                
+                output.seek(0)
+                
+                return Response(
+                    output.getvalue(),
+                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    headers={
+                        'Content-Disposition': f'attachment; filename=asesorias_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+                    }
+                )
+                
+            except ImportError:
+                return jsonify({
+                    'error': 'Pandas y openpyxl son requeridos para exportar a Excel. Instala con: pip install pandas openpyxl'
+                }), 500
+        
+        else:
+            return jsonify({'error': 'Formato no soportado. Use csv o excel'}), 400
         
     except Error as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Error de base de datos: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': f'Error inesperado: {str(e)}'}), 500
