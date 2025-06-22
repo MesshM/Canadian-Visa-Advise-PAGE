@@ -403,7 +403,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Modal Eliminar Asesoría - CORREGIDO
   let codigoEliminar = null
   window.abrirModalEliminarAsesoria = (codigo) => {
-    codigoEliminar = codigo
+    console.log("DEBUG JS: Función abrirModalEliminarAsesoria llamada con:", codigo, "tipo:", typeof codigo)
+    codigoEliminar = Number.parseInt(codigo) // Asegurar que sea un número
+    console.log("DEBUG JS: codigoEliminar asignado:", codigoEliminar, "tipo:", typeof codigoEliminar)
     document.getElementById("modalEliminarAsesoria").classList.remove("hidden")
   }
 
@@ -415,27 +417,46 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnEliminar = document.getElementById("btnConfirmarEliminarAsesoria")
   if (btnEliminar) {
     btnEliminar.onclick = () => {
-      if (!codigoEliminar) return
+      console.log("DEBUG JS: Botón eliminar clickeado, codigoEliminar:", codigoEliminar)
 
-      const motivo = document.getElementById("motivoEliminacion")?.value || "Eliminada por administrador"
+      if (!codigoEliminar) {
+        alert("Error: No se ha seleccionado una asesoría para eliminar")
+        return
+      }
 
       // Mostrar loading
       const textoOriginal = btnEliminar.textContent
       btnEliminar.textContent = "Eliminando..."
       btnEliminar.disabled = true
 
-      fetch(`/admin/asesorias/${codigoEliminar}/eliminar`, {
+      const url = `/admin/asesorias/${codigoEliminar}/eliminar`
+      console.log("DEBUG JS: URL de eliminación:", url)
+
+      const payload = { motivo: "Eliminada por administrador" }
+      console.log("DEBUG JS: Payload:", payload)
+
+      fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ motivo: motivo }),
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
       })
         .then((response) => {
+          console.log("DEBUG JS: Respuesta recibida:", response.status, response.statusText)
+          console.log("DEBUG JS: Headers de respuesta:", [...response.headers.entries()])
+
           if (!response.ok) {
-            throw new Error("Error al eliminar")
+            return response.text().then((text) => {
+              console.log("DEBUG JS: Texto de error:", text)
+              throw new Error(`Error HTTP: ${response.status} - ${text}`)
+            })
           }
           return response.json()
         })
         .then((data) => {
+          console.log("DEBUG JS: Datos recibidos:", data)
           if (data.success) {
             alert("Asesoría eliminada exitosamente")
             location.reload()
@@ -444,6 +465,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         })
         .catch((error) => {
+          console.error("DEBUG JS: Error completo:", error)
           alert("Error al eliminar asesoría: " + error.message)
           btnEliminar.textContent = textoOriginal
           btnEliminar.disabled = false
