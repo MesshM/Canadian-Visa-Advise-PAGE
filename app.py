@@ -9,10 +9,10 @@ from routes.formularios import formulario_bp
 
 # Importa todos los blueprints de asesor
 from routes.routes_asesor.panel_asesor import panel_asesor_bp
-from routes.routes_asesor.clientes import clientes_asesor_bp
-from routes.routes_asesor.citas import citas_asesor_bp
-from routes.routes_asesor.mensajeria import mensajeria_asesor_bp
-from routes.routes_asesor.recursos import recursos_asesor_bp
+from routes.routes_asesor.clientes_asesor import clientes_asesor_bp
+from routes.routes_asesor.asesorias_asesor import citas_asesor_bp
+from routes.routes_asesor.mensajeria_asesor import mensajeria_asesor_bp
+from routes.routes_asesor.recursos_asesor import recursos_asesor_bp
 from routes.routes_asesor.perfil_asesor import perfil_asesor_bp
 
 # Importa otros blueprints de administrador si los tienes
@@ -60,7 +60,7 @@ app.register_blueprint(clientes_asesor_bp)
 app.register_blueprint(citas_asesor_bp)
 app.register_blueprint(mensajeria_asesor_bp)
 app.register_blueprint(recursos_asesor_bp)
-app.register_blueprint(perfil_asesor_bp)
+app.register_blueprint(perfil_asesor_bp)    
 
 # Registrar los blueprints de administrador
 app.register_blueprint(panel_admin_bp)
