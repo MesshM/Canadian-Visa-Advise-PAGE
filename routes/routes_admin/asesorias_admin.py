@@ -341,6 +341,36 @@ def eliminar_asesoria(codigo):
         print(f"DEBUG: Traceback: {traceback.format_exc()}")
         return jsonify({'error': f'Error inesperado: {str(e)}'}), 500
 
+@asesorias_admin_bp.route('/admin/asesorias/<int:codigo>/eliminar_fisico', methods=['POST'])
+@admin_required
+def eliminar_asesoria_fisico(codigo):
+    """Elimina físicamente una asesoría y sus pagos asociados de la base de datos"""
+    try:
+        conn = create_connection()
+        if not conn:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+
+        cursor = conn.cursor()
+
+        # Eliminar pagos asociados primero (si existen)
+        cursor.execute('DELETE FROM tbl_pago_asesoria WHERE codigo_asesoria = %s', (codigo,))
+        # Eliminar la asesoría
+        cursor.execute('DELETE FROM tbl_asesoria WHERE codigo_asesoria = %s', (codigo,))
+
+        if cursor.rowcount == 0:
+            conn.rollback()
+            conn.close()
+            return jsonify({'error': 'No se encontró la asesoría o ya fue eliminada'}), 404
+
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True, 'mensaje': 'Asesoría eliminada permanentemente'})
+
+    except Error as e:
+        return jsonify({'error': f'Error de base de datos: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': f'Error inesperado: {str(e)}'}), 500
+
 @asesorias_admin_bp.route('/admin/asesorias/crear', methods=['POST'])
 @admin_required
 def crear_asesoria():
@@ -348,34 +378,149 @@ def crear_asesoria():
     try:
         data = request.get_json()
         
+        # Validar datos requeridos
+        if not data:
+            return jsonify({'error': 'No se recibieron datos'}), 400
+        
+        # Validar campos requeridos
+        campos_requeridos = ['cliente_correo', 'tipo_asesoria']
+        for campo in campos_requeridos:
+            if not data.get(campo):
+                return jsonify({'error': f'El campo {campo} es requerido'}), 400
+        
         conn = create_connection()
         if not conn:
             return jsonify({'error': 'Error de conexión a la base de datos'}), 500
         
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
         
-        # Crear asesoría básica
+        # Buscar o crear el usuario/solicitante
+        cliente_correo = data['cliente_correo'].strip().lower()
+        cliente_nombre = data.get('cliente_nombre', '').strip()
+        
+        # Verificar si el usuario ya existe
+        cursor.execute('SELECT id_usuario FROM tbl_usuario WHERE correo = %s', (cliente_correo,))
+        usuario_existente = cursor.fetchone()
+        
+        if usuario_existente:
+            id_usuario = usuario_existente['id_usuario']
+            
+            # Verificar si ya es solicitante
+            cursor.execute('SELECT id_solicitante FROM tbl_solicitante WHERE id_usuario = %s', (id_usuario,))
+            solicitante_existente = cursor.fetchone()
+            
+            if solicitante_existente:
+                id_solicitante = solicitante_existente['id_solicitante']
+            else:
+                # Crear registro de solicitante
+                cursor.execute('INSERT INTO tbl_solicitante (id_usuario) VALUES (%s)', (id_usuario,))
+                id_solicitante = cursor.lastrowid
+        else:
+            # Crear nuevo usuario
+            if not cliente_nombre:
+                return jsonify({'error': 'El nombre del cliente es requerido para usuarios nuevos'}), 400
+            
+            # Separar nombre y apellidos
+            nombres_completos = cliente_nombre.split()
+            nombres = nombres_completos[0] if nombres_completos else 'Cliente'
+            apellidos = ' '.join(nombres_completos[1:]) if len(nombres_completos) > 1 else 'Nuevo'
+            
+            cursor.execute('''
+                INSERT INTO tbl_usuario (nombres, apellidos, correo, contrasena, correo_verificado)
+                VALUES (%s, %s, %s, %s, %s)
+            ''', (nombres, apellidos, cliente_correo, 'temp_password_admin', 0))
+            
+            id_usuario = cursor.lastrowid
+            
+            # Crear registro de solicitante
+            cursor.execute('INSERT INTO tbl_solicitante (id_usuario) VALUES (%s)', (id_usuario,))
+            id_solicitante = cursor.lastrowid
+        
+        # Buscar asesor si se especifica
+        id_asesor = None
+        asesor_asignado = data.get('asesor_asignado', '').strip()
+        
+        if asesor_asignado:
+            cursor.execute('''
+                SELECT id_asesor FROM tbl_asesor 
+                WHERE nombre LIKE %s OR CONCAT(nombre, ' ', apellidos) LIKE %s
+                LIMIT 1
+            ''', (f'%{asesor_asignado}%', f'%{asesor_asignado}%'))
+            
+            asesor_encontrado = cursor.fetchone()
+            if asesor_encontrado:
+                id_asesor = asesor_encontrado['id_asesor']
+        
+        # Preparar fecha de asesoría
+        fecha_asesoria = None
+        if data.get('fecha_asesoria'):
+            try:
+                fecha_asesoria = datetime.strptime(data['fecha_asesoria'], '%Y-%m-%dT%H:%M')
+            except ValueError:
+                return jsonify({'error': 'Formato de fecha inválido. Use YYYY-MM-DDTHH:MM'}), 400
+        
+        # Crear la asesoría
         cursor.execute('''
-            INSERT INTO tbl_asesoria (tipo_asesoria, fecha_asesoria, estado_proceso, fecha_creacion)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO tbl_asesoria (
+                id_solicitante, id_asesor, tipo_asesoria, fecha_asesoria, 
+                estado_proceso, estado, lugar, descripcion, asesor_asignado,
+                especialidad, fecha_creacion, tipo_documento, numero_documento
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ''', (
+            id_solicitante,
+            id_asesor,
             data.get('tipo_asesoria', 'Visa de Trabajo'),
-            datetime.strptime(data['fecha_asesoria'], '%Y-%m-%dT%H:%M') if data.get('fecha_asesoria') else None,
+            fecha_asesoria,
             data.get('estado_proceso', 'Pendiente'),
-            datetime.now()
+            data.get('estado', 'Pendiente'),
+            data.get('lugar', 'Virtual (Zoom)'),
+            data.get('descripcion', f'Asesoría creada por administrador para {cliente_nombre or cliente_correo}'),
+            asesor_asignado or None,
+            data.get('especialidad', 'Inmigración Canadiense'),
+            datetime.now(),
+            data.get('tipo_documento', 'C.C'),
+            data.get('numero_documento', '')
         ))
+        
+        codigo_asesoria = cursor.lastrowid
+        
+        # Si se especifica un monto, crear registro de pago
+        if data.get('monto_pago'):
+            try:
+                monto = float(data['monto_pago'])
+                cursor.execute('''
+                    INSERT INTO tbl_pago_asesoria (
+                        codigo_asesoria, monto, metodo_pago, estado_pago, fecha_pago
+                    ) VALUES (%s, %s, %s, %s, %s)
+                ''', (
+                    codigo_asesoria,
+                    monto,
+                    data.get('metodo_pago', 'Pendiente'),
+                    'Pendiente',
+                    datetime.now()
+                ))
+            except (ValueError, TypeError):
+                # Si el monto no es válido, continuar sin crear el pago
+                pass
         
         conn.commit()
         conn.close()
         
         return jsonify({
             'success': True,
-            'mensaje': 'Asesoría creada exitosamente'
+            'mensaje': f'Asesoría creada exitosamente con código {codigo_asesoria}',
+            'codigo_asesoria': codigo_asesoria
         })
         
     except Error as e:
+        if conn:
+            conn.rollback()
+            conn.close()
         return jsonify({'error': f'Error de base de datos: {str(e)}'}), 500
     except Exception as e:
+        if conn:
+            conn.rollback()
+            conn.close()
         return jsonify({'error': f'Error inesperado: {str(e)}'}), 500
 
 @asesorias_admin_bp.route('/admin/asesorias/exportar')
@@ -462,6 +607,37 @@ def exportar_asesorias():
             }
         )
         
+    except Error as e:
+        return jsonify({'error': f'Error de base de datos: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': f'Error inesperado: {str(e)}'}), 500
+
+@asesorias_admin_bp.route('/admin/asesorias/<int:codigo>/cancelar', methods=['POST'])
+@admin_required
+def cancelar_asesoria(codigo):
+    """Cancela una asesoría (cambia estado_proceso a Cancelado y libera el horario)"""
+    try:
+        conn = create_connection()
+        if not conn:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+
+        cursor = conn.cursor(dictionary=True)
+        # Verificar que la asesoría existe
+        cursor.execute('SELECT * FROM tbl_asesoria WHERE codigo_asesoria = %s', (codigo,))
+        asesoria = cursor.fetchone()
+        if not asesoria:
+            return jsonify({'error': 'Asesoría no encontrada'}), 404
+
+        # Cambiar estado_proceso a Cancelado y liberar horario
+        cursor.execute('''
+            UPDATE tbl_asesoria
+            SET estado_proceso = %s, fecha_asesoria = NULL
+            WHERE codigo_asesoria = %s
+        ''', ('Cancelado', codigo))
+
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True, 'mensaje': 'Asesoría cancelada correctamente'})
     except Error as e:
         return jsonify({'error': f'Error de base de datos: {str(e)}'}), 500
     except Exception as e:

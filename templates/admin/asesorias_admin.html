@@ -23,6 +23,9 @@
             </div>
         </div>
 
+        <!-- Toast notifications -->
+        <div id="toast-container" class="fixed top-6 right-6 z-[9999] space-y-2"></div>
+
         <!-- Filters -->
         <div class="bg-white p-4 rounded-lg shadow mb-6">
             <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -108,33 +111,34 @@
                                     {{ asesoria.estado_pago or 'Pendiente' }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-semibold
                                     {% if asesoria.estado_proceso == 'Terminado' %}bg-green-100 text-green-800
                                     {% elif asesoria.estado_proceso == 'Proceso activo' %}bg-blue-100 text-blue-800
+                                    {% elif asesoria.estado_proceso == 'Cancelado' %}bg-red-100 text-red-800
                                     {% else %}bg-yellow-100 text-yellow-800{% endif %}">
                                     {{ asesoria.estado_proceso or 'Pendiente' }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex justify-end space-x-2">
-                                    <button class="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50 transition-colors" title="Ver detalles"
+                                    <button class="btn-action text-blue-600" title="Ver detalles"
                                         onclick="abrirModalVerAsesoria({{ asesoria.codigo_asesoria }})">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                         </svg>
                                     </button>
-                                    <button class="text-primary-600 hover:text-primary-900 p-1 rounded-full hover:bg-primary-50 transition-colors" title="Editar"
+                                    <button class="btn-action text-primary-600" title="Editar"
                                         onclick="abrirModalEditarAsesoria({{ asesoria.codigo_asesoria }})">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                         </svg>
                                     </button>
-                                    <button class="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-50 transition-colors" title="Eliminar"
-                                        onclick="abrirModalEliminarAsesoria({{ asesoria.codigo_asesoria }})">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    <button class="btn-action text-red-600" title="Cancelar"
+                                        onclick="abrirModalCancelarAsesoria({{ asesoria.codigo_asesoria }})">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                         </svg>
                                     </button>
                                 </div>
@@ -152,47 +156,132 @@
     </div>
 
     <!-- MODAL CREAR ASESORIA -->
-    <div id="modalCrearAsesoria" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Crear Nueva Asesoría</h2>
-                <button onclick="cerrarModalCrearAsesoria()" class="text-gray-400 hover:text-gray-600">
+    <div id="modalCrearAsesoria" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900">Crear Nueva Asesoría</h2>
+                    <p class="text-sm text-gray-600 mt-1">Complete la información de la nueva asesoría</p>
+                </div>
+                <button type="button" onclick="cerrarModalCrearAsesoria()" class="text-gray-500 hover:text-gray-700 transition-colors duration-300">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
-            <form id="formCrearAsesoria">
-                <div class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700">Nombre del Cliente</label>
-                    <input type="text" name="cliente_nombre" required class="w-full border rounded px-3 py-2 mt-1" />
+            <form id="formCrearAsesoria" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Correo del Cliente *</label>
+                        <input type="email" name="cliente_correo" required 
+                               class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                               placeholder="cliente@ejemplo.com">
+                        <p class="text-xs text-gray-500 mt-1">Si el cliente no existe, se creará automáticamente</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nombre del Cliente</label>
+                        <input type="text" name="cliente_nombre" 
+                               class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                               placeholder="Nombre completo del cliente">
+                        <p class="text-xs text-gray-500 mt-1">Requerido solo para clientes nuevos</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Asesoría *</label>
+                        <select name="tipo_asesoria" required class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            <option value="">Seleccione un tipo</option>
+                            <option value="Visa de Trabajo">Visa de Trabajo</option>
+                            <option value="Visa de Turista">Visa de Turista</option>
+                            <option value="Visa de Estudiante">Visa de Estudiante</option>
+                            <option value="Residencia Permanente">Residencia Permanente</option>
+                            <option value="Reunificación Familiar">Reunificación Familiar</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Fecha y Hora</label>
+                        <input type="datetime-local" name="fecha_asesoria" 
+                               class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        <p class="text-xs text-gray-500 mt-1">Opcional - se puede programar después</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Lugar</label>
+                        <select name="lugar" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            <option value="Virtual (Zoom)">Virtual (Zoom)</option>
+                            <option value="Presencial">Presencial</option>
+                            <option value="Telefónica">Telefónica</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Estado Proceso</label>
+                        <select name="estado_proceso" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            <option value="Pendiente" selected>Pendiente</option>
+                            <option value="Proceso activo">Proceso activo</option>
+                            <option value="Terminado">Terminado</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Asesor Asignado</label>
+                        <input type="text" name="asesor_asignado" 
+                               class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                               placeholder="Nombre del asesor">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Especialidad</label>
+                        <input type="text" name="especialidad" 
+                               class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                               placeholder="Inmigración Canadiense" value="Inmigración Canadiense">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Documento</label>
+                        <select name="tipo_documento" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            <option value="C.C">Cédula de Ciudadanía</option>
+                            <option value="C.E">Cédula de Extranjería</option>
+                            <option value="Pasaporte">Pasaporte</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Número de Documento</label>
+                        <input type="text" name="numero_documento" 
+                               class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                               placeholder="Número de documento">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Monto del Pago</label>
+                        <input type="number" name="monto_pago" step="0.01" min="0"
+                               class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                               placeholder="0.00">
+                        <p class="text-xs text-gray-500 mt-1">Opcional - para crear registro de pago</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Método de Pago</label>
+                        <select name="metodo_pago" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="Tarjeta de Crédito">Tarjeta de Crédito</option>
+                            <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+                            <option value="PayPal">PayPal</option>
+                            <option value="Efectivo">Efectivo</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700">Tipo de Asesoría</label>
-                    <input type="text" name="tipo_asesoria" required class="w-full border rounded px-3 py-2 mt-1" />
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
+                    <textarea name="descripcion" rows="3" 
+                              class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                              placeholder="Descripción adicional de la asesoría..."></textarea>
                 </div>
-                <div class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700">Fecha</label>
-                    <input type="datetime-local" name="fecha_asesoria" class="w-full border rounded px-3 py-2 mt-1" />
-                </div>
-                <div class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700">Estado Proceso</label>
-                    <select name="estado_proceso" class="w-full border rounded px-3 py-2 mt-1">
-                        <option value="Pendiente">Pendiente</option>
-                        <option value="Proceso activo">Proceso activo</option>
-                        <option value="Terminado">Terminado</option>
-                    </select>
-                </div>
-                <div class="flex justify-end space-x-2 mt-4">
-                    <button type="button" onclick="cerrarModalCrearAsesoria()" class="px-4 py-2 bg-gray-500 text-white rounded">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded">Crear</button>
+                <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                    <button type="button" onclick="cerrarModalCrearAsesoria()" class="px-6 py-3 bg-gray-300 text-gray-700 rounded-xl hover:bg-gray-400 transition-all duration-300 font-medium">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all duration-300 font-medium">
+                        Crear Asesoría
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- MODAL VER ASESORIA -->
-    <div id="modalVerAsesoria" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div id="modalVerAsesoria" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
         <div class="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold">Detalles de Asesoría</h2>
@@ -203,40 +292,56 @@
                 </button>
             </div>
             <div id="contenidoVerAsesoria">
-                <!-- Aquí se cargan los datos por JS -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- ...otros campos... -->
+                    <div class="md:col-span-2 flex flex-col items-center justify-center">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Estado del Proceso</label>
+                        <span class="inline-flex items-center justify-center px-4 py-1 rounded-full text-base font-semibold
+                            ${window.getEstadoProcesoClass(asesoria.estado_proceso)}">
+                            ${asesoria.estado_proceso || "N/A"}
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- MODAL EDITAR ASESORIA -->
-    <div id="modalEditarAsesoria" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Editar Asesoría</h2>
-                <button onclick="cerrarModalEditarAsesoria()" class="text-gray-400 hover:text-gray-600">
+    <div id="modalEditarAsesoria" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900">Editar Asesoría</h2>
+                    <p class="text-sm text-gray-600 mt-1">Modifique la información de la asesoría</p>
+                </div>
+                <button type="button" onclick="cerrarModalEditarAsesoria()" class="text-gray-500 hover:text-gray-700 transition-colors duration-300">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
-            <form id="formEditarAsesoria">
+            <form id="formEditarAsesoria" class="space-y-6">
                 <div id="contenidoEditarAsesoria">
-                    <!-- Aquí se cargan los datos por JS -->
+                    <!-- El contenido se llena dinámicamente por JS -->
                 </div>
-                <div class="flex justify-end space-x-2 mt-6 pt-4 border-t">
-                    <button type="button" onclick="cerrarModalEditarAsesoria()" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors">Guardar Cambios</button>
+                <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                    <button type="button" onclick="cerrarModalEditarAsesoria()" class="px-6 py-3 bg-gray-300 text-gray-700 rounded-xl hover:bg-gray-400 transition-all duration-300 font-medium">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all duration-300 font-medium">
+                        Guardar Cambios
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL ELIMINAR ASESORIA -->
-    <div id="modalEliminarAsesoria" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+    <!-- MODAL CANCELAR ASESORIA -->
+    <div id="modalCancelarAsesoria" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden flex justify-center items-center z-50">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-red-600">Eliminar Asesoría</h2>
-                <button onclick="cerrarModalEliminarAsesoria()" class="text-gray-400 hover:text-gray-600">
+                <h2 class="text-xl font-bold text-red-600">Cancelar Asesoría</h2>
+                <button onclick="cerrarModalCancelarAsesoria()" class="text-gray-400 hover:text-gray-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
@@ -249,16 +354,38 @@
                     </svg>
                     <div>
                         <h3 class="text-lg font-medium text-gray-900">¿Estás seguro?</h3>
-                        <p class="text-sm text-gray-600">Esta acción cancelará la asesoría y no se puede deshacer.</p>
+                        <p class="text-sm text-gray-600">Esta acción cancelará la asesoría y liberará el horario.</p>
                     </div>
                 </div>
             </div>
             <div class="flex justify-end space-x-2">
-                <button type="button" onclick="cerrarModalEliminarAsesoria()" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors">Cancelar</button>
-                <button type="button" id="btnConfirmarEliminarAsesoria" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors">Eliminar Asesoría</button>
+                <button type="button" onclick="cerrarModalCancelarAsesoria()" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors">Cancelar</button>
+                <button type="button" id="btnConfirmarCancelarAsesoria" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors">Cancelar Asesoría</button>
             </div>
         </div>
     </div>
+
+    <style>
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            background: transparent;
+            transition: background 0.2s, color 0.2s;
+        }
+        .btn-action:hover {
+            background: #f3f4f6;
+            color: #1d4ed8;
+        }
+        /* Badge grande y centrado para estado proceso */
+        .inline-flex.items-center.justify-center.px-4.py-1.rounded-full.text-base {
+            min-width: 120px;
+            justify-content: center;
+            font-size: 1rem;
+        }
+    </style>
 
     <script src="/static/js/administrador/asesorias_admin.js"></script>
 {% endblock %}

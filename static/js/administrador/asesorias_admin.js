@@ -5,35 +5,125 @@ document.addEventListener("DOMContentLoaded", () => {
   const formCrear = document.getElementById("formCrearAsesoria")
 
   if (btnAbrirCrear && modalCrear) {
-    btnAbrirCrear.onclick = () => modalCrear.classList.remove("hidden")
+    btnAbrirCrear.onclick = () => {
+      modalCrear.classList.remove("hidden")
+      modalCrear.classList.add("flex")
+      document.body.style.overflow = "hidden"
+      if (formCrear) formCrear.reset()
+    }
   }
 
-  window.cerrarModalCrearAsesoria = () => {
+  function cerrarModalCrearAsesoria() {
+    modalCrear.classList.remove("flex")
     modalCrear.classList.add("hidden")
+    document.body.style.overflow = "auto"
+    if (formCrear) formCrear.reset()
   }
 
+  // Toast notification helper
+  function showToast(message, type = "success") {
+    const container = document.getElementById("toast-container")
+    if (!container) return
+    const toast = document.createElement("div")
+    toast.className =
+      "flex items-center px-4 py-3 rounded shadow text-white " +
+      (type === "success" ? "bg-green-600" : type === "error" ? "bg-red-600" : "bg-gray-800")
+    toast.innerHTML = `
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        ${
+          type === "success"
+            ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />'
+            : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />'
+        }
+      </svg>
+      <span>${message}</span>
+    `
+    container.appendChild(toast)
+    setTimeout(() => {
+      toast.classList.add("opacity-0")
+      setTimeout(() => container.removeChild(toast), 500)
+    }, 3000)
+  }
+
+  // Validación y envío del formulario de crear asesoría
   if (formCrear) {
     formCrear.onsubmit = async (e) => {
       e.preventDefault()
+
       const formData = new FormData(formCrear)
       const data = {}
       formData.forEach((v, k) => (data[k] = v))
 
+      // Validaciones del lado del cliente
+      if (!data.cliente_correo || !data.cliente_correo.trim()) {
+        showToast("El correo del cliente es requerido", "error")
+        return
+      }
+
+      if (!data.tipo_asesoria || !data.tipo_asesoria.trim()) {
+        showToast("El tipo de asesoría es requerido", "error")
+        return
+      }
+
+      // Validar formato de correo
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(data.cliente_correo.trim())) {
+        showToast("Por favor ingrese un correo electrónico válido", "error")
+        return
+      }
+
+      // Validar fecha si se proporciona
+      if (data.fecha_asesoria) {
+        const fechaSeleccionada = new Date(data.fecha_asesoria)
+        const ahora = new Date()
+
+        if (fechaSeleccionada < ahora) {
+          showToast("La fecha de la asesoría no puede ser en el pasado", "error")
+          return
+        }
+      }
+
+      // Validar monto si se proporciona
+      if (data.monto_pago && data.monto_pago.trim()) {
+        const monto = Number.parseFloat(data.monto_pago)
+        if (isNaN(monto) || monto < 0) {
+          showToast("El monto debe ser un número válido mayor o igual a 0", "error")
+          return
+        }
+      }
+
+      // Mostrar loading en el botón
+      const btnSubmit = formCrear.querySelector('button[type="submit"]')
+      const textoOriginal = btnSubmit.textContent
+      btnSubmit.textContent = "Creando..."
+      btnSubmit.disabled = true
+
       try {
         const resp = await fetch("/admin/asesorias/crear", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
           body: JSON.stringify(data),
         })
 
-        if (resp.ok) {
-          location.reload()
+        const result = await resp.json()
+
+        if (resp.ok && result.success) {
+          showToast(result.mensaje || "Asesoría creada exitosamente", "success")
+          cerrarModalCrearAsesoria()
+          setTimeout(() => location.reload(), 1500)
         } else {
-          const error = await resp.json()
-          alert("Error al crear asesoría: " + (error.error || "Error desconocido"))
+          throw new Error(result.error || "Error desconocido al crear la asesoría")
         }
       } catch (error) {
-        alert("Error de conexión: " + error.message)
+        console.error("Error al crear asesoría:", error)
+        showToast("Error al crear asesoría: " + error.message, "error")
+      } finally {
+        // Restaurar botón
+        btnSubmit.textContent = textoOriginal
+        btnSubmit.disabled = false
       }
     }
   }
@@ -47,11 +137,25 @@ document.addEventListener("DOMContentLoaded", () => {
     contenido.innerHTML =
       '<div class="text-center py-4"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div><p class="mt-2 text-gray-600">Cargando...</p></div>'
     modal.classList.remove("hidden")
+    modal.classList.add("flex")
+    document.body.style.overflow = "hidden"
 
-    fetch(`/admin/asesorias/${id}/ver`)
+    fetch(`/admin/asesorias/${id}/ver`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    })
       .then((response) => {
         if (!response.ok) {
-          throw new Error("Error al cargar la asesoría")
+          return response
+            .json()
+            .then((err) => {
+              throw new Error(err.error || "Error al cargar la asesoría")
+            })
+            .catch(() => {
+              throw new Error("Error al cargar la asesoría")
+            })
         }
         return response.json()
       })
@@ -86,9 +190,11 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <label class="block text-sm font-medium text-gray-700">Estado</label>
                                         <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${window.getEstadoClass(asesoria.estado)}">${asesoria.estado || "N/A"}</span>
                                     </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Estado del Proceso</label>
-                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${window.getEstadoProcesoClass(asesoria.estado_proceso)}">${asesoria.estado_proceso || "N/A"}</span>
+                                    <div class="md:col-span-2 flex flex-col items-center justify-center">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Estado del Proceso</label>
+                                        <span class="inline-flex items-center justify-center px-4 py-1 rounded-full text-base font-semibold ${window.getEstadoProcesoClass(asesoria.estado_proceso)}">
+                                          ${asesoria.estado_proceso || "N/A"}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -207,12 +313,15 @@ document.addEventListener("DOMContentLoaded", () => {
       .catch((error) => {
         console.error("Error:", error)
         contenido.innerHTML =
-          '<div class="text-center py-4 text-red-600">Error al cargar la asesoría: ' + error.message + "</div>"
+          '<div class="text-center py-4 text-red-600">Error al cargar la asesoría: ' +
+          (error.message || error) +
+          "</div>"
       })
   }
 
-  window.cerrarModalVerAsesoria = () => {
+  function cerrarModalVerAsesoria() {
     document.getElementById("modalVerAsesoria").classList.add("hidden")
+    document.body.style.overflow = "auto"
   }
 
   // Modal Editar Asesoría - MEJORADO
@@ -224,6 +333,8 @@ document.addEventListener("DOMContentLoaded", () => {
     contenido.innerHTML =
       '<div class="text-center py-4"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div><p class="mt-2 text-gray-600">Cargando...</p></div>'
     modal.classList.remove("hidden")
+    modal.classList.add("flex")
+    document.body.style.overflow = "hidden"
 
     fetch(`/admin/asesorias/${id}/ver`)
       .then((response) => {
@@ -372,14 +483,14 @@ document.addEventListener("DOMContentLoaded", () => {
               })
               .then((data) => {
                 if (data.success) {
-                  alert("Asesoría actualizada exitosamente")
-                  location.reload()
+                  showToast("Asesoría actualizada exitosamente", "success")
+                  setTimeout(() => location.reload(), 1200)
                 } else {
                   throw new Error(data.error || "Error desconocido")
                 }
               })
               .catch((error) => {
-                alert("Error al editar asesoría: " + error.message)
+                showToast("Error al editar asesoría: " + error.message, "error")
                 btnGuardar.textContent = textoOriginal
                 btnGuardar.disabled = false
               })
@@ -396,79 +507,60 @@ document.addEventListener("DOMContentLoaded", () => {
       })
   }
 
-  window.cerrarModalEditarAsesoria = () => {
-    document.getElementById("modalEditarAsesoria").classList.add("hidden")
+  function cerrarModalEditarAsesoria() {
+    const modal = document.getElementById("modalEditarAsesoria")
+    modal.classList.remove("flex")
+    modal.classList.add("hidden")
+    document.body.style.overflow = "auto"
+    // Limpia el contenido del formulario
+    const contenido = document.getElementById("contenidoEditarAsesoria")
+    if (contenido) contenido.innerHTML = ""
   }
 
-  // Modal Eliminar Asesoría - CORREGIDO
-  let codigoEliminar = null
-  window.abrirModalEliminarAsesoria = (codigo) => {
-    console.log("DEBUG JS: Función abrirModalEliminarAsesoria llamada con:", codigo, "tipo:", typeof codigo)
-    codigoEliminar = Number.parseInt(codigo) // Asegurar que sea un número
-    console.log("DEBUG JS: codigoEliminar asignado:", codigoEliminar, "tipo:", typeof codigoEliminar)
-    document.getElementById("modalEliminarAsesoria").classList.remove("hidden")
+  // Modal Cancelar Asesoría
+  let codigoCancelar = null
+  window.abrirModalCancelarAsesoria = (codigo) => {
+    codigoCancelar = Number.parseInt(codigo)
+    document.getElementById("modalCancelarAsesoria").classList.remove("hidden")
   }
 
-  window.cerrarModalEliminarAsesoria = () => {
-    document.getElementById("modalEliminarAsesoria").classList.add("hidden")
-    codigoEliminar = null
+  function cerrarModalCancelarAsesoria() {
+    document.getElementById("modalCancelarAsesoria").classList.add("hidden")
+    codigoCancelar = null
   }
 
-  const btnEliminar = document.getElementById("btnConfirmarEliminarAsesoria")
-  if (btnEliminar) {
-    btnEliminar.onclick = () => {
-      console.log("DEBUG JS: Botón eliminar clickeado, codigoEliminar:", codigoEliminar)
-
-      if (!codigoEliminar) {
-        alert("Error: No se ha seleccionado una asesoría para eliminar")
+  const btnCancelar = document.getElementById("btnConfirmarCancelarAsesoria")
+  if (btnCancelar) {
+    btnCancelar.onclick = () => {
+      if (!codigoCancelar) {
+        showToast("Error: No se ha seleccionado una asesoría para cancelar", "error")
         return
       }
+      const textoOriginal = btnCancelar.textContent
+      btnCancelar.textContent = "Cancelando..."
+      btnCancelar.disabled = true
 
-      // Mostrar loading
-      const textoOriginal = btnEliminar.textContent
-      btnEliminar.textContent = "Eliminando..."
-      btnEliminar.disabled = true
-
-      const url = `/admin/asesorias/${codigoEliminar}/eliminar`
-      console.log("DEBUG JS: URL de eliminación:", url)
-
-      const payload = { motivo: "Eliminada por administrador" }
-      console.log("DEBUG JS: Payload:", payload)
-
-      fetch(url, {
+      fetch(`/admin/asesorias/${codigoCancelar}/cancelar`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify(payload),
       })
-        .then((response) => {
-          console.log("DEBUG JS: Respuesta recibida:", response.status, response.statusText)
-          console.log("DEBUG JS: Headers de respuesta:", [...response.headers.entries()])
-
-          if (!response.ok) {
-            return response.text().then((text) => {
-              console.log("DEBUG JS: Texto de error:", text)
-              throw new Error(`Error HTTP: ${response.status} - ${text}`)
-            })
-          }
-          return response.json()
-        })
+        .then((resp) => resp.json())
         .then((data) => {
-          console.log("DEBUG JS: Datos recibidos:", data)
-          if (data.success) {
-            alert("Asesoría eliminada exitosamente")
-            location.reload()
+          if (data && data.success) {
+            cerrarModalCancelarAsesoria()
+            showToast("Asesoría cancelada correctamente", "success")
+            setTimeout(() => location.reload(), 1200)
           } else {
-            throw new Error(data.error || "Error desconocido")
+            throw new Error((data && data.error) || "Error desconocido")
           }
         })
         .catch((error) => {
-          console.error("DEBUG JS: Error completo:", error)
-          alert("Error al eliminar asesoría: " + error.message)
-          btnEliminar.textContent = textoOriginal
-          btnEliminar.disabled = false
+          showToast("Error al cancelar: " + error.message, "error")
+          btnCancelar.textContent = textoOriginal
+          btnCancelar.disabled = false
         })
     }
   }
@@ -490,6 +582,7 @@ document.addEventListener("DOMContentLoaded", () => {
       Pendiente: "bg-yellow-100 text-yellow-800",
       "Proceso activo": "bg-blue-100 text-blue-800",
       Terminado: "bg-green-100 text-green-800",
+      Cancelado: "bg-red-100 text-red-800",
     }
     return clases[estado] || "bg-gray-100 text-gray-800"
   }
@@ -502,4 +595,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     return clases[estado] || "bg-gray-100 text-gray-800"
   }
+
+  // Manejar tecla Escape para cerrar modales
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      cerrarModalCrearAsesoria()
+      cerrarModalEditarAsesoria()
+      cerrarModalCancelarAsesoria()
+    }
+  })
 })
