@@ -4,16 +4,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const tabButtons = document.querySelectorAll(".tab-button");
   const tabContents = document.querySelectorAll(".tab-content");
   const currentSectionIndicator = document.getElementById("current-section-indicator");
-  const progressBar = document.getElementById("progress-bar");
-
-  // Mapeo de nombres de secciones y progreso
+  const progressBar = document.getElementById("progress-bar"); // Declare progressBar variable
   const sectionData = {
-    "personal-info": { name: "Información Personal", progress: "20%" },
-    "security": { name: "Seguridad", progress: "40%" },
-    "visa-history": { name: "Historial de Asesorías", progress: "60%" },
-    "preferences": { name: "Preferencias", progress: "80%" },
-    "account": { name: "Gestión de Cuenta", progress: "100%" }
-  };
+    "personal-info": { name: "Personal Info", progress: "20%" },
+    "education": { name: "Education", progress: "40%" },
+    "experience": { name: "Experience", progress: "60%" },
+    "skills": { name: "Skills", progress: "80%" },
+    "summary": { name: "Summary", progress: "100%" }
+  }; // Declare sectionData variable
 
   // Función para resetear todas las pestañas
   function resetAllTabs() {
