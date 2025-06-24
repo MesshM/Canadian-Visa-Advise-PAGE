@@ -18,67 +18,72 @@
   <div class="bg-white rounded-xl shadow-md border border-gray-100 transition-all duration-300">
 
     <!-- Navegación de pestañas -->
+    <!-- Modificación: flex-nowrap y overflow-x-auto para el slider horizontal, y pb-2 para espacio de scrollbar -->
     <div class="px-8 py-4">
-      <nav class="flex flex-wrap gap-2">
+      <nav class="flex flex-nowrap overflow-x-auto whitespace-nowrap gap-2 p-2">
         <!-- Información Personal -->
-        <button class="tab-button group flex items-center px-4 py-3 rounded-lg text-sm font-medium font-inter transition-all duration-300 bg-primary-50 text-primary-700 border border-primary-200 shadow-sm active-tab"
+        <!-- Modificación: Ocultar texto en pantallas pequeñas, mostrar solo icono -->
+        <button class="tab-button group flex items-center px-4 py-3 rounded-lg text-sm font-medium font-inter transition-all duration-300 bg-primary-50 text-primary-700 border border-primary-200 shadow-sm active-tab min-w-max"
                 data-tab="personal-info">
-          <div class="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center mr-3 group-hover:bg-primary-200 transition-colors duration-300">
+          <div class="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center mr-0 sm:mr-3 group-hover:bg-primary-200 transition-colors duration-300">
             <svg class="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
             </svg>
           </div>
-          <span>Información Personal</span>
+          <span class="hidden sm:inline">Información Personal</span>
           <div class="ml-2 w-1.5 h-1.5 bg-primary-500 rounded-full opacity-100"></div>
         </button>
 
         <!-- Seguridad -->
-        <button class="tab-button group flex items-center px-4 py-3 rounded-lg text-sm font-medium font-inter transition-all duration-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-transparent hover:border-gray-200"
+        <!-- Modificación: Ocultar texto en pantallas pequeñas, mostrar solo icono -->
+        <button class="tab-button group flex items-center px-4 py-3 rounded-lg text-sm font-medium font-inter transition-all duration-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-transparent hover:border-gray-200 min-w-max"
                 data-tab="security">
-          <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center mr-3 group-hover:bg-gray-200 transition-colors duration-300">
+          <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center mr-0 sm:mr-3 group-hover:bg-gray-200 transition-colors duration-300">
             <svg class="w-4 h-4 text-gray-500 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
             </svg>
           </div>
-          <span>Seguridad</span>
+          <span class="hidden sm:inline">Seguridad</span>
           <div class="ml-2 w-1.5 h-1.5 bg-gray-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </button>
 
         <!-- Historial de Asesorías -->
-        <button class="tab-button group flex items-center px-4 py-3 rounded-lg text-sm font-medium font-inter transition-all duration-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-transparent hover:border-gray-200"
+        <!-- Modificación: Ya tiene clases responsivas, solo ajustamos el margen del icono -->
+        <button class="tab-button group flex items-center px-4 py-3 rounded-lg text-sm font-medium font-inter transition-all duration-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-transparent hover:border-gray-200 min-w-max"
                 data-tab="visa-history">
-          <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center mr-3 group-hover:bg-gray-200 transition-colors duration-300">
+          <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center mr-0 sm:mr-3 group-hover:bg-gray-200 transition-colors duration-300">
             <svg class="w-4 h-4 text-gray-500 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
             </svg>
           </div>
           <span class="hidden sm:inline">Historial de Asesorías</span>
-          <span class="sm:hidden">Historial</span>
           <div class="ml-2 w-1.5 h-1.5 bg-gray-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </button>
 
         <!-- Preferencias -->
-        <button class="tab-button group flex items-center px-4 py-3 rounded-lg text-sm font-medium font-inter transition-all duration-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-transparent hover:border-gray-200"
+        <!-- Modificación: Ocultar texto en pantallas pequeñas, mostrar solo icono -->
+        <button class="tab-button group flex items-center px-4 py-3 rounded-lg text-sm font-medium font-inter transition-all duration-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-transparent hover:border-gray-200 min-w-max"
                 data-tab="preferences">
-          <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center mr-3 group-hover:bg-gray-200 transition-colors duration-300">
+          <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center mr-0 sm:mr-3 group-hover:bg-gray-200 transition-colors duration-300">
             <svg class="w-4 h-4 text-gray-500 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
             </svg>
           </div>
-          <span>Preferencias</span>
+          <span class="hidden sm:inline">Preferencias</span>
           <div class="ml-2 w-1.5 h-1.5 bg-gray-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </button>
 
         <!-- Cuenta -->
-        <button class="tab-button group flex items-center px-4 py-3 rounded-lg text-sm font-medium font-inter transition-all duration-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-transparent hover:border-gray-200"
+        <!-- Modificación: Ocultar texto en pantallas pequeñas, mostrar solo icono -->
+        <button class="tab-button group flex items-center px-4 py-3 rounded-lg text-sm font-medium font-inter transition-all duration-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50 border border-transparent hover:border-gray-200 min-w-max"
                 data-tab="account">
-          <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center mr-3 group-hover:bg-gray-200 transition-colors duration-300">
+          <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center mr-0 sm:mr-3 group-hover:bg-gray-200 transition-colors duration-300">
             <svg class="w-4 h-4 text-gray-500 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
           </div>
-          <span>Cuenta</span>
+          <span class="hidden sm:inline">Cuenta</span>
           <div class="ml-2 w-1.5 h-1.5 bg-gray-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </button>
       </nav>
@@ -1162,7 +1167,8 @@
 <!-- Modal para verificación de contraseña -->
 <div id="password-verification-modal"
   class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
-  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 animate-scale-in">
+  <!-- Modificación: max-w-sm para reducir el ancho del modal -->
+  <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 animate-scale-in">
     <div class="flex justify-between items-center mb-4 p-6 border-b border-gray-200">
       <h3 class="text-xl font-semibold text-gray-900 font-roboto">Verificar Contraseña</h3>
       <button id="close-password-verification-modal"
@@ -1228,7 +1234,8 @@
 </div>
 <!-- Modal para confirmar eliminación de foto de perfil -->
 <div id="delete-profile-modal"class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
-  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 animate-scale-in">
+  <!-- Modificación: max-w-sm para reducir el ancho del modal -->
+  <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 animate-scale-in">
     <div class="flex justify-between items-center mb-4 p-6 border-b border-gray-200">
       <h3 class="text-xl font-semibold text-gray-900 font-roboto">Eliminar foto de perfil</h3>
       <button id="close-delete-profile-modal"
@@ -1276,7 +1283,8 @@
 <!-- Modal de confirmación para eliminar cuenta - Diseño mejorado -->
 <div id="delete-account-modal"
   class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
-  <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md animate-scale-in">
+  <!-- Modificación: max-w-sm para reducir el ancho del modal -->
+  <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-scale-in">
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-xl font-semibold text-gray-900 font-roboto">¿Estás seguro?</h2>
       <button id="close-delete-account-modal"
@@ -1348,7 +1356,8 @@
 
 <!-- Modal de verificación OTP para correo electrónico - Diseño mejorado -->
 <div id="otp-modal" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
-  <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md animate-scale-in">
+  <!-- Modificación: max-w-sm para reducir el ancho del modal -->
+  <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-scale-in">
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-xl font-semibold text-gray-900 font-roboto">Verificación</h2>
       <button id="close-otp-modal"
@@ -1426,7 +1435,8 @@
 
 <!-- Modal de verificación OTP para cambio de contraseña - Diseño mejorado -->
 <div id="password-otp-modal" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
-  <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md animate-scale-in">
+  <!-- Modificación: max-w-sm para reducir el ancho del modal -->
+  <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-scale-in">
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-xl font-semibold text-gray-900 font-roboto">Verificación de Cambio de Contraseña</h2>
       <button id="close-password-otp-modal"
@@ -1499,7 +1509,8 @@
 
 <!-- Modal de verificación OTP para teléfono - Diseño mejorado -->
 <div id="phone-otp-modal" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
-  <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md animate-scale-in">
+  <!-- Modificación: max-w-sm para reducir el ancho del modal -->
+  <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-scale-in">
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-xl font-semibold text-gray-900 font-roboto">Verificación de Teléfono</h2>
       <button id="close-phone-otp-modal"
@@ -1576,7 +1587,8 @@
 </div>
 <!-- Modal para configurar 2FA - Agregar al final del archivo, antes del cierre de body -->
 <div id="two-factor-modal" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
-  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 animate-scale-in">
+  <!-- Modificación: max-w-sm para reducir el ancho del modal -->
+  <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 animate-scale-in">
     <!-- Paso 1: Introducción -->
     <div id="step-1-2fa" class="p-6">
       <div class="flex justify-between items-center mb-6">
@@ -1816,7 +1828,8 @@
 
 <!-- Modal para desactivar 2FA -->
 <div id="disable-2fa-modal" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
-  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 animate-scale-in">
+  <!-- Modificación: max-w-sm para reducir el ancho del modal -->
+  <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 animate-scale-in">
     <div class="flex justify-between items-center mb-4 p-6 border-b border-gray-200">
       <h3 class="text-xl font-semibold text-gray-900 font-roboto">Desactivar Verificación en Dos Pasos</h3>
       <button id="close-disable-2fa-modal"

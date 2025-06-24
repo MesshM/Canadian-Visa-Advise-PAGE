@@ -132,7 +132,7 @@ def login():
                     # Iniciar sesión solo con datos de tbl_asesor
                     session['user_id'] = asesor['id_asesor']
                     session['user_name'] = f"{asesor['nombre']} {asesor['apellidos']}"
-                    session['user_role'] = 'Asesor'
+                    session['user_role'] = 'Asesor'# <-- ESTA LÍNEA ES CLAVE
                     session.permanent = True if remember_me else False
                     
                     # Registrar último acceso para asesor
@@ -185,7 +185,7 @@ def login():
                     # Verificar el rol del usuario
                     if email.endswith('@cva.com'):
                         session['user_role'] = 'Asesor'
-                        session['is_admin'] = True
+                        session['is_asesor'] = True
                     else:
                         session['user_role'] = 'Usuario'
                         session['is_admin'] = False
