@@ -1,8 +1,142 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Modal Crear Asesoría
+  // ===== VARIABLES GLOBALES =====
+  let codigoAsesoriaACancelar = null
+
+  // ===== ELEMENTOS DEL DOM =====
   const btnAbrirCrear = document.getElementById("btnAbrirCrearAsesoria")
   const modalCrear = document.getElementById("modalCrearAsesoria")
   const formCrear = document.getElementById("formCrearAsesoria")
+  const modalVer = document.getElementById("modalVerAsesoria")
+  const modalEditar = document.getElementById("modalEditarAsesoria")
+  const modalCancelar = document.getElementById("modalCancelarAsesoria")
+  const formEditar = document.getElementById("formEditarAsesoria")
+
+  // ===== ELEMENTOS CAPTCHA =====
+  const refreshButton = document.getElementById("refreshCaptcha")
+  const captchaText = document.getElementById("captchaText")
+  const captchaInput = document.getElementById("captcha")
+
+  // ===== FUNCIONES AUXILIARES =====
+
+  // Toast notification helper
+  function showToast(message, type = "success") {
+    const container = document.getElementById("toast-container")
+    if (!container) return
+
+    const toast = document.createElement("div")
+    toast.className = `flex items-center px-4 py-3 rounded shadow text-white transition-opacity duration-500 ${
+      type === "success"
+        ? "bg-green-600"
+        : type === "error"
+          ? "bg-red-600"
+          : type === "info"
+            ? "bg-blue-600"
+            : "bg-gray-800"
+    }`
+
+    toast.innerHTML = `
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        ${
+          type === "success"
+            ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />'
+            : type === "error"
+              ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />'
+              : type === "info"
+                ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />'
+                : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />'
+        }
+      </svg>
+      <span>${message}</span>
+    `
+
+    container.appendChild(toast)
+
+    setTimeout(() => {
+      toast.classList.add("opacity-0")
+      setTimeout(() => {
+        if (container.contains(toast)) {
+          container.removeChild(toast)
+        }
+      }, 500)
+    }, 3000)
+  }
+
+  // Función para mostrar loading en botón
+  function setButtonLoading(button, loading, loadingText = "Cargando...") {
+    if (!button) return
+
+    if (loading) {
+      button.dataset.originalText = button.innerHTML
+      button.innerHTML = `
+        <div class="flex items-center justify-center">
+          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+          ${loadingText}
+        </div>
+      `
+      button.disabled = true
+    } else {
+      button.innerHTML = button.dataset.originalText || button.innerHTML
+      button.disabled = false
+    }
+  }
+
+  // Función para cerrar todos los modales
+  function cerrarTodosLosModales() {
+    const modales = [modalCrear, modalVer, modalEditar, modalCancelar]
+    modales.forEach((modal) => {
+      if (modal) {
+        modal.classList.remove("flex")
+        modal.classList.add("hidden")
+      }
+    })
+    document.body.style.overflow = "auto"
+  }
+
+  // ===== FUNCIONES CAPTCHA (COPIADAS DE forgot_password.js) =====
+
+  // Función para refrescar el captcha
+  function refreshCaptcha() {
+    if (captchaText) {
+      captchaText.textContent = "Cargando..."
+
+      // Cambia esta URL para incluir el prefijo del blueprint
+      fetch("/auth/refresh_captcha") // Cambiado de '/refresh_captcha' a '/auth/refresh_captcha'
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Error en la respuesta del servidor")
+          }
+          return response.json()
+        })
+        .then((data) => {
+          captchaText.textContent = data.captcha_text
+          // Limpiar el campo de entrada del captcha cuando se refresca
+          if (captchaInput) {
+            captchaInput.value = ""
+            captchaInput.focus()
+          }
+        })
+        .catch((error) => {
+          console.error("Error al cargar el captcha:", error)
+          captchaText.textContent = "Error - Clic para reintentar"
+          captchaText.style.cursor = "pointer"
+          // Hacer que el texto de error sea clickeable para reintentar
+          captchaText.addEventListener("click", refreshCaptcha, { once: true })
+        })
+    }
+  }
+
+  // Event listener para el botón de refresh del captcha
+  if (refreshButton) {
+    refreshButton.addEventListener("click", refreshCaptcha)
+  }
+
+  // También refrescar el captcha cuando hay un error en el formulario
+  const errorMessages = document.querySelectorAll(".error")
+  if (errorMessages.length > 0 && captchaText) {
+    refreshCaptcha()
+  }
+
+  // ===== FUNCIONES PARA MODAL CREAR ASESORÍA =====
 
   if (btnAbrirCrear && modalCrear) {
     btnAbrirCrear.onclick = () => {
@@ -10,42 +144,391 @@ document.addEventListener("DOMContentLoaded", () => {
       modalCrear.classList.add("flex")
       document.body.style.overflow = "hidden"
       if (formCrear) formCrear.reset()
+
+      // Refrescar captcha al abrir el modal
+      if (captchaText) {
+        refreshCaptcha()
+      }
     }
   }
 
-  function cerrarModalCrearAsesoria() {
-    modalCrear.classList.remove("flex")
-    modalCrear.classList.add("hidden")
-    document.body.style.overflow = "auto"
-    if (formCrear) formCrear.reset()
+  window.cerrarModalCrearAsesoria = () => {
+    if (modalCrear) {
+      modalCrear.classList.remove("flex")
+      modalCrear.classList.add("hidden")
+      document.body.style.overflow = "auto"
+      if (formCrear) formCrear.reset()
+
+      // Limpiar captcha al cerrar
+      if (captchaInput) {
+        captchaInput.value = ""
+      }
+    }
   }
 
-  // Toast notification helper
-  function showToast(message, type = "success") {
-    const container = document.getElementById("toast-container")
-    if (!container) return
-    const toast = document.createElement("div")
-    toast.className =
-      "flex items-center px-4 py-3 rounded shadow text-white " +
-      (type === "success" ? "bg-green-600" : type === "error" ? "bg-red-600" : "bg-gray-800")
-    toast.innerHTML = `
-      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        ${
-          type === "success"
-            ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />'
-            : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />'
+  // ===== FUNCIONES PARA VER ASESORÍA =====
+
+  window.abrirModalVerAsesoria = async (codigo) => {
+    try {
+      showToast("Cargando detalles...", "info")
+
+      const response = await fetch(`/admin/asesorias/${codigo}/ver`)
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+
+      if (data.success) {
+        const asesoria = data.asesoria
+        const pagos = data.pagos || []
+
+        // Llenar el contenido del modal
+        const contenido = document.getElementById("contenidoVerAsesoria")
+        contenido.innerHTML = `
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Código de Asesoría</label>
+              <p class="text-sm text-gray-900 font-semibold">${asesoria.codigo_asesoria || "N/A"}</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Asesoría</label>
+              <p class="text-sm text-gray-900">${asesoria.tipo_asesoria || "N/A"}</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+              <p class="text-sm text-gray-900 font-medium">${asesoria.cliente_nombre || "N/A"}</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Correo del Cliente</label>
+              <p class="text-sm text-gray-900">${asesoria.cliente_correo || "N/A"}</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+              <p class="text-sm text-gray-900">${asesoria.cliente_telefono || "N/A"}</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Asesoría</label>
+              <p class="text-sm text-gray-900">${asesoria.fecha_asesoria_formatted || "Por programar"}</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Lugar</label>
+              <p class="text-sm text-gray-900">${asesoria.lugar || "N/A"}</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Asesor Asignado</label>
+              <p class="text-sm text-gray-900">${asesoria.asesor_asignado || asesoria.asesor_nombre || "Sin asignar"}</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Especialidad</label>
+              <p class="text-sm text-gray-900">${asesoria.especialidad || "N/A"}</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+              <p class="text-sm text-gray-900">${asesoria.estado || "N/A"}</p>
+            </div>
+            <div class="md:col-span-2 flex flex-col items-center justify-center">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Estado del Proceso</label>
+              <span class="inline-flex items-center justify-center px-4 py-1 rounded-full text-base font-semibold ${getEstadoProcesoClass(asesoria.estado_proceso)}">
+                ${asesoria.estado_proceso || "N/A"}
+              </span>
+            </div>
+            ${
+              asesoria.descripcion
+                ? `
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+              <p class="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg">${asesoria.descripcion}</p>
+            </div>
+            `
+                : ""
+            }
+            ${
+              pagos.length > 0
+                ? `
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Historial de Pagos</label>
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Monto</th>
+                      <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Método</th>
+                      <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                      <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                    ${pagos
+                      .map(
+                        (pago) => `
+                      <tr>
+                        <td class="px-4 py-2 text-sm text-gray-900 font-medium">$${pago.monto || "N/A"}</td>
+                        <td class="px-4 py-2 text-sm text-gray-900">${pago.metodo_pago || "N/A"}</td>
+                        <td class="px-4 py-2 text-sm text-gray-900">
+                          <span class="px-2 py-1 text-xs rounded-full ${pago.estado_pago === "Completado" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}">
+                            ${pago.estado_pago || "N/A"}
+                          </span>
+                        </td>
+                        <td class="px-4 py-2 text-sm text-gray-900">${pago.fecha_pago ? new Date(pago.fecha_pago).toLocaleDateString() : "N/A"}</td>
+                      </tr>
+                    `,
+                      )
+                      .join("")}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            `
+                : ""
+            }
+          </div>
+        `
+
+        // Mostrar modal
+        if (modalVer) {
+          modalVer.classList.remove("hidden")
+          modalVer.classList.add("flex")
+          document.body.style.overflow = "hidden"
         }
-      </svg>
-      <span>${message}</span>
-    `
-    container.appendChild(toast)
-    setTimeout(() => {
-      toast.classList.add("opacity-0")
-      setTimeout(() => container.removeChild(toast), 500)
-    }, 3000)
+      } else {
+        showToast(data.error || "Error al cargar la asesoría", "error")
+      }
+    } catch (error) {
+      console.error("Error:", error)
+      showToast("Error al cargar los detalles de la asesoría", "error")
+    }
   }
 
-  // Validación y envío del formulario de crear asesoría
+  window.cerrarModalVerAsesoria = () => {
+    if (modalVer) {
+      modalVer.classList.remove("flex")
+      modalVer.classList.add("hidden")
+      document.body.style.overflow = "auto"
+    }
+  }
+
+  // ===== FUNCIONES PARA EDITAR ASESORÍA =====
+
+  window.abrirModalEditarAsesoria = async (codigo) => {
+    try {
+      showToast("Cargando datos para editar...", "info")
+
+      const response = await fetch(`/admin/asesorias/${codigo}/ver`)
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+
+      if (data.success) {
+        const asesoria = data.asesoria
+
+        // Llenar el formulario de edición
+        const contenido = document.getElementById("contenidoEditarAsesoria")
+        contenido.innerHTML = `
+          <input type="hidden" name="codigo_asesoria" value="${asesoria.codigo_asesoria}">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Asesoría *</label>
+              <select name="tipo_asesoria" required class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <option value="Visa de Trabajo" ${asesoria.tipo_asesoria === "Visa de Trabajo" ? "selected" : ""}>Visa de Trabajo</option>
+                <option value="Visa de Turista" ${asesoria.tipo_asesoria === "Visa de Turista" ? "selected" : ""}>Visa de Turista</option>
+                <option value="Visa de Estudiante" ${asesoria.tipo_asesoria === "Visa de Estudiante" ? "selected" : ""}>Visa de Estudiante</option>
+                <option value="Residencia Permanente" ${asesoria.tipo_asesoria === "Residencia Permanente" ? "selected" : ""}>Residencia Permanente</option>
+                <option value="Reunificación Familiar" ${asesoria.tipo_asesoria === "Reunificación Familiar" ? "selected" : ""}>Reunificación Familiar</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Fecha y Hora</label>
+              <input type="datetime-local" name="fecha_asesoria" value="${asesoria.fecha_asesoria ? new Date(asesoria.fecha_asesoria).toISOString().slice(0, 16) : ""}"
+                     class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Lugar</label>
+              <select name="lugar" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <option value="Virtual (Zoom)" ${asesoria.lugar === "Virtual (Zoom)" ? "selected" : ""}>Virtual (Zoom)</option>
+                <option value="Presencial" ${asesoria.lugar === "Presencial" ? "selected" : ""}>Presencial</option>
+                <option value="Telefónica" ${asesoria.lugar === "Telefónica" ? "selected" : ""}>Telefónica</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Estado Proceso</label>
+              <select name="estado_proceso" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <option value="Pendiente" ${asesoria.estado_proceso === "Pendiente" ? "selected" : ""}>Pendiente</option>
+                <option value="Proceso activo" ${asesoria.estado_proceso === "Proceso activo" ? "selected" : ""}>Proceso activo</option>
+                <option value="Terminado" ${asesoria.estado_proceso === "Terminado" ? "selected" : ""}>Terminado</option>
+                <option value="Cancelado" ${asesoria.estado_proceso === "Cancelado" ? "selected" : ""}>Cancelado</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Asesor Asignado</label>
+              <input type="text" name="asesor_asignado" value="${asesoria.asesor_asignado || ""}"
+                     class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                     placeholder="Nombre del asesor">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Especialidad</label>
+              <input type="text" name="especialidad" value="${asesoria.especialidad || ""}"
+                     class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                     placeholder="Inmigración Canadiense">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Documento</label>
+              <select name="tipo_documento" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <option value="C.C" ${asesoria.tipo_documento === "C.C" ? "selected" : ""}>Cédula de Ciudadanía</option>
+                <option value="C.E" ${asesoria.tipo_documento === "C.E" ? "selected" : ""}>Cédula de Extranjería</option>
+                <option value="Pasaporte" ${asesoria.tipo_documento === "Pasaporte" ? "selected" : ""}>Pasaporte</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Número de Documento</label>
+              <input type="text" name="numero_documento" value="${asesoria.numero_documento || ""}"
+                     class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                     placeholder="Número de documento">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
+            <textarea name="descripcion" rows="3" 
+                      class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      placeholder="Descripción adicional de la asesoría...">${asesoria.descripcion || ""}</textarea>
+          </div>
+        `
+
+        // Mostrar modal
+        if (modalEditar) {
+          modalEditar.classList.remove("hidden")
+          modalEditar.classList.add("flex")
+          document.body.style.overflow = "hidden"
+        }
+      } else {
+        showToast(data.error || "Error al cargar la asesoría", "error")
+      }
+    } catch (error) {
+      console.error("Error:", error)
+      showToast("Error al cargar los datos de la asesoría", "error")
+    }
+  }
+
+  window.cerrarModalEditarAsesoria = () => {
+    if (modalEditar) {
+      modalEditar.classList.remove("flex")
+      modalEditar.classList.add("hidden")
+      document.body.style.overflow = "auto"
+      if (formEditar) formEditar.reset()
+    }
+  }
+
+  // ===== FUNCIONES PARA CANCELAR/ELIMINAR ASESORÍA =====
+
+  window.abrirModalCancelarAsesoria = (codigo) => {
+    codigoAsesoriaACancelar = codigo
+    if (modalCancelar) {
+      modalCancelar.classList.remove("hidden")
+      modalCancelar.classList.add("flex")
+      document.body.style.overflow = "hidden"
+    }
+  }
+
+  window.cerrarModalCancelarAsesoria = () => {
+    if (modalCancelar) {
+      modalCancelar.classList.remove("flex")
+      modalCancelar.classList.add("hidden")
+      document.body.style.overflow = "auto"
+    }
+    codigoAsesoriaACancelar = null
+  }
+
+  // ===== FUNCIÓN AUXILIAR PARA CLASES DE ESTADO =====
+  function getEstadoProcesoClass(estado) {
+    switch (estado) {
+      case "Terminado":
+        return "bg-green-100 text-green-800"
+      case "Proceso activo":
+        return "bg-blue-100 text-blue-800"
+      case "Cancelado":
+        return "bg-red-100 text-red-800"
+      default:
+        return "bg-yellow-100 text-yellow-800"
+    }
+  }
+
+  // ===== FUNCIONES DE EXPORTACIÓN PDF =====
+
+  window.exportarAsesoriaPDF = async (codigo) => {
+    const btnElement = event.target.closest("button")
+
+    try {
+      setButtonLoading(btnElement, true, "Generando PDF...")
+      showToast("Generando PDF...", "info")
+
+      const response = await fetch(`/admin/asesorias/${codigo}/exportar-pdf`)
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Error del servidor: ${response.status}`)
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `asesoria_${codigo}_${new Date().toISOString().slice(0, 10)}.pdf`
+
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      showToast("PDF generado exitosamente", "success")
+    } catch (error) {
+      console.error("Error al exportar PDF:", error)
+      showToast(`Error al generar PDF: ${error.message}`, "error")
+    } finally {
+      setButtonLoading(btnElement, false)
+    }
+  }
+
+  window.exportarTodasAsesoriasPDF = async () => {
+    const btnElement = event.target.closest("button")
+
+    try {
+      setButtonLoading(btnElement, true, "Generando reporte...")
+      showToast("Generando reporte completo en PDF...", "info")
+
+      const response = await fetch("/admin/asesorias/exportar-todas-pdf")
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Error del servidor: ${response.status}`)
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `asesorias_completo_${new Date().toISOString().slice(0, 10)}.pdf`
+
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      showToast("Reporte PDF generado exitosamente", "success")
+    } catch (error) {
+      console.error("Error al exportar PDF:", error)
+      showToast(`Error al generar reporte PDF: ${error.message}`, "error")
+    } finally {
+      setButtonLoading(btnElement, false)
+    }
+  }
+
+  // ===== EVENT LISTENERS PARA FORMULARIOS =====
+
+  // Formulario crear asesoría
   if (formCrear) {
     formCrear.onsubmit = async (e) => {
       e.preventDefault()
@@ -65,14 +548,19 @@ document.addEventListener("DOMContentLoaded", () => {
         return
       }
 
-      // Validar formato de correo
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(data.cliente_correo.trim())) {
         showToast("Por favor ingrese un correo electrónico válido", "error")
         return
       }
 
-      // Validar fecha si se proporciona
+      // Validación del captcha
+      if (captchaInput && captchaInput.value.trim() === "") {
+        showToast("Por favor complete el captcha", "error")
+        captchaInput.focus()
+        return
+      }
+
       if (data.fecha_asesoria) {
         const fechaSeleccionada = new Date(data.fecha_asesoria)
         const ahora = new Date()
@@ -83,7 +571,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // Validar monto si se proporciona
       if (data.monto_pago && data.monto_pago.trim()) {
         const monto = Number.parseFloat(data.monto_pago)
         if (isNaN(monto) || monto < 0) {
@@ -92,516 +579,142 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // Mostrar loading en el botón
       const btnSubmit = formCrear.querySelector('button[type="submit"]')
-      const textoOriginal = btnSubmit.textContent
-      btnSubmit.textContent = "Creando..."
-      btnSubmit.disabled = true
 
       try {
-        const resp = await fetch("/admin/asesorias/crear", {
+        setButtonLoading(btnSubmit, true, "Creando asesoría...")
+
+        const response = await fetch("/admin/asesorias/crear", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Accept: "application/json",
           },
           body: JSON.stringify(data),
         })
 
-        const result = await resp.json()
-
-        if (resp.ok && result.success) {
-          showToast(result.mensaje || "Asesoría creada exitosamente", "success")
-          cerrarModalCrearAsesoria()
-          setTimeout(() => location.reload(), 1500)
+        if (response.ok) {
+          const result = await response.json()
+          showToast(result.message, "success")
+          window.cerrarModalCrearAsesoria()
+          setTimeout(() => {
+            window.location.reload()
+          }, 1000)
         } else {
-          throw new Error(result.error || "Error desconocido al crear la asesoría")
+          const error = await response.json()
+          showToast(error.message, "error")
+
+          // Refrescar captcha en caso de error
+          if (captchaText) {
+            refreshCaptcha()
+          }
         }
       } catch (error) {
-        console.error("Error al crear asesoría:", error)
-        showToast("Error al crear asesoría: " + error.message, "error")
+        console.error("Error al crear la asesoría:", error)
+        showToast("Error al crear la asesoría", "error")
+
+        // Refrescar captcha en caso de error
+        if (captchaText) {
+          refreshCaptcha()
+        }
       } finally {
-        // Restaurar botón
-        btnSubmit.textContent = textoOriginal
-        btnSubmit.disabled = false
+        setButtonLoading(btnSubmit, false)
       }
     }
   }
 
-  // Modal Ver Asesoría - MEJORADO
-  window.abrirModalVerAsesoria = (id) => {
-    const modal = document.getElementById("modalVerAsesoria")
-    const contenido = document.getElementById("contenidoVerAsesoria")
+  // Formulario editar asesoría
+  if (formEditar) {
+    formEditar.onsubmit = async (e) => {
+      e.preventDefault()
 
-    // Mostrar loading
-    contenido.innerHTML =
-      '<div class="text-center py-4"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div><p class="mt-2 text-gray-600">Cargando...</p></div>'
-    modal.classList.remove("hidden")
-    modal.classList.add("flex")
-    document.body.style.overflow = "hidden"
+      const formData = new FormData(formEditar)
+      const data = {}
+      formData.forEach((v, k) => (data[k] = v))
 
-    fetch(`/admin/asesorias/${id}/ver`, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          return response
-            .json()
-            .then((err) => {
-              throw new Error(err.error || "Error al cargar la asesoría")
-            })
-            .catch(() => {
-              throw new Error("Error al cargar la asesoría")
-            })
-        }
-        return response.json()
-      })
-      .then((data) => {
-        if (data.success && data.asesoria) {
-          const asesoria = data.asesoria
-          const pagos = data.pagos || []
+      const codigo = data.codigo_asesoria
+      delete data.codigo_asesoria
 
-          const html = `
-                        <div class="space-y-6">
-                            <!-- Información General -->
-                            <div class="bg-gray-50 p-4 rounded-lg">
-                                <h3 class="text-lg font-semibold text-gray-900 mb-3">Información General</h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Código de Asesoría</label>
-                                        <p class="mt-1 text-sm text-gray-900 font-mono">${asesoria.codigo_asesoria || "N/A"}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Tipo de Asesoría</label>
-                                        <p class="mt-1 text-sm text-gray-900">${asesoria.tipo_asesoria || "N/A"}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Fecha de Asesoría</label>
-                                        <p class="mt-1 text-sm text-gray-900">${asesoria.fecha_asesoria_formatted || "Por programar"}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Lugar</label>
-                                        <p class="mt-1 text-sm text-gray-900">${asesoria.lugar || "N/A"}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Estado</label>
-                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${window.getEstadoClass(asesoria.estado)}">${asesoria.estado || "N/A"}</span>
-                                    </div>
-                                    <div class="md:col-span-2 flex flex-col items-center justify-center">
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Estado del Proceso</label>
-                                        <span class="inline-flex items-center justify-center px-4 py-1 rounded-full text-base font-semibold ${window.getEstadoProcesoClass(asesoria.estado_proceso)}">
-                                          ${asesoria.estado_proceso || "N/A"}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
+      const btnSubmit = formEditar.querySelector('button[type="submit"]')
 
-                            <!-- Información del Cliente -->
-                            <div class="bg-blue-50 p-4 rounded-lg">
-                                <h3 class="text-lg font-semibold text-gray-900 mb-3">Información del Cliente</h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Nombre Completo</label>
-                                        <p class="mt-1 text-sm text-gray-900">${asesoria.cliente_nombre || "N/A"}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Correo Electrónico</label>
-                                        <p class="mt-1 text-sm text-gray-900">${asesoria.cliente_correo || "N/A"}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Teléfono</label>
-                                        <p class="mt-1 text-sm text-gray-900">${asesoria.cliente_telefono || "N/A"}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Fecha de Nacimiento</label>
-                                        <p class="mt-1 text-sm text-gray-900">${asesoria.cliente_fecha_nacimiento_formatted || "N/A"}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Tipo de Documento</label>
-                                        <p class="mt-1 text-sm text-gray-900">${asesoria.tipo_documento || "N/A"}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Número de Documento</label>
-                                        <p class="mt-1 text-sm text-gray-900 font-mono">${asesoria.numero_documento || "N/A"}</p>
-                                    </div>
-                                </div>
-                            </div>
+      try {
+        setButtonLoading(btnSubmit, true, "Guardando cambios...")
 
-                            <!-- Información del Asesor -->
-                            <div class="bg-green-50 p-4 rounded-lg">
-                                <h3 class="text-lg font-semibold text-gray-900 mb-3">Información del Asesor</h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Asesor Asignado</label>
-                                        <p class="mt-1 text-sm text-gray-900">${asesoria.asesor_asignado || asesoria.asesor_nombre || "Sin asignar"}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Correo del Asesor</label>
-                                        <p class="mt-1 text-sm text-gray-900">${asesoria.asesor_correo || "N/A"}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Especialidad</label>
-                                        <p class="mt-1 text-sm text-gray-900">${asesoria.especialidad || "N/A"}</p>
-                                    </div>
-                                </div>
-                            </div>
+        const response = await fetch(`/admin/asesorias/${codigo}/editar`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        })
 
-                            <!-- Descripción -->
-                            ${
-                              asesoria.descripcion
-                                ? `
-                            <div class="bg-yellow-50 p-4 rounded-lg">
-                                <h3 class="text-lg font-semibold text-gray-900 mb-3">Descripción</h3>
-                                <p class="text-sm text-gray-900">${asesoria.descripcion}</p>
-                            </div>
-                            `
-                                : ""
-                            }
-
-                            <!-- Información de Pagos -->
-                            ${
-                              pagos.length > 0
-                                ? `
-                            <div class="bg-purple-50 p-4 rounded-lg">
-                                <h3 class="text-lg font-semibold text-gray-900 mb-3">Historial de Pagos</h3>
-                                <div class="space-y-2">
-                                    ${pagos
-                                      .map(
-                                        (pago) => `
-                                        <div class="flex justify-between items-center p-2 bg-white rounded border">
-                                            <div>
-                                                <p class="text-sm font-medium">$${pago.monto} - ${pago.metodo_pago}</p>
-                                                <p class="text-xs text-gray-500">${pago.referencia_pago || "Sin referencia"}</p>
-                                            </div>
-                                            <span class="px-2 py-1 text-xs font-semibold rounded-full ${window.getPagoEstadoClass(pago.estado_pago)}">${pago.estado_pago}</span>
-                                        </div>
-                                    `,
-                                      )
-                                      .join("")}
-                                </div>
-                            </div>
-                            `
-                                : ""
-                            }
-
-                            <!-- Información de Sistema -->
-                            <div class="bg-gray-100 p-4 rounded-lg">
-                                <h3 class="text-lg font-semibold text-gray-900 mb-3">Información del Sistema</h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Fecha de Creación</label>
-                                        <p class="mt-1 text-sm text-gray-900">${asesoria.fecha_creacion_formatted || "N/A"}</p>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Número de Asesoría</label>
-                                        <p class="mt-1 text-sm text-gray-900">${asesoria.numero_asesoria || "N/A"}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `
-
-          contenido.innerHTML = html
+        if (response.ok) {
+          const result = await response.json()
+          showToast(result.mensaje || "Asesoría actualizada exitosamente", "success")
+          window.cerrarModalEditarAsesoria()
+          setTimeout(() => {
+            window.location.reload()
+          }, 1000)
         } else {
-          contenido.innerHTML =
-            '<div class="text-center py-4 text-red-600">No se pudo cargar la información de la asesoría</div>'
+          const error = await response.json()
+          showToast(error.error || "Error al actualizar la asesoría", "error")
         }
-      })
-      .catch((error) => {
-        console.error("Error:", error)
-        contenido.innerHTML =
-          '<div class="text-center py-4 text-red-600">Error al cargar la asesoría: ' +
-          (error.message || error) +
-          "</div>"
-      })
-  }
-
-  function cerrarModalVerAsesoria() {
-    document.getElementById("modalVerAsesoria").classList.add("hidden")
-    document.body.style.overflow = "auto"
-  }
-
-  // Modal Editar Asesoría - MEJORADO
-  window.abrirModalEditarAsesoria = (id) => {
-    const modal = document.getElementById("modalEditarAsesoria")
-    const contenido = document.getElementById("contenidoEditarAsesoria")
-
-    // Mostrar loading
-    contenido.innerHTML =
-      '<div class="text-center py-4"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div><p class="mt-2 text-gray-600">Cargando...</p></div>'
-    modal.classList.remove("hidden")
-    modal.classList.add("flex")
-    document.body.style.overflow = "hidden"
-
-    fetch(`/admin/asesorias/${id}/ver`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Error al cargar la asesoría")
-        }
-        return response.json()
-      })
-      .then((data) => {
-        if (data.success && data.asesoria) {
-          const asesoria = data.asesoria
-
-          const html = `
-                        <div class="space-y-4">
-                            <!-- Campos no editables -->
-                            <div class="bg-gray-50 p-3 rounded">
-                                <div class="grid grid-cols-2 gap-4 text-sm">
-                                    <div>
-                                        <span class="font-medium text-gray-700">Código:</span>
-                                        <span class="ml-2 font-mono">${asesoria.codigo_asesoria}</span>
-                                    </div>
-                                    <div>
-                                        <span class="font-medium text-gray-700">Cliente:</span>
-                                        <span class="ml-2">${asesoria.cliente_nombre || "N/A"}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Campos editables -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Asesoría</label>
-                                    <select name="tipo_asesoria" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500">
-                                        <option value="Visa de Trabajo" ${asesoria.tipo_asesoria === "Visa de Trabajo" ? "selected" : ""}>Visa de Trabajo</option>
-                                        <option value="Visa de Turista" ${asesoria.tipo_asesoria === "Visa de Turista" ? "selected" : ""}>Visa de Turista</option>
-                                        <option value="Visa de Estudiante" ${asesoria.tipo_asesoria === "Visa de Estudiante" ? "selected" : ""}>Visa de Estudiante</option>
-                                        <option value="Residencia Permanente" ${asesoria.tipo_asesoria === "Residencia Permanente" ? "selected" : ""}>Residencia Permanente</option>
-                                        <option value="Reunificación Familiar" ${asesoria.tipo_asesoria === "Reunificación Familiar" ? "selected" : ""}>Reunificación Familiar</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Fecha y Hora</label>
-                                    <input type="datetime-local" name="fecha_asesoria" 
-                                           value="${asesoria.fecha_asesoria ? new Date(asesoria.fecha_asesoria).toISOString().slice(0, 16) : ""}"
-                                           class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500" />
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Lugar</label>
-                                    <select name="lugar" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500">
-                                        <option value="Virtual (Zoom)" ${asesoria.lugar === "Virtual (Zoom)" ? "selected" : ""}>Virtual (Zoom)</option>
-                                        <option value="Presencial" ${asesoria.lugar === "Presencial" ? "selected" : ""}>Presencial</option>
-                                        <option value="Telefónica" ${asesoria.lugar === "Telefónica" ? "selected" : ""}>Telefónica</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                                    <select name="estado" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500">
-                                        <option value="Pendiente" ${asesoria.estado === "Pendiente" ? "selected" : ""}>Pendiente</option>
-                                        <option value="Confirmada" ${asesoria.estado === "Confirmada" ? "selected" : ""}>Confirmada</option>
-                                        <option value="En Proceso" ${asesoria.estado === "En Proceso" ? "selected" : ""}>En Proceso</option>
-                                        <option value="Completada" ${asesoria.estado === "Completada" ? "selected" : ""}>Completada</option>
-                                        <option value="Cancelada" ${asesoria.estado === "Cancelada" ? "selected" : ""}>Cancelada</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Estado del Proceso</label>
-                                    <select name="estado_proceso" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500">
-                                        <option value="Pendiente" ${asesoria.estado_proceso === "Pendiente" ? "selected" : ""}>Pendiente</option>
-                                        <option value="Proceso activo" ${asesoria.estado_proceso === "Proceso activo" ? "selected" : ""}>Proceso activo</option>
-                                        <option value="Terminado" ${asesoria.estado_proceso === "Terminado" ? "selected" : ""}>Terminado</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Asesor Asignado</label>
-                                    <input type="text" name="asesor_asignado" 
-                                           value="${asesoria.asesor_asignado || ""}"
-                                           class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500" />
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Documento</label>
-                                    <select name="tipo_documento" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500">
-                                        <option value="C.C" ${asesoria.tipo_documento === "C.C" ? "selected" : ""}>Cédula de Ciudadanía</option>
-                                        <option value="C.E" ${asesoria.tipo_documento === "C.E" ? "selected" : ""}>Cédula de Extranjería</option>
-                                        <option value="Pasaporte" ${asesoria.tipo_documento === "Pasaporte" ? "selected" : ""}>Pasaporte</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Número de Documento</label>
-                                    <input type="text" name="numero_documento" 
-                                           value="${asesoria.numero_documento || ""}"
-                                           class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500" />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Especialidad</label>
-                                <input type="text" name="especialidad" 
-                                       value="${asesoria.especialidad || ""}"
-                                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500" />
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-                                <textarea name="descripcion" rows="3" 
-                                          class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500">${asesoria.descripcion || ""}</textarea>
-                            </div>
-                        </div>
-                    `
-
-          contenido.innerHTML = html
-
-          // Configurar el submit del formulario
-          const formEditar = document.getElementById("formEditarAsesoria")
-          formEditar.onsubmit = (e) => {
-            e.preventDefault()
-
-            const formData = new FormData(formEditar)
-            const obj = {}
-            for (const [k, v] of formData.entries()) {
-              obj[k] = v
-            }
-
-            // Mostrar loading en el botón
-            const btnGuardar = formEditar.querySelector('button[type="submit"]')
-            const textoOriginal = btnGuardar.textContent
-            btnGuardar.textContent = "Guardando..."
-            btnGuardar.disabled = true
-
-            fetch(`/admin/asesorias/${id}/editar`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(obj),
-            })
-              .then((response) => {
-                if (!response.ok) {
-                  throw new Error("Error al actualizar")
-                }
-                return response.json()
-              })
-              .then((data) => {
-                if (data.success) {
-                  showToast("Asesoría actualizada exitosamente", "success")
-                  setTimeout(() => location.reload(), 1200)
-                } else {
-                  throw new Error(data.error || "Error desconocido")
-                }
-              })
-              .catch((error) => {
-                showToast("Error al editar asesoría: " + error.message, "error")
-                btnGuardar.textContent = textoOriginal
-                btnGuardar.disabled = false
-              })
-          }
-        } else {
-          contenido.innerHTML =
-            '<div class="text-center py-4 text-red-600">No se pudo cargar la información de la asesoría</div>'
-        }
-      })
-      .catch((error) => {
-        console.error("Error:", error)
-        contenido.innerHTML =
-          '<div class="text-center py-4 text-red-600">Error al cargar la asesoría: ' + error.message + "</div>"
-      })
-  }
-
-  function cerrarModalEditarAsesoria() {
-    const modal = document.getElementById("modalEditarAsesoria")
-    modal.classList.remove("flex")
-    modal.classList.add("hidden")
-    document.body.style.overflow = "auto"
-    // Limpia el contenido del formulario
-    const contenido = document.getElementById("contenidoEditarAsesoria")
-    if (contenido) contenido.innerHTML = ""
-  }
-
-  // Modal Cancelar Asesoría
-  let codigoCancelar = null
-  window.abrirModalCancelarAsesoria = (codigo) => {
-    codigoCancelar = Number.parseInt(codigo)
-    document.getElementById("modalCancelarAsesoria").classList.remove("hidden")
-  }
-
-  function cerrarModalCancelarAsesoria() {
-    document.getElementById("modalCancelarAsesoria").classList.add("hidden")
-    codigoCancelar = null
-  }
-
-  const btnCancelar = document.getElementById("btnConfirmarCancelarAsesoria")
-  if (btnCancelar) {
-    btnCancelar.onclick = () => {
-      if (!codigoCancelar) {
-        showToast("Error: No se ha seleccionado una asesoría para cancelar", "error")
-        return
+      } catch (error) {
+        console.error("Error al actualizar la asesoría:", error)
+        showToast("Error al actualizar la asesoría", "error")
+      } finally {
+        setButtonLoading(btnSubmit, false)
       }
-      const textoOriginal = btnCancelar.textContent
-      btnCancelar.textContent = "Cancelando..."
-      btnCancelar.disabled = true
+    }
+  }
 
-      fetch(`/admin/asesorias/${codigoCancelar}/cancelar`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      })
-        .then((resp) => resp.json())
-        .then((data) => {
-          if (data && data.success) {
-            cerrarModalCancelarAsesoria()
-            showToast("Asesoría cancelada correctamente", "success")
-            setTimeout(() => location.reload(), 1200)
-          } else {
-            throw new Error((data && data.error) || "Error desconocido")
-          }
+  // Botón confirmar cancelación
+  const btnConfirmarCancelar = document.getElementById("btnConfirmarCancelarAsesoria")
+  if (btnConfirmarCancelar) {
+    btnConfirmarCancelar.onclick = async () => {
+      if (!codigoAsesoriaACancelar) return
+
+      try {
+        setButtonLoading(btnConfirmarCancelar, true, "Cancelando...")
+
+        const response = await fetch(`/admin/asesorias/${codigoAsesoriaACancelar}/eliminar`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            motivo: "Cancelada por administrador",
+          }),
         })
-        .catch((error) => {
-          showToast("Error al cancelar: " + error.message, "error")
-          btnCancelar.textContent = textoOriginal
-          btnCancelar.disabled = false
-        })
+
+        if (response.ok) {
+          const result = await response.json()
+          showToast(result.mensaje || "Asesoría cancelada exitosamente", "success")
+          window.cerrarModalCancelarAsesoria()
+          setTimeout(() => {
+            window.location.reload()
+          }, 1000)
+        } else {
+          const error = await response.json()
+          showToast(error.error || "Error al cancelar la asesoría", "error")
+        }
+      } catch (error) {
+        console.error("Error al cancelar la asesoría:", error)
+        showToast("Error al cancelar la asesoría", "error")
+      } finally {
+        setButtonLoading(btnConfirmarCancelar, false)
+      }
     }
   }
 
-  // Funciones auxiliares para clases CSS
-  window.getEstadoClass = (estado) => {
-    const clases = {
-      Pendiente: "bg-yellow-100 text-yellow-800",
-      Confirmada: "bg-blue-100 text-blue-800",
-      "En Proceso": "bg-purple-100 text-purple-800",
-      Completada: "bg-green-100 text-green-800",
-      Cancelada: "bg-red-100 text-red-800",
-    }
-    return clases[estado] || "bg-gray-100 text-gray-800"
-  }
-
-  window.getEstadoProcesoClass = (estado) => {
-    const clases = {
-      Pendiente: "bg-yellow-100 text-yellow-800",
-      "Proceso activo": "bg-blue-100 text-blue-800",
-      Terminado: "bg-green-100 text-green-800",
-      Cancelado: "bg-red-100 text-red-800",
-    }
-    return clases[estado] || "bg-gray-100 text-gray-800"
-  }
-
-  window.getPagoEstadoClass = (estado) => {
-    const clases = {
-      Pendiente: "bg-yellow-100 text-yellow-800",
-      Completado: "bg-green-100 text-green-800",
-      Cancelado: "bg-red-100 text-red-800",
-    }
-    return clases[estado] || "bg-gray-100 text-gray-800"
-  }
-
-  // Manejar tecla Escape para cerrar modales
+  // ===== EVENT LISTENERS PARA CERRAR MODALES CON ESC =====
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      cerrarModalCrearAsesoria()
-      cerrarModalEditarAsesoria()
-      cerrarModalCancelarAsesoria()
+      cerrarTodosLosModales()
     }
   })
+
+  // ===== HACER FUNCIONES GLOBALES =====
+  window.showToast = showToast
+  window.codigoAsesoriaACancelar = codigoAsesoriaACancelar
+  window.refreshCaptcha = refreshCaptcha
 })
