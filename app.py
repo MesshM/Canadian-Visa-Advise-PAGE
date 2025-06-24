@@ -10,7 +10,6 @@ from routes.formularios import formulario_bp
 # Importa todos los blueprints de asesor
 from routes.routes_asesor.panel_asesor import panel_asesor_bp
 from routes.routes_asesor.clientes_asesor import clientes_asesor_bp
-from routes.routes_asesor.asesorias_asesor import citas_asesor_bp
 from routes.routes_asesor.mensajeria_asesor import mensajeria_asesor_bp
 from routes.routes_asesor.recursos_asesor import recursos_asesor_bp
 from routes.routes_asesor.perfil_asesor import perfil_asesor_bp
@@ -57,7 +56,6 @@ app.register_blueprint(formulario_bp, url_prefix='/formularios')
 # Registrar los blueprints de asesor
 app.register_blueprint(panel_asesor_bp)
 app.register_blueprint(clientes_asesor_bp)
-app.register_blueprint(citas_asesor_bp)
 app.register_blueprint(mensajeria_asesor_bp)
 app.register_blueprint(recursos_asesor_bp)
 app.register_blueprint(perfil_asesor_bp)    
@@ -133,7 +131,7 @@ def asesor_documentos_redirect():
 
 @app.route('/asesor/asesorias')
 def asesor_asesorias_redirect():
-    return redirect(url_for('citas_asesor.asesorias_asesor'))
+    return redirect(url_for('panel_asesor.index_asesor'))  # O redirige a otra vista relevante
 
 @app.route('/asesor/pagos')
 def asesor_pagos_redirect():
@@ -229,7 +227,7 @@ def inject_urls():
         # Rutas de asesor (antes admin)
         'url_for_asesor_clientes': lambda: url_for('clientes_asesor.clientes_asesor'),
         'url_for_asesor_documentos': lambda: url_for('clientes_asesor.documentos_asesor'),
-        'url_for_asesor_asesorias': lambda: url_for('citas_asesor.asesorias_asesor'),
+        'url_for_asesor_asesorias': lambda: url_for('panel_asesor.index_asesor'),  # <-- Cambiado/eliminado citas_asesor
         'url_for_asesor_pagos': lambda: url_for('recursos_asesor.pagos_asesor'),
         'url_for_asesor_reportes': lambda: url_for('panel_asesor.reportes_asesor'),
         'url_for_asesor_dashboard': lambda: url_for('panel_asesor.dashboard_asesor'),

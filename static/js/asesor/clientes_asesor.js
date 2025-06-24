@@ -299,9 +299,9 @@ function getBadgeClassTipoVisa(tipo) {
   const clases = {
     Turismo: "bg-green-100 text-green-600",
     Estudios: "bg-purple-100 text-purple-600",
-    "Trabajo temporal": "bg-blue-100 text-blue-600",
+    "Trabajo Temporal": "bg-blue-100 text-blue-600",
     Negocios: "bg-yellow-100 text-yellow-600",
-    "Residencia permanente": "bg-gray-100 text-gray-600",
+    "Residencia Permanente": "bg-gray-100 text-gray-600",
   }
   return clases[tipo] || "bg-gray-100 text-gray-600"
 }

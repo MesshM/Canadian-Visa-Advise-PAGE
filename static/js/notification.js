@@ -122,9 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!notification.leida) {
                     markAsRead(notification.id);
                 }
-                if (notification.enlace) {
-                    window.location.href = notification.enlace;
-                }
+                
                 hidePanel();
             });
 
