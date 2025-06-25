@@ -368,9 +368,9 @@ document.addEventListener("DOMContentLoaded", () => {
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Lugar</label>
               <select name="lugar" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
-                <option value="Virtual (Zoom)" ${asesoria.lugar === "Virtual (Zoom)" ? "selected" : ""}>Virtual (Zoom)</option>
                 <option value="Presencial" ${asesoria.lugar === "Presencial" ? "selected" : ""}>Presencial</option>
-                <option value="Telefónica" ${asesoria.lugar === "Telefónica" ? "selected" : ""}>Telefónica</option>
+                <option value="Virtual (Teams)" ${asesoria.lugar === "Virtual (Teams)" ? "selected" : ""}>Virtual (Teams)</option>
+                <option value="Virtual (Zoom)" ${asesoria.lugar === "Virtual (Zoom)" ? "selected" : ""}>Virtual (Zoom)</option>
               </select>
             </div>
             <div>
@@ -384,9 +384,11 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Especialidad</label>
-              <input type="text" name="especialidad" value="${asesoria.especialidad || ""}"
-                     class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                     placeholder="Inmigración Canadiense">
+              <select name="especialidad" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <option value="Inmigración Canadiense" ${asesoria.especialidad === "Inmigración Canadiense" ? "selected" : ""}>Inmigración Canadiense</option>
+                <option value="Especialista en Visas de Trabajo" ${asesoria.especialidad === "Especialista en Visas de Trabajo" ? "selected" : ""}>Especialista en Visas de Trabajo</option>
+                <option value="Especialista en Residencia Permanente" ${asesoria.especialidad === "Especialista en Residencia Permanente" ? "selected" : ""}>Especialista en Residencia Permanente</option>
+              </select>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Documento</label>
@@ -410,19 +412,46 @@ document.addEventListener("DOMContentLoaded", () => {
                       placeholder="Descripción adicional de la asesoría...">${asesoria.descripcion || ""}</textarea>
           </div>
         `
+
+        // Inicializar calendario con el asesor y fecha actuales
         setTimeout(() => {
+          let asesorNombre = "";
+          if (asesoria.id_asesor) {
+            const found = asesores.find(a => String(a.id_asesor) === String(asesoria.id_asesor));
+            if (found) asesorNombre = `${found.nombre} ${found.apellidos}`;
+          } else {
+            asesorNombre = asesoria.asesor_asignado || asesoria.asesor_nombre || "";
+          }
           window.initEditarAsesoriaCalendar(
-            asesoria.asesor_asignado || asesoria.asesor_nombre || "",
+            asesorNombre,
             asesoria.fecha_asesoria
           );
-          // Set fecha_asesoria input value si existe
           const fechaInput = document.getElementById("fecha_asesoria_admin_edit");
           if (fechaInput && originalEditarAsesoria.fecha_asesoria) {
             fechaInput.value = originalEditarAsesoria.fecha_asesoria;
           }
         }, 100);
 
-        // Habilitar/deshabilitar el botón guardar según cambios
+        setTimeout(() => {
+          const selectAsesor = document.getElementById("id_asesor_admin_edit");
+          if (selectAsesor) {
+            selectAsesor.addEventListener("change", function () {
+              const selectedId = this.value;
+              let asesorNombre = "";
+              if (selectedId) {
+                const found = asesores.find(a => String(a.id_asesor) === String(selectedId));
+                if (found) asesorNombre = `${found.nombre} ${found.apellidos}`;
+              }
+              window.initEditarAsesoriaCalendar(
+                asesorNombre,
+                null
+              );
+              const fechaInput = document.getElementById("fecha_asesoria_admin_edit");
+              if (fechaInput) fechaInput.value = "";
+            });
+          }
+        }, 200);
+
         setTimeout(() => {
           setupDetectarCambiosEditarAsesoria();
         }, 200);
@@ -448,18 +477,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnSubmit = formEditar.querySelector('button[type="submit"]');
     if (!btnSubmit) return;
 
-    // Función para obtener los valores actuales del formulario
     function getCurrentValues() {
       const fd = new FormData(formEditar);
       const obj = {};
       fd.forEach((v, k) => (obj[k] = v));
-      // Fecha
       const fechaInput = document.getElementById("fecha_asesoria_admin_edit");
-      obj.fecha_asesoria = fechaInput ? fechaInput.value : "";
+      // Usar la variable temporal si existe
+      obj.fecha_asesoria = window.fechaHoraSeleccionadaTemporal || (fechaInput ? fechaInput.value : "");
       return obj;
     }
 
-    // Función para comparar los valores actuales con los originales
     function hayCambios() {
       const current = getCurrentValues();
       for (const key in originalEditarAsesoria) {
@@ -470,31 +497,34 @@ document.addEventListener("DOMContentLoaded", () => {
       return false;
     }
 
-    // Deshabilitar el botón inicialmente
+    function handleChange(e) {
+      if (hayCambios()) {
+        btnSubmit.disabled = false;
+        btnSubmit.classList.remove("opacity-50", "cursor-not-allowed");
+      } else {
+        btnSubmit.disabled = true;
+        btnSubmit.classList.add("opacity-50", "cursor-not-allowed");
+      }
+    }
+
     btnSubmit.disabled = true;
     btnSubmit.classList.add("opacity-50", "cursor-not-allowed");
 
-    // Detectar cambios en todos los campos del formulario
     formEditar.querySelectorAll("input, select, textarea").forEach((el) => {
-      el.addEventListener("input", () => {
-        if (hayCambios()) {
-          btnSubmit.disabled = false;
-          btnSubmit.classList.remove("opacity-50", "cursor-not-allowed");
-        } else {
-          btnSubmit.disabled = true;
-          btnSubmit.classList.add("opacity-50", "cursor-not-allowed");
-        }
-      });
-      el.addEventListener("change", () => {
-        if (hayCambios()) {
-          btnSubmit.disabled = false;
-          btnSubmit.classList.remove("opacity-50", "cursor-not-allowed");
-        } else {
-          btnSubmit.disabled = true;
-          btnSubmit.classList.add("opacity-50", "cursor-not-allowed");
-        }
-      });
+      el.removeEventListener("input", handleChange);
+      el.removeEventListener("change", handleChange);
+      el.addEventListener("input", handleChange);
+      el.addEventListener("change", handleChange);
     });
+
+    // Detectar cambios en la selección de fecha/hora del calendario
+    window._fechaHoraSeleccionadaTemporal = window.fechaHoraSeleccionadaTemporal;
+    setInterval(() => {
+      if (window._fechaHoraSeleccionadaTemporal !== window.fechaHoraSeleccionadaTemporal) {
+        window._fechaHoraSeleccionadaTemporal = window.fechaHoraSeleccionadaTemporal;
+        handleChange();
+      }
+    }, 200);
   }
 
   window.cerrarModalEditarAsesoria = () => {
@@ -682,7 +712,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </button>
             <button class="btn-action text-red-600" title="Cancelar"
               onclick="abrirModalCancelarAsesoria(${asesoria.codigo_asesoria})">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
             </button>
@@ -834,45 +864,52 @@ document.addEventListener("DOMContentLoaded", () => {
   // Formulario editar asesoría
   if (formEditar) {
     formEditar.onsubmit = async (e) => {
-      e.preventDefault()
+      e.preventDefault();
 
-      const formData = new FormData(formEditar)
-      const data = {}
-      formData.forEach((v, k) => (data[k] = v))
+      // Copia la selección temporal al input oculto antes de enviar
+      if (window.fechaHoraSeleccionadaTemporal) {
+        const fechaInput = document.getElementById("fecha_asesoria_admin_edit");
+        if (fechaInput) {
+          fechaInput.value = window.fechaHoraSeleccionadaTemporal;
+        }
+      }
 
-      const codigo = data.codigo_asesoria
-      delete data.codigo_asesoria
+      const formData = new FormData(formEditar);
+      const data = {};
+      formData.forEach((v, k) => (data[k] = v));
 
-      const btnSubmit = formEditar.querySelector('button[type="submit"]')
+      const codigo = data.codigo_asesoria;
+      delete data.codigo_asesoria;
+
+      const btnSubmit = formEditar.querySelector('button[type="submit"]');
 
       try {
-        setButtonLoading(btnSubmit, true, "Guardando cambios...")
+        setButtonLoading(btnSubmit, true, "Guardando cambios...");
 
-        // Solo guardar cambios al hacer submit, no antes
         const response = await fetch(`/admin/asesorias/${codigo}/editar`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(data),
-        })
+        });
 
         if (response.ok) {
-          const result = await response.json()
-          showToast(result.mensaje || "Asesoría actualizada exitosamente", "success")
-          window.cerrarModalEditarAsesoria()
+          const result = await response.json();
+          showToast(result.mensaje || "Asesoría actualizada exitosamente", "success");
+          window.cerrarModalEditarAsesoria();
           setTimeout(() => {
-            window.location.reload()
-          }, 1000)
+            window.location.reload();
+          }, 1000);
         } else {
-          const error = await response.json()
-          showToast(error.error || "Error al actualizar la asesoría", "error")
+          const error = await response.json();
+          showToast(error.error || "Error al actualizar la asesoría", "error");
         }
       } catch (error) {
-        console.error("Error al actualizar la asesoría:", error)
-        showToast("Error al actualizar la asesoría", "error")
+        console.error("Error al actualizar la asesoría:", error);
+        showToast("Error al actualizar la asesoría", "error");
       } finally {
-        setButtonLoading(btnSubmit, false)
+        setButtonLoading(btnSubmit, false);
       }
     }
   }
@@ -925,6 +962,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ===== HACER FUNCIONES GLOBALES =====
   window.showToast = showToast
-  window.codigoAsesoriaACancelar = codigoAsesoriaACancelar
   window.refreshCaptcha = refreshCaptcha
+  window.codigoAsesoriaACancelar = codigoAsesoriaACancelar
 })

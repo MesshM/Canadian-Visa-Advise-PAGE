@@ -31,7 +31,12 @@ def procesar_pago():
         datos_adicionales = data.get('datos_adicionales', {})
         fecha_asesoria = data.get('fecha_asesoria')
         id_asesor = data.get('id_asesor')
-        
+        referencia_pago = data.get('referencia_pago')  # Recibe referencia si viene del frontend
+
+        if not referencia_pago:
+            # Si no hay referencia, genera una (ejemplo: timestamp + user_id)
+            referencia_pago = f"MANUAL-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{session.get('user_id', '0')}"
+
         if isinstance(datos_adicionales, str):
             try:
                 datos_adicionales = json.loads(datos_adicionales)
@@ -44,9 +49,9 @@ def procesar_pago():
             try:
                 # Registrar el pago
                 cursor.execute("""
-                    INSERT INTO tbl_pago_asesoria (codigo_asesoria, monto, metodo_pago, estado_pago, datos_adicionales)
-                    VALUES (%s, %s, %s, 'Completado', %s)
-                """, (codigo_asesoria, monto, metodo_pago, json.dumps(datos_adicionales)))
+                    INSERT INTO tbl_pago_asesoria (codigo_asesoria, monto, metodo_pago, estado_pago, referencia_pago, datos_adicionales)
+                    VALUES (%s, %s, %s, 'Completado', %s, %s)
+                """, (codigo_asesoria, monto, metodo_pago, referencia_pago, json.dumps(datos_adicionales)))
                 
                 # Actualizar el estado de la asesoría a "Pagada"
                 cursor.execute("""
@@ -228,14 +233,15 @@ def confirmar_pago():
                 if connection:
                     cursor = connection.cursor(dictionary=True)
                     
-                    # Registrar el pago
+                    # Registrar el pago con referencia_pago (payment_intent_id)
                     cursor.execute("""
-                        INSERT INTO tbl_pago_asesoria (codigo_asesoria, monto, metodo_pago, estado_pago, datos_adicionales)
-                        VALUES (%s, %s, %s, 'Completado', %s)
+                        INSERT INTO tbl_pago_asesoria (codigo_asesoria, monto, metodo_pago, estado_pago, referencia_pago, datos_adicionales)
+                        VALUES (%s, %s, %s, 'Completado', %s, %s)
                     """, (
                         codigo_asesoria, 
                         payment_intent.amount / 100,  # Convertir de centavos a dólares
-                        'Tarjeta de Crédito (Stripe)', 
+                        'Stripe',  # Usa solo 'Stripe' para que el reembolso funcione
+                        payment_intent_id,  # Guarda el payment_intent_id como referencia_pago
                         json.dumps({'payment_intent': payment_intent_id})
                     ))
                     

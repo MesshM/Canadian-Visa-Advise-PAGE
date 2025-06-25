@@ -71,6 +71,11 @@ async function loadDashboardData() {
     if (data.success) {
       updateDashboardStats(data.estadisticas)
     }
+    // Cargar usuarios recientes
+    loadUsuariosRecientes()
+    loadAsesoriasRecientes()
+    loadPagosRecientes()
+    loadDocumentosPendientes()
   } catch (error) {
     console.error("Error cargando estadísticas:", error)
   }
@@ -92,6 +97,150 @@ function updateDashboardStats(stats) {
       elemento.textContent = elementos[key]
     }
   })
+}
+
+// Cargar usuarios recientes
+async function loadUsuariosRecientes() {
+  try {
+    const response = await fetch("/admin/api/usuarios_recientes")
+    const data = await response.json()
+    if (data.success) {
+      renderUsuariosRecientes(data.usuarios)
+    }
+  } catch (error) {
+    console.error("Error cargando usuarios recientes:", error)
+  }
+}
+
+// Renderizar usuarios recientes en la tabla
+function renderUsuariosRecientes(usuarios) {
+  const tbody = document.getElementById("tabla-usuarios-recientes")
+  if (!tbody) return
+  if (!usuarios.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No hay usuarios recientes</td></tr>`
+    return
+  }
+  tbody.innerHTML = usuarios
+    .map(
+      (usuario) => `
+      <tr class="hover:bg-gray-50">
+        <td class="px-6 py-4 whitespace-nowrap">
+          <div class="flex items-center">
+            <div class="h-10 w-10 flex-shrink-0 bg-gray-200 rounded-full text-gray-500 flex items-center justify-center">
+              ${usuario.nombres ? usuario.nombres[0] : "U"}${usuario.apellidos ? usuario.apellidos[0] : ""}
+            </div>
+            <div class="ml-4">
+              <div class="text-sm font-medium text-gray-900">${usuario.nombres} ${usuario.apellidos}</div>
+              <div class="text-sm text-gray-500">${usuario.correo}</div>
+            </div>
+          </div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+            Cliente
+          </span>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${usuario.fecha_registro}</td>
+        <td class="px-6 py-4 whitespace-nowrap">
+          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+            Activo
+          </span>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+          <a href="/admin/usuarios/editar/${usuario.id_usuario}" class="text-primary-600 hover:text-primary-900 mr-3">Editar</a>
+          <a href="#" class="text-red-600 hover:text-red-900">Desactivar</a>
+        </td>
+      </tr>
+    `
+    )
+    .join("")
+}
+
+// Asesorías recientes
+async function loadAsesoriasRecientes() {
+  try {
+    const response = await fetch("/admin/api/asesorias_recientes")
+    const data = await response.json()
+    if (data.success) {
+      renderAsesoriasRecientes(data.asesorias)
+    }
+  } catch (error) {
+    console.error("Error cargando asesorías recientes:", error)
+  }
+}
+function renderAsesoriasRecientes(asesorias) {
+  const tbody = document.getElementById("tabla-asesorias-recientes")
+  if (!tbody) return
+  if (!asesorias.length) {
+    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-500">No hay asesorías recientes</td></tr>`
+    return
+  }
+  tbody.innerHTML = asesorias.map(a => `
+    <tr>
+      <td>${a.codigo_asesoria}</td>
+      <td>${a.fecha_asesoria}</td>
+      <td>${a.asesor}</td>
+      <td>${a.estado}</td>
+    </tr>
+  `).join("")
+}
+
+// Pagos recientes
+async function loadPagosRecientes() {
+  try {
+    const response = await fetch("/admin/api/pagos_recientes")
+    const data = await response.json()
+    if (data.success) {
+      renderPagosRecientes(data.pagos)
+    }
+  } catch (error) {
+    console.error("Error cargando pagos recientes:", error)
+  }
+}
+function renderPagosRecientes(pagos) {
+  const tbody = document.getElementById("tabla-pagos-recientes")
+  if (!tbody) return
+  if (!pagos.length) {
+    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-500">No hay pagos recientes</td></tr>`
+    return
+  }
+  tbody.innerHTML = pagos.map(p => `
+    <tr>
+      <td>${p.id_pago}</td>
+      <td>$${p.monto}</td>
+      <td>${p.estado}</td>
+      <td>${p.fecha_pago}</td>
+    </tr>
+  `).join("")
+}
+
+// Documentos pendientes
+async function loadDocumentosPendientes() {
+  try {
+    const response = await fetch("/admin/api/documentos_pendientes")
+    const data = await response.json()
+    if (data.success) {
+      renderDocumentosPendientes(data.documentos)
+    }
+  } catch (error) {
+    console.error("Error cargando documentos pendientes:", error)
+  }
+}
+function renderDocumentosPendientes(documentos) {
+  const tbody = document.getElementById("tabla-documentos-pendientes")
+  if (!tbody) return
+  if (!documentos.length) {
+    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-500">No hay documentos pendientes</td></tr>`
+    return
+  }
+  tbody.innerHTML = documentos.map(d => `
+    <tr>
+      <td>${d.id_documento}</td>
+      <td>${d.nombre_documento}</td>
+      <td>${d.estado}</td>
+      <td>${d.fecha_subida}</td>
+    </tr>
+  `).join("")
 }
 
 // Cargar notificaciones

@@ -10,6 +10,17 @@ document.addEventListener("DOMContentLoaded", function () {
   const timeContainerEdit = document.getElementById("time-container-admin-edit");
   const fechaInputEdit = document.getElementById("fecha_asesoria_admin_edit");
 
+  if (fechaInputEdit) {
+    fechaInputEdit.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+      }
+    });
+  }
+
+  // Variable global temporal para la selección de fecha/hora en edición
+  window.fechaHoraSeleccionadaTemporal = null;
+
   // ========== CREAR ==========
   if (asesorInput && calendarContainer && timeContainer && fechaInput) {
     asesorInput.addEventListener("blur", function () {
@@ -28,30 +39,13 @@ document.addEventListener("DOMContentLoaded", function () {
   window.initEditarAsesoriaCalendar = function (asesorAsignado, fechaInicial) {
     if (!calendarContainerEdit || !timeContainerEdit || !fechaInputEdit) return;
     renderCalendar(calendarContainerEdit, timeContainerEdit, fechaInputEdit, asesorAsignado, fechaInicial, true);
-
-    // Cuando el usuario selecciona una fecha y hora:
-    function onHoraSeleccionada(fecha, hora) {
-      // Actualiza el input oculto del formulario, pero NO guardes automáticamente
-      if (fechaInputEdit) {
-        // fecha: 'YYYY-MM-DD', hora: 'HH:mm'
-        fechaInputEdit.value = `${fecha}T${hora}`;
-        // Dispara un evento input/change para que el otro JS detecte el cambio y habilite el botón
-        fechaInputEdit.dispatchEvent(new Event("input", { bubbles: true }));
-        fechaInputEdit.dispatchEvent(new Event("change", { bubbles: true }));
-      }
-      // NO LLAMES a ningún fetch ni POST aquí.
-    }
-
-    // Modifica la lógica para que al seleccionar una hora, llame a onHoraSeleccionada(fecha, hora)
-    // Ejemplo:
-    // horaBtn.addEventListener('click', () => onHoraSeleccionada(fechaSeleccionada, horaSeleccionada));
   };
 
   // ========== FUNCION PRINCIPAL ==========
   function renderCalendar(calendarDiv, timeDiv, fechaHiddenInput, asesorNombre, fechaPreseleccionada = null, compacto = false) {
     calendarDiv.innerHTML = "";
     timeDiv.innerHTML = '<p class="text-gray-500 text-center">Seleccione una fecha para ver los horarios disponibles</p>';
-    fechaHiddenInput.value = "";
+    // NO limpiar el input aquí, solo al seleccionar una hora
 
     // Mes y año a mostrar
     const today = new Date();
@@ -157,7 +151,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Preseleccionar la fecha si corresponde
         if (fechaPreseleccionada && dateStr === fechaPreseleccionada.slice(0, 10)) {
           el.classList.add("selected", "bg-primary-100", "text-primary-800", "ring-2", "ring-primary-500", "ring-offset-1");
-          setTimeout(() => selectDate(dateStr, el, timeDiv, fechaHiddenInput, asesorNombre, fechaPreseleccionada), 100);
+          // NO llamar selectDate aquí, solo marcar visualmente
         }
       }
     }
@@ -187,6 +181,8 @@ document.addEventListener("DOMContentLoaded", function () {
       d.classList.remove("selected", "bg-primary-100", "text-primary-800", "ring-2", "ring-primary-500", "ring-offset-1");
     });
     el.classList.add("selected", "bg-primary-100", "text-primary-800", "ring-2", "ring-primary-500", "ring-offset-1");
+    // Al seleccionar solo el día, NO modificar el input ni disparar eventos
+    // Solo cargar los horarios disponibles
     loadAvailableTimes(dateStr, timeDiv, fechaHiddenInput, asesorNombre, fechaPreseleccionada);
   }
 
@@ -252,10 +248,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 // Dispara eventos para que el botón de guardar cambios se habilite
                 fechaHiddenInput.dispatchEvent(new Event("input", { bubbles: true }));
                 fechaHiddenInput.dispatchEvent(new Event("change", { bubbles: true }));
-                // Llama explícitamente a la función de detección de cambios si existe
-                if (window.setupDetectarCambiosEditarAsesoria) {
-                  window.setupDetectarCambiosEditarAsesoria();
-                }
                 // Mostrar previsualizador
                 showPreviewFechaHora(dateStr, hora, previewDiv, asesorNombre);
               };

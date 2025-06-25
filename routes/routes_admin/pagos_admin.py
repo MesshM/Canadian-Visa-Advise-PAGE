@@ -11,6 +11,9 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
+import stripe
+
+
 
 pagos_admin_bp = Blueprint('pagos_admin', __name__)
 
@@ -39,7 +42,6 @@ def listar_pagos():
         # Obtener parámetros de filtro
         buscar = request.args.get('buscar', '')
         estado_filtro = request.args.get('estado', '')
-        metodo_filtro = request.args.get('metodo', '')
         fecha_desde = request.args.get('fecha_desde', '')
         fecha_hasta = request.args.get('fecha_hasta', '')
         pagina = int(request.args.get('pagina', 1))
@@ -48,7 +50,7 @@ def listar_pagos():
         # Construir consulta con filtros
         query = '''
             SELECT p.id_pago, p.codigo_asesoria, p.monto, p.metodo_pago, 
-                   p.estado_pago, p.fecha_pago, p.referencia_pago,
+                   p.estado_pago, p.fecha_pago, p.referencia_pago, p.id_reembolso_stripe,
                    CONCAT(u.nombres, ' ', u.apellidos) as cliente_nombre,
                    u.correo as cliente_correo,
                    a.tipo_asesoria
@@ -67,10 +69,6 @@ def listar_pagos():
         if estado_filtro:
             query += ' AND p.estado_pago = %s'
             params.append(estado_filtro)
-
-        if metodo_filtro:
-            query += ' AND p.metodo_pago = %s'
-            params.append(metodo_filtro)
 
         if fecha_desde:
             query += ' AND DATE(p.fecha_pago) >= %s'
@@ -156,52 +154,6 @@ def cambiar_estado_pago(id):
         })
         
     except Error as e:
-        return jsonify({'error': str(e)}), 500
-
-@pagos_admin_bp.route('/admin/pagos/<int:id>/editar', methods=['POST'])
-@admin_required
-def editar_pago(id):
-    """Editar los datos de un pago"""
-    try:
-        data = request.json
-        monto = data.get('monto')
-        metodo_pago = data.get('metodo_pago')
-        referencia_pago = data.get('referencia_pago')
-        datos_adicionales = data.get('datos_adicionales')
-        estado_pago = data.get('estado_pago')
-        fecha_pago = data.get('fecha_pago')
-
-        # Validaciones básicas
-        if monto is None or metodo_pago is None or monto == '':
-            return jsonify({'error': 'Monto y método de pago son obligatorios'}), 400
-
-        campos = ['monto', 'metodo_pago', 'referencia_pago', 'datos_adicionales']
-        valores = [monto, metodo_pago, referencia_pago, datos_adicionales]
-
-        # Solo permitir los valores válidos de la tabla
-        if estado_pago in ['Pendiente', 'Completado', 'Cancelado']:
-            campos.append('estado_pago')
-            valores.append(estado_pago)
-        if fecha_pago:
-            campos.append('fecha_pago')
-            valores.append(fecha_pago)
-
-        set_clause = ', '.join([f"{campo} = %s" for campo in campos])
-
-        conn = create_connection()
-        if not conn:
-            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-        cursor = conn.cursor()
-        cursor.execute(
-            f'UPDATE tbl_pago_asesoria SET {set_clause} WHERE id_pago = %s',
-            tuple(valores + [id])
-        )
-        if cursor.rowcount == 0:
-            return jsonify({'error': 'Pago no encontrado'}), 404
-        conn.commit()
-        conn.close()
-        return jsonify({'success': True, 'mensaje': 'Pago actualizado correctamente'})
-    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @pagos_admin_bp.route('/admin/pagos/<int:id>/detalles')
@@ -318,25 +270,6 @@ def procesar_pagos_masivo():
         conn.commit()
         conn.close()
         return jsonify({'success': True, 'mensaje': f'{cursor.rowcount} pagos actualizados.'})
-    except Error as e:
-        return jsonify({'error': str(e)}), 500
-
-@pagos_admin_bp.route('/admin/pagos/<int:id>/nota', methods=['POST'])
-@admin_required
-def agregar_nota_pago(id):
-    """Agregar o editar nota interna de un pago"""
-    try:
-        nota = request.json.get('nota', '')
-        conn = create_connection()
-        if not conn:
-            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-        cursor = conn.cursor()
-        cursor.execute('UPDATE tbl_pago_asesoria SET datos_adicionales = %s WHERE id_pago = %s', (nota, id))
-        if cursor.rowcount == 0:
-            return jsonify({'error': 'Pago no encontrado'}), 404
-        conn.commit()
-        conn.close()
-        return jsonify({'success': True, 'mensaje': 'Nota guardada'})
     except Error as e:
         return jsonify({'error': str(e)}), 500
 

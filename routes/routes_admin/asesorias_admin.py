@@ -512,3 +512,74 @@ def ver_asesoria(codigo):
     if asesoria.get("fecha_asesoria"):
         asesoria["fecha_asesoria_formatted"] = asesoria["fecha_asesoria"].strftime("%d/%m/%Y %H:%M")
     return jsonify({'success': True, 'asesoria': asesoria, 'pagos': pagos})
+
+@asesorias_admin_bp.route('/admin/asesorias/<int:codigo>/editar', methods=['POST'])
+@admin_required
+def editar_asesoria(codigo):
+    """
+    Actualiza los datos de una asesoría.
+    """
+    try:
+        data = request.get_json()
+        campos = [
+            "tipo_asesoria", "lugar", "estado_proceso", "id_asesor",
+            "especialidad", "tipo_documento", "numero_documento", "descripcion"
+        ]
+        valores = [data.get(c) for c in campos]
+        fecha_asesoria = data.get("fecha_asesoria")
+        # Si hay fecha, agrégala al update
+        set_fields = ", ".join([f"{c}=%s" for c in campos])
+        params = valores
+        if fecha_asesoria:
+            set_fields += ", fecha_asesoria=%s"
+            params.append(fecha_asesoria.replace("T", " "))
+        params.append(codigo)
+
+        conn = create_connection()
+        if not conn:
+            return jsonify({"error": "Error de conexión a la base de datos"}), 500
+        cursor = conn.cursor(dictionary=True)
+
+        # Obtener la fecha/hora anterior, el id_asesor anterior y el id_usuario
+        cursor.execute("""
+            SELECT a.fecha_asesoria, a.id_asesor, s.id_usuario
+            FROM tbl_asesoria a
+            LEFT JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
+            WHERE a.codigo_asesoria=%s
+        """, (codigo,))
+        row = cursor.fetchone()
+        fecha_anterior = row["fecha_asesoria"]
+        id_asesor_anterior = row["id_asesor"]
+        id_usuario = row["id_usuario"]
+
+        # Actualizar la asesoría
+        cursor = conn.cursor()
+        cursor.execute(
+            f"UPDATE tbl_asesoria SET {set_fields} WHERE codigo_asesoria=%s",
+            params
+        )
+        conn.commit()
+
+        # Liberar el horario anterior si cambió la fecha/hora o el asesor
+        if fecha_asesoria:
+            fecha_anterior_str = fecha_anterior.strftime("%Y-%m-%dT%H:%M") if fecha_anterior else None
+            if (fecha_anterior_str and (fecha_anterior_str != fecha_asesoria or str(id_asesor_anterior) != str(data.get("id_asesor")))):
+                # Liberar el horario anterior (eliminar reserva temporal si existe)
+                cursor.execute("""
+                    DELETE FROM tbl_reservas_temporales
+                    WHERE id_asesor=%s AND fecha=%s AND id_usuario=%s
+                """, (id_asesor_anterior, fecha_anterior, id_usuario))
+                conn.commit()
+            # Ocupar el nuevo horario (crear reserva temporal para el nuevo horario)
+            cursor.execute("""
+                INSERT INTO tbl_reservas_temporales (id_asesor, fecha, expiracion, id_usuario)
+                VALUES (%s, %s, DATE_ADD(NOW(), INTERVAL 2 HOUR), %s)
+                ON DUPLICATE KEY UPDATE expiracion = DATE_ADD(NOW(), INTERVAL 2 HOUR)
+            """, (data.get("id_asesor"), fecha_asesoria.replace("T", " "), id_usuario))
+            conn.commit()
+
+        cursor.close()
+        conn.close()
+        return jsonify({"mensaje": "Asesoría actualizada exitosamente"})
+    except Exception as e:
+        return jsonify({"error": f"Error al actualizar la asesoría: {str(e)}"}), 500
