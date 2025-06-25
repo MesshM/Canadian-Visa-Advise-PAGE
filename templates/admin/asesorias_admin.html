@@ -8,12 +8,6 @@
         <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow">
             <h1 class="text-2xl font-bold text-gray-900 font-roboto">Gestión de Asesorías</h1>
             <div class="flex space-x-3">
-                <button id="btnAbrirCrearAsesoria" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-300">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                    Nueva Asesoría
-                </button>
                 <button onclick="exportarTodasAsesoriasPDF()" class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-300 mr-2">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -43,24 +37,17 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Estado</label>
-                    <select id="filterEstado" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
-                        <option value="">Todos los estados</option>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Estado Proceso</label>
+                    <select id="filterEstadoProceso" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        <option value="">Todos los procesos</option>
                         <option value="Pendiente">Pendiente</option>
-                        <option value="Confirmada">Confirmada</option>
-                        <option value="En Proceso">En Proceso</option>
-                        <option value="Completada">Completada</option>
-                        <option value="Cancelada">Cancelada</option>
+                        <option value="Proceso activo">Proceso activo</option>
+                        <option value="Terminado">Terminado</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
                     <input type="date" id="filterFecha" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
-                </div>
-                <div class="flex items-end">
-                    <button type="button" id="btnLimpiarFiltros" class="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors duration-300">
-                        Limpiar Filtros
-                    </button>
                 </div>
             </div>
         </div>
@@ -149,7 +136,7 @@
                                     </button>
                                     <button class="btn-action text-red-600" title="Exportar PDF"
                                         onclick="exportarAsesoriaPDF({{ asesoria.codigo_asesoria }})">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                         </svg>
                                     </button>
@@ -158,7 +145,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">No hay asesorías registradas</td>
+                            <td colspan="6" class="px-6 py-4 text-center text-gray-500">No hay asesorías registradas</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -167,137 +154,12 @@
         </div>
     </div>
 
-    <!-- MODAL CREAR ASESORIA -->
-    <div id="modalCrearAsesoria" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
-        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h2 class="text-xl font-bold text-gray-900">Crear Nueva Asesoría</h2>
-                    <p class="text-sm text-gray-600 mt-1">Complete la información de la nueva asesoría</p>
-                </div>
-                <button type="button" onclick="cerrarModalCrearAsesoria()" class="text-gray-500 hover:text-gray-700 transition-colors duration-300">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            <form id="formCrearAsesoria" class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Correo del Cliente *</label>
-                        <input type="email" name="cliente_correo" required 
-                               class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                               placeholder="cliente@ejemplo.com">
-                        <p class="text-xs text-gray-500 mt-1">Si el cliente no existe, se creará automáticamente</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Nombre del Cliente</label>
-                        <input type="text" name="cliente_nombre" 
-                               class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                               placeholder="Nombre completo del cliente">
-                        <p class="text-xs text-gray-500 mt-1">Requerido solo para clientes nuevos</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Asesoría *</label>
-                        <select name="tipo_asesoria" required class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
-                            <option value="">Seleccione un tipo</option>
-                            <option value="Visa de Trabajo">Visa de Trabajo</option>
-                            <option value="Visa de Turista">Visa de Turista</option>
-                            <option value="Visa de Estudiante">Visa de Estudiante</option>
-                            <option value="Residencia Permanente">Residencia Permanente</option>
-                            <option value="Reunificación Familiar">Reunificación Familiar</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Fecha y Hora</label>
-                        <input type="datetime-local" name="fecha_asesoria" 
-                               class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
-                        <p class="text-xs text-gray-500 mt-1">Opcional - se puede programar después</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Lugar</label>
-                        <select name="lugar" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
-                            <option value="Virtual (Zoom)">Virtual (Zoom)</option>
-                            <option value="Presencial">Presencial</option>
-                            <option value="Telefónica">Telefónica</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Estado Proceso</label>
-                        <select name="estado_proceso" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
-                            <option value="Pendiente" selected>Pendiente</option>
-                            <option value="Proceso activo">Proceso activo</option>
-                            <option value="Terminado">Terminado</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Asesor Asignado</label>
-                        <input type="text" name="asesor_asignado" 
-                               class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                               placeholder="Nombre del asesor">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Especialidad</label>
-                        <input type="text" name="especialidad" 
-                               class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                               placeholder="Inmigración Canadiense" value="Inmigración Canadiense">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Documento</label>
-                        <select name="tipo_documento" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
-                            <option value="C.C">Cédula de Ciudadanía</option>
-                            <option value="C.E">Cédula de Extranjería</option>
-                            <option value="Pasaporte">Pasaporte</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Número de Documento</label>
-                        <input type="text" name="numero_documento" 
-                               class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                               placeholder="Número de documento">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Monto del Pago</label>
-                        <input type="number" name="monto_pago" step="0.01" min="0"
-                               class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                               placeholder="0.00">
-                        <p class="text-xs text-gray-500 mt-1">Opcional - para crear registro de pago</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Método de Pago</label>
-                        <select name="metodo_pago" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
-                            <option value="Pendiente">Pendiente</option>
-                            <option value="Tarjeta de Crédito">Tarjeta de Crédito</option>
-                            <option value="Transferencia Bancaria">Transferencia Bancaria</option>
-                            <option value="PayPal">PayPal</option>
-                            <option value="Efectivo">Efectivo</option>
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
-                    <textarea name="descripcion" rows="3" 
-                              class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                              placeholder="Descripción adicional de la asesoría..."></textarea>
-                </div>
-                <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-                    <button type="button" onclick="cerrarModalCrearAsesoria()" class="px-6 py-3 bg-gray-300 text-gray-700 rounded-xl hover:bg-gray-400 transition-all duration-300 font-medium">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all duration-300 font-medium">
-                        Crear Asesoría
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- MODAL VER ASESORIA -->
     <div id="modalVerAsesoria" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
         <div class="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold">Detalles de Asesoría</h2>
-                <button onclick="cerrarModalVerAsesoria()" class="text-gray-400 hover:text-gray-600">
+                <button onclick="cerrarModalVerAsesoria()" class="text-gray-400 hover:text-gray-600"></button>
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
@@ -334,13 +196,32 @@
             </div>
             <form id="formEditarAsesoria" class="space-y-6">
                 <div id="contenidoEditarAsesoria">
-                    <!-- El contenido se llena dinámicamente por JS -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Lugar</label>
+                        <select id="lugar" name="lugar" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            <option value="Presencial">Presencial</option>
+                            <option value="Virtual (Teams)">Virtual (Teams)</option>
+                            <option value="Virtual (Zoom)">Virtual (Zoom)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Especialidad</label>
+                        <select id="especialidad" name="especialidad" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            <option value="Inmigración Canadiense">Inmigración Canadiense</option>
+                            <option value="Especialista en Visas de Trabajo">Especialista en Visas de Trabajo</option>
+                            <option value="Especialista en Residencia Permanente">Especialista en Residencia Permanente</option>
+                        </select>
+                    </div>
                 </div>
+                <!-- Calendario compacto y horarios disponibles para editar -->
+                <div id="calendar-container-admin-edit" class="mt-2"></div>
+                <div id="time-container-admin-edit" class="mt-1"></div>
+                <input type="hidden" name="fecha_asesoria" id="fecha_asesoria_admin_edit">
                 <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
                     <button type="button" onclick="cerrarModalEditarAsesoria()" class="px-6 py-3 bg-gray-300 text-gray-700 rounded-xl hover:bg-gray-400 transition-all duration-300 font-medium">
                         Cancelar
                     </button>
-                    <button type="submit" class="px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all duration-300 font-medium">
+                    <button type="submit" class="px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all duration-300 font-medium opacity-50 cursor-not-allowed" disabled>
                         Guardar Cambios
                     </button>
                 </div>
@@ -361,7 +242,7 @@
             </div>
             <div class="mb-4">
                 <div class="flex items-center mb-4">
-                    <svg class="w-12 h-12 text-red-500 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-12 h-12 text-red-500 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"></svg>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
                     </svg>
                     <div>
@@ -397,7 +278,27 @@
             justify-content: center;
             font-size: 1rem;
         }
+        /* Calendario compacto */
+        #calendar-container-admin-edit .grid {
+            gap: 0.25rem !important;
+        }
+        #calendar-container-admin-edit .calendar-day {
+            padding: 0.25rem 0 !important;
+            min-width: 1.8rem;
+            min-height: 1.8rem;
+            font-size: 0.95rem;
+        }
+        #calendar-container-admin-edit .text-center {
+            font-size: 0.92rem;
+        }
+        #calendar-container-admin-edit .flex {
+            padding: 0.5rem 0.5rem !important;
+        }
     </style>
 
+    <script>
+      window.LISTA_ASESORES = {{ asesores|tojson }};
+    </script>
     <script src="/static/js/administrador/asesorias_admin.js"></script>
+    <script src="/static/js/administrador/asesorias_admin_calendar_admin.js"></script>
 {% endblock %}

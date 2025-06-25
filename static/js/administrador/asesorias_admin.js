@@ -2,6 +2,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // ===== VARIABLES GLOBALES =====
   let codigoAsesoriaACancelar = null
 
+  // Guardar los valores originales para detectar cambios
+  let originalEditarAsesoria = {};
+
   // ===== ELEMENTOS DEL DOM =====
   const btnAbrirCrear = document.getElementById("btnAbrirCrearAsesoria")
   const modalCrear = document.getElementById("modalCrearAsesoria")
@@ -314,44 +317,60 @@ document.addEventListener("DOMContentLoaded", () => {
   window.abrirModalEditarAsesoria = async (codigo) => {
     try {
       showToast("Cargando datos para editar...", "info")
-
       const response = await fetch(`/admin/asesorias/${codigo}/ver`)
-
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`)
-      }
-
+      if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`)
       const data = await response.json()
-
       if (data.success) {
         const asesoria = data.asesoria
-
-        // Llenar el formulario de edición
         const contenido = document.getElementById("contenidoEditarAsesoria")
+        // Guardar valores originales para comparación
+        originalEditarAsesoria = {
+          tipo_asesoria: asesoria.tipo_asesoria || "",
+          lugar: asesoria.lugar || "",
+          estado_proceso: asesoria.estado_proceso || "",
+          id_asesor: asesoria.id_asesor || "",
+          especialidad: asesoria.especialidad || "",
+          tipo_documento: asesoria.tipo_documento || "",
+          numero_documento: asesoria.numero_documento || "",
+          descripcion: asesoria.descripcion || "",
+          fecha_asesoria: asesoria.fecha_asesoria
+            ? new Date(asesoria.fecha_asesoria).toISOString().slice(0, 16)
+            : "",
+        };
+
+        // Renderizar select de asesores
+        let asesores = window.LISTA_ASESORES || [];
+        let selectAsesorHtml = `<select name="id_asesor" id="id_asesor_admin_edit" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">`;
+        selectAsesorHtml += `<option value="">Seleccione un asesor</option>`;
+        asesores.forEach(asesor => {
+          const selected = String(asesor.id_asesor) === String(asesoria.id_asesor) ? "selected" : "";
+          selectAsesorHtml += `<option value="${asesor.id_asesor}" ${selected}>${asesor.nombre} ${asesor.apellidos}</option>`;
+        });
+        selectAsesorHtml += `</select>`;
+
         contenido.innerHTML = `
           <input type="hidden" name="codigo_asesoria" value="${asesoria.codigo_asesoria}">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Asesoría *</label>
               <select name="tipo_asesoria" required class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
-                <option value="Visa de Trabajo" ${asesoria.tipo_asesoria === "Visa de Trabajo" ? "selected" : ""}>Visa de Trabajo</option>
-                <option value="Visa de Turista" ${asesoria.tipo_asesoria === "Visa de Turista" ? "selected" : ""}>Visa de Turista</option>
-                <option value="Visa de Estudiante" ${asesoria.tipo_asesoria === "Visa de Estudiante" ? "selected" : ""}>Visa de Estudiante</option>
+                <option value="Turismo" ${asesoria.tipo_asesoria === "Turismo" ? "selected" : ""}>Turismo</option>
+                <option value="Estudios" ${asesoria.tipo_asesoria === "Estudios" ? "selected" : ""}>Estudios</option>
+                <option value="Trabajo Temporal" ${asesoria.tipo_asesoria === "Trabajo Temporal" ? "selected" : ""}>Trabajo Temporal</option>
+                <option value="Negocios" ${asesoria.tipo_asesoria === "Negocios" ? "selected" : ""}>Negocios</option>
                 <option value="Residencia Permanente" ${asesoria.tipo_asesoria === "Residencia Permanente" ? "selected" : ""}>Residencia Permanente</option>
-                <option value="Reunificación Familiar" ${asesoria.tipo_asesoria === "Reunificación Familiar" ? "selected" : ""}>Reunificación Familiar</option>
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Fecha y Hora</label>
-              <input type="datetime-local" name="fecha_asesoria" value="${asesoria.fecha_asesoria ? new Date(asesoria.fecha_asesoria).toISOString().slice(0, 16) : ""}"
-                     class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Asesor</label>
+              ${selectAsesorHtml}
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Lugar</label>
               <select name="lugar" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
-                <option value="Virtual (Zoom)" ${asesoria.lugar === "Virtual (Zoom)" ? "selected" : ""}>Virtual (Zoom)</option>
                 <option value="Presencial" ${asesoria.lugar === "Presencial" ? "selected" : ""}>Presencial</option>
-                <option value="Telefónica" ${asesoria.lugar === "Telefónica" ? "selected" : ""}>Telefónica</option>
+                <option value="Virtual (Teams)" ${asesoria.lugar === "Virtual (Teams)" ? "selected" : ""}>Virtual (Teams)</option>
+                <option value="Virtual (Zoom)" ${asesoria.lugar === "Virtual (Zoom)" ? "selected" : ""}>Virtual (Zoom)</option>
               </select>
             </div>
             <div>
@@ -364,16 +383,12 @@ document.addEventListener("DOMContentLoaded", () => {
               </select>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Asesor Asignado</label>
-              <input type="text" name="asesor_asignado" value="${asesoria.asesor_asignado || ""}"
-                     class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                     placeholder="Nombre del asesor">
-            </div>
-            <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Especialidad</label>
-              <input type="text" name="especialidad" value="${asesoria.especialidad || ""}"
-                     class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                     placeholder="Inmigración Canadiense">
+              <select name="especialidad" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <option value="Inmigración Canadiense" ${asesoria.especialidad === "Inmigración Canadiense" ? "selected" : ""}>Inmigración Canadiense</option>
+                <option value="Especialista en Visas de Trabajo" ${asesoria.especialidad === "Especialista en Visas de Trabajo" ? "selected" : ""}>Especialista en Visas de Trabajo</option>
+                <option value="Especialista en Residencia Permanente" ${asesoria.especialidad === "Especialista en Residencia Permanente" ? "selected" : ""}>Especialista en Residencia Permanente</option>
+              </select>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Documento</label>
@@ -398,7 +413,49 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `
 
-        // Mostrar modal
+        // Inicializar calendario con el asesor y fecha actuales
+        setTimeout(() => {
+          let asesorNombre = "";
+          if (asesoria.id_asesor) {
+            const found = asesores.find(a => String(a.id_asesor) === String(asesoria.id_asesor));
+            if (found) asesorNombre = `${found.nombre} ${found.apellidos}`;
+          } else {
+            asesorNombre = asesoria.asesor_asignado || asesoria.asesor_nombre || "";
+          }
+          window.initEditarAsesoriaCalendar(
+            asesorNombre,
+            asesoria.fecha_asesoria
+          );
+          const fechaInput = document.getElementById("fecha_asesoria_admin_edit");
+          if (fechaInput && originalEditarAsesoria.fecha_asesoria) {
+            fechaInput.value = originalEditarAsesoria.fecha_asesoria;
+          }
+        }, 100);
+
+        setTimeout(() => {
+          const selectAsesor = document.getElementById("id_asesor_admin_edit");
+          if (selectAsesor) {
+            selectAsesor.addEventListener("change", function () {
+              const selectedId = this.value;
+              let asesorNombre = "";
+              if (selectedId) {
+                const found = asesores.find(a => String(a.id_asesor) === String(selectedId));
+                if (found) asesorNombre = `${found.nombre} ${found.apellidos}`;
+              }
+              window.initEditarAsesoriaCalendar(
+                asesorNombre,
+                null
+              );
+              const fechaInput = document.getElementById("fecha_asesoria_admin_edit");
+              if (fechaInput) fechaInput.value = "";
+            });
+          }
+        }, 200);
+
+        setTimeout(() => {
+          setupDetectarCambiosEditarAsesoria();
+        }, 200);
+
         if (modalEditar) {
           modalEditar.classList.remove("hidden")
           modalEditar.classList.add("flex")
@@ -411,6 +468,63 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error:", error)
       showToast("Error al cargar los datos de la asesoría", "error")
     }
+  }
+
+  // Detectar cambios en el formulario de edición y habilitar el botón solo si hay cambios
+  function setupDetectarCambiosEditarAsesoria() {
+    const formEditar = document.getElementById("formEditarAsesoria");
+    if (!formEditar) return;
+    const btnSubmit = formEditar.querySelector('button[type="submit"]');
+    if (!btnSubmit) return;
+
+    function getCurrentValues() {
+      const fd = new FormData(formEditar);
+      const obj = {};
+      fd.forEach((v, k) => (obj[k] = v));
+      const fechaInput = document.getElementById("fecha_asesoria_admin_edit");
+      // Usar la variable temporal si existe
+      obj.fecha_asesoria = window.fechaHoraSeleccionadaTemporal || (fechaInput ? fechaInput.value : "");
+      return obj;
+    }
+
+    function hayCambios() {
+      const current = getCurrentValues();
+      for (const key in originalEditarAsesoria) {
+        if ((originalEditarAsesoria[key] || "") !== (current[key] || "")) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function handleChange(e) {
+      if (hayCambios()) {
+        btnSubmit.disabled = false;
+        btnSubmit.classList.remove("opacity-50", "cursor-not-allowed");
+      } else {
+        btnSubmit.disabled = true;
+        btnSubmit.classList.add("opacity-50", "cursor-not-allowed");
+      }
+    }
+
+    btnSubmit.disabled = true;
+    btnSubmit.classList.add("opacity-50", "cursor-not-allowed");
+
+    formEditar.querySelectorAll("input, select, textarea").forEach((el) => {
+      el.removeEventListener("input", handleChange);
+      el.removeEventListener("change", handleChange);
+      el.addEventListener("input", handleChange);
+      el.addEventListener("change", handleChange);
+    });
+
+    // Detectar cambios en la selección de fecha/hora del calendario
+    window._fechaHoraSeleccionadaTemporal = window.fechaHoraSeleccionadaTemporal;
+    setInterval(() => {
+      if (window._fechaHoraSeleccionadaTemporal !== window.fechaHoraSeleccionadaTemporal) {
+        window._fechaHoraSeleccionadaTemporal = window.fechaHoraSeleccionadaTemporal;
+        handleChange();
+      }
+    }, 200);
   }
 
   window.cerrarModalEditarAsesoria = () => {
@@ -526,6 +640,131 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // ===== BUSCAR ASESORÍA POR CLIENTE =====
+  const searchClienteInput = document.getElementById("searchCliente");
+  const filterAsesor = document.getElementById("filterAsesor");
+  const filterEstadoProceso = document.getElementById("filterEstadoProceso");
+  const filterFecha = document.getElementById("filterFecha");
+  const tablaBody = document.querySelector("#tablaAsesorias tbody");
+  const loadingIndicator = document.getElementById("loading-indicator");
+
+  function renderAsesoriasTable(asesorias) {
+    if (!tablaBody) return;
+    if (!asesorias.length) {
+      tablaBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No hay asesorías registradas</td></tr>`;
+      return;
+    }
+    // Ordenar por codigo_asesoria descendente (más reciente primero)
+    asesorias.sort((a, b) => b.codigo_asesoria - a.codigo_asesoria);
+    tablaBody.innerHTML = asesorias.map(asesoria => `
+      <tr class="hover:bg-gray-50">
+        <td class="px-6 py-4 whitespace-nowrap">
+          <div class="flex items-center">
+            <div class="h-10 w-10 flex-shrink-0 bg-gray-200 rounded-full text-gray-500 flex items-center justify-center">
+              ${asesoria.cliente_nombre ? asesoria.cliente_nombre[0] : 'C'}
+            </div>
+            <div class="ml-4">
+              <div class="text-sm font-medium text-gray-900">${asesoria.cliente_nombre || 'N/A'}</div>
+              <div class="text-sm text-gray-500">${asesoria.cliente_correo || 'N/A'}</div>
+            </div>
+          </div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap">
+          <div class="text-sm text-gray-900">${asesoria.asesor_asignado || 'Sin asignar'}</div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+          ${asesoria.tipo_asesoria || 'Visa de Trabajo'}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+          ${asesoria.fecha_asesoria ? new Date(asesoria.fecha_asesoria).toLocaleString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : 'Por programar'}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap">
+          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+            ${asesoria.estado_pago === 'Completado' ? 'bg-green-100 text-green-800'
+              : asesoria.estado_pago === 'Pendiente' ? 'bg-yellow-100 text-yellow-800'
+              : 'bg-red-100 text-red-800'}">
+            ${asesoria.estado_pago || 'Pendiente'}
+          </span>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-center">
+          <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-semibold
+            ${asesoria.estado_proceso === 'Terminado' ? 'bg-green-100 text-green-800'
+              : asesoria.estado_proceso === 'Proceso activo' ? 'bg-blue-100 text-blue-800'
+              : asesoria.estado_proceso === 'Cancelado' ? 'bg-red-100 text-red-800'
+              : 'bg-yellow-100 text-yellow-800'}">
+            ${asesoria.estado_proceso || 'Pendiente'}
+          </span>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+          <div class="flex justify-end space-x-2">
+            <button class="btn-action text-blue-600" title="Ver detalles"
+              onclick="abrirModalVerAsesoria(${asesoria.codigo_asesoria})">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              </svg>
+            </button>
+            <button class="btn-action text-primary-600" title="Editar"
+              onclick="abrirModalEditarAsesoria(${asesoria.codigo_asesoria})">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+              </svg>
+            </button>
+            <button class="btn-action text-red-600" title="Cancelar"
+              onclick="abrirModalCancelarAsesoria(${asesoria.codigo_asesoria})">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+            <button class="btn-action text-red-600" title="Exportar PDF"
+              onclick="exportarAsesoriaPDF(${asesoria.codigo_asesoria})">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  async function filtrarAsesoriasAdmin() {
+    if (loadingIndicator) loadingIndicator.classList.remove("hidden");
+    const buscar = searchClienteInput ? searchClienteInput.value.trim() : "";
+    const asesor = filterAsesor ? filterAsesor.value : "";
+    const estado_proceso = filterEstadoProceso ? filterEstadoProceso.value : "";
+    const fecha = filterFecha ? filterFecha.value : "";
+
+    try {
+      const params = new URLSearchParams();
+      if (buscar) params.append("buscar", buscar);
+      if (asesor) params.append("asesor", asesor);
+      if (estado_proceso) params.append("estado_proceso", estado_proceso);
+      if (fecha) params.append("fecha", fecha);
+
+      const response = await fetch(`/admin/asesorias/filtrar?${params.toString()}`);
+      const data = await response.json();
+      if (data.success) {
+        renderAsesoriasTable(data.asesorias);
+      } else {
+        renderAsesoriasTable([]);
+      }
+    } catch (e) {
+      renderAsesoriasTable([]);
+    } finally {
+      if (loadingIndicator) loadingIndicator.classList.add("hidden");
+    }
+  }
+
+  if (searchClienteInput) {
+    searchClienteInput.addEventListener("input", () => {
+      filtrarAsesoriasAdmin();
+    });
+  }
+  if (filterAsesor) filterAsesor.addEventListener("change", filtrarAsesoriasAdmin);
+  if (filterEstadoProceso) filterEstadoProceso.addEventListener("change", filtrarAsesoriasAdmin);
+  if (filterFecha) filterFecha.addEventListener("change", filtrarAsesoriasAdmin);
+
   // ===== EVENT LISTENERS PARA FORMULARIOS =====
 
   // Formulario crear asesoría
@@ -625,19 +864,27 @@ document.addEventListener("DOMContentLoaded", () => {
   // Formulario editar asesoría
   if (formEditar) {
     formEditar.onsubmit = async (e) => {
-      e.preventDefault()
+      e.preventDefault();
 
-      const formData = new FormData(formEditar)
-      const data = {}
-      formData.forEach((v, k) => (data[k] = v))
+      // Copia la selección temporal al input oculto antes de enviar
+      if (window.fechaHoraSeleccionadaTemporal) {
+        const fechaInput = document.getElementById("fecha_asesoria_admin_edit");
+        if (fechaInput) {
+          fechaInput.value = window.fechaHoraSeleccionadaTemporal;
+        }
+      }
 
-      const codigo = data.codigo_asesoria
-      delete data.codigo_asesoria
+      const formData = new FormData(formEditar);
+      const data = {};
+      formData.forEach((v, k) => (data[k] = v));
 
-      const btnSubmit = formEditar.querySelector('button[type="submit"]')
+      const codigo = data.codigo_asesoria;
+      delete data.codigo_asesoria;
+
+      const btnSubmit = formEditar.querySelector('button[type="submit"]');
 
       try {
-        setButtonLoading(btnSubmit, true, "Guardando cambios...")
+        setButtonLoading(btnSubmit, true, "Guardando cambios...");
 
         const response = await fetch(`/admin/asesorias/${codigo}/editar`, {
           method: "POST",
@@ -645,24 +892,24 @@ document.addEventListener("DOMContentLoaded", () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(data),
-        })
+        });
 
         if (response.ok) {
-          const result = await response.json()
-          showToast(result.mensaje || "Asesoría actualizada exitosamente", "success")
-          window.cerrarModalEditarAsesoria()
+          const result = await response.json();
+          showToast(result.mensaje || "Asesoría actualizada exitosamente", "success");
+          window.cerrarModalEditarAsesoria();
           setTimeout(() => {
-            window.location.reload()
-          }, 1000)
+            window.location.reload();
+          }, 1000);
         } else {
-          const error = await response.json()
-          showToast(error.error || "Error al actualizar la asesoría", "error")
+          const error = await response.json();
+          showToast(error.error || "Error al actualizar la asesoría", "error");
         }
       } catch (error) {
-        console.error("Error al actualizar la asesoría:", error)
-        showToast("Error al actualizar la asesoría", "error")
+        console.error("Error al actualizar la asesoría:", error);
+        showToast("Error al actualizar la asesoría", "error");
       } finally {
-        setButtonLoading(btnSubmit, false)
+        setButtonLoading(btnSubmit, false);
       }
     }
   }
@@ -715,6 +962,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ===== HACER FUNCIONES GLOBALES =====
   window.showToast = showToast
-  window.codigoAsesoriaACancelar = codigoAsesoriaACancelar
   window.refreshCaptcha = refreshCaptcha
+  window.codigoAsesoriaACancelar = codigoAsesoriaACancelar
 })
