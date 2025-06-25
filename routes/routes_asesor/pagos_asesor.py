@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, jsonify, session, request, redirect, url_for
+from flask import Blueprint, render_template, jsonify, session, request, redirect, url_for, flash
 from config.database import create_connection
 from config.stripe_config import PRECIOS_VISA
 import matplotlib
@@ -238,6 +238,7 @@ def generar_grafico_tendencia_semanal(datos_pagos):
 def pagos():
     """Página principal de métricas de pagos"""
     if 'user_role' not in session or session.get('user_role') != 'Asesor':
+        flash('Debe iniciar sesión como asesor para acceder a esta página', 'error')
         return redirect(url_for('auth.login'))
     
     return render_template('asesor/pagos_asesor.html')
@@ -245,7 +246,7 @@ def pagos():
 @pagos_asesor_bp.route('/api/metricas-pagos')
 def obtener_metricas_pagos():
     """API para obtener métricas de pagos del asesor"""
-    if 'user_role' not in session or session.get('user_role') != 'Asesor':
+    if 'user_id' not in session or session.get('user_role') != 'Asesor':
         return jsonify({'error': 'No autorizado'}), 401
 
     id_asesor = session.get('id_asesor')  # <--- CORREGIDO
@@ -303,7 +304,7 @@ def obtener_metricas_pagos():
 @pagos_asesor_bp.route('/api/exportar-reporte')
 def exportar_reporte_pagos():
     """Exporta reporte de pagos en formato CSV"""
-    if 'user_role' not in session or session.get('user_role') != 'Asesor':
+    if 'user_id' not in session or session.get('user_role') != 'Asesor':
         return jsonify({'error': 'No autorizado'}), 401
 
     id_asesor = session.get('id_asesor')  # <--- CORREGIDO
