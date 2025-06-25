@@ -181,39 +181,28 @@
     </div>
 
     <!-- MODAL EDITAR ASESORIA -->
-    <div id="modalEditarAsesoria" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
-        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
+    <div id="modalEditarAsesoria" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl p-4 md:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
                 <div>
                     <h2 class="text-xl font-bold text-gray-900">Editar Asesoría</h2>
                     <p class="text-sm text-gray-600 mt-1">Modifique la información de la asesoría</p>
                 </div>
-                <button type="button" onclick="cerrarModalEditarAsesoria()" class="text-gray-500 hover:text-gray-700 transition-colors duration-300"></button>
+                <button type="button" onclick="cerrarModalEditarAsesoria()" class="text-gray-500 hover:text-gray-700 transition-colors duration-300">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
-            <form id="formEditarAsesoria" class="space-y-6">
+            <form id="formEditarAsesoria" class="space-y-4">
                 <div id="contenidoEditarAsesoria">
-                    <label for="tipoAsesoria" class="block text-sm font-medium text-gray-700">Tipo de Asesoría</label>
-                    <select id="tipoAsesoria" name="tipoAsesoria" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
-                        <option value="Turismo">Turismo</option>
-                        <option value="Estudios">Estudios</option>
-                        <option value="Trabajo Temporal">Trabajo Temporal</option>
-                        <option value="Negocios">Negocios</option>
-                        <option value="Residencia Permanente">Residencia Permanente</option>
-                    </select>
+                    <!-- El JS rellena aquí el contenido del formulario -->
                 </div>
-                <!-- Calendario compacto y horarios disponibles para editar -->
-                <div id="calendar-container-admin-edit" class="mt-2"></div>
-                <div id="time-container-admin-edit" class="mt-1"></div>
-                <input type="hidden" name="fecha_asesoria" id="fecha_asesoria_admin_edit">
-                <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-                    <button type="button" onclick="cerrarModalEditarAsesoria()" class="px-6 py-3 bg-gray-300 text-gray-700 rounded-xl hover:bg-gray-400 transition-all duration-300 font-medium">
+                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 mt-2">
+                    <button type="button" onclick="cerrarModalEditarAsesoria()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-xl hover:bg-gray-400 transition-all duration-300 font-medium">
                         Cancelar
                     </button>
-                    <button type="submit" class="px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all duration-300 font-medium opacity-50 cursor-not-allowed" disabled>
+                    <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all duration-300 font-medium opacity-50 cursor-not-allowed" disabled>
                         Guardar Cambios
                     </button>
                 </div>
@@ -285,6 +274,34 @@
         }
         #calendar-container-admin-edit .flex {
             padding: 0.5rem 0.5rem !important;
+        }
+        /* Fondo más borroso y oscuro para todos los modales */
+        .fixed.inset-0.bg-black\/30,
+        .fixed.inset-0.bg-black\/50,
+        .fixed.inset-0.backdrop-blur-sm {
+            background: rgba(0,0,0,0.45) !important;
+            backdrop-filter: blur(6px) !important;
+        }
+        /* Modal editar asesoría compacto */
+        #modalEditarAsesoria .grid {
+            gap: 0.75rem !important;
+        }
+        #modalEditarAsesoria .block {
+            margin-bottom: 0.25rem !important;
+        }
+        #modalEditarAsesoria input,
+        #modalEditarAsesoria select,
+        #modalEditarAsesoria textarea {
+            font-size: 0.97rem;
+            padding: 0.5rem 0.75rem;
+        }
+        #modalEditarAsesoria .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+            margin-top: 0.75rem !important;
+        }
+        @media (min-width: 768px) {
+            #modalEditarAsesoria .grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
     </style>
 
