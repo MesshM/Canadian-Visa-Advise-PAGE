@@ -12,6 +12,19 @@ let selectedDate = null
 let selectedTime = null
 let reservationId = null
 
+// Variables para el chat
+let currentChatAsesoriaId = null
+let currentChatAsesorId = null
+let currentChatAsesorName = null
+let chatPollingInterval = null
+
+// Configuración de CometChat
+const COMETCHAT_CONSTANTS = {
+  APP_ID: "277868b6eeea1f3d", // Reemplazar con tu App ID de CometChat
+  REGION: "us", // Reemplazar con tu región
+  AUTH_KEY: "837dde62048e90ace0791e4fc895365c118cfffa", // Reemplazar con tu Auth Key
+}
+
 // Definir precios por tipo de visa (para usar en el frontend)
 const PRECIOS_VISA = {
   Turismo: 100,
@@ -24,12 +37,12 @@ const PRECIOS_VISA = {
 // Función para formatear fechas en un formato legible
 function formatDate(dateString) {
   const options = {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-}
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }
   return new Date(dateString).toLocaleDateString("es-ES", options)
 }
 
@@ -259,13 +272,308 @@ function formatTimeRemaining(milliseconds) {
   return `${formattedMinutes}:${formattedSeconds}`
 }
 
+// Funciones para el Chat con CometChat
+function initializeCometChat() {
+  const appID = COMETCHAT_CONSTANTS.APP_ID
+  const region = COMETCHAT_CONSTANTS.REGION
+
+  const appSetting = new CometChat.AppSettingsBuilder().subscribePresenceForAllUsers().setRegion(region).build()
+
+  CometChat.init(appID, appSetting).then(
+    () => {
+      console.log("CometChat inicializado correctamente")
+      // Intentar login automático si hay usuario en sesión
+      loginCometChatUser()
+    },
+    (error) => {
+      console.log("Error al inicializar CometChat:", error)
+    },
+  )
+}
+
+function loginCometChatUser() {
+  // Obtener el ID del usuario actual de la sesión
+  const userId = document.querySelector("[data-solicitante-id]")?.getAttribute("data-solicitante-id")
+
+  if (!userId) {
+    console.log("No se encontró ID de usuario para CometChat")
+    return
+  }
+
+  const authKey = COMETCHAT_CONSTANTS.AUTH_KEY
+
+  CometChat.login(userId, authKey).then(
+    (user) => {
+      console.log("Login exitoso en CometChat:", user)
+    },
+    (error) => {
+      console.log("Error en login de CometChat:", error)
+      // Si el usuario no existe, crearlo
+      createCometChatUser(userId)
+    },
+  )
+}
+
+function createCometChatUser(userId) {
+  const authKey = COMETCHAT_CONSTANTS.AUTH_KEY
+
+  // Obtener información del usuario actual
+  fetch("/user/obtener_info_usuario")
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        const user = new CometChat.User(userId)
+        user.setName(data.usuario.nombres + " " + data.usuario.apellidos)
+
+        CometChat.createUser(user, authKey).then(
+          (user) => {
+            console.log("Usuario creado en CometChat:", user)
+            // Intentar login después de crear el usuario
+            CometChat.login(userId, authKey)
+          },
+          (error) => {
+            console.log("Error al crear usuario en CometChat:", error)
+          },
+        )
+      }
+    })
+    .catch((error) => {
+      console.log("Error al obtener información del usuario:", error)
+    })
+}
+
+function openChatModal(asesoriaId, asesorName, asesorId) {
+  currentChatAsesoriaId = asesoriaId
+  currentChatAsesorId = asesorId
+  currentChatAsesorName = asesorName
+
+  const modal = document.getElementById("chatModal")
+  const asesorNameElement = document.getElementById("chat-asesor-name")
+  const asesoriaIdElement = document.getElementById("chat-asesoria-id")
+
+  if (asesorNameElement) asesorNameElement.textContent = `Chat con ${asesorName}`
+  if (asesoriaIdElement) asesoriaIdElement.textContent = asesoriaId
+
+  // Mostrar el modal
+  modal.classList.remove("hidden")
+  modal.classList.add("flex")
+
+  // Cargar mensajes existentes
+  loadChatMessages(asesoriaId)
+
+  // Iniciar polling para nuevos mensajes
+  startChatPolling()
+}
+
+function closeChatModal() {
+  const modal = document.getElementById("chatModal")
+
+  // Detener polling
+  if (chatPollingInterval) {
+    clearInterval(chatPollingInterval)
+    chatPollingInterval = null
+  }
+
+  // Limpiar variables
+  currentChatAsesoriaId = null
+  currentChatAsesorId = null
+  currentChatAsesorName = null
+
+  // Cerrar modal con animación
+  const modalContent = modal.querySelector(".bg-white")
+  modalContent.classList.add("opacity-0", "scale-95", "transition-all", "duration-300")
+  setTimeout(() => {
+    modal.classList.remove("flex")
+    modal.classList.add("hidden")
+    modalContent.classList.remove("opacity-0", "scale-95")
+  }, 300)
+}
+
+function loadChatMessages(asesoriaId) {
+  const messagesContainer = document.getElementById("chat-messages")
+
+  // Mostrar indicador de carga
+  messagesContainer.innerHTML = `
+        <div class="flex justify-center items-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-t-2 border-primary-600"></div>
+            <p class="ml-3 text-primary-600 text-sm">Cargando mensajes...</p>
+        </div>
+    `
+
+  fetch(`/asesorias/chat/obtener_mensajes/${asesoriaId}`)
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        displayChatMessages(data.mensajes)
+      } else {
+        messagesContainer.innerHTML = `
+                    <div class="text-center py-8">
+                        <p class="text-gray-500">Error al cargar mensajes</p>
+                    </div>
+                `
+      }
+    })
+    .catch((error) => {
+      console.error("Error al cargar mensajes:", error)
+      messagesContainer.innerHTML = `
+                <div class="text-center py-8">
+                    <p class="text-red-500">Error al cargar mensajes</p>
+                </div>
+            `
+    })
+}
+
+function displayChatMessages(mensajes) {
+  const messagesContainer = document.getElementById("chat-messages")
+
+  if (mensajes.length === 0) {
+    messagesContainer.innerHTML = `
+            <div class="text-center py-8">
+                <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
+                </div>
+                <p class="text-gray-500">No hay mensajes aún</p>
+                <p class="text-sm text-gray-400 mt-1">Inicia la conversación con tu asesor</p>
+            </div>
+        `
+    return
+  }
+
+  messagesContainer.innerHTML = ""
+
+  mensajes.forEach((mensaje) => {
+    const messageElement = createMessageElement(mensaje)
+    messagesContainer.appendChild(messageElement)
+  })
+
+  // Scroll al último mensaje
+  messagesContainer.scrollTop = messagesContainer.scrollHeight
+}
+
+function createMessageElement(mensaje) {
+  const messageDiv = document.createElement("div")
+  const isFromUser = mensaje.tipo_emisor === "solicitante"
+
+  messageDiv.className = `flex ${isFromUser ? "justify-end" : "justify-start"} mb-4`
+
+  const messageTime = new Date(mensaje.fecha_envio).toLocaleTimeString("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+
+  messageDiv.innerHTML = `
+        <div class="max-w-xs lg:max-w-md ${isFromUser ? "order-1" : "order-2"}">
+            <div class="${
+              isFromUser ? "bg-primary-600 text-white" : "bg-gray-100 text-gray-900"
+            } rounded-2xl px-4 py-2 shadow-sm">
+                <p class="text-sm">${mensaje.mensaje}</p>
+            </div>
+            <div class="flex ${isFromUser ? "justify-end" : "justify-start"} mt-1">
+                <span class="text-xs text-gray-500">${messageTime}</span>
+            </div>
+        </div>
+        ${
+          !isFromUser
+            ? `
+            <div class="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center mr-2 order-1 flex-shrink-0">
+                <span class="text-xs font-medium">${generateAvatar(mensaje.nombre_emisor)}</span>
+            </div>
+        `
+            : ""
+        }
+    `
+
+  return messageDiv
+}
+
+function sendMessage() {
+  const messageInput = document.getElementById("chat-message-input")
+  const sendButton = document.getElementById("send-message-btn")
+  const mensaje = messageInput.value.trim()
+
+  if (!mensaje || !currentChatAsesoriaId) {
+    return
+  }
+
+  // Deshabilitar input y botón
+  messageInput.disabled = true
+  sendButton.disabled = true
+  sendButton.innerHTML = `
+        <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+        <div class="relative flex items-center justify-center">
+            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+        </div>
+    `
+
+  fetch("/asesorias/chat/enviar_mensaje", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      codigo_asesoria: currentChatAsesoriaId,
+      mensaje: mensaje,
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        // Limpiar input
+        messageInput.value = ""
+
+        // Agregar mensaje a la interfaz
+        const messagesContainer = document.getElementById("chat-messages")
+        const messageElement = createMessageElement(data.mensaje)
+        messagesContainer.appendChild(messageElement)
+
+        // Scroll al último mensaje
+        messagesContainer.scrollTop = messagesContainer.scrollHeight
+      } else {
+        showNotification("Error al enviar mensaje: " + data.error, "error")
+      }
+    })
+    .catch((error) => {
+      console.error("Error al enviar mensaje:", error)
+      showNotification("Error al enviar mensaje", "error")
+    })
+    .finally(() => {
+      // Rehabilitar input y botón
+      messageInput.disabled = false
+      sendButton.disabled = false
+      sendButton.innerHTML = `
+            <span class="absolute right-0 -mt-12 h-32 w-8 opacity-20 transform rotate-12 transition-all duration-1000 translate-x-12 bg-white group-hover:-translate-x-40"></span>
+            <div class="relative flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                </svg>
+            </div>
+        `
+      messageInput.focus()
+    })
+}
+
+function startChatPolling() {
+  // Polling cada 3 segundos para nuevos mensajes
+  chatPollingInterval = setInterval(() => {
+    if (currentChatAsesoriaId) {
+      loadChatMessages(currentChatAsesoriaId)
+    }
+  }, 3000)
+}
+
 // Inicializar los botones de consejos útiles cuando se carga la página
 document.addEventListener("DOMContentLoaded", () => {
+  // Inicializar CometChat
+  initializeCometChat()
+
   // Añadir eventos para cerrar modales al hacer clic fuera del contenido
   const modals = [
     { id: "pagoModal", closeFunction: closePagoModal },
     { id: "cancelarAsesoriaModal", closeFunction: closeCancelarAsesoriaModal },
     { id: "newAdvisoryModal", closeFunction: closeNewAdvisoryModal },
+    { id: "chatModal", closeFunction: closeChatModal },
   ]
 
   modals.forEach((modal) => {
@@ -278,6 +586,18 @@ document.addEventListener("DOMContentLoaded", () => {
       })
     }
   })
+
+  // Event listener para enviar mensaje con Enter
+  const messageInput = document.getElementById("chat-message-input")
+  if (messageInput) {
+    messageInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault()
+        sendMessage()
+      }
+    })
+  }
+
   // Inicializar el resto de funcionalidades
   ordenarYNumerarAsesorias()
 
@@ -1422,10 +1742,10 @@ function resetStepper() {
   reservationId = null
 
   // Actualizar indicador móvil
-  const mobileStepNumber = document.getElementById('current-step-number');
-  const mobileStepText = document.getElementById('current-step-text');
-  if (mobileStepNumber) mobileStepNumber.textContent = '1';
-  if (mobileStepText) mobileStepText.textContent = 'Paso 1 de 3';
+  const mobileStepNumber = document.getElementById("current-step-number")
+  const mobileStepText = document.getElementById("current-step-text")
+  if (mobileStepNumber) mobileStepNumber.textContent = "1"
+  if (mobileStepText) mobileStepText.textContent = "Paso 1 de 3"
 }
 
 // Modificar la función prevStep para mostrar números en lugar de checks en los pasos activos
@@ -1477,70 +1797,63 @@ function prevStep() {
       "opacity-0",
     )
 
-    // Forzar un reflow para que la animación funcione
-    contents[activeIndex - 1].offsetHeight
-
     // Animar la entrada del contenido anterior
-    contents[activeIndex - 1].classList.remove("translate-x-full", "opacity-0")
-    contents[activeIndex - 1].classList.add("translate-x-0", "opacity-100")
-  }, 300)
+    setTimeout(() => {
+      contents[activeIndex - 1].classList.remove("translate-x-full", "opacity-0")
+    }, 50)
 
-  // SECUENCIA DE ANIMACIÓN MEJORADA:
+    // Limpiar las clases de animación después de completar la transición
+    setTimeout(() => {
+      contents[activeIndex - 1].classList.remove("transform", "transition-all", "duration-500")
+    }, 500)
+  }, 250)
 
-  // 1. Primero: Cambiar el color del círculo actual
-  const currentCircle = steps[activeIndex].querySelector("div:first-child")
+  // Actualizar los pasos
+  const currentStep = steps[activeIndex]
+  const prevStepElement = steps[activeIndex - 1]
+
+  // Desactivar el paso actual
+  currentStep.classList.remove("active")
+  const currentCircle = currentStep.querySelector("div:first-child")
   if (currentCircle) {
-    currentCircle.classList.add("transition-all", "duration-500")
     currentCircle.classList.remove("bg-primary-600", "text-white")
     currentCircle.classList.add("bg-gray-200", "text-gray-500")
+    // Mostrar el número del paso
     currentCircle.innerHTML = `<span>${activeIndex + 1}</span>`
   }
 
-  // Actualizar el paso activo DESPUÉS de cambiar los círculos
-  steps[activeIndex].classList.remove("active", "completed")
-  steps[activeIndex - 1].classList.add("active")
-  steps[activeIndex - 1].classList.remove("completed")
+  // Activar el paso anterior
+  prevStepElement.classList.add("active")
+  prevStepElement.classList.remove("completed")
+  const prevCircle = prevStepElement.querySelector("div:first-child")
+  if (prevCircle) {
+    prevCircle.classList.remove("bg-gray-200", "text-gray-500")
+    prevCircle.classList.add("bg-primary-600", "text-white")
+    // Mostrar el número del paso en lugar del check
+    prevCircle.innerHTML = `<span>${activeIndex}</span>`
+  }
 
-  // 2. Segundo: Después de un delay, cambiar el color de la barra conectora
-  setTimeout(() => {
-    if (activeIndex > 0 && activeIndex - 1 < connectors.length) {
-      // Añadir transición a la barra conectora
-      connectors[activeIndex - 1].classList.add("transition-all", "duration-700")
-      // Cambiar el color de la barra conectora
-      connectors[activeIndex - 1].classList.remove("bg-primary-600")
-      connectors[activeIndex - 1].classList.add("bg-gray-200")
-    }
-  }, 300) // Delay para la barra conectora
-
-  // 3. Tercero: Después de otro delay, quitar el check y mostrar el número
-  setTimeout(() => {
-    const prevCircle = steps[activeIndex - 1].querySelector("div:first-child")
-    if (prevCircle) {
-      prevCircle.classList.add("transition-all", "duration-500")
-      prevCircle.classList.remove("bg-gray-200", "text-gray-500")
-      prevCircle.classList.add("bg-primary-600", "text-white")
-
-      // Crear un efecto de animación para el número que reaparece
-      prevCircle.innerHTML = `<span class="inline-block animate-fade-in">${activeIndex}</span>`
-    }
-  }, 600) // Delay adicional para quitar el check y mostrar el número
+  // Actualizar el conector
+  if (connectors[activeIndex - 1]) {
+    connectors[activeIndex - 1].classList.remove("bg-primary-600")
+    connectors[activeIndex - 1].classList.add("bg-gray-200")
+  }
 
   // Actualizar botones
   if (activeIndex - 1 === 0) {
     prevBtn.classList.add("hidden")
   }
-
   nextBtn.classList.remove("hidden")
   submitBtn.classList.add("hidden")
 
   // Actualizar indicador móvil
-  const mobileStepNumber = document.getElementById('current-step-number');
-  const mobileStepText = document.getElementById('current-step-text');
-  if (mobileStepNumber) mobileStepNumber.textContent = activeIndex.toString();
-  if (mobileStepText) mobileStepText.textContent = `Paso ${activeIndex} de 3`;
+  const mobileStepNumber = document.getElementById("current-step-number")
+  const mobileStepText = document.getElementById("current-step-text")
+  if (mobileStepNumber) mobileStepNumber.textContent = activeIndex.toString()
+  if (mobileStepText) mobileStepText.textContent = `Paso ${activeIndex} de 3`
 }
 
-// Modificar la función nextStep para mostrar checks solo en pasos completados
+// Modificar la función nextStep para mostrar números en lugar de checks en los pasos activos
 function nextStep() {
   const steps = document.querySelectorAll(".stepper-step")
   const contents = document.querySelectorAll(".stepper-content")
@@ -1549,7 +1862,7 @@ function nextStep() {
   const nextBtn = document.getElementById("stepper-next-btn")
   const submitBtn = document.getElementById("stepper-submit-btn")
 
-  // Find the active step
+  // Encontrar el índice del paso activo actual
   let activeIndex = -1
   steps.forEach((step, index) => {
     if (step.classList.contains("active")) {
@@ -1557,557 +1870,409 @@ function nextStep() {
     }
   })
 
-  if (activeIndex >= steps.length - 1) return // Already at the last step
-
-  // Validate the current step before proceeding
-  if (!validateStep(activeIndex)) {
+  // Validar el paso actual antes de continuar
+  if (!validateCurrentStep(activeIndex)) {
     return
   }
 
-  // If we're in the first step and going to the second step, load the calendar
-  if (activeIndex === 0) {
-    loadCalendar()
+  if (activeIndex >= steps.length - 1) return // Ya estamos en el último paso
 
-    // Disable the next button until a date and time are selected
-    nextBtn.classList.add("opacity-50", "cursor-not-allowed")
-    nextBtn.disabled = true
-  }
+  // Animar la salida del contenido actual
+  contents[activeIndex].classList.add("transform", "transition-all", "duration-500", "-translate-x-full", "opacity-0")
 
-  // If we're in the second step and going to the third step, update the summary
-  if (activeIndex === 1) {
-    updateSummary()
-  }
-
-  // Animate the exit of the current content with a more evident transition
-  contents[activeIndex].classList.add("transform", "transition-all", "duration-500", "translate-x-[-100%]", "opacity-0")
-
-  // After a brief delay, hide the current content and show the next one
+  // Después de un breve retraso, ocultar el contenido actual y mostrar el siguiente
   setTimeout(() => {
     contents[activeIndex].classList.add("hidden")
     contents[activeIndex].classList.remove(
       "transform",
       "transition-all",
       "duration-500",
-      "translate-x-[-100%]",
+      "-translate-x-full",
       "opacity-0",
     )
 
-    // Prepare the next content for the entrance animation
+    // Preparar el contenido siguiente para la animación de entrada
     contents[activeIndex + 1].classList.remove("hidden")
     contents[activeIndex + 1].classList.add(
       "transform",
       "transition-all",
       "duration-500",
-      "translate-x-[-100%]",
+      "translate-x-full",
       "opacity-0",
     )
 
-    // Force a reflow to make the animation work
-    contents[activeIndex + 1].offsetHeight
-
-    // Animate the entrance of the next content
-    contents[activeIndex + 1].classList.remove("translate-x-[-100%]", "opacity-0")
-    contents[activeIndex + 1].classList.add("translate-x-0", "opacity-100")
-  }, 300)
-
-  // First, animate the connector with a delay before updating the circles
-  if (activeIndex < connectors.length) {
-    // First animate the connector
-    connectors[activeIndex].classList.remove("bg-gray-200")
-    connectors[activeIndex].classList.add("bg-primary-600", "transition-all", "duration-700")
-
-    // After the connector animation, update the step circles
+    // Animar la entrada del contenido siguiente
     setTimeout(() => {
-      // Update the active step
-      steps[activeIndex].classList.remove("active")
-      steps[activeIndex].classList.add("completed")
-      steps[activeIndex + 1].classList.add("active")
+      contents[activeIndex + 1].classList.remove("translate-x-full", "opacity-0")
+    }, 50)
 
-      // Update the circles of the steps
-      const currentCircle = steps[activeIndex].querySelector("div:first-child")
-      const nextCircle = steps[activeIndex + 1].querySelector("div:first-child")
+    // Limpiar las clases de animación después de completar la transición
+    setTimeout(() => {
+      contents[activeIndex + 1].classList.remove("transform", "transition-all", "duration-500")
+    }, 500)
+  }, 250)
 
-      if (currentCircle) {
-        currentCircle.classList.remove("bg-gray-200", "text-gray-500")
-        currentCircle.classList.add("bg-primary-600", "text-white", "transition-all", "duration-500")
-        // Show the check icon in the completed step with animation
-        currentCircle.innerHTML =
-          '<svg class="w-6 h-6 animate-check-mark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
-      }
+  // Actualizar los pasos
+  const currentStep = steps[activeIndex]
+  const nextStepElement = steps[activeIndex + 1]
 
-      if (nextCircle) {
-        nextCircle.classList.remove("bg-gray-200", "text-gray-500")
-        nextCircle.classList.add("bg-primary-600", "text-white", "transition-all", "duration-500")
-        // Show the number in the active step, not the check
-        nextCircle.innerHTML = `<span>${activeIndex + 2}</span>`
-      }
-    }, 300) // Delay the circle animation to happen after the connector
+  // Marcar el paso actual como completado
+  currentStep.classList.remove("active")
+  currentStep.classList.add("completed")
+  const currentCircle = currentStep.querySelector("div:first-child")
+  if (currentCircle) {
+    currentCircle.classList.remove("bg-primary-600", "text-white")
+    currentCircle.classList.add("bg-primary-600", "text-white")
+    // Mostrar el check para pasos completados
+    currentCircle.innerHTML = `
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+      </svg>
+    `
   }
 
-  // Update buttons
-  prevBtn.classList.remove("hidden")
+  // Activar el siguiente paso
+  nextStepElement.classList.add("active")
+  const nextCircle = nextStepElement.querySelector("div:first-child")
+  if (nextCircle) {
+    nextCircle.classList.remove("bg-gray-200", "text-gray-500")
+    nextCircle.classList.add("bg-primary-600", "text-white")
+    // Mostrar el número del paso activo
+    nextCircle.innerHTML = `<span>${activeIndex + 2}</span>`
+  }
 
+  // Actualizar el conector
+  if (connectors[activeIndex]) {
+    connectors[activeIndex].classList.remove("bg-gray-200")
+    connectors[activeIndex].classList.add("bg-primary-600")
+  }
+
+  // Actualizar botones
+  prevBtn.classList.remove("hidden")
   if (activeIndex + 1 === steps.length - 1) {
     nextBtn.classList.add("hidden")
     submitBtn.classList.remove("hidden")
   }
 
   // Actualizar indicador móvil
-  const mobileStepNumber = document.getElementById('current-step-number');
-  const mobileStepText = document.getElementById('current-step-text');
-  if (mobileStepNumber) mobileStepNumber.textContent = (activeIndex + 2).toString();
-  if (mobileStepText) mobileStepText.textContent = `Paso ${activeIndex + 2} de 3`;
-}
+  const mobileStepNumber = document.getElementById("current-step-number")
+  const mobileStepText = document.getElementById("current-step-text")
+  if (mobileStepNumber) mobileStepNumber.textContent = (activeIndex + 2).toString()
+  if (mobileStepText) mobileStepText.textContent = `Paso ${activeIndex + 2} de 3`
 
-function validateStep(stepIndex) {
-  switch (stepIndex) {
-    case 0: // Validar formulario de datos personales
-      const form = document.getElementById("asesoria-form")
-      const tipoAsesoria = document.getElementById("tipo_asesoria")
-      const asesorSelect = document.getElementById("asesor_id")
-      const tipoDocumento = document.getElementById("tipo_documento")
-      const numeroDocumento = document.getElementById("numero_documento")
-      const descripcion = document.getElementById("descripcion")
-
-      if (!tipoAsesoria || !asesorSelect || !tipoDocumento || !numeroDocumento) {
-        showNotification("Por favor, complete todos los campos obligatorios", "error")
-        return false
-      }
-
-      if (tipoAsesoria.value === "") {
-        showNotification("Por favor, seleccione un tipo de asesoría", "error")
-        return false
-      }
-
-      if (asesorSelect.value === "") {
-        showNotification("Por favor, seleccione un asesor", "error")
-        return false
-      }
-
-      if (numeroDocumento.value.trim() === "") {
-        showNotification("Por favor, ingrese su número de documento", "error")
-        return false
-      }
-
-      // Guardar los datos seleccionados
-      selectedAsesorId = asesorSelect.value
-      const asesorText = asesorSelect.options[asesorSelect.selectedIndex].text
-      // Extraer solo el nombre del asesor (sin la especialidad)
-      selectedAsesorName = asesorText.split(" - ")[0]
-      selectedAsesorEspecialidad = asesorSelect.options[asesorSelect.selectedIndex].getAttribute("data-especialidad")
-
-      return true
-
-    case 1: // Validar selección de fecha y hora
-      if (!selectedDate || !selectedTime) {
-        showNotification("Por favor, seleccione una fecha y hora para la asesoría", "error")
-        return false
-      }
-
-      return true
-
-    default:
-      return true
+  // Acciones específicas para cada paso
+  if (activeIndex + 1 === 1) {
+    // Entrando al paso 2 (calendario)
+    initCalendar()
+  } else if (activeIndex + 1 === 2) {
+    // Entrando al paso 3 (resumen)
+    updateSummary()
   }
 }
 
+// Función para validar el paso actual
+function validateCurrentStep(stepIndex) {
+  if (stepIndex === 0) {
+    // Validar paso 1: datos básicos
+    const tipoAsesoria = document.getElementById("tipo_asesoria")
+    const asesorId = document.getElementById("asesor_id")
+    const numeroDocumento = document.getElementById("numero_documento")
+
+    if (!tipoAsesoria || tipoAsesoria.value === "") {
+      showNotification("Por favor selecciona un tipo de asesoría", "warning")
+      return false
+    }
+
+    if (!asesorId || asesorId.value === "") {
+      showNotification("Por favor selecciona un asesor", "warning")
+      return false
+    }
+
+    if (!numeroDocumento || numeroDocumento.value.trim() === "") {
+      showNotification("Por favor ingresa tu número de documento", "warning")
+      return false
+    }
+
+    // Guardar información del asesor seleccionado
+    const selectedOption = asesorId.options[asesorId.selectedIndex]
+    selectedAsesorId = asesorId.value
+    selectedAsesorName = selectedOption.text
+    selectedAsesorEspecialidad = selectedOption.getAttribute("data-especialidad") || "Especialista en Inmigración"
+
+    return true
+  } else if (stepIndex === 1) {
+    // Validar paso 2: fecha y hora
+    if (!selectedDate || !selectedTime) {
+      showNotification("Por favor selecciona una fecha y hora para tu asesoría", "warning")
+      return false
+    }
+
+    return true
+  }
+
+  return true
+}
+
+// Función para cargar asesores
 function loadAsesores() {
   const asesorSelect = document.getElementById("asesor_id")
   if (!asesorSelect) return
 
-  // Limpiar opciones actuales
-  asesorSelect.innerHTML = '<option value="">Seleccione un asesor</option>'
+  // Mostrar indicador de carga
+  asesorSelect.innerHTML = '<option value="">Cargando asesores...</option>'
 
-  // Cargar asesores desde el servidor
   fetch("/asesorias/obtener_asesores")
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Error al cargar asesores")
-      }
-      return response.json()
-    })
+    .then((response) => response.json())
     .then((data) => {
-      if (data.asesores && data.asesores.length > 0) {
+      if (data.asesores) {
+        asesorSelect.innerHTML = '<option value="">Seleccione un asesor</option>'
+
         data.asesores.forEach((asesor) => {
           const option = document.createElement("option")
           option.value = asesor.id_asesor
-          option.text = `${asesor.nombre} ${asesor.apellidos} - ${asesor.especialidad}`
+          option.textContent = `${asesor.nombre} ${asesor.apellidos}`
           option.setAttribute("data-especialidad", asesor.especialidad)
           asesorSelect.appendChild(option)
         })
+      } else {
+        asesorSelect.innerHTML = '<option value="">Error al cargar asesores</option>'
       }
     })
     .catch((error) => {
       console.error("Error al cargar asesores:", error)
-      showNotification("Error al cargar la lista de asesores", "error")
+      asesorSelect.innerHTML = '<option value="">Error al cargar asesores</option>'
     })
 }
 
-// Modificar la función loadCalendar para añadir más colores y destacar el día actual
-function loadCalendar() {
+// Función para inicializar el calendario
+function initCalendar() {
   const calendarContainer = document.getElementById("calendar-container")
-  const timeContainer = document.getElementById("time-container")
+  if (!calendarContainer) return
 
-  if (!calendarContainer || !timeContainer) return
-
-  // Limpiar contenedores
+  // Limpiar el contenedor
   calendarContainer.innerHTML = ""
-  timeContainer.innerHTML =
-    '<p class="text-gray-500 text-center">Seleccione una fecha para ver los horarios disponibles</p>'
-
-  // Crear el calendario con un contenedor redondeado
-  calendarContainer.className =
-    "bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300"
 
   // Crear el calendario
-  const currentDate = new Date()
-  const currentMonth = currentDate.getMonth()
-  const currentYear = currentDate.getFullYear()
-  const currentDay = currentDate.getDate()
+  const calendar = document.createElement("div")
+  calendar.className = "calendar"
 
-  // Crear el encabezado del calendario con un diseño más atractivo y redondeado
-  const calendarHeader = document.createElement("div")
-  calendarHeader.className = "flex justify-between items-center mb-4 bg-primary-50 p-3 rounded-xl shadow-sm"
-  calendarHeader.innerHTML = `
-  <button id="prev-month" class="p-2 rounded-full hover:bg-primary-100 transition-colors text-primary-600 hover:shadow-sm">
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  // Obtener la fecha actual
+  const today = new Date()
+  const currentMonth = today.getMonth()
+  const currentYear = today.getFullYear()
+
+  // Crear el encabezado del calendario
+  const header = document.createElement("div")
+  header.className = "calendar-header flex justify-between items-center mb-4"
+  header.innerHTML = `
+  <button id="prev-month" class="p-2 rounded-xl hover:bg-gray-100 transition-colors duration-300 cursor-pointer">
+    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
     </svg>
   </button>
-  <h3 id="calendar-month" class="text-base font-medium text-primary-800"></h3>
-  <button id="next-month" class="p-2 rounded-full hover:bg-primary-100 transition-colors text-primary-600 hover:shadow-sm">
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <h3 id="calendar-title" class="text-lg font-semibold text-gray-800"></h3>
+  <button id="next-month" class="p-2 rounded-xl hover:bg-gray-100 transition-colors duration-300 cursor-pointer">
+    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
     </svg>
   </button>
 `
-  calendarContainer.appendChild(calendarHeader)
 
-  // Crear la estructura del calendario
-  const calendarGrid = document.createElement("div")
-  calendarGrid.className = "grid grid-cols-7 gap-2"
+  calendar.appendChild(header)
 
-  // Agregar los días de la semana (lunes a domingo) con un estilo más destacado
-  const daysOfWeek = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
-  daysOfWeek.forEach((day, index) => {
-    const dayElement = document.createElement("div")
-    // Destacar los días laborables (lunes a viernes)
-    if (index < 5) {
-      dayElement.className = "text-center font-medium text-primary-700 py-2 border-b border-primary-200 mx-1"
-    } else {
-      // Fin de semana con un estilo diferente
-      dayElement.className = "text-center font-medium text-gray-400 py-2 border-b border-gray-200 mx-1"
-    }
-    dayElement.textContent = day
-    calendarGrid.appendChild(dayElement)
+  // Crear la grilla del calendario
+  const grid = document.createElement("div")
+  grid.className = "calendar-grid grid grid-cols-7 gap-1"
+  grid.id = "calendar-grid"
+
+  calendar.appendChild(grid)
+  calendarContainer.appendChild(calendar)
+
+  // Renderizar el calendario para el mes actual
+  renderCalendar(currentYear, currentMonth)
+
+  // Agregar event listeners para navegación
+  document.getElementById("prev-month").addEventListener("click", () => {
+    const title = document.getElementById("calendar-title")
+    const [monthName, year] = title.textContent.split(" ")
+    const monthIndex = getMonthIndex(monthName)
+    const newDate = new Date(Number.parseInt(year), monthIndex - 1, 1)
+    renderCalendar(newDate.getFullYear(), newDate.getMonth())
   })
 
-  // Agregar los días del mes (se llenarán dinámicamente)
-  for (let i = 0; i < 42; i++) {
-    const dayElement = document.createElement("div")
-    dayElement.className = "calendar-day text-center py-2 rounded-full"
-    dayElement.setAttribute("data-day", "")
-    calendarGrid.appendChild(dayElement)
-  }
-
-  calendarContainer.appendChild(calendarGrid)
-
-  // Configurar los botones de navegación
-  const prevMonthBtn = document.getElementById("prev-month")
-  const nextMonthBtn = document.getElementById("next-month")
-  const calendarMonthElement = document.getElementById("calendar-month")
-
-  let displayMonth = currentMonth
-  let displayYear = currentYear
-
-  // Función para actualizar el calendario
-  function updateCalendar() {
-    // Actualizar el título del mes
-    const monthNames = [
-      "Enero",
-      "Febrero",
-      "Marzo",
-      "Abril",
-      "Mayo",
-      "Junio",
-      "Julio",
-      "Agosto",
-      "Septiembre",
-      "Octubre",
-      "Noviembre",
-      "Diciembre",
-    ]
-    calendarMonthElement.textContent = `${monthNames[displayMonth]} ${displayYear}`
-
-    // Obtener el primer día del mes
-    const firstDayOfMonth = new Date(displayYear, displayMonth, 1)
-
-    // Ajustar para que la semana comience en lunes (0 = lunes, 6 = domingo)
-
-    // getDay() devuelve 0 para domingo, 1 para lunes, etc.
-    let firstDayIndex = firstDayOfMonth.getDay() - 1
-    if (firstDayIndex < 0) firstDayIndex = 6 // Si es domingo (0-1=-1), ajustar a 6
-
-    // Número de días en el mes actual
-    const daysInMonth = new Date(displayYear, displayMonth + 1, 0).getDate()
-
-    // Obtener todos los elementos de día
-    const dayElements = document.querySelectorAll(".calendar-day")
-
-    // Limpiar todos los días
-    dayElements.forEach((day) => {
-      day.textContent = ""
-      day.className = "calendar-day text-center py-2 rounded-full"
-      day.removeAttribute("data-date")
-      day.onclick = null // Eliminar eventos de clic anteriores
-    })
-
-    // Llenar los días del mes actual
-    for (let i = 1; i <= daysInMonth; i++) {
-      const dayIndex = firstDayIndex + i - 1
-      if (dayIndex >= dayElements.length) break // Protección contra errores
-
-      const dayElement = dayElements[dayIndex]
-      const date = new Date(displayYear, displayMonth, i)
-      const dateStr = `${displayYear}-${String(displayMonth + 1).padStart(2, "0")}-${String(i).padStart(2, "0")}`
-
-      // Establecer el texto y atributo de fecha
-      dayElement.textContent = i
-      dayElement.setAttribute("data-date", dateStr)
-
-      // Verificar si es el día actual
-      const isToday = displayYear === currentYear && displayMonth === currentMonth && i === currentDay
-
-      // Verificar si es un día pasado
-      const isPastDay = date < new Date().setHours(0, 0, 0, 0)
-
-      // Verificar si es fin de semana (0 = domingo, 6 = sábado)
-      const dayOfWeek = date.getDay()
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
-
-      // Aplicar estilos según el tipo de día
-      if (isToday) {
-        // Destacar el día actual con un estilo distintivo
-        dayElement.className =
-          "calendar-day text-center py-2 rounded-full bg-primary-600 text-white font-bold transform scale-105 shadow-md text-base relative z-10 hover:bg-primary-700 transition-all duration-300"
-
-        // Si el día actual es seleccionable (no es fin de semana y no es pasado)
-        if (!isWeekend) {
-          dayElement.className += " cursor-pointer"
-
-          // Agregar evento de clic
-          dayElement.onclick = function () {
-            // Deseleccionar día anterior
-            document.querySelectorAll(".calendar-day.selected").forEach((el) => {
-              if (el !== this) {
-                el.classList.remove("selected", "ring-2", "ring-primary-500", "ring-offset-1")
-              }
-            })
-
-            // Seleccionar este día (mantener el estilo de día actual)
-            this.classList.add("selected", "ring-2", "ring-primary-500", "ring-offset-1")
-
-            // Guardar la fecha seleccionada
-            selectedDate = dateStr
-
-            // Cargar horarios disponibles
-            loadAvailableTimes(selectedDate)
-          }
-        }
-      } else if (isPastDay) {
-        dayElement.className =
-          "calendar-day text-center py-2 rounded-full text-gray-400 cursor-default text-base bg-gray-50"
-      } else if (isWeekend) {
-        dayElement.className =
-          "calendar-day text-center py-2 rounded-full text-gray-400 cursor-default text-base bg-gray-50"
-        dayElement.title = "No disponible en fin de semana"
-      } else {
-        // Día seleccionable (lunes a viernes)
-        dayElement.className =
-          "calendar-day text-center py-2 rounded-full cursor-pointer hover:bg-primary-50 transition-all duration-300 text-base hover:shadow-sm"
-
-        // Agregar evento de clic
-        dayElement.onclick = function () {
-          // Deseleccionar día anterior
-          document.querySelectorAll(".calendar-day.selected").forEach((el) => {
-            el.classList.remove(
-              "selected",
-              "bg-primary-100",
-              "text-primary-800",
-              "ring-2",
-              "ring-primary-500",
-              "ring-offset-1",
-            )
-          })
-
-          // Seleccionar este día
-          this.classList.add(
-            "selected",
-            "bg-primary-100",
-            "text-primary-800",
-            "ring-2",
-            "ring-primary-500",
-            "ring-offset-1",
-          )
-
-          // Guardar la fecha seleccionada
-          selectedDate = dateStr
-
-          // Cargar horarios disponibles
-          loadAvailableTimes(selectedDate)
-        }
-      }
-    }
-  }
-
-  // Configurar eventos de navegación con efectos visuales
-  prevMonthBtn.addEventListener("click", () => {
-    // Añadir efecto visual al botón
-    prevMonthBtn.classList.add("scale-90")
-    setTimeout(() => prevMonthBtn.classList.remove("scale-90"), 150)
-
-    displayMonth--
-    if (displayMonth < 0) {
-      displayMonth = 11
-      displayYear--
-    }
-    updateCalendar()
+  document.getElementById("next-month").addEventListener("click", () => {
+    const title = document.getElementById("calendar-title")
+    const [monthName, year] = title.textContent.split(" ")
+    const monthIndex = getMonthIndex(monthName)
+    const newDate = new Date(Number.parseInt(year), monthIndex + 1, 1)
+    renderCalendar(newDate.getFullYear(), newDate.getMonth())
   })
-
-  nextMonthBtn.addEventListener("click", () => {
-    // Añadir efecto visual al botón
-    nextMonthBtn.classList.add("scale-90")
-    setTimeout(() => nextMonthBtn.classList.remove("scale-90"), 150)
-
-    displayMonth++
-    if (displayMonth > 11) {
-      displayMonth = 0
-      displayYear++
-    }
-    updateCalendar()
-  })
-
-  // Inicializar el calendario
-  updateCalendar()
 }
 
-// Modificar la función loadAvailableTimes para mejorar el diseño de los horarios
+// Función para obtener el índice del mes por nombre
+function getMonthIndex(monthName) {
+  const months = [
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre",
+  ]
+  return months.indexOf(monthName)
+}
+
+// Función para renderizar el calendario
+function renderCalendar(year, month) {
+  const grid = document.getElementById("calendar-grid")
+  const title = document.getElementById("calendar-title")
+
+  if (!grid || !title) return
+
+  // Limpiar la grilla
+  grid.innerHTML = ""
+
+  // Actualizar el título
+  const monthNames = [
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre",
+  ]
+  title.textContent = `${monthNames[month]} ${year}`
+
+  // Días de la semana
+  const dayNames = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"]
+  dayNames.forEach((day) => {
+    const dayHeader = document.createElement("div")
+    dayHeader.className = "text-center text-xs font-medium text-gray-500 py-2"
+    dayHeader.textContent = day
+    grid.appendChild(dayHeader)
+  })
+
+  // Obtener información del mes
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+  const daysInMonth = lastDay.getDate()
+  const startingDayOfWeek = firstDay.getDay()
+
+  // Obtener la fecha actual
+  const today = new Date()
+  const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month
+  const currentDate = today.getDate()
+
+  // Agregar días vacíos al inicio
+  for (let i = 0; i < startingDayOfWeek; i++) {
+    const emptyDay = document.createElement("div")
+    emptyDay.className = "h-10"
+    grid.appendChild(emptyDay)
+  }
+
+  // Agregar los días del mes
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dayElement = document.createElement("div")
+    dayElement.className =
+      "h-10 flex items-center justify-center text-sm cursor-pointer rounded-xl transition-all duration-300 hover:bg-primary-100"
+    dayElement.textContent = day
+
+    // Marcar el día actual
+    if (isCurrentMonth && day === currentDate) {
+      dayElement.classList.add("bg-primary-600", "text-white", "font-semibold")
+      dayElement.classList.remove("hover:bg-primary-100")
+    }
+
+    // Deshabilitar días pasados
+    const dayDate = new Date(year, month, day)
+    if (dayDate < today.setHours(0, 0, 0, 0)) {
+      dayElement.classList.add("text-gray-300", "cursor-not-allowed")
+      dayElement.classList.remove("cursor-pointer", "hover:bg-primary-100")
+    } else {
+      // Agregar event listener para días válidos
+      dayElement.addEventListener("click", () => selectDate(year, month, day, dayElement))
+    }
+
+    grid.appendChild(dayElement)
+  }
+}
+
+// Función para seleccionar una fecha
+function selectDate(year, month, day, element) {
+  // Remover selección anterior
+  const previousSelected = document.querySelector(".calendar-grid .selected-date")
+  if (previousSelected) {
+    previousSelected.classList.remove("selected-date", "bg-primary-100", "border-primary-500", "border-2")
+    // Restaurar el estilo del día actual si es necesario
+    const today = new Date()
+    if (
+      today.getFullYear() === year &&
+      today.getMonth() === month &&
+      today.getDate() === Number.parseInt(previousSelected.textContent)
+    ) {
+      previousSelected.classList.add("bg-primary-600", "text-white", "font-semibold")
+    }
+  }
+
+  // Seleccionar la nueva fecha
+  element.classList.add("selected-date", "bg-primary-100", "border-primary-500", "border-2")
+  element.classList.remove("bg-primary-600", "text-white", "font-semibold")
+
+  // Guardar la fecha seleccionada
+  selectedDate = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+
+  // Cargar horarios disponibles
+  loadAvailableTimes(selectedDate)
+}
+
+// Función para cargar horarios disponibles
 function loadAvailableTimes(date) {
   const timeContainer = document.getElementById("time-container")
   if (!timeContainer || !selectedAsesorId) return
 
-  // Mostrar spinner de carga antes de cualquier validación
+  // Mostrar indicador de carga
   timeContainer.innerHTML = `
-    <div class="flex flex-col justify-center items-center h-24 space-y-3">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-t-2 border-primary-600"></div>
-      <p class="text-primary-600 text-sm animate-pulse">Cargando horarios disponibles...</p>
-    </div>
-  `
-  // Verifica si la fecha seleccionada es hoy
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const [year, month, day] = date.split("-")
-  const selected = new Date(Number(year), Number(month) - 1, Number(day))
-  selected.setHours(0, 0, 0, 0)
+  <div class="flex justify-center items-center py-8">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-t-2 border-primary-600"></div>
+    <p class="ml-3 text-primary-600 text-sm">Cargando horarios...</p>
+  </div>
+`
 
-  if (selected.getTime() === today.getTime()) {
-    // Mostrar mensaje personalizado para hoy
-    timeContainer.innerHTML = `
-      <div class="flex flex-col items-center justify-center h-24 text-center bg-yellow-50 rounded-xl p-4">
-        <svg class="w-10 h-12 text-yellow-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <p class="text-yellow-700 text-base">No es posible agendar citas para el día de hoy.</p>
-        <p class="text-primary-600 text-sm mt-2">Por favor, seleccione una fecha futura.</p>
-      </div>
-    `
-    return
-  }
-  // Formatear la fecha para mostrarla
-  const dateObj = new Date(Number(year), Number(month) - 1, Number(day))
-  const formattedDate = dateObj.toLocaleDateString("es-ES", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  })
-
-  // Cargar horarios disponibles desde el servidor
   fetch(`/asesorias/obtener_horarios_disponibles?id_asesor=${selectedAsesorId}&fecha=${date}`)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Error al cargar horarios")
-      }
-      return response.json()
-    })
+    .then((response) => response.json())
     .then((data) => {
-      // Limpiar contenedor
-      timeContainer.innerHTML = ""
-
-      // Añadir un título con la fecha
-      timeContainer.innerHTML = `
-      <div class="bg-primary-50 p-3 rounded-xl mb-4 text-center">
-        <p class="text-primary-700 font-medium">${formattedDate}</p>
-      </div>
-    `
-
       if (data.horarios && data.horarios.length > 0) {
-        // Crear lista de horarios en columna
-        const timeList = document.createElement("div")
-        timeList.className = "flex flex-col space-y-2 mt-2"
+        timeContainer.innerHTML = ""
 
-        // Agregar cada horario disponible con un diseño mejorado
-        data.horarios.forEach((hora, index) => {
+        // Crear botones para cada horario
+        data.horarios.forEach((hora) => {
           const timeButton = document.createElement("button")
-          // Alternar colores de fondo para mejor visualización
-          const isEven = index % 2 === 0
-          timeButton.className = isEven
-            ? "time-slot py-3 px-4 rounded-xl border border-gray-200 hover:bg-primary-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-base w-full text-left flex items-center"
-            : "time-slot py-3 px-4 rounded-xl border border-gray-200 bg-gray-50 hover:bg-primary-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-base w-full text-left flex items-center"
-
-          timeButton.setAttribute("data-time", hora)
-
-          // Añadir icono de reloj junto a la hora
-          timeButton.innerHTML = `
-          <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <span>${hora}</span>
-        `
-
-          // Agregar evento de clic con efectos visuales mejorados
-          timeButton.addEventListener("click", () => {
-            // Deseleccionar horario anterior
-            document.querySelectorAll(".time-slot.selected").forEach((el) => {
-              el.classList.remove(
-                "selected",
-                "bg-primary-100",
-                "text-primary-800",
-                "border-primary-500",
-                "shadow-md",
-                "scale-105",
-              )
-            })
-
-            // Guardar el horario seleccionado
-            selectedTime = hora
-
-            // Crear reserva temporal
-            createTemporaryReservation(selectedDate, selectedTime)
-          })
-
-          timeList.appendChild(timeButton)
+          timeButton.className =
+            "w-full p-3 mb-2 text-left rounded-xl border border-gray-200 hover:border-primary-500 hover:bg-primary-50 transition-all duration-300 cursor-pointer"
+          timeButton.textContent = hora
+          timeButton.addEventListener("click", () => selectTime(hora, timeButton))
+          timeContainer.appendChild(timeButton)
         })
-
-        timeContainer.appendChild(timeList)
       } else {
-        timeContainer.innerHTML += `
-        <div class="flex flex-col items-center justify-center h-24 text-center bg-gray-50 rounded-xl p-4">
-          <svg class="w-10 h-10 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        timeContainer.innerHTML = `
+        <div class="text-center py-8">
+          <svg class="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
-          <p class="text-gray-500 text-base">No hay horarios disponibles para esta fecha</p>
-          <p class="text-primary-600 text-sm mt-2">Por favor, seleccione otra fecha</p>
+          <p class="text-gray-500">No hay horarios disponibles para esta fecha</p>
+          <p class="text-sm text-gray-400 mt-1">Selecciona otra fecha</p>
         </div>
       `
       }
@@ -2115,28 +2280,38 @@ function loadAvailableTimes(date) {
     .catch((error) => {
       console.error("Error al cargar horarios:", error)
       timeContainer.innerHTML = `
-      <div class="flex flex-col items-center justify-center h-24 text-center bg-red-50 rounded-xl p-4">
-        <svg class="w-10 h-10 text-red-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <p class="text-red-500 text-base">Error al cargar horarios disponibles</p>
-        <p class="text-gray-600 text-sm mt-2">Intente nuevamente más tarde</p>
+      <div class="text-center py-8">
+        <p class="text-red-500">Error al cargar horarios</p>
+        <p class="text-sm text-gray-400 mt-1">Intenta nuevamente</p>
       </div>
     `
     })
 }
 
-// Modificar la función createTemporaryReservation para habilitar el botón siguiente cuando se selecciona una hora
-function createTemporaryReservation(date, time) {
-  if (!selectedAsesorId || !date || !time) return
-
-  // Cancelar cualquier reserva temporal anterior
-  if (reservationId) {
-    cancelarReservaTemporal(reservationId)
-    reservationId = null
+// Función para seleccionar una hora
+function selectTime(time, element) {
+  // Remover selección anterior
+  const previousSelected = document.querySelector("#time-container .selected-time")
+  if (previousSelected) {
+    previousSelected.classList.remove("selected-time", "bg-primary-600", "text-white", "border-primary-600")
+    previousSelected.classList.add("border-gray-200", "hover:border-primary-500", "hover:bg-primary-50")
   }
 
-  // Crear una nueva reserva temporal
+  // Seleccionar la nueva hora
+  element.classList.add("selected-time", "bg-primary-600", "text-white", "border-primary-600")
+  element.classList.remove("border-gray-200", "hover:border-primary-500", "hover:bg-primary-50")
+
+  // Guardar la hora seleccionada
+  selectedTime = time
+
+  // Crear reserva temporal
+  createTemporaryReservation()
+}
+
+// Función para crear una reserva temporal
+function createTemporaryReservation() {
+  if (!selectedAsesorId || !selectedDate || !selectedTime) return
+
   fetch("/asesorias/reservar_horario_temporal", {
     method: "POST",
     headers: {
@@ -2144,42 +2319,33 @@ function createTemporaryReservation(date, time) {
     },
     body: JSON.stringify({
       id_asesor: selectedAsesorId,
-      fecha: date,
-      hora: time,
+      fecha: selectedDate,
+      hora: selectedTime,
     }),
   })
-    .then((response) => {
-      if (!response.ok) {
-        return response.json().then((data) => {
-          throw new Error(data.error || "Error al reservar horario")
-        })
-      }
-      return response.json()
-    })
+    .then((response) => response.json())
     .then((data) => {
       if (data.success) {
         reservationId = data.reserva_id
-
-        // Habilitar el botón siguiente ahora que tenemos fecha y hora seleccionadas
-        const nextBtn = document.getElementById("stepper-next-btn")
-        if (nextBtn) {
-          nextBtn.classList.remove("opacity-50", "cursor-not-allowed")
-          nextBtn.disabled = false
-        }
-
-        // Mostrar el indicador de reserva temporal
-        const reservationIndicator = document.getElementById("reservation-indicator")
-        if (reservationIndicator) {
-          reservationIndicator.classList.remove("hidden")
+        showNotification("Horario reservado temporalmente por 10 minutos", "success")
+      } else {
+        showNotification("Error al reservar horario: " + data.error, "error")
+        // Limpiar selección si hay error
+        selectedTime = null
+        const selectedElement = document.querySelector("#time-container .selected-time")
+        if (selectedElement) {
+          selectedElement.classList.remove("selected-time", "bg-primary-600", "text-white", "border-primary-600")
+          selectedElement.classList.add("border-gray-200", "hover:border-primary-500", "hover:bg-primary-50")
         }
       }
     })
     .catch((error) => {
-      console.error("Error al reservar horario:", error)
-      showNotification(error.message, "error")
+      console.error("Error al crear reserva temporal:", error)
+      showNotification("Error al reservar horario", "error")
     })
 }
 
+// Función para cancelar una reserva temporal
 function cancelarReservaTemporal(reservaId) {
   if (!reservaId) return
 
@@ -2191,107 +2357,70 @@ function cancelarReservaTemporal(reservaId) {
     body: JSON.stringify({
       reserva_id: reservaId,
     }),
-  }).catch((error) => {
-    console.error("Error al cancelar reserva temporal:", error)
   })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        console.log("Reserva temporal cancelada")
+      } else {
+        console.error("Error al cancelar reserva temporal:", data.error)
+      }
+    })
+    .catch((error) => {
+      console.error("Error al cancelar reserva temporal:", error)
+    })
 }
 
-// Modificar la función submitAsesoria para mostrar el indicador de carga
+// Función para enviar la solicitud de asesoría
 function submitAsesoria() {
+  if (!validateCurrentStep(2)) return
+
   // Mostrar indicador de carga
   showLoadingIndicator()
 
   // Obtener datos del formulario
-  const form = document.getElementById("asesoria-form")
-  if (!form) {
-    hideLoadingIndicator()
-    return
+  const formData = {
+    id_solicitante: document.getElementById("asesoria-form").getAttribute("data-solicitante-id"),
+    tipo_asesoria: document.getElementById("tipo_asesoria").value,
+    descripcion: document.getElementById("descripcion").value,
+    lugar: document.getElementById("lugar").value,
+    tipo_documento: document.getElementById("tipo_documento").value,
+    numero_documento: document.getElementById("numero_documento").value,
+    id_asesor: selectedAsesorId,
+    asesor_asignado: selectedAsesorName,
+    asesor_especialidad: selectedAsesorEspecialidad,
+    fecha_asesoria: `${selectedDate}T${selectedTime}`,
   }
 
-  const tipoAsesoriaValue = document.getElementById("tipo_asesoria").value
-  const tipoDocumento = document.getElementById("tipo_documento").value
-  const numeroDocumento = document.getElementById("numero_documento").value
-  const descripcion = document.getElementById("descripcion").value
-  const lugar = document.getElementById("lugar").value
-
-  // Verificar que tenemos todos los datos necesarios
-  if (!selectedAsesorId || !selectedDate || !selectedTime) {
-    showNotification("Faltan datos para agendar la asesoría", "error")
-    hideLoadingIndicator()
-    return
-  }
-
-  // Formatear fecha y hora para el servidor
-  const fechaAsesoria = `${selectedDate}T${selectedTime}`
-
-  // Crear objeto con los datos de la asesoría
-  // Obtener el id_solicitante del usuario actual mediante una petición al servidor
-  fetch("/user/obtener_id_solicitante")
+  fetch("/asesorias/nueva_asesoria", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(formData),
+  })
     .then((response) => response.json())
     .then((data) => {
-      if (data.error) {
-        showNotification(data.error, "error")
-        hideLoadingIndicator()
-        return
+      hideLoadingIndicator()
+
+      if (data.success) {
+        showNotification("Asesoría agendada exitosamente. Tienes 5 minutos para realizar el pago.", "success")
+
+        // Cerrar el modal
+        closeNewAdvisoryModal()
+
+        // Recargar la página para mostrar la nueva asesoría
+        setTimeout(() => {
+          window.location.reload()
+        }, 2000)
+      } else {
+        showNotification("Error al agendar asesoría: " + data.error, "error")
       }
-
-      const asesoriaData = {
-        id_solicitante: data.id_solicitante, // Usar el ID obtenido del servidor
-        tipo_asesoria: tipoAsesoriaValue,
-        descripcion: descripcion,
-        lugar: lugar,
-        tipo_documento: tipoDocumento,
-        numero_documento: numeroDocumento,
-        id_asesor: selectedAsesorId,
-        asesor_asignado: selectedAsesorName,
-        asesor_especialidad: selectedAsesorEspecialidad,
-        fecha_asesoria: fechaAsesoria,
-      }
-
-      // Enviar solicitud al servidor
-      fetch("/asesorias/nueva_asesoria", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(asesoriaData),
-      })
-        .then((response) => {
-          if (!response.ok) {
-            return response.json().then((data) => {
-              throw new Error(data.error || "Error al agendar la asesoría")
-            })
-          }
-          return response.json()
-        })
-        .then((data) => {
-          if (data.success) {
-            // Ocultar indicador de carga
-            hideLoadingIndicator()
-
-            // Mostrar notificación de éxito con información del tiempo límite
-            showNotification(
-              data.message || "Asesoría agendada con éxito. Tienes 5 minutos para realizar el pago.",
-              "success",
-            )
-
-            // Cerrar el modal
-            closeNewAdvisoryModal()
-
-            // Redirigir a la página de pago
-            pagarAsesoria(data.codigo_asesoria, tipoAsesoriaValue)
-          }
-        })
-        .catch((error) => {
-          console.error("Error al agendar asesoría:", error)
-          showNotification(error.message, "error")
-          hideLoadingIndicator()
-        })
     })
     .catch((error) => {
-      console.error("Error al obtener ID de solicitante:", error)
-      showNotification("Error al obtener información del usuario", "error")
       hideLoadingIndicator()
+      console.error("Error al enviar solicitud:", error)
+      showNotification("Error al agendar asesoría", "error")
     })
 }
 

@@ -286,6 +286,18 @@ function mostrarClientes(clientes) {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
               </button>
+
+              <!-- ...dentro del <td> de acciones, agrega: -->
+              <button onclick="abrirChatCliente(${cliente.codigo_asesoria}, '${cliente.nombre_completo}', ${cliente.id_solicitante})"
+                class="flex items-center justify-center w-9 h-9 rounded-xl text-gray-500 transition-all duration-300 hover:text-primary-600 hover:translate-y-[-3px] relative overflow-hidden cursor-pointer"
+                title="Chat con cliente">
+                <span class="absolute inset-0 bg-current opacity-0 rounded-xl transition-opacity duration-300 hover:opacity-10"></span>
+                <svg class="relative z-10 transition-transform duration-300 hover:scale-110" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v8a2 2 0 01-2 2H7a2 2 0 01-2-2V10a2 2 0 012-2h2"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 3h6v6"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2 4 4"></path>
+                </svg>
+              </button>
             </div>
           </td>
         </tr>

@@ -131,6 +131,7 @@ def login():
                 if asesor and check_password_hash(asesor['password'], password):
                     # Iniciar sesión solo con datos de tbl_asesor
                     session['user_id'] = asesor['id_asesor']
+                    session['id_asesor'] = asesor['id_asesor']  # <-- AGREGA ESTA LÍNEA
                     session['user_name'] = f"{asesor['nombre']} {asesor['apellidos']}"
                     session['user_role'] = 'Asesor'# <-- ESTA LÍNEA ES CLAVE
                     session.permanent = True if remember_me else False

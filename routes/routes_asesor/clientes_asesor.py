@@ -32,17 +32,17 @@ configure_cloudinary()
 @clientes_asesor_bp.route('/clientes')
 def clientes():
     """Página principal de gestión de clientes del asesor"""
-    if 'user_id' not in session or session.get('user_role') != 'Asesor':
+    if 'user_role' not in session or session.get('user_role') != 'Asesor':
         flash('Debe iniciar sesión como asesor para acceder a esta página', 'error')
         return redirect(url_for('auth.login'))
     
     return render_template('asesor/clientes_asesor.html')
 
-# API para obtener la lista de clientes del asesor con paginación - CORREGIDO: Excluir "Sin estado"
+# API para obtener la lista de clientes del asesor with paginación - CORREGIDO: Excluir "Sin estado"
 @clientes_asesor_bp.route('/api/clientes')
 def api_clientes():
     """API para obtener todos los clientes asignados al asesor logueado con paginación"""
-    if 'user_id' not in session or session.get('user_role') != 'Asesor':
+    if 'user_role' not in session or session.get('user_role') != 'Asesor':
         return jsonify({'error': 'No autorizado'}), 401
     
     try:
@@ -55,7 +55,7 @@ def api_clientes():
         offset = (page - 1) * per_page
         
         # Obtener el ID del asesor desde la sesión
-        id_asesor = session.get('user_id')
+        id_asesor = session.get('user_role')
         
         # Query para contar el total de registros y estadísticas - CORREGIDO: Excluir NULL/Sin estado
         count_and_stats_query = """
@@ -1158,3 +1158,4 @@ def ver_formulario(id_form_elegibilidad):
     finally:
         if 'connection' in locals():
             connection.close()
+
