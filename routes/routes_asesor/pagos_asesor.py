@@ -1,335 +1,640 @@
 from flask import Blueprint, render_template, jsonify, session, request, redirect, url_for, flash
+import datetime
 from config.database import create_connection
-from config.stripe_config import PRECIOS_VISA
-import matplotlib
-matplotlib.use('Agg')  # Backend sin GUI
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta
-import base64
-import io
-from collections import defaultdict
-import locale
-
-# Configurar locale para formato de moneda
-try:
-    locale.setlocale(locale.LC_ALL, 'es_ES.UTF-8')
-except:
-    try:
-        locale.setlocale(locale.LC_ALL, 'Spanish_Spain.1252')
-    except:
-        pass
+from mysql.connector import Error
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+import os
+from flask import send_file
+import tempfile
+import time
 
 pagos_asesor_bp = Blueprint('pagos_asesor', __name__, url_prefix='/asesor')
 
-# Configurar estilo de matplotlib
-plt.style.use('default')
-sns.set_palette("husl")
-
-def obtener_datos_pagos_asesor(id_asesor):
-    """Obtiene todos los datos de pagos para un asesor específico"""
-    connection = create_connection()
-    if not connection:
-        return None
-    
-    try:
-        cursor = connection.cursor(dictionary=True)
-        query = """
-        SELECT 
-            pa.id_pago,
-            pa.monto,
-            pa.metodo_pago,
-            pa.estado_pago,
-            pa.fecha_pago,
-            pa.referencia_pago,
-            a.tipo_asesoria,
-            a.fecha_asesoria,
-            u.nombres,
-            u.apellidos,
-            s.id_solicitante
-        FROM tbl_pago_asesoria pa
-        INNER JOIN tbl_asesoria a ON pa.codigo_asesoria = a.codigo_asesoria
-        INNER JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
-        INNER JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-        WHERE a.id_asesor = %s
-        ORDER BY pa.fecha_pago DESC
-        """
-        cursor.execute(query, (id_asesor,))
-        return cursor.fetchall()
-    except Exception as e:
-        print(f"Error al obtener datos de pagos: {e}")
-        return []
-    finally:
-        if connection.is_connected():
-            cursor.close()
-            connection.close()
-
-def generar_grafico_ingresos_mensuales(datos_pagos):
-    """Genera gráfico de ingresos mensuales"""
-    if not datos_pagos:
-        return None
-    
-    # Convertir a DataFrame
-    df = pd.DataFrame(datos_pagos)
-    df['fecha_pago'] = pd.to_datetime(df['fecha_pago'])
-    df['mes_año'] = df['fecha_pago'].dt.to_period('M')
-    
-    # Filtrar solo pagos completados
-    df_completados = df[df['estado_pago'] == 'Completado']
-    
-    # Agrupar por mes
-    ingresos_mensuales = df_completados.groupby('mes_año')['monto'].sum().reset_index()
-    ingresos_mensuales['mes_año_str'] = ingresos_mensuales['mes_año'].astype(str)
-    
-    # Crear gráfico
-    plt.figure(figsize=(12, 6))
-    bars = plt.bar(ingresos_mensuales['mes_año_str'], ingresos_mensuales['monto'], 
-                   color='#3B82F6', alpha=0.8, edgecolor='#1E40AF', linewidth=1)
-    
-    plt.title('Ingresos Mensuales', fontsize=16, fontweight='bold', pad=20)
-    plt.xlabel('Mes', fontsize=12)
-    plt.ylabel('Ingresos (USD)', fontsize=12)
-    plt.xticks(rotation=45)
-    plt.grid(axis='y', alpha=0.3)
-    
-    # Añadir valores en las barras
-    for bar in bars:
-        height = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2., height + height*0.01,
-                f'${height:,.0f}', ha='center', va='bottom', fontweight='bold')
-    
-    plt.tight_layout()
-    
-    # Convertir a base64
-    buffer = io.BytesIO()
-    plt.savefig(buffer, format='png', dpi=300, bbox_inches='tight')
-    buffer.seek(0)
-    image_base64 = base64.b64encode(buffer.getvalue()).decode()
-    plt.close()
-    
-    return image_base64
-
-def generar_grafico_tipos_visa(datos_pagos):
-    """Genera gráfico de ingresos por tipo de visa"""
-    if not datos_pagos:
-        return None
-    
-    df = pd.DataFrame(datos_pagos)
-    df_completados = df[df['estado_pago'] == 'Completado']
-    
-    # Agrupar por tipo de visa
-    ingresos_visa = df_completados.groupby('tipo_asesoria')['monto'].sum().reset_index()
-    
-    # Crear gráfico de pastel
-    plt.figure(figsize=(10, 8))
-    colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
-    wedges, texts, autotexts = plt.pie(ingresos_visa['monto'], 
-                                      labels=ingresos_visa['tipo_asesoria'],
-                                      autopct='%1.1f%%',
-                                      colors=colors,
-                                      startangle=90,
-                                      explode=[0.05] * len(ingresos_visa))
-    
-    plt.title('Ingresos por Tipo de Visa', fontsize=16, fontweight='bold', pad=20)
-    
-    # Mejorar apariencia del texto
-    for autotext in autotexts:
-        autotext.set_color('white')
-        autotext.set_fontweight('bold')
-    
-    plt.axis('equal')
-    
-    # Convertir a base64
-    buffer = io.BytesIO()
-    plt.savefig(buffer, format='png', dpi=300, bbox_inches='tight')
-    buffer.seek(0)
-    image_base64 = base64.b64encode(buffer.getvalue()).decode()
-    plt.close()
-    
-    return image_base64
-
-def generar_grafico_metodos_pago(datos_pagos):
-    """Genera gráfico de métodos de pago más utilizados"""
-    if not datos_pagos:
-        return None
-    
-    df = pd.DataFrame(datos_pagos)
-    df_completados = df[df['estado_pago'] == 'Completado']
-    
-    # Contar métodos de pago
-    metodos_pago = df_completados['metodo_pago'].value_counts()
-    
-    # Crear gráfico de barras horizontales
-    plt.figure(figsize=(10, 6))
-    bars = plt.barh(metodos_pago.index, metodos_pago.values, 
-                    color='#10B981', alpha=0.8, edgecolor='#059669', linewidth=1)
-    
-    plt.title('Métodos de Pago Más Utilizados', fontsize=16, fontweight='bold', pad=20)
-    plt.xlabel('Cantidad de Transacciones', fontsize=12)
-    plt.ylabel('Método de Pago', fontsize=12)
-    plt.grid(axis='x', alpha=0.3)
-    
-    # Añadir valores en las barras
-    for i, bar in enumerate(bars):
-        width = bar.get_width()
-        plt.text(width + width*0.01, bar.get_y() + bar.get_height()/2,
-                f'{int(width)}', ha='left', va='center', fontweight='bold')
-    
-    plt.tight_layout()
-    
-    # Convertir a base64
-    buffer = io.BytesIO()
-    plt.savefig(buffer, format='png', dpi=300, bbox_inches='tight')
-    buffer.seek(0)
-    image_base64 = base64.b64encode(buffer.getvalue()).decode()
-    plt.close()
-    
-    return image_base64
-
-def generar_grafico_tendencia_semanal(datos_pagos):
-    """Genera gráfico de tendencia de pagos por día de la semana"""
-    if not datos_pagos:
-        return None
-    
-    df = pd.DataFrame(datos_pagos)
-    df['fecha_pago'] = pd.to_datetime(df['fecha_pago'])
-    df_completados = df[df['estado_pago'] == 'Completado']
-    
-    # Obtener día de la semana
-    df_completados['dia_semana'] = df_completados['fecha_pago'].dt.day_name()
-    
-    # Orden de días
-    dias_orden = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    dias_español = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
-    
-    # Contar pagos por día
-    pagos_dia = df_completados['dia_semana'].value_counts().reindex(dias_orden, fill_value=0)
-    
-    # Crear gráfico de línea
-    plt.figure(figsize=(12, 6))
-    plt.plot(dias_español, pagos_dia.values, marker='o', linewidth=3, 
-             markersize=8, color='#8B5CF6', markerfacecolor='#7C3AED')
-    
-    plt.title('Tendencia de Pagos por Día de la Semana', fontsize=16, fontweight='bold', pad=20)
-    plt.xlabel('Día de la Semana', fontsize=12)
-    plt.ylabel('Cantidad de Pagos', fontsize=12)
-    plt.grid(True, alpha=0.3)
-    plt.xticks(rotation=45)
-    
-    # Añadir valores en los puntos
-    for i, valor in enumerate(pagos_dia.values):
-        plt.annotate(f'{valor}', (i, valor), textcoords="offset points", 
-                    xytext=(0,10), ha='center', fontweight='bold')
-    
-    plt.tight_layout()
-    
-    # Convertir a base64
-    buffer = io.BytesIO()
-    plt.savefig(buffer, format='png', dpi=300, bbox_inches='tight')
-    buffer.seek(0)
-    image_base64 = base64.b64encode(buffer.getvalue()).decode()
-    plt.close()
-    
-    return image_base64
+def verificar_sesion_asesor():
+    """Verifica si el usuario es un asesor autenticado"""
+    if 'user_id' not in session or session.get('user_role') != 'Asesor':
+        return False
+    if 'id_asesor' not in session:
+        return False
+    return True
 
 @pagos_asesor_bp.route('/pagos')
-def pagos():
-    """Página principal de métricas de pagos"""
-    if 'user_role' not in session or session.get('user_role') != 'Asesor':
-        flash('Debe iniciar sesión como asesor para acceder a esta página', 'error')
+def pagos_dashboard():
+    """Página principal del dashboard de pagos del asesor"""
+    if not verificar_sesion_asesor():
+        flash('Debes iniciar sesión como asesor', 'error')
         return redirect(url_for('auth.login'))
     
     return render_template('asesor/pagos_asesor.html')
 
 @pagos_asesor_bp.route('/api/metricas-pagos')
 def obtener_metricas_pagos():
-    """API para obtener métricas de pagos del asesor"""
-    if 'user_id' not in session or session.get('user_role') != 'Asesor':
+    """API para obtener las métricas principales de pagos del asesor"""
+    if not verificar_sesion_asesor():
         return jsonify({'error': 'No autorizado'}), 401
-
-    id_asesor = session.get('id_asesor')  # <--- CORREGIDO
-    if not id_asesor:
-        return jsonify({'error': 'ID de asesor no encontrado'}), 400
-
-    datos_pagos = obtener_datos_pagos_asesor(id_asesor)
     
-    if not datos_pagos:
+    try:
+        connection = create_connection()
+        if not connection:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        id_asesor = session.get('id_asesor')
+        
+        if not id_asesor:
+            return jsonify({'error': 'ID de asesor no encontrado en sesión'}), 400
+        
+        # Ingresos totales
+        cursor.execute("""
+            SELECT COALESCE(SUM(p.monto), 0) as ingresos_totales
+            FROM tbl_pago_asesoria p
+            JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
+            WHERE a.id_asesor = %s AND p.estado_pago = 'Completado'
+        """, (id_asesor,))
+        result = cursor.fetchone()
+        ingresos_totales = float(result['ingresos_totales']) if result and result['ingresos_totales'] else 0.0
+        
+        # Total transacciones
+        cursor.execute("""
+            SELECT COUNT(*) as total_transacciones
+            FROM tbl_pago_asesoria p
+            JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
+            WHERE a.id_asesor = %s
+        """, (id_asesor,))
+        result = cursor.fetchone()
+        total_transacciones = result['total_transacciones'] if result else 0
+        
+        # Pagos pendientes
+        cursor.execute("""
+            SELECT COUNT(*) as pagos_pendientes
+            FROM tbl_pago_asesoria p
+            JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
+            WHERE a.id_asesor = %s AND p.estado_pago = 'Pendiente'
+        """, (id_asesor,))
+        result = cursor.fetchone()
+        pagos_pendientes = result['pagos_pendientes'] if result else 0
+        
+        # Pagos completados
+        cursor.execute("""
+            SELECT COUNT(*) as pagos_completados
+            FROM tbl_pago_asesoria p
+            JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
+            WHERE a.id_asesor = %s AND p.estado_pago = 'Completado'
+        """, (id_asesor,))
+        result = cursor.fetchone()
+        pagos_completados = result['pagos_completados'] if result else 0
+        
+        # Promedio por transacción
+        promedio_transaccion = 0
+        if pagos_completados > 0:
+            promedio_transaccion = round(ingresos_totales / pagos_completados, 2)
+        
+        # Ingresos del mes actual
+        cursor.execute("""
+            SELECT COALESCE(SUM(p.monto), 0) as ingresos_mes
+            FROM tbl_pago_asesoria p
+            JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
+            WHERE a.id_asesor = %s 
+            AND p.estado_pago = 'Completado'
+            AND MONTH(p.fecha_pago) = MONTH(CURDATE())
+            AND YEAR(p.fecha_pago) = YEAR(CURDATE())
+        """, (id_asesor,))
+        result = cursor.fetchone()
+        ingresos_mes = float(result['ingresos_mes']) if result and result['ingresos_mes'] else 0.0
+        
+        # Monto pendiente
+        cursor.execute("""
+            SELECT COALESCE(SUM(p.monto), 0) as monto_pendiente
+            FROM tbl_pago_asesoria p
+            JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
+            WHERE a.id_asesor = %s AND p.estado_pago = 'Pendiente'
+        """, (id_asesor,))
+        result = cursor.fetchone()
+        monto_pendiente = float(result['monto_pendiente']) if result and result['monto_pendiente'] else 0.0
+        
+        # Tasa de conversión (pagos completados vs total)
+        tasa_conversion = 0
+        if total_transacciones > 0:
+            tasa_conversion = round((pagos_completados / total_transacciones) * 100, 1)
+        
+        cursor.close()
+        connection.close()
+        
         return jsonify({
-            'total_ingresos': 0,
-            'total_transacciones': 0,
-            'pagos_pendientes': 0,
-            'pagos_completados': 0,
-            'promedio_transaccion': 0,
-            'grafico_ingresos_mensuales': None,
-            'grafico_tipos_visa': None,
-            'grafico_metodos_pago': None,
-            'grafico_tendencia_semanal': None,
-            'transacciones_recientes': []
+            'ingresos_totales': ingresos_totales,
+            'total_transacciones': total_transacciones,
+            'pagos_pendientes': pagos_pendientes,
+            'pagos_completados': pagos_completados,
+            'promedio_transaccion': promedio_transaccion,
+            'ingresos_mes': ingresos_mes,
+            'monto_pendiente': monto_pendiente,
+            'tasa_conversion': tasa_conversion
         })
-    
-    # Calcular métricas básicas
-    df = pd.DataFrame(datos_pagos)
-    df_completados = df[df['estado_pago'] == 'Completado']
-    
-    total_ingresos = df_completados['monto'].sum()
-    total_transacciones = len(datos_pagos)
-    pagos_pendientes = len(df[df['estado_pago'] == 'Pendiente'])
-    pagos_completados = len(df_completados)
-    promedio_transaccion = df_completados['monto'].mean() if len(df_completados) > 0 else 0
-    
-    # Generar gráficos
-    grafico_ingresos = generar_grafico_ingresos_mensuales(datos_pagos)
-    grafico_tipos = generar_grafico_tipos_visa(datos_pagos)
-    grafico_metodos = generar_grafico_metodos_pago(datos_pagos)
-    grafico_tendencia = generar_grafico_tendencia_semanal(datos_pagos)
-    
-    # Transacciones recientes (últimas 10)
-    transacciones_recientes = datos_pagos[:10]
-    
-    return jsonify({
-        'total_ingresos': float(total_ingresos),
-        'total_transacciones': total_transacciones,
-        'pagos_pendientes': pagos_pendientes,
-        'pagos_completados': pagos_completados,
-        'promedio_transaccion': float(promedio_transaccion),
-        'grafico_ingresos_mensuales': grafico_ingresos,
-        'grafico_tipos_visa': grafico_tipos,
-        'grafico_metodos_pago': grafico_metodos,
-        'grafico_tendencia_semanal': grafico_tendencia,
-        'transacciones_recientes': transacciones_recientes
-    })
+        
+    except Error as e:
+        print(f"Error en obtener_metricas_pagos: {str(e)}")
+        return jsonify({'error': 'Error interno del servidor'}), 500
+    except Exception as e:
+        print(f"Error general en obtener_metricas_pagos: {str(e)}")
+        return jsonify({'error': 'Error interno del servidor'}), 500
 
-@pagos_asesor_bp.route('/api/exportar-reporte')
-def exportar_reporte_pagos():
-    """Exporta reporte de pagos en formato CSV"""
-    if 'user_id' not in session or session.get('user_role') != 'Asesor':
+@pagos_asesor_bp.route('/api/ingresos-tipo-visa')
+def obtener_ingresos_tipo_visa():
+    """API para obtener datos del gráfico de ingresos por tipo de visa"""
+    if not verificar_sesion_asesor():
         return jsonify({'error': 'No autorizado'}), 401
+    
+    try:
+        connection = create_connection()
+        if not connection:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        id_asesor = session.get('id_asesor')
+        
+        if not id_asesor:
+            return jsonify({'error': 'ID de asesor no encontrado en sesión'}), 400
+        
+        cursor.execute("""
+            SELECT 
+                a.tipo_asesoria,
+                COALESCE(SUM(p.monto), 0) as total_ingresos
+            FROM tbl_pago_asesoria p
+            JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
+            WHERE a.id_asesor = %s AND p.estado_pago = 'Completado'
+            GROUP BY a.tipo_asesoria
+            ORDER BY total_ingresos DESC
+        """, (id_asesor,))
+        
+        resultados = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        
+        # Formatear datos para ApexCharts
+        tipos = []
+        ingresos = []
+        
+        if resultados:
+            for resultado in resultados:
+                tipos.append(resultado['tipo_asesoria'] or 'Sin tipo')
+                ingresos.append(float(resultado['total_ingresos']))
+        else:
+            tipos = ['Sin datos']
+            ingresos = [0]
+        
+        return jsonify({
+            'tipos': tipos,
+            'ingresos': ingresos
+        })
+        
+    except Error as e:
+        print(f"Error en obtener_ingresos_tipo_visa: {str(e)}")
+        return jsonify({'error': 'Error interno del servidor'}), 500
+    except Exception as e:
+        print(f"Error general en obtener_ingresos_tipo_visa: {str(e)}")
+        return jsonify({'error': 'Error interno del servidor'}), 500
 
-    id_asesor = session.get('id_asesor')  # <--- CORREGIDO
-    datos_pagos = obtener_datos_pagos_asesor(id_asesor)
+@pagos_asesor_bp.route('/api/metodos-pago')
+def obtener_metodos_pago():
+    """API para obtener datos del gráfico de métodos de pago"""
+    if not verificar_sesion_asesor():
+        return jsonify({'error': 'No autorizado'}), 401
     
-    if not datos_pagos:
-        return jsonify({'error': 'No hay datos para exportar'}), 404
+    try:
+        connection = create_connection()
+        if not connection:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        id_asesor = session.get('id_asesor')
+        
+        if not id_asesor:
+            return jsonify({'error': 'ID de asesor no encontrado en sesión'}), 400
+        
+        cursor.execute("""
+            SELECT 
+                p.metodo_pago,
+                COUNT(*) as cantidad,
+                COALESCE(SUM(p.monto), 0) as total_monto
+            FROM tbl_pago_asesoria p
+            JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
+            WHERE a.id_asesor = %s AND p.estado_pago = 'Completado'
+            GROUP BY p.metodo_pago
+            ORDER BY cantidad DESC
+        """, (id_asesor,))
+        
+        resultados = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        
+        # Formatear datos para ApexCharts
+        metodos = []
+        cantidades = []
+        
+        if resultados:
+            for resultado in resultados:
+                metodos.append(resultado['metodo_pago'] or 'Sin método')
+                cantidades.append(int(resultado['cantidad']))
+        else:
+            metodos = ['Sin datos']
+            cantidades = [0]
+        
+        return jsonify({
+            'metodos': metodos,
+            'cantidades': cantidades
+        })
+        
+    except Error as e:
+        print(f"Error en obtener_metodos_pago: {str(e)}")
+        return jsonify({'error': 'Error interno del servidor'}), 500
+    except Exception as e:
+        print(f"Error general en obtener_metodos_pago: {str(e)}")
+        return jsonify({'error': 'Error interno del servidor'}), 500
+
+@pagos_asesor_bp.route('/api/tendencia-semanal')
+def obtener_tendencia_semanal():
+    """API para obtener datos de la tendencia semanal de ingresos"""
+    if not verificar_sesion_asesor():
+        return jsonify({'error': 'No autorizado'}), 401
     
-    # Crear DataFrame y exportar
-    df = pd.DataFrame(datos_pagos)
+    try:
+        connection = create_connection()
+        if not connection:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        id_asesor = session.get('id_asesor')
+        
+        if not id_asesor:
+            return jsonify({'error': 'ID de asesor no encontrado en sesión'}), 400
+        
+        cursor.execute("""
+            SELECT 
+                DATE(p.fecha_pago) as fecha,
+                COALESCE(SUM(p.monto), 0) as ingresos_dia
+            FROM tbl_pago_asesoria p
+            JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
+            WHERE a.id_asesor = %s 
+            AND p.estado_pago = 'Completado'
+            AND p.fecha_pago >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            GROUP BY DATE(p.fecha_pago)
+            ORDER BY fecha ASC
+        """, (id_asesor,))
+        
+        resultados = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        
+        # Formatear datos para ApexCharts
+        fechas = []
+        ingresos = []
+        
+        if resultados:
+            for resultado in resultados:
+                fechas.append(resultado['fecha'].strftime('%Y-%m-%d'))
+                ingresos.append(float(resultado['ingresos_dia']))
+        else:
+            fechas = ['Sin datos']
+            ingresos = [0]
+        
+        return jsonify({
+            'fechas': fechas,
+            'ingresos': ingresos
+        })
+        
+    except Error as e:
+        print(f"Error en obtener_tendencia_semanal: {str(e)}")
+        return jsonify({'error': 'Error interno del servidor'}), 500
+    except Exception as e:
+        print(f"Error general en obtener_tendencia_semanal: {str(e)}")
+        return jsonify({'error': 'Error interno del servidor'}), 500
+
+@pagos_asesor_bp.route('/api/transacciones-recientes')
+def obtener_transacciones_recientes():
+    """API para obtener las transacciones recientes del asesor"""
+    if not verificar_sesion_asesor():
+        return jsonify({'error': 'No autorizado'}), 401
     
-    # Formatear fechas
-    df['fecha_pago'] = pd.to_datetime(df['fecha_pago']).dt.strftime('%Y-%m-%d %H:%M:%S')
-    df['fecha_asesoria'] = pd.to_datetime(df['fecha_asesoria']).dt.strftime('%Y-%m-%d %H:%M:%S')
+    try:
+        connection = create_connection()
+        if not connection:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        id_asesor = session.get('id_asesor')
+        
+        if not id_asesor:
+            return jsonify({'error': 'ID de asesor no encontrado en sesión'}), 400
+        
+        cursor.execute("""
+            SELECT 
+                p.id_pago,
+                p.monto,
+                p.metodo_pago,
+                p.estado_pago,
+                p.fecha_pago,
+                p.referencia_pago,
+                u.nombres,
+                u.apellidos,
+                a.tipo_asesoria
+            FROM tbl_pago_asesoria p
+            JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
+            JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
+            JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+            WHERE a.id_asesor = %s
+            ORDER BY p.fecha_pago DESC
+            LIMIT 15
+        """, (id_asesor,))
+        
+        resultados = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        
+        # Formatear fechas para el frontend
+        transacciones_recientes = []
+        for resultado in resultados:
+            transaccion = {
+                'id_pago': resultado['id_pago'],
+                'monto': float(resultado['monto']),
+                'metodo_pago': resultado['metodo_pago'] or 'Sin método',
+                'estado_pago': resultado['estado_pago'] or 'Sin estado',
+                'referencia_pago': resultado['referencia_pago'] or 'Sin referencia',
+                'nombres': resultado['nombres'] or 'Sin nombre',
+                'apellidos': resultado['apellidos'] or 'Sin apellido',
+                'tipo_asesoria': resultado['tipo_asesoria'] or 'Sin tipo',
+                'fecha_formateada': 'Sin fecha'
+            }
+            
+            if resultado['fecha_pago']:
+                transaccion['fecha_formateada'] = resultado['fecha_pago'].strftime('%d/%m/%Y %H:%M')
+            
+            transacciones_recientes.append(transaccion)
+        
+        return jsonify({'transacciones_recientes': transacciones_recientes})
+        
+    except Error as e:
+        print(f"Error en obtener_transacciones_recientes: {str(e)}")
+        return jsonify({'error': f'Error de base de datos: {str(e)}'}), 500
+    except Exception as e:
+        print(f"Error general en obtener_transacciones_recientes: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
+
+@pagos_asesor_bp.route('/api/generar-reporte-pagos')
+def generar_reporte_pagos():
+    """API para generar reporte PDF de pagos del asesor"""
+    if not verificar_sesion_asesor():
+        return jsonify({'error': 'No autorizado'}), 401
     
-    # Renombrar columnas
-    df.columns = ['ID Pago', 'Monto', 'Método Pago', 'Estado', 'Fecha Pago', 
-                  'Referencia', 'Tipo Asesoría', 'Fecha Asesoría', 'Nombres', 'Apellidos', 'ID Solicitante']
+    try:
+        connection = create_connection()
+        if not connection:
+            return jsonify({'error': 'Error de conexión a la base de datos'}), 500
+        
+        cursor = connection.cursor(dictionary=True)
+        id_asesor = session.get('id_asesor')
+        
+        if not id_asesor:
+            return jsonify({'error': 'ID de asesor no encontrado en sesión'}), 400
+        
+        # Obtener información del asesor
+        cursor.execute("""
+            SELECT a.nombre, a.apellidos, u.correo
+            FROM tbl_asesor a
+            JOIN tbl_usuario u ON a.id_usuario = u.id_usuario
+            WHERE a.id_asesor = %s
+        """, (id_asesor,))
+        asesor_info = cursor.fetchone()
+        
+        # Obtener métricas de pagos
+        metricas = {}
+        
+        # Ingresos totales
+        cursor.execute("""
+            SELECT COALESCE(SUM(p.monto), 0) as total
+            FROM tbl_pago_asesoria p
+            JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
+            WHERE a.id_asesor = %s AND p.estado_pago = 'Completado'
+        """, (id_asesor,))
+        result = cursor.fetchone()
+        metricas['ingresos_totales'] = float(result['total']) if result and result['total'] else 0.0
+        
+        # Total transacciones
+        cursor.execute("""
+            SELECT COUNT(*) as total
+            FROM tbl_pago_asesoria p
+            JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
+            WHERE a.id_asesor = %s
+        """, (id_asesor,))
+        result = cursor.fetchone()
+        metricas['total_transacciones'] = result['total'] if result else 0
+        
+        # Pagos completados
+        cursor.execute("""
+            SELECT COUNT(*) as completados
+            FROM tbl_pago_asesoria p
+            JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
+            WHERE a.id_asesor = %s AND p.estado_pago = 'Completado'
+        """, (id_asesor,))
+        result = cursor.fetchone()
+        metricas['pagos_completados'] = result['completados'] if result else 0
+        
+        # Pagos pendientes
+        cursor.execute("""
+            SELECT COUNT(*) as pendientes
+            FROM tbl_pago_asesoria p
+            JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
+            WHERE a.id_asesor = %s AND p.estado_pago = 'Pendiente'
+        """, (id_asesor,))
+        result = cursor.fetchone()
+        metricas['pagos_pendientes'] = result['pendientes'] if result else 0
+        
+        # Promedio por transacción
+        if metricas['pagos_completados'] > 0:
+            metricas['promedio_transaccion'] = round(metricas['ingresos_totales'] / metricas['pagos_completados'], 2)
+        else:
+            metricas['promedio_transaccion'] = 0
+        
+        # Tasa de conversión
+        if metricas['total_transacciones'] > 0:
+            metricas['tasa_conversion'] = round((metricas['pagos_completados'] / metricas['total_transacciones']) * 100, 1)
+        else:
+            metricas['tasa_conversion'] = 0
+        
+        # Ingresos del mes
+        cursor.execute("""
+            SELECT COALESCE(SUM(p.monto), 0) as ingresos
+            FROM tbl_pago_asesoria p
+            JOIN tbl_asesoria a ON p.codigo_asesoria = a.codigo_asesoria
+            WHERE a.id_asesor = %s 
+            AND p.estado_pago = 'Completado'
+            AND MONTH(p.fecha_pago) = MONTH(CURDATE())
+            AND YEAR(p.fecha_pago) = YEAR(CURDATE())
+        """, (id_asesor,))
+        result = cursor.fetchone()
+        metricas['ingresos_mes'] = float(result['ingresos']) if result and result['ingresos'] else 0.0
+        
+        cursor.close()
+        connection.close()
+        
+        # Generar serial de 6 dígitos basado en timestamp
+        serial = str(int(time.time()))[-6:]
+
+        # Generar nombre del archivo
+        fecha_generacion = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        nombre_archivo = f"{id_asesor}_pagos_{serial}_{fecha_generacion}.pdf"
+        
+        # Generar PDF
+        archivo_pdf = crear_reporte_pagos_pdf(asesor_info, metricas)
+        
+        return send_file(
+            archivo_pdf,
+            as_attachment=True,
+            download_name=nombre_archivo,
+            mimetype='application/pdf'
+        )
+        
+    except Error as e:
+        print(f"Error en generar_reporte_pagos: {str(e)}")
+        return jsonify({'error': 'Error interno del servidor'}), 500
+    except Exception as e:
+        print(f"Error general en generar_reporte_pagos: {str(e)}")
+        return jsonify({'error': 'Error interno del servidor'}), 500
+
+def crear_reporte_pagos_pdf(asesor_info, metricas):
+    """Crear el archivo PDF del reporte de pagos"""
+    # Crear archivo temporal
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
     
-    # Convertir a CSV
-    csv_buffer = io.StringIO()
-    df.to_csv(csv_buffer, index=False, encoding='utf-8')
-    csv_data = csv_buffer.getvalue()
+    # Configurar documento
+    doc = SimpleDocTemplate(
+        temp_file.name,
+        pagesize=A4,
+        rightMargin=72,
+        leftMargin=72,
+        topMargin=72,
+        bottomMargin=18
+    )
     
-    return jsonify({
-        'csv_data': csv_data,
-        'filename': f'reporte_pagos_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
-    })
+    # Estilos
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        spaceAfter=30,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor('#1F2937')
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Heading2'],
+        fontSize=16,
+        spaceAfter=20,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor('#4B5563')
+    )
+    
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontSize=12,
+        spaceAfter=12,
+        alignment=TA_LEFT
+    )
+    
+    # Contenido del documento
+    story = []
+    
+    # Logo (si existe)
+    logo_path = 'static/img/logo-canadian-visa-advise.jpg'
+    if os.path.exists(logo_path):
+        logo = Image(logo_path, width=2*inch, height=1*inch)
+        logo.hAlign = 'CENTER'
+        story.append(logo)
+        story.append(Spacer(1, 20))
+    
+    # Título
+    story.append(Paragraph("Reporte de Métricas de Pagos", title_style))
+    
+    # Información del asesor
+    asesor_nombre = f"{asesor_info['nombre']} {asesor_info['apellidos']}" if asesor_info else "Asesor"
+    story.append(Paragraph(f"Asesor: {asesor_nombre}", subtitle_style))
+    
+    if asesor_info and asesor_info['correo']:
+        story.append(Paragraph(f"Correo: {asesor_info['correo']}", normal_style))
+    
+    story.append(Paragraph(f"Fecha de generación: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}", normal_style))
+    story.append(Spacer(1, 30))
+    
+    # Tabla de métricas de pagos
+    story.append(Paragraph("Métricas de Pagos", subtitle_style))
+    
+    # Datos de la tabla
+    data = [
+        ['Métrica', 'Valor'],
+        ['Ingresos Totales', f"${metricas['ingresos_totales']:,.0f} USD"],
+        ['Total Transacciones', str(metricas['total_transacciones'])],
+        ['Pagos Completados', str(metricas['pagos_completados'])],
+        ['Pagos Pendientes', str(metricas['pagos_pendientes'])],
+        ['Promedio por Transacción', f"${metricas['promedio_transaccion']:,.0f} USD"],
+        ['Tasa de Conversión', f"{metricas['tasa_conversion']}%"],
+        ['Ingresos del Mes', f"${metricas['ingresos_mes']:,.0f} USD"]
+    ]
+    
+    # Crear tabla
+    table = Table(data, colWidths=[3*inch, 2*inch])
+    table.setStyle(TableStyle([
+        # Header
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#10B981')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        
+        # Body
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#F0FDF4')),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.HexColor('#1F2937')),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 12),
+        
+        # Borders
+        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#E5E7EB')),
+        ('LINEBELOW', (0, 0), (-1, 0), 2, colors.HexColor('#10B981')),
+        
+        # Alternating rows
+        ('BACKGROUND', (0, 2), (-1, 2), colors.white),
+        ('BACKGROUND', (0, 4), (-1, 4), colors.white),
+        ('BACKGROUND', (0, 6), (-1, 6), colors.white),
+        
+        # Padding
+        ('TOPPADDING', (0, 0), (-1, -1), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+        ('LEFTPADDING', (0, 0), (-1, -1), 20),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 20),
+    ]))
+    
+    story.append(table)
+    story.append(Spacer(1, 30))
+    
+    # Nota al pie
+    story.append(Paragraph(
+        "Este reporte fue generado automáticamente por el sistema Canadian Visa Advise.",
+        ParagraphStyle(
+            'Footer',
+            parent=styles['Normal'],
+            fontSize=10,
+            alignment=TA_CENTER,
+            textColor=colors.HexColor('#6B7280')
+        )
+    ))
+    
+    # Construir PDF
+    doc.build(story)
+    
+    return temp_file.name

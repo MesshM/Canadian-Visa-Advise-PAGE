@@ -1,418 +1,752 @@
-// Variables globales
-let datosMetricas = null;
+// Variables globales para los gráficos
+let graficoTipoVisa = null
+let graficoMetodosPago = null
+let graficoTendencia = null
 
-// Inicialización cuando se carga la página
-document.addEventListener('DOMContentLoaded', function() {
-    cargarMetricasPagos();
-});
+// Importación de ApexCharts
+const ApexCharts = window.ApexCharts
 
-/**
- * Carga las métricas de pagos desde el servidor
- */
+// Función para inicializar el dashboard
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("Inicializando dashboard de pagos del asesor...")
+  cargarTodasLasMetricasPagos()
+})
+
+// Función para cargar todas las métricas de pagos
+async function cargarTodasLasMetricasPagos() {
+  try {
+    await Promise.all([
+      cargarMetricasPagos(),
+      cargarGraficoTipoVisa(),
+      cargarGraficoMetodosPago(),
+      cargarGraficoTendencia(),
+      cargarTransaccionesRecientes(),
+    ])
+    console.log("Todas las métricas de pagos cargadas exitosamente")
+  } catch (error) {
+    console.error("Error al cargar las métricas de pagos:", error)
+    mostrarNotificacion("Error al cargar algunas métricas", "error")
+  }
+}
+
+// Función para cargar las métricas principales de pagos
 async function cargarMetricasPagos() {
-    try {
-        mostrarLoadingTransacciones(true);
-        
-        const response = await fetch('/asesor/api/metricas-pagos');
-        
-        if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
-        }
-        
-        datosMetricas = await response.json();
-        
-        // Actualizar estadísticas principales
-        actualizarEstadisticasPrincipales(datosMetricas);
-        
-        // Cargar gráficos
-        cargarGraficos(datosMetricas);
-        
-        // Cargar transacciones recientes
-        cargarTransaccionesRecientes(datosMetricas.transacciones_recientes);
-        
-    } catch (error) {
-        console.error('Error al cargar métricas:', error);
-        mostrarError('Error al cargar las métricas de pagos. Por favor, intente nuevamente.');
-    } finally {
-        mostrarLoadingTransacciones(false);
+  try {
+    console.log("Cargando métricas principales de pagos...")
+    const response = await fetch("/asesor/api/metricas-pagos")
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
     }
+
+    const data = await response.json()
+
+    if (data.error) {
+      throw new Error(data.error)
+    }
+
+    // Actualizar los números en las tarjetas
+    document.getElementById("ingresosTotales").textContent = formatearMoneda(data.ingresos_totales || 0)
+    document.getElementById("totalTransacciones").textContent = data.total_transacciones || 0
+    document.getElementById("pagosCompletados").textContent = data.pagos_completados || 0
+    document.getElementById("pagosPendientes").textContent = data.pagos_pendientes || 0
+    document.getElementById("promedioTransaccion").textContent = formatearMoneda(data.promedio_transaccion || 0)
+    document.getElementById("ingresosMes").textContent = formatearMoneda(data.ingresos_mes || 0)
+    document.getElementById("montoPendiente").textContent = formatearMoneda(data.monto_pendiente || 0)
+    document.getElementById("tasaConversion").textContent = data.tasa_conversion || "0"
+
+    console.log("Métricas principales de pagos cargadas:", data)
+  } catch (error) {
+    console.error("Error al cargar métricas principales de pagos:", error)
+    mostrarNotificacion("Error al cargar métricas principales", "error")
+  }
 }
 
-/**
- * Actualiza las estadísticas principales en las tarjetas
- */
-function actualizarEstadisticasPrincipales(datos) {
-    // Formatear números con separadores de miles
-    const formatearMoneda = (valor) => {
-        return new Intl.NumberFormat('es-ES', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(valor);
-    };
-    
-    const formatearNumero = (valor) => {
-        return new Intl.NumberFormat('es-ES').format(valor);
-    };
-    
-    // Actualizar valores
-    document.getElementById('totalIngresos').textContent = formatearMoneda(datos.total_ingresos);
-    document.getElementById('totalTransacciones').textContent = formatearNumero(datos.total_transacciones);
-    document.getElementById('pagosPendientes').textContent = formatearNumero(datos.pagos_pendientes);
-    document.getElementById('pagosCompletados').textContent = formatearNumero(datos.pagos_completados);
-    document.getElementById('promedioTransaccion').textContent = formatearMoneda(datos.promedio_transaccion);
-    
-    // Animación de conteo para las estadísticas
-    animarContadores();
+// Función para cargar el gráfico de ingresos por tipo de visa
+async function cargarGraficoTipoVisa() {
+  const contenedor = document.getElementById("contenedorGraficoTipoVisa")
+  if (!contenedor) return
+
+  try {
+    console.log("Cargando gráfico de ingresos por tipo de visa...")
+    const response = await fetch("/asesor/api/ingresos-tipo-visa")
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    if (data.error) {
+      throw new Error(data.error)
+    }
+
+    // Validar que tenemos datos válidos
+    if (!data.ingresos || !Array.isArray(data.ingresos) || data.ingresos.length === 0) {
+      mostrarGraficoVacio(contenedor, "No hay datos de ingresos por tipo de visa disponibles")
+      return
+    }
+
+    const opciones = {
+      series: [
+        {
+          name: "Ingresos",
+          data: data.ingresos,
+        },
+      ],
+      chart: {
+        type: "bar",
+        height: 320,
+        toolbar: {
+          show: false,
+        },
+        fontFamily: "Inter, system-ui, sans-serif",
+        background: "transparent",
+      },
+      plotOptions: {
+        bar: {
+          horizontal: true,
+          columnWidth: "70%",
+          endingShape: "rounded",
+          borderRadius: 6,
+          dataLabels: {
+            position: "center",
+          },
+        },
+      },
+      dataLabels: {
+        enabled: true,
+        style: {
+          fontSize: "12px",
+          fontWeight: 600,
+          colors: ["#FFFFFF"],
+        },
+        formatter: (val) => "$" + formatearMoneda(val),
+        dropShadow: {
+          enabled: true,
+          top: 1,
+          left: 1,
+          blur: 1,
+          opacity: 0.8,
+        },
+      },
+      stroke: {
+        show: false,
+      },
+      xaxis: {
+        categories: data.tipos || ["Sin datos"],
+        labels: {
+          style: {
+            fontSize: "12px",
+            fontWeight: 500,
+            colors: "#6B7280",
+          },
+          formatter: (val) => "$" + formatearMoneda(val),
+        },
+        axisBorder: {
+          show: false,
+        },
+        axisTicks: {
+          show: false,
+        },
+      },
+      yaxis: {
+        title: {
+          text: "Tipo de Visa",
+          style: {
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "#374151",
+          },
+        },
+        labels: {
+          style: {
+            fontSize: "11px",
+            colors: "#6B7280",
+          },
+        },
+      },
+      grid: {
+        borderColor: "#F3F4F6",
+        strokeDashArray: 3,
+        yaxis: {
+          lines: {
+            show: false,
+          },
+        },
+      },
+      fill: {
+        type: "gradient",
+        gradient: {
+          shade: "light",
+          type: "horizontal",
+          shadeIntensity: 0.3,
+          gradientToColors: ["#A855F7"],
+          inverseColors: false,
+          opacityFrom: 0.9,
+          opacityTo: 0.7,
+        },
+      },
+      colors: ["#8B5CF6"],
+      tooltip: {
+        theme: "light",
+        style: {
+          fontSize: "12px",
+          fontFamily: "Inter, system-ui, sans-serif",
+        },
+        y: {
+          formatter: (val) => "$" + formatearMoneda(val) + " USD",
+        },
+      },
+    }
+
+    // Destruir gráfico anterior si existe
+    if (graficoTipoVisa) {
+      graficoTipoVisa.destroy()
+    }
+
+    contenedor.innerHTML = ""
+    graficoTipoVisa = new ApexCharts(contenedor, opciones)
+    await graficoTipoVisa.render()
+
+    console.log("Gráfico de ingresos por tipo de visa cargado:", data)
+  } catch (error) {
+    console.error("Error al cargar gráfico de ingresos por tipo de visa:", error)
+    mostrarGraficoVacio(contenedor, "Error al cargar gráfico de ingresos por tipo de visa")
+  }
 }
 
-/**
- * Carga y muestra los gráficos
- */
-function cargarGraficos(datos) {
-    // Gráfico de ingresos mensuales
-    if (datos.grafico_ingresos_mensuales) {
-        const contenedorIngresos = document.getElementById('contenedorGraficoIngresos');
-        contenedorIngresos.innerHTML = `
-            <img src="data:image/png;base64,${datos.grafico_ingresos_mensuales}" 
-                 alt="Gráfico de Ingresos Mensuales" 
-                 class="w-full h-auto rounded-lg shadow-sm">
-        `;
+// Función para cargar el gráfico de métodos de pago
+async function cargarGraficoMetodosPago() {
+  const contenedor = document.getElementById("contenedorGraficoMetodosPago")
+  if (!contenedor) return
+
+  try {
+    console.log("Cargando gráfico de métodos de pago...")
+    const response = await fetch("/asesor/api/metodos-pago")
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    if (data.error) {
+      throw new Error(data.error)
+    }
+
+    // Validar que tenemos datos válidos
+    if (!data.cantidades || !Array.isArray(data.cantidades) || data.cantidades.length === 0) {
+      mostrarGraficoVacio(contenedor, "No hay datos de métodos de pago disponibles")
+      return
+    }
+
+    const opciones = {
+      series: data.cantidades,
+      chart: {
+        type: "donut",
+        height: 320,
+        fontFamily: "Inter, system-ui, sans-serif",
+        background: "transparent",
+      },
+      labels: data.metodos || ["Sin datos"],
+      colors: ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"],
+      plotOptions: {
+        pie: {
+          donut: {
+            size: "70%",
+            labels: {
+              show: true,
+              total: {
+                show: true,
+                label: "Total",
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "#374151",
+                formatter: (w) =>
+                  w.globals.seriesTotals.reduce((a, b) => {
+                    return a + b
+                  }, 0),
+              },
+              value: {
+                fontSize: "24px",
+                fontWeight: 700,
+                color: "#1F2937",
+              },
+            },
+          },
+        },
+      },
+      dataLabels: {
+        enabled: true,
+        style: {
+          fontSize: "12px",
+          fontWeight: 600,
+          colors: ["#FFFFFF"],
+        },
+        dropShadow: {
+          enabled: true,
+          top: 1,
+          left: 1,
+          blur: 1,
+          opacity: 0.8,
+        },
+      },
+      legend: {
+        position: "bottom",
+        fontSize: "12px",
+        fontWeight: 500,
+        labels: {
+          colors: "#374151",
+        },
+        markers: {
+          width: 12,
+          height: 12,
+          radius: 6,
+        },
+      },
+      responsive: [
+        {
+          breakpoint: 480,
+          options: {
+            chart: {
+              width: 280,
+            },
+            legend: {
+              position: "bottom",
+            },
+          },
+        },
+      ],
+      tooltip: {
+        theme: "light",
+        style: {
+          fontSize: "12px",
+          fontFamily: "Inter, system-ui, sans-serif",
+        },
+        y: {
+          formatter: (val) => val + " transacciones",
+        },
+      },
+    }
+
+    // Destruir gráfico anterior si existe
+    if (graficoMetodosPago) {
+      graficoMetodosPago.destroy()
+    }
+
+    contenedor.innerHTML = ""
+    graficoMetodosPago = new ApexCharts(contenedor, opciones)
+    await graficoMetodosPago.render()
+
+    console.log("Gráfico de métodos de pago cargado:", data)
+  } catch (error) {
+    console.error("Error al cargar gráfico de métodos de pago:", error)
+    mostrarGraficoVacio(contenedor, "Error al cargar gráfico de métodos de pago")
+  }
+}
+
+// Función para cargar el gráfico de tendencia semanal
+async function cargarGraficoTendencia() {
+  const contenedor = document.getElementById("contenedorGraficoTendencia")
+  if (!contenedor) return
+
+  try {
+    console.log("Cargando gráfico de tendencia...")
+    const response = await fetch("/asesor/api/tendencia-semanal")
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    if (data.error) {
+      throw new Error(data.error)
+    }
+
+    // Validar que tenemos datos válidos
+    if (!data.ingresos || !Array.isArray(data.ingresos) || data.ingresos.length === 0) {
+      mostrarGraficoVacio(contenedor, "No hay datos de tendencia disponibles")
+      return
+    }
+
+    const opciones = {
+      series: [
+        {
+          name: "Ingresos Diarios",
+          data: data.ingresos,
+        },
+      ],
+      chart: {
+        type: "area",
+        height: 420,
+        toolbar: {
+          show: false,
+        },
+        fontFamily: "Inter, system-ui, sans-serif",
+        background: "transparent",
+      },
+      dataLabels: {
+        enabled: false,
+      },
+      stroke: {
+        curve: "smooth",
+        width: 3,
+      },
+      xaxis: {
+        categories: data.fechas || ["Sin datos"],
+        labels: {
+          style: {
+            fontSize: "12px",
+            fontWeight: 500,
+            colors: "#6B7280",
+          },
+          formatter: (val) => {
+            if (val === "Sin datos") return val
+            const date = new Date(val)
+            return date.toLocaleDateString("es-ES", { month: "short", day: "numeric" })
+          },
+        },
+        axisBorder: {
+          show: false,
+        },
+        axisTicks: {
+          show: false,
+        },
+      },
+      yaxis: {
+        title: {
+          text: "Ingresos (USD)",
+          style: {
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "#374151",
+          },
+        },
+        labels: {
+          style: {
+            fontSize: "12px",
+            colors: "#6B7280",
+          },
+          formatter: (val) => "$" + formatearMoneda(val),
+        },
+      },
+      grid: {
+        borderColor: "#F3F4F6",
+        strokeDashArray: 3,
+      },
+      fill: {
+        type: "gradient",
+        gradient: {
+          shade: "light",
+          type: "vertical",
+          shadeIntensity: 0.3,
+          gradientToColors: ["#10B981"],
+          inverseColors: false,
+          opacityFrom: 0.8,
+          opacityTo: 0.1,
+        },
+      },
+      colors: ["#059669"],
+      tooltip: {
+        theme: "light",
+        style: {
+          fontSize: "12px",
+          fontFamily: "Inter, system-ui, sans-serif",
+        },
+        x: {
+          formatter: (val) => {
+            if (typeof val === "string" && val !== "Sin datos") {
+              const date = new Date(val)
+              return date.toLocaleDateString("es-ES", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
+            }
+            return val
+          },
+        },
+        y: {
+          formatter: (val) => "$" + formatearMoneda(val) + " USD",
+        },
+      },
+    }
+
+    // Destruir gráfico anterior si existe
+    if (graficoTendencia) {
+      graficoTendencia.destroy()
+    }
+
+    contenedor.innerHTML = ""
+    graficoTendencia = new ApexCharts(contenedor, opciones)
+    await graficoTendencia.render()
+
+    console.log("Gráfico de tendencia cargado:", data)
+  } catch (error) {
+    console.error("Error al cargar gráfico de tendencia:", error)
+    mostrarGraficoVacio(contenedor, "Error al cargar gráfico de tendencia")
+  }
+}
+
+// Función para mostrar un gráfico vacío con mensaje
+function mostrarGraficoVacio(contenedor, mensaje) {
+  contenedor.innerHTML = `
+    <div class="flex flex-col items-center justify-center h-full py-8">
+      <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+      </svg>
+      <p class="text-gray-500 text-center">${mensaje}</p>
+    </div>
+  `
+}
+
+// Función para cargar las transacciones recientes
+async function cargarTransaccionesRecientes() {
+  const loadingElement = document.getElementById("loadingTransaccionesRecientes")
+  const tablaElement = document.getElementById("tablaTransaccionesRecientes")
+
+  if (!loadingElement || !tablaElement) return
+
+  // Mostrar loading
+  loadingElement.classList.remove("hidden")
+
+  try {
+    console.log("Cargando transacciones recientes...")
+    const response = await fetch("/asesor/api/transacciones-recientes")
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    if (data.error) {
+      throw new Error(data.error)
+    }
+
+    tablaElement.innerHTML = ""
+
+    if (!data.transacciones_recientes || data.transacciones_recientes.length === 0) {
+      tablaElement.innerHTML = `
+        <tr>
+          <td colspan="6" class="p-8 text-center text-gray-500">
+            No tienes transacciones recientes
+          </td>
+        </tr>
+      `
     } else {
-        mostrarGraficoVacio('contenedorGraficoIngresos', 'No hay datos de ingresos mensuales');
-    }
-    
-    // Gráfico de tipos de visa
-    if (datos.grafico_tipos_visa) {
-        const contenedorTipos = document.getElementById('contenedorGraficoTipos');
-        contenedorTipos.innerHTML = `
-            <img src="data:image/png;base64,${datos.grafico_tipos_visa}" 
-                 alt="Gráfico de Tipos de Visa" 
-                 class="w-full h-auto rounded-lg shadow-sm">
-        `;
-    } else {
-        mostrarGraficoVacio('contenedorGraficoTipos', 'No hay datos de tipos de visa');
-    }
-    
-    // Gráfico de métodos de pago
-    if (datos.grafico_metodos_pago) {
-        const contenedorMetodos = document.getElementById('contenedorGraficoMetodos');
-        contenedorMetodos.innerHTML = `
-            <img src="data:image/png;base64,${datos.grafico_metodos_pago}" 
-                 alt="Gráfico de Métodos de Pago" 
-                 class="w-full h-auto rounded-lg shadow-sm">
-        `;
-    } else {
-        mostrarGraficoVacio('contenedorGraficoMetodos', 'No hay datos de métodos de pago');
-    }
-    
-    // Gráfico de tendencia semanal
-    if (datos.grafico_tendencia_semanal) {
-        const contenedorTendencia = document.getElementById('contenedorGraficoTendencia');
-        contenedorTendencia.innerHTML = `
-            <img src="data:image/png;base64,${datos.grafico_tendencia_semanal}" 
-                 alt="Gráfico de Tendencia Semanal" 
-                 class="w-full h-auto rounded-lg shadow-sm">
-        `;
-    } else {
-        mostrarGraficoVacio('contenedorGraficoTendencia', 'No hay datos de tendencia semanal');
-    }
-}
+      data.transacciones_recientes.forEach((transaccion) => {
+        const fila = document.createElement("tr")
+        fila.className = "hover:bg-gray-50 transition-colors duration-200"
 
-/**
- * Muestra un mensaje cuando no hay datos para un gráfico
- */
-function mostrarGraficoVacio(contenedorId, mensaje) {
-    const contenedor = document.getElementById(contenedorId);
-    contenedor.innerHTML = `
-        <div class="text-center py-12">
-            <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-            </svg>
-            <p class="text-gray-500 text-sm">${mensaje}</p>
-        </div>
-    `;
-}
+        const estadoColor = obtenerColorEstadoPago(transaccion.estado_pago)
 
-/**
- * Carga las transacciones recientes en la tabla
- */
-function cargarTransaccionesRecientes(transacciones) {
-    const tbody = document.getElementById('tablaTransaccionesRecientes');
-    
-    if (!transacciones || transacciones.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="6" class="p-8 text-center text-gray-500">
-                    <svg class="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    No hay transacciones recientes
-                </td>
-            </tr>
-        `;
-        return;
-    }
-    
-    tbody.innerHTML = transacciones.map(transaccion => {
-        const estadoClass = obtenerClaseEstado(transaccion.estado_pago);
-        const fechaFormateada = formatearFecha(transaccion.fecha_pago);
-        const montoFormateado = formatearMoneda(transaccion.monto);
-        
-        return `
-            <tr class="hover:bg-gray-50 transition-colors duration-200">
-                <td class="p-4 border-b border-gray-200">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center mr-3">
-                            <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">${transaccion.nombres} ${transaccion.apellidos}</p>
-                            <p class="text-xs text-gray-500">ID: ${transaccion.id_solicitante}</p>
-                        </div>
-                    </div>
-                </td>
-                <td class="p-4 border-b border-gray-200">
-                    <span class="text-sm font-semibold text-gray-900">${montoFormateado}</span>
-                </td>
-                <td class="p-4 border-b border-gray-200">
-                    <span class="text-sm text-gray-600">${transaccion.metodo_pago}</span>
-                </td>
-                <td class="p-4 border-b border-gray-200">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${estadoClass}">
-                        ${transaccion.estado_pago}
-                    </span>
-                </td>
-                <td class="p-4 border-b border-gray-200">
-                    <span class="text-sm text-gray-600">${fechaFormateada}</span>
-                </td>
-                <td class="p-4 border-b border-gray-200">
-                    <span class="text-sm text-gray-600">${transaccion.tipo_asesoria}</span>
-                </td>
-            </tr>
-        `;
-    }).join('');
-}
-
-/**
- * Obtiene la clase CSS para el estado del pago
- */
-function obtenerClaseEstado(estado) {
-    const estados = {
-        'Completado': 'bg-green-100 text-green-800',
-        'Pendiente': 'bg-yellow-100 text-yellow-800',
-        'Cancelado': 'bg-red-100 text-red-800'
-    };
-    return estados[estado] || 'bg-gray-100 text-gray-800';
-}
-
-/**
- * Formatea una fecha para mostrar
- */
-function formatearFecha(fecha) {
-    const date = new Date(fecha);
-    return date.toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
-/**
- * Formatea un valor monetario
- */
-function formatearMoneda(valor) {
-    return new Intl.NumberFormat('es-ES', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(valor);
-}
-
-/**
- * Anima los contadores de las estadísticas principales
- */
-function animarContadores() {
-    const contadores = [
-        { elemento: 'totalIngresos', valor: datosMetricas.total_ingresos, esMoneda: true },
-        { elemento: 'totalTransacciones', valor: datosMetricas.total_transacciones, esMoneda: false },
-        { elemento: 'pagosPendientes', valor: datosMetricas.pagos_pendientes, esMoneda: false },
-        { elemento: 'pagosCompletados', valor: datosMetricas.pagos_completados, esMoneda: false },
-        { elemento: 'promedioTransaccion', valor: datosMetricas.promedio_transaccion, esMoneda: true }
-    ];
-    
-    contadores.forEach(contador => {
-        animarContador(contador.elemento, contador.valor, contador.esMoneda);
-    });
-}
-
-/**
- * Anima un contador individual
- */
-function animarContador(elementoId, valorFinal, esMoneda = false) {
-    const elemento = document.getElementById(elementoId);
-    const duracion = 2000; // 2 segundos
-    const pasos = 60;
-    const incremento = valorFinal / pasos;
-    let valorActual = 0;
-    let paso = 0;
-    
-    const intervalo = setInterval(() => {
-        valorActual += incremento;
-        paso++;
-        
-        if (paso >= pasos) {
-            valorActual = valorFinal;
-            clearInterval(intervalo);
-        }
-        
-        if (esMoneda) {
-            elemento.textContent = formatearMoneda(valorActual);
-        } else {
-            elemento.textContent = new Intl.NumberFormat('es-ES').format(Math.floor(valorActual));
-        }
-    }, duracion / pasos);
-}
-
-/**
- * Actualiza las métricas (botón actualizar)
- */
-async function actualizarMetricas() {
-    const boton = event.target.closest('button');
-    const textoOriginal = boton.innerHTML;
-    
-    // Mostrar loading en el botón
-    boton.innerHTML = `
-        <div class="relative flex items-center justify-center">
-            <svg class="animate-spin w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-            </svg>
-            <span>Actualizando...</span>
-        </div>
-    `;
-    boton.disabled = true;
-    
-    try {
-        await cargarMetricasPagos();
-        mostrarExito('Métricas actualizadas correctamente');
-    } catch (error) {
-        mostrarError('Error al actualizar las métricas');
-    } finally {
-        // Restaurar botón
-        setTimeout(() => {
-            boton.innerHTML = textoOriginal;
-            boton.disabled = false;
-        }, 1000);
-    }
-}
-
-/**
- * Exporta el reporte de pagos
- */
-async function exportarReporte() {
-    const boton = event.target.closest('button');
-    const textoOriginal = boton.innerHTML;
-    
-    // Mostrar loading en el botón
-    boton.innerHTML = `
-        <div class="flex items-center justify-center">
-            <svg class="animate-spin w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-            </svg>
-            <span>Exportando...</span>
-        </div>
-    `;
-    boton.disabled = true;
-    
-    try {
-        const response = await fetch('/asesor/api/exportar-reporte');
-        
-        if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        // Crear y descargar archivo CSV
-        const blob = new Blob([data.csv_data], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        
-        link.setAttribute('href', url);
-        link.setAttribute('download', data.filename);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        mostrarExito('Reporte exportado correctamente');
-        
-    } catch (error) {
-        console.error('Error al exportar reporte:', error);
-        mostrarError('Error al exportar el reporte. Por favor, intente nuevamente.');
-    } finally {
-        // Restaurar botón
-        setTimeout(() => {
-            boton.innerHTML = textoOriginal;
-            boton.disabled = false;
-        }, 1000);
-    }
-}
-
-/**
- * Muestra/oculta el loading de transacciones
- */
-function mostrarLoadingTransacciones(mostrar) {
-    const loading = document.getElementById('loadingTransacciones');
-    const tabla = document.getElementById('tablaTransaccionesRecientes').closest('.overflow-x-auto');
-    
-    if (mostrar) {
-        loading.classList.remove('hidden');
-        tabla.style.opacity = '0.5';
-    } else {
-        loading.classList.add('hidden');
-        tabla.style.opacity = '1';
-    }
-}
-
-/**
- * Muestra mensaje de éxito
- */
-function mostrarExito(mensaje) {
-    // Implementar sistema de notificaciones toast
-    console.log('Éxito:', mensaje);
-    // Aquí puedes agregar tu sistema de notificaciones
-}
-
-/**
- * Muestra mensaje de error
- */
-function mostrarError(mensaje) {
-    // Implementar sistema de notificaciones toast
-    console.error('Error:', mensaje);
-    // Aquí puedes agregar tu sistema de notificaciones
-}
-
-/**
- * Maneja errores de carga de imágenes
- */
-document.addEventListener('error', function(e) {
-    if (e.target.tagName === 'IMG') {
-        e.target.style.display = 'none';
-        const contenedor = e.target.parentElement;
-        contenedor.innerHTML = `
-            <div class="text-center py-12">
-                <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                </svg>
-                <p class="text-gray-500 text-sm">Error al cargar el gráfico</p>
+        fila.innerHTML = `
+          <td class="p-4 border-b border-gray-200">
+            <div class="font-medium text-gray-900">
+              ${transaccion.nombres} ${transaccion.apellidos}
             </div>
-        `;
+          </td>
+          <td class="p-4 border-b border-gray-200">
+            <span class="text-sm text-gray-600">${transaccion.tipo_asesoria}</span>
+          </td>
+          <td class="p-4 border-b border-gray-200">
+            <span class="text-sm font-semibold text-gray-900">$${formatearMoneda(transaccion.monto)}</span>
+          </td>
+          <td class="p-4 border-b border-gray-200">
+            <span class="text-sm text-gray-600">${transaccion.metodo_pago}</span>
+          </td>
+          <td class="p-4 border-b border-gray-200">
+            <span class="text-sm text-gray-600">${transaccion.fecha_formateada}</span>
+          </td>
+          <td class="p-4 border-b border-gray-200">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${estadoColor}">
+              ${transaccion.estado_pago}
+            </span>
+          </td>
+        `
+
+        tablaElement.appendChild(fila)
+      })
     }
-}, true);
+
+    console.log("Transacciones recientes cargadas:", data.transacciones_recientes.length)
+  } catch (error) {
+    console.error("Error al cargar transacciones recientes:", error)
+    tablaElement.innerHTML = `
+      <tr>
+        <td colspan="6" class="p-8 text-center text-red-500">
+          Error al cargar las transacciones recientes: ${error.message}
+        </td>
+      </tr>
+    `
+  } finally {
+    // Ocultar loading
+    loadingElement.classList.add("hidden")
+  }
+}
+
+// Función para obtener el color del estado de pago
+function obtenerColorEstadoPago(estado) {
+  switch (estado) {
+    case "Completado":
+      return "bg-green-100 text-green-800"
+    case "Pendiente":
+      return "bg-yellow-100 text-yellow-800"
+    case "Cancelado":
+      return "bg-red-100 text-red-800"
+    default:
+      return "bg-gray-100 text-gray-800"
+  }
+}
+
+// Función para formatear moneda
+function formatearMoneda(cantidad) {
+  return new Intl.NumberFormat("es-CO", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(cantidad)
+}
+
+// Función para actualizar todas las métricas de pagos
+async function actualizarMetricasPagos() {
+  const btnActualizar = document.getElementById("btnActualizarPagos")
+  const textoActualizar = document.getElementById("textoActualizarPagos")
+  const loadingActualizar = document.getElementById("loadingActualizarPagos")
+
+  // Cambiar a estado de loading
+  btnActualizar.disabled = true
+  btnActualizar.classList.add("opacity-75", "cursor-not-allowed")
+  textoActualizar.classList.add("hidden")
+  loadingActualizar.classList.remove("hidden")
+
+  try {
+    console.log("Actualizando todas las métricas de pagos...")
+    await cargarTodasLasMetricasPagos()
+  } catch (error) {
+    console.error("Error al actualizar métricas de pagos:", error)
+    mostrarNotificacion("Error al actualizar métricas", "error")
+  } finally {
+    // Restaurar estado normal
+    btnActualizar.disabled = false
+    btnActualizar.classList.remove("opacity-75", "cursor-not-allowed")
+    textoActualizar.classList.remove("hidden")
+    loadingActualizar.classList.add("hidden")
+  }
+}
+
+// Función para exportar reporte de pagos
+async function exportarReportePagos() {
+  const btnExportar = document.getElementById("btnExportarReportePagos")
+  const textoExportar = document.getElementById("textoExportarPagos")
+  const loadingExportar = document.getElementById("loadingExportarPagos")
+
+  // Cambiar a estado de loading
+  btnExportar.disabled = true
+  btnExportar.classList.add("opacity-75", "cursor-not-allowed")
+  textoExportar.classList.add("hidden")
+  loadingExportar.classList.remove("hidden")
+
+  try {
+    const response = await fetch("/asesor/api/generar-reporte-pagos")
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    // Crear blob y descargar
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.style.display = "none"
+    a.href = url
+
+    // Obtener nombre del archivo del header Content-Disposition si está disponible
+    const contentDisposition = response.headers.get("Content-Disposition")
+    let filename = `reporte_pagos_${new Date().toISOString().slice(0, 10)}.pdf`
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="(.+)"/)
+      if (filenameMatch) {
+        filename = filenameMatch[1]
+      }
+    }
+
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+  } catch (error) {
+    console.error("Error al generar reporte de pagos:", error)
+    mostrarNotificacion("Error al generar el reporte", "error")
+  } finally {
+    // Restaurar estado normal
+    btnExportar.disabled = false
+    btnExportar.classList.remove("opacity-75", "cursor-not-allowed")
+    textoExportar.classList.remove("hidden")
+    loadingExportar.classList.add("hidden")
+  }
+}
+
+// Función para mostrar notificaciones
+function mostrarNotificacion(mensaje, tipo = "info") {
+  // Crear elemento de notificación
+  const notificacion = document.createElement("div")
+  notificacion.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`
+
+  // Aplicar estilos según el tipo
+  switch (tipo) {
+    case "success":
+      notificacion.classList.add("bg-green-500", "text-white")
+      break
+    case "error":
+      notificacion.classList.add("bg-red-500", "text-white")
+      break
+    case "info":
+      notificacion.classList.add("bg-blue-500", "text-white")
+      break
+    default:
+      notificacion.classList.add("bg-gray-500", "text-white")
+  }
+
+  notificacion.innerHTML = `
+    <div class="flex items-center">
+      <span>${mensaje}</span>
+      <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+  `
+
+  // Agregar al DOM
+  document.body.appendChild(notificacion)
+
+  // Animar entrada
+  setTimeout(() => {
+    notificacion.classList.remove("translate-x-full")
+  }, 100)
+
+  // Auto-remover después de 5 segundos
+  setTimeout(() => {
+    notificacion.classList.add("translate-x-full")
+    setTimeout(() => {
+      if (notificacion.parentElement) {
+        notificacion.remove()
+      }
+    }, 300)
+  }, 5000)
+}
+
+// Función para manejar errores de red
+window.addEventListener("online", () => {
+  mostrarNotificacion("Conexión restaurada", "success")
+})
+
+window.addEventListener("offline", () => {
+  mostrarNotificacion("Sin conexión a internet", "error")
+})
