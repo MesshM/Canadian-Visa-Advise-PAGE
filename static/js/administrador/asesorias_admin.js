@@ -1,9 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
   // ===== VARIABLES GLOBALES =====
   let codigoAsesoriaACancelar = null
+  let fechaSeleccionadaEdit = null
+  let horaSeleccionadaEdit = null
+  let asesorSeleccionadoEdit = null
+  let horariosOcupadosEdit = []
+  let mesMostradoEdit = null // <-- NUEVA VARIABLE GLOBAL
 
   // Guardar los valores originales para detectar cambios
-  let originalEditarAsesoria = {};
+  let originalEditarAsesoria = {}
 
   // ===== ELEMENTOS DEL DOM =====
   const btnAbrirCrear = document.getElementById("btnAbrirCrearAsesoria")
@@ -93,6 +98,241 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     })
     document.body.style.overflow = "auto"
+  }
+
+  // ===== FUNCIONES PARA CALENDARIO Y HORARIOS =====
+
+  // Función para obtener la fecha actual en Colombia
+  function getFechaActualColombia() {
+    const now = new Date()
+    // Ajustar a zona horaria de Colombia (UTC-5)
+    const colombiaTime = new Date(now.getTime() - 5 * 60 * 60 * 1000)
+    return colombiaTime
+  }
+
+  // Función para verificar si una fecha es día laboral (Lunes a Viernes)
+  function esDiaLaboral(fecha) {
+    const dia = fecha.getDay()
+    return dia >= 1 && dia <= 5 // 1=Lunes, 5=Viernes
+  }
+
+  // Función para generar el calendario
+  function generarCalendario(containerId, fechaActual = null) {
+    const container = document.getElementById(containerId)
+    if (!container) return
+
+    // Usar mesMostradoEdit si existe, sino usar fechaActual o hoy
+    let fechaBase = mesMostradoEdit || fechaActual || getFechaActualColombia()
+    // Si se pasa fechaActual explícitamente (por cambio de mes), actualizar mesMostradoEdit
+    if (fechaActual) mesMostradoEdit = new Date(fechaBase)
+
+    const hoy = getFechaActualColombia()
+    const primerDia = new Date(fechaBase.getFullYear(), fechaBase.getMonth(), 1)
+    const ultimoDia = new Date(fechaBase.getFullYear(), fechaBase.getMonth() + 1, 0)
+
+    const meses = [
+      "Enero",
+      "Febrero",
+      "Marzo",
+      "Abril",
+      "Mayo",
+      "Junio",
+      "Julio",
+      "Agosto",
+      "Septiembre",
+      "Octubre",
+      "Noviembre",
+      "Diciembre",
+    ]
+
+    const diasSemana = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"]
+
+    let html = `
+      <div class="flex justify-between items-center mb-4">
+        <button type="button" onclick="cambiarMes('${containerId}', -1)" class="p-2 hover:bg-gray-200 rounded">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+        <h3 class="text-lg font-semibold">${meses[fechaBase.getMonth()]} ${fechaBase.getFullYear()}</h3>
+        <button type="button" onclick="cambiarMes('${containerId}', 1)" class="p-2 hover:bg-gray-200 rounded">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="grid grid-cols-7 gap-1 mb-2">
+        ${diasSemana.map((dia) => `<div class="text-center text-sm font-medium text-gray-500 py-2">${dia}</div>`).join("")}
+      </div>
+      
+      <div class="grid grid-cols-7 gap-1">
+    `
+
+    // Días vacíos al inicio
+    const primerDiaSemana = primerDia.getDay()
+    for (let i = 0; i < primerDiaSemana; i++) {
+      html += "<div></div>"
+    }
+
+    // Días del mes
+    for (let dia = 1; dia <= ultimoDia.getDate(); dia++) {
+      const fechaDia = new Date(fechaBase.getFullYear(), fechaBase.getMonth(), dia)
+      const esHoy = fechaDia.toDateString() === hoy.toDateString()
+      const esLaboral = esDiaLaboral(fechaDia)
+      const esPasado = fechaDia < hoy
+      const esSeleccionado = fechaSeleccionadaEdit && fechaDia.toDateString() === fechaSeleccionadaEdit.toDateString()
+
+      let clases = "calendar-day"
+      if (esHoy) clases += " today"
+      if (esSeleccionado) clases += " selected"
+      if (!esLaboral || esPasado) clases += " disabled"
+
+      const onclick =
+        esLaboral && !esPasado ? `onclick="seleccionarFecha('${fechaDia.toISOString().split("T")[0]}')"` : ""
+
+      html += `<div class="${clases}" ${onclick}>${dia}</div>`
+    }
+
+    html += "</div>"
+    container.innerHTML = html
+  }
+
+  // Función para cambiar mes en el calendario
+  window.cambiarMes = (containerId, direccion) => {
+    // Si no hay mesMostradoEdit, usar hoy
+    let base = mesMostradoEdit || getFechaActualColombia()
+    // Cambiar el mes mostrado
+    const nuevaFecha = new Date(base.getFullYear(), base.getMonth() + direccion, 1)
+    mesMostradoEdit = nuevaFecha
+    generarCalendario(containerId, nuevaFecha)
+  }
+
+  // Función para seleccionar fecha
+  window.seleccionarFecha = async (fechaStr) => {
+    fechaSeleccionadaEdit = new Date(fechaStr + "T00:00:00")
+    horaSeleccionadaEdit = null
+    mesMostradoEdit = new Date(fechaSeleccionadaEdit) // <-- Actualiza el mes mostrado
+
+    // Regenerar calendario para mostrar selección
+    generarCalendario("calendar-container-edit")
+
+    // Cargar horarios disponibles
+    await cargarHorariosDisponibles(fechaStr)
+
+    // Actualizar campo oculto y detectar cambios
+    actualizarCampoFechaHora()
+    window.detectarCambiosFormulario()
+  }
+
+  // Función para cargar horarios disponibles
+  async function cargarHorariosDisponibles(fecha) {
+    const container = document.getElementById("horarios-container-edit")
+    if (!container || !asesorSeleccionadoEdit) {
+      container.innerHTML =
+        '<p class="text-gray-500 text-center py-8">Seleccione un asesor para ver los horarios disponibles</p>'
+      return
+    }
+
+    try {
+      container.innerHTML =
+        '<div class="text-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div><p class="mt-2 text-gray-600">Cargando horarios...</p></div>'
+
+      const response = await fetch(`/admin/asesores/${asesorSeleccionadoEdit}/horarios-disponibles?fecha=${fecha}`)
+      const data = await response.json()
+
+      if (data.success && data.horarios) {
+        // Obtener horarios ocupados para esta fecha
+        const responseOcupados = await fetch(
+          `/admin/asesorias/horarios-ocupados?fecha=${fecha}&asesor=${asesorSeleccionadoEdit}`,
+        )
+        const dataOcupados = await responseOcupados.json()
+        horariosOcupadosEdit = dataOcupados.success ? dataOcupados.horarios : []
+
+        mostrarHorarios(data.horarios)
+      } else {
+        container.innerHTML =
+          '<p class="text-gray-500 text-center py-8">No hay horarios disponibles para esta fecha</p>'
+      }
+    } catch (error) {
+      console.error("Error al cargar horarios:", error)
+      container.innerHTML = '<p class="text-red-500 text-center py-8">Error al cargar horarios</p>'
+    }
+  }
+
+  // Función para mostrar horarios
+  function mostrarHorarios(horarios) {
+    const container = document.getElementById("horarios-container-edit")
+    if (!container) return
+
+    if (horarios.length === 0) {
+      container.innerHTML = '<p class="text-gray-500 text-center py-8">No hay horarios disponibles para esta fecha</p>'
+      return
+    }
+
+    let html = '<div class="grid grid-cols-2 gap-2">'
+
+    horarios.forEach((hora) => {
+      const estaOcupado = horariosOcupadosEdit.includes(hora)
+      const esSeleccionado = horaSeleccionadaEdit === hora
+
+      let clases = "horario-btn"
+      if (estaOcupado) clases += " ocupado"
+      else if (esSeleccionado) clases += " selected"
+
+      const onclick = !estaOcupado ? `onclick="seleccionarHora('${hora}')"` : ""
+      const titulo = estaOcupado ? "Horario ocupado" : "Seleccionar horario"
+
+      html += `<button type="button" class="${clases}" ${onclick} title="${titulo}">${hora}</button>`
+    })
+
+    html += "</div>"
+    container.innerHTML = html
+  }
+
+  // Función para seleccionar hora
+  window.seleccionarHora = (hora) => {
+    horaSeleccionadaEdit = hora
+
+    // Actualizar visualización de horarios
+    const horarios = document.querySelectorAll("#horarios-container-edit .horario-btn")
+    horarios.forEach((btn) => {
+      btn.classList.remove("selected")
+      if (btn.textContent === hora) {
+        btn.classList.add("selected")
+      }
+    })
+
+    // Actualizar campo oculto y detectar cambios
+    actualizarCampoFechaHora()
+    window.detectarCambiosFormulario() // Use window.detectarCambiosFormulario instead of detectarCambiosFormulario
+  }
+
+  // Función para actualizar el campo oculto de fecha/hora
+  function actualizarCampoFechaHora() {
+    const campoFecha = document.getElementById("fecha_asesoria_edit")
+    const infoSeleccion = document.getElementById("seleccion-actual-edit")
+    const textoSeleccion = document.getElementById("fecha-hora-seleccionada-edit")
+
+    if (fechaSeleccionadaEdit && horaSeleccionadaEdit && campoFecha) {
+      const fechaHora = `${fechaSeleccionadaEdit.toISOString().split("T")[0]}T${horaSeleccionadaEdit}`
+      campoFecha.value = fechaHora
+
+      // Mostrar información de selección
+      if (infoSeleccion && textoSeleccion) {
+        const fechaFormateada = fechaSeleccionadaEdit.toLocaleDateString("es-CO", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+        textoSeleccion.textContent = `${fechaFormateada} a las ${horaSeleccionadaEdit}`
+        infoSeleccion.classList.remove("hidden")
+      }
+    } else {
+      if (campoFecha) campoFecha.value = ""
+      if (infoSeleccion) infoSeleccion.classList.add("hidden")
+    }
   }
 
   // ===== FUNCIONES CAPTCHA (COPIADAS DE forgot_password.js) =====
@@ -323,6 +563,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (data.success) {
         const asesoria = data.asesoria
         const contenido = document.getElementById("contenidoEditarAsesoria")
+
         // Guardar valores originales para comparación
         originalEditarAsesoria = {
           tipo_asesoria: asesoria.tipo_asesoria || "",
@@ -333,20 +574,18 @@ document.addEventListener("DOMContentLoaded", () => {
           tipo_documento: asesoria.tipo_documento || "",
           numero_documento: asesoria.numero_documento || "",
           descripcion: asesoria.descripcion || "",
-          fecha_asesoria: asesoria.fecha_asesoria
-            ? new Date(asesoria.fecha_asesoria).toISOString().slice(0, 16)
-            : "",
-        };
+          fecha_asesoria: asesoria.fecha_asesoria ? new Date(asesoria.fecha_asesoria).toISOString().slice(0, 16) : "",
+        }
 
         // Renderizar select de asesores
-        let asesores = window.LISTA_ASESORES || [];
-        let selectAsesorHtml = `<select name="id_asesor" id="id_asesor_admin_edit" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">`;
-        selectAsesorHtml += `<option value="">Seleccione un asesor</option>`;
-        asesores.forEach(asesor => {
-          const selected = String(asesor.id_asesor) === String(asesoria.id_asesor) ? "selected" : "";
-          selectAsesorHtml += `<option value="${asesor.id_asesor}" ${selected}>${asesor.nombre} ${asesor.apellidos}</option>`;
-        });
-        selectAsesorHtml += `</select>`;
+        const asesores = window.LISTA_ASESORES || []
+        let selectAsesorHtml = `<select name="id_asesor" id="id_asesor_admin_edit" class="w-full py-3 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">`
+        selectAsesorHtml += `<option value="">Seleccione un asesor</option>`
+        asesores.forEach((asesor) => {
+          const selected = String(asesor.id_asesor) === String(asesoria.id_asesor) ? "selected" : ""
+          selectAsesorHtml += `<option value="${asesor.id_asesor}" ${selected}>${asesor.nombre} ${asesor.apellidos}</option>`
+        })
+        selectAsesorHtml += `</select>`
 
         contenido.innerHTML = `
           <input type="hidden" name="codigo_asesoria" value="${asesoria.codigo_asesoria}">
@@ -413,48 +652,56 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `
 
-        // Inicializar calendario con el asesor y fecha actuales
-        setTimeout(() => {
-          let asesorNombre = "";
-          if (asesoria.id_asesor) {
-            const found = asesores.find(a => String(a.id_asesor) === String(asesoria.id_asesor));
-            if (found) asesorNombre = `${found.nombre} ${found.apellidos}`;
-          } else {
-            asesorNombre = asesoria.asesor_asignado || asesoria.asesor_nombre || "";
-          }
-          window.initEditarAsesoriaCalendar(
-            asesorNombre,
-            asesoria.fecha_asesoria
-          );
-          const fechaInput = document.getElementById("fecha_asesoria_admin_edit");
-          if (fechaInput && originalEditarAsesoria.fecha_asesoria) {
-            fechaInput.value = originalEditarAsesoria.fecha_asesoria;
-          }
-        }, 100);
+        // Configurar asesor seleccionado para el calendario
+        if (asesoria.id_asesor) {
+          asesorSeleccionadoEdit = asesoria.id_asesor
+        }
 
+        // Configurar fecha actual si existe
+        if (asesoria.fecha_asesoria) {
+          const fechaAsesoria = new Date(asesoria.fecha_asesoria)
+          fechaSeleccionadaEdit = fechaAsesoria
+          horaSeleccionadaEdit = fechaAsesoria.toTimeString().slice(0, 5)
+          mesMostradoEdit = new Date(fechaAsesoria) // <-- REINICIA EL MES MOSTRADO AL ABRIR MODAL
+        } else {
+          mesMostradoEdit = null // <-- REINICIA EL MES MOSTRADO SI NO HAY FECHA
+        }
+
+        // Inicializar calendario
         setTimeout(() => {
-          const selectAsesor = document.getElementById("id_asesor_admin_edit");
+          generarCalendario("calendar-container-edit")
+          if (fechaSeleccionadaEdit) {
+            cargarHorariosDisponibles(fechaSeleccionadaEdit.toISOString().split("T")[0])
+          }
+        }, 100)
+
+        // Configurar event listener para cambio de asesor
+        setTimeout(() => {
+          const selectAsesor = document.getElementById("id_asesor_admin_edit")
           if (selectAsesor) {
             selectAsesor.addEventListener("change", function () {
-              const selectedId = this.value;
-              let asesorNombre = "";
-              if (selectedId) {
-                const found = asesores.find(a => String(a.id_asesor) === String(selectedId));
-                if (found) asesorNombre = `${found.nombre} ${found.apellidos}`;
-              }
-              window.initEditarAsesoriaCalendar(
-                asesorNombre,
-                null
-              );
-              const fechaInput = document.getElementById("fecha_asesoria_admin_edit");
-              if (fechaInput) fechaInput.value = "";
-            });
+              asesorSeleccionadoEdit = this.value
+              fechaSeleccionadaEdit = null
+              horaSeleccionadaEdit = null
+              mesMostradoEdit = null // <-- REINICIA EL MES MOSTRADO AL CAMBIAR ASESOR
+
+              // Limpiar selecciones
+              document.getElementById("fecha_asesoria_edit").value = ""
+              document.getElementById("seleccion-actual-edit").classList.add("hidden")
+
+              // Regenerar calendario y limpiar horarios
+              generarCalendario("calendar-container-edit")
+              document.getElementById("horarios-container-edit").innerHTML =
+                '<p class="text-gray-500 text-center py-8">Seleccione una fecha para ver los horarios disponibles</p>'
+
+              window.detectarCambiosFormulario()
+            })
           }
-        }, 200);
+        }, 200)
 
         setTimeout(() => {
-          setupDetectarCambiosEditarAsesoria();
-        }, 200);
+          setupDetectarCambiosEditarAsesoria()
+        }, 300)
 
         if (modalEditar) {
           modalEditar.classList.remove("hidden")
@@ -472,59 +719,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Detectar cambios en el formulario de edición y habilitar el botón solo si hay cambios
   function setupDetectarCambiosEditarAsesoria() {
-    const formEditar = document.getElementById("formEditarAsesoria");
-    if (!formEditar) return;
-    const btnSubmit = formEditar.querySelector('button[type="submit"]');
-    if (!btnSubmit) return;
+    const formEditar = document.getElementById("formEditarAsesoria")
+    if (!formEditar) return
+    const btnSubmit = formEditar.querySelector('button[type="submit"]')
+    if (!btnSubmit) return
 
     function getCurrentValues() {
-      const fd = new FormData(formEditar);
-      const obj = {};
-      fd.forEach((v, k) => (obj[k] = v));
-      const fechaInput = document.getElementById("fecha_asesoria_admin_edit");
-      // Usar la variable temporal si existe
-      obj.fecha_asesoria = window.fechaHoraSeleccionadaTemporal || (fechaInput ? fechaInput.value : "");
-      return obj;
+      const fd = new FormData(formEditar)
+      const obj = {}
+      fd.forEach((v, k) => (obj[k] = v))
+      const fechaInput = document.getElementById("fecha_asesoria_edit")
+      obj.fecha_asesoria = fechaInput ? fechaInput.value : ""
+      return obj
     }
 
     function hayCambios() {
-      const current = getCurrentValues();
+      const current = getCurrentValues()
       for (const key in originalEditarAsesoria) {
         if ((originalEditarAsesoria[key] || "") !== (current[key] || "")) {
-          return true;
+          return true
         }
       }
-      return false;
+      return false
     }
 
-    function handleChange(e) {
+    window.detectarCambiosFormulario = function detectarCambiosFormulario() {
       if (hayCambios()) {
-        btnSubmit.disabled = false;
-        btnSubmit.classList.remove("opacity-50", "cursor-not-allowed");
+        btnSubmit.disabled = false
+        btnSubmit.classList.remove("opacity-50", "cursor-not-allowed")
       } else {
-        btnSubmit.disabled = true;
-        btnSubmit.classList.add("opacity-50", "cursor-not-allowed");
+        btnSubmit.disabled = true
+        btnSubmit.classList.add("opacity-50", "cursor-not-allowed")
       }
     }
 
-    btnSubmit.disabled = true;
-    btnSubmit.classList.add("opacity-50", "cursor-not-allowed");
+    btnSubmit.disabled = true
+    btnSubmit.classList.add("opacity-50", "cursor-not-allowed")
 
     formEditar.querySelectorAll("input, select, textarea").forEach((el) => {
-      el.removeEventListener("input", handleChange);
-      el.removeEventListener("change", handleChange);
-      el.addEventListener("input", handleChange);
-      el.addEventListener("change", handleChange);
-    });
-
-    // Detectar cambios en la selección de fecha/hora del calendario
-    window._fechaHoraSeleccionadaTemporal = window.fechaHoraSeleccionadaTemporal;
-    setInterval(() => {
-      if (window._fechaHoraSeleccionadaTemporal !== window.fechaHoraSeleccionadaTemporal) {
-        window._fechaHoraSeleccionadaTemporal = window.fechaHoraSeleccionadaTemporal;
-        handleChange();
-      }
-    }, 200);
+      el.removeEventListener("input", window.detectarCambiosFormulario)
+      el.removeEventListener("change", window.detectarCambiosFormulario)
+      el.addEventListener("input", window.detectarCambiosFormulario)
+      el.addEventListener("change", window.detectarCambiosFormulario)
+    })
   }
 
   window.cerrarModalEditarAsesoria = () => {
@@ -533,6 +770,13 @@ document.addEventListener("DOMContentLoaded", () => {
       modalEditar.classList.add("hidden")
       document.body.style.overflow = "auto"
       if (formEditar) formEditar.reset()
+
+      // Limpiar variables de selección
+      fechaSeleccionadaEdit = null
+      horaSeleccionadaEdit = null
+      asesorSeleccionadoEdit = null
+      horariosOcupadosEdit = []
+      mesMostradoEdit = null // <-- LIMPIA EL MES MOSTRADO AL CERRAR MODAL
     }
   }
 
@@ -556,214 +800,90 @@ document.addEventListener("DOMContentLoaded", () => {
     codigoAsesoriaACancelar = null
   }
 
-  // ===== FUNCIÓN AUXILIAR PARA CLASES DE ESTADO =====
-  function getEstadoProcesoClass(estado) {
-    switch (estado) {
-      case "Terminado":
-        return "bg-green-100 text-green-800"
-      case "Proceso activo":
-        return "bg-blue-100 text-blue-800"
-      case "Cancelado":
-        return "bg-red-100 text-red-800"
-      default:
-        return "bg-yellow-100 text-yellow-800"
+  // ===== PAGINACIÓN =====
+  let paginaActual = 1
+  let totalPaginas = 1
+  const paginacionContainer = document.getElementById("paginacion-asesorias")
+  const POR_PAGINA = 10
+
+  function renderPaginacion() {
+    if (!paginacionContainer) return
+    paginacionContainer.innerHTML = ""
+    if (totalPaginas <= 1) return
+    // Mostrar máximo 5 páginas a la vez
+    let inicio = Math.max(1, paginaActual - 2)
+    let fin = Math.min(totalPaginas, inicio + 4)
+    if (fin - inicio < 4) inicio = Math.max(1, fin - 4)
+    // Botón anterior
+    const btnPrev = document.createElement("button")
+    btnPrev.textContent = "<"
+    btnPrev.className = `px-2 py-1 rounded ${paginaActual === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-100'}`
+    btnPrev.disabled = paginaActual === 1
+    btnPrev.onclick = () => cambiarPagina(paginaActual - 1)
+    paginacionContainer.appendChild(btnPrev)
+    // Números de página
+    for (let i = inicio; i <= fin; i++) {
+      const btn = document.createElement("button")
+      btn.textContent = i
+      btn.className = `px-3 py-1 rounded ${i === paginaActual ? 'bg-primary-600 text-white font-bold' : 'bg-white text-gray-700 hover:bg-gray-100'}`
+      btn.disabled = i === paginaActual
+      btn.onclick = () => cambiarPagina(i)
+      paginacionContainer.appendChild(btn)
     }
+    // Botón siguiente
+    const btnNext = document.createElement("button")
+    btnNext.textContent = ">"
+    btnNext.className = `px-2 py-1 rounded ${paginaActual === totalPaginas ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-100'}`
+    btnNext.disabled = paginaActual === totalPaginas
+    btnNext.onclick = () => cambiarPagina(paginaActual + 1)
+    paginacionContainer.appendChild(btnNext)
   }
 
-  // ===== FUNCIONES DE EXPORTACIÓN PDF =====
-
-  window.exportarAsesoriaPDF = async (codigo) => {
-    const btnElement = event.target.closest("button")
-
-    try {
-      setButtonLoading(btnElement, true, "Generando PDF...")
-      showToast("Generando PDF...", "info")
-
-      const response = await fetch(`/admin/asesorias/${codigo}/exportar-pdf`)
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || `Error del servidor: ${response.status}`)
-      }
-
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement("a")
-      link.href = url
-      link.download = `asesoria_${codigo}_${new Date().toISOString().slice(0, 10)}.pdf`
-
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
-
-      showToast("PDF generado exitosamente", "success")
-    } catch (error) {
-      console.error("Error al exportar PDF:", error)
-      showToast(`Error al generar PDF: ${error.message}`, "error")
-    } finally {
-      setButtonLoading(btnElement, false)
-    }
-  }
-
-  window.exportarTodasAsesoriasPDF = async () => {
-    const btnElement = event.target.closest("button")
-
-    try {
-      setButtonLoading(btnElement, true, "Generando reporte...")
-      showToast("Generando reporte completo en PDF...", "info")
-
-      const response = await fetch("/admin/asesorias/exportar-todas-pdf")
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || `Error del servidor: ${response.status}`)
-      }
-
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement("a")
-      link.href = url
-      link.download = `asesorias_completo_${new Date().toISOString().slice(0, 10)}.pdf`
-
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
-
-      showToast("Reporte PDF generado exitosamente", "success")
-    } catch (error) {
-      console.error("Error al exportar PDF:", error)
-      showToast(`Error al generar reporte PDF: ${error.message}`, "error")
-    } finally {
-      setButtonLoading(btnElement, false)
-    }
-  }
-
-  // ===== BUSCAR ASESORÍA POR CLIENTE =====
-  const searchClienteInput = document.getElementById("searchCliente");
-  const filterAsesor = document.getElementById("filterAsesor");
-  const filterEstadoProceso = document.getElementById("filterEstadoProceso");
-  const filterFecha = document.getElementById("filterFecha");
-  const tablaBody = document.querySelector("#tablaAsesorias tbody");
-  const loadingIndicator = document.getElementById("loading-indicator");
-
-  function renderAsesoriasTable(asesorias) {
-    if (!tablaBody) return;
-    if (!asesorias.length) {
-      tablaBody.innerHTML = `<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No hay asesorías registradas</td></tr>`;
-      return;
-    }
-    // Ordenar por codigo_asesoria descendente (más reciente primero)
-    asesorias.sort((a, b) => b.codigo_asesoria - a.codigo_asesoria);
-    tablaBody.innerHTML = asesorias.map(asesoria => `
-      <tr class="hover:bg-gray-50">
-        <td class="px-6 py-4 whitespace-nowrap">
-          <div class="flex items-center">
-            <div class="h-10 w-10 flex-shrink-0 bg-gray-200 rounded-full text-gray-500 flex items-center justify-center">
-              ${asesoria.cliente_nombre ? asesoria.cliente_nombre[0] : 'C'}
-            </div>
-            <div class="ml-4">
-              <div class="text-sm font-medium text-gray-900">${asesoria.cliente_nombre || 'N/A'}</div>
-              <div class="text-sm text-gray-500">${asesoria.cliente_correo || 'N/A'}</div>
-            </div>
-          </div>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-          <div class="text-sm text-gray-900">${asesoria.asesor_asignado || 'Sin asignar'}</div>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-          ${asesoria.tipo_asesoria || 'Visa de Trabajo'}
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-          ${asesoria.fecha_asesoria ? new Date(asesoria.fecha_asesoria).toLocaleString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : 'Por programar'}
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-            ${asesoria.estado_pago === 'Completado' ? 'bg-green-100 text-green-800'
-              : asesoria.estado_pago === 'Pendiente' ? 'bg-yellow-100 text-yellow-800'
-              : 'bg-red-100 text-red-800'}">
-            ${asesoria.estado_pago || 'Pendiente'}
-          </span>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap text-center">
-          <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-semibold
-            ${asesoria.estado_proceso === 'Terminado' ? 'bg-green-100 text-green-800'
-              : asesoria.estado_proceso === 'Proceso activo' ? 'bg-blue-100 text-blue-800'
-              : asesoria.estado_proceso === 'Cancelado' ? 'bg-red-100 text-red-800'
-              : 'bg-yellow-100 text-yellow-800'}">
-            ${asesoria.estado_proceso || 'Pendiente'}
-          </span>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-          <div class="flex justify-end space-x-2">
-            <button class="btn-action text-blue-600" title="Ver detalles"
-              onclick="abrirModalVerAsesoria(${asesoria.codigo_asesoria})">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-              </svg>
-            </button>
-            <button class="btn-action text-primary-600" title="Editar"
-              onclick="abrirModalEditarAsesoria(${asesoria.codigo_asesoria})">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-              </svg>
-            </button>
-            <button class="btn-action text-red-600" title="Cancelar"
-              onclick="abrirModalCancelarAsesoria(${asesoria.codigo_asesoria})">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
-            <button class="btn-action text-red-600" title="Exportar PDF"
-              onclick="exportarAsesoriaPDF(${asesoria.codigo_asesoria})">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-              </svg>
-            </button>
-          </div>
-        </td>
-      </tr>
-    `).join("");
+  function cambiarPagina(nuevaPagina) {
+    if (nuevaPagina < 1 || nuevaPagina > totalPaginas) return
+    paginaActual = nuevaPagina
+    filtrarAsesoriasAdmin()
   }
 
   async function filtrarAsesoriasAdmin() {
-    if (loadingIndicator) loadingIndicator.classList.remove("hidden");
-    const buscar = searchClienteInput ? searchClienteInput.value.trim() : "";
-    const asesor = filterAsesor ? filterAsesor.value : "";
-    const estado_proceso = filterEstadoProceso ? filterEstadoProceso.value : "";
-    const fecha = filterFecha ? filterFecha.value : "";
+    if (loadingIndicator) loadingIndicator.classList.remove("hidden")
+    const buscar = searchClienteInput ? searchClienteInput.value.trim() : ""
+    const asesor = filterAsesor ? filterAsesor.value : ""
+    const estado_proceso = filterEstadoProceso ? filterEstadoProceso.value : ""
+    const fecha = filterFecha ? filterFecha.value : ""
 
     try {
-      const params = new URLSearchParams();
-      if (buscar) params.append("buscar", buscar);
-      if (asesor) params.append("asesor", asesor);
-      if (estado_proceso) params.append("estado_proceso", estado_proceso);
-      if (fecha) params.append("fecha", fecha);
+      const params = new URLSearchParams()
+      if (buscar) params.append("buscar", buscar)
+      if (asesor) params.append("asesor", asesor)
+      if (estado_proceso) params.append("estado_proceso", estado_proceso)
+      if (fecha) params.append("fecha", fecha)
+      params.append("page", paginaActual)
+      params.append("per_page", POR_PAGINA)
 
-      const response = await fetch(`/admin/asesorias/filtrar?${params.toString()}`);
-      const data = await response.json();
+      const response = await fetch(`/admin/asesorias/filtrar?${params.toString()}`)
+      const data = await response.json()
       if (data.success) {
-        renderAsesoriasTable(data.asesorias);
+        renderAsesoriasTable(data.asesorias)
+        totalPaginas = data.total_paginas || 1
+        paginaActual = data.pagina_actual || 1
+        renderPaginacion()
       } else {
-        renderAsesoriasTable([]);
+        renderAsesoriasTable([])
+        totalPaginas = 1
+        renderPaginacion()
       }
     } catch (e) {
-      renderAsesoriasTable([]);
+      renderAsesoriasTable([])
+      totalPaginas = 1
+      renderPaginacion()
     } finally {
-      if (loadingIndicator) loadingIndicator.classList.add("hidden");
+      if (loadingIndicator) loadingIndicator.classList.add("hidden")
     }
   }
 
-  if (searchClienteInput) {
-    searchClienteInput.addEventListener("input", () => {
-      filtrarAsesoriasAdmin();
-    });
-  }
-  if (filterAsesor) filterAsesor.addEventListener("change", filtrarAsesoriasAdmin);
-  if (filterEstadoProceso) filterEstadoProceso.addEventListener("change", filtrarAsesoriasAdmin);
-  if (filterFecha) filterFecha.addEventListener("change", filtrarAsesoriasAdmin);
+  // Inicializar paginación al cargar
+  filtrarAsesoriasAdmin()
 
   // ===== EVENT LISTENERS PARA FORMULARIOS =====
 
@@ -864,27 +984,36 @@ document.addEventListener("DOMContentLoaded", () => {
   // Formulario editar asesoría
   if (formEditar) {
     formEditar.onsubmit = async (e) => {
-      e.preventDefault();
+      e.preventDefault()
 
-      // Copia la selección temporal al input oculto antes de enviar
-      if (window.fechaHoraSeleccionadaTemporal) {
-        const fechaInput = document.getElementById("fecha_asesoria_admin_edit");
-        if (fechaInput) {
-          fechaInput.value = window.fechaHoraSeleccionadaTemporal;
+      const formData = new FormData(formEditar)
+      const data = {}
+      formData.forEach((v, k) => (data[k] = v))
+
+      const codigo = data.codigo_asesoria
+      delete data.codigo_asesoria
+
+      // Validar que se haya seleccionado fecha y hora si se cambió el asesor
+      if (data.id_asesor && !data.fecha_asesoria) {
+        showToast("Por favor seleccione una fecha y hora para la asesoría", "error")
+        return
+      }
+
+      // Validar que la fecha no sea en el pasado
+      if (data.fecha_asesoria) {
+        const fechaSeleccionada = new Date(data.fecha_asesoria)
+        const ahora = getFechaActualColombia()
+
+        if (fechaSeleccionada < ahora) {
+          showToast("La fecha de la asesoría no puede ser en el pasado", "error")
+          return
         }
       }
 
-      const formData = new FormData(formEditar);
-      const data = {};
-      formData.forEach((v, k) => (data[k] = v));
-
-      const codigo = data.codigo_asesoria;
-      delete data.codigo_asesoria;
-
-      const btnSubmit = formEditar.querySelector('button[type="submit"]');
+      const btnSubmit = formEditar.querySelector('button[type="submit"]')
 
       try {
-        setButtonLoading(btnSubmit, true, "Guardando cambios...");
+        setButtonLoading(btnSubmit, true, "Guardando cambios...")
 
         const response = await fetch(`/admin/asesorias/${codigo}/editar`, {
           method: "POST",
@@ -892,24 +1021,24 @@ document.addEventListener("DOMContentLoaded", () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(data),
-        });
+        })
 
         if (response.ok) {
-          const result = await response.json();
-          showToast(result.mensaje || "Asesoría actualizada exitosamente", "success");
-          window.cerrarModalEditarAsesoria();
+          const result = await response.json()
+          showToast(result.mensaje || "Asesoría actualizada exitosamente", "success")
+          window.cerrarModalEditarAsesoria()
           setTimeout(() => {
-            window.location.reload();
-          }, 1000);
+            window.location.reload()
+          }, 1000)
         } else {
-          const error = await response.json();
-          showToast(error.error || "Error al actualizar la asesoría", "error");
+          const error = await response.json()
+          showToast(error.error || "Error al actualizar la asesoría", "error")
         }
       } catch (error) {
-        console.error("Error al actualizar la asesoría:", error);
-        showToast("Error al actualizar la asesoría", "error");
+        console.error("Error al actualizar la asesoría:", error)
+        showToast("Error al actualizar la asesoría", "error")
       } finally {
-        setButtonLoading(btnSubmit, false);
+        setButtonLoading(btnSubmit, false)
       }
     }
   }
@@ -964,4 +1093,5 @@ document.addEventListener("DOMContentLoaded", () => {
   window.showToast = showToast
   window.refreshCaptcha = refreshCaptcha
   window.codigoAsesoriaACancelar = codigoAsesoriaACancelar
+  window.getEstadoProcesoClass = getEstadoProcesoClass
 })

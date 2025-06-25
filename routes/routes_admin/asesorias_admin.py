@@ -92,14 +92,15 @@ def horarios_disponibles_asesor(id_asesor):
             mes = fecha_obj.month
             anio = fecha_obj.year
 
-            cursor.execute("""
-                SELECT TIME_FORMAT(hora_inicio, '%H:%i') as hora
-                FROM tbl_horarios_asesores
-                WHERE id_asesor = %s AND dia_semana = %s AND mes = %s AND anio = %s AND disponible = 1
-                ORDER BY hora_inicio
-            """, (id_asesor, dia_semana, mes, anio))
-            horarios_base = [h['hora'] for h in cursor.fetchall()]
+            # Generar horarios de 7:00 a 15:00 (solo días laborales)
+            if dia_semana >= 1 and dia_semana <= 5:  # Lunes a Viernes
+                horarios_base = []
+                for hora in range(7, 16):  # 7:00 a 15:00
+                    horarios_base.append(f"{hora:02d}:00")
+            else:
+                horarios_base = []
 
+            # Verificar horarios ocupados
             cursor.execute("""
                 SELECT TIME_FORMAT(TIME(fecha_asesoria), '%H:%i') as hora
                 FROM tbl_asesoria
@@ -107,6 +108,7 @@ def horarios_disponibles_asesor(id_asesor):
             """, (id_asesor, fecha_obj.date()))
             ocupadas = [r['hora'] for r in cursor.fetchall()]
 
+            # Verificar reservas temporales
             cursor.execute("""
                 SELECT TIME_FORMAT(TIME(fecha), '%H:%i') as hora
                 FROM tbl_reservas_temporales
@@ -124,32 +126,75 @@ def horarios_disponibles_asesor(id_asesor):
             for i in range(0, 30):
                 dia = hoy + timedelta(days=i)
                 dia_semana = dia.weekday() + 1
-                mes = dia.month
-                anio = dia.year
-                cursor.execute("""
-                    SELECT TIME_FORMAT(hora_inicio, '%H:%i') as hora
-                    FROM tbl_horarios_asesores
-                    WHERE id_asesor = %s AND dia_semana = %s AND mes = %s AND anio = %s AND disponible = 1
-                    ORDER BY hora_inicio
-                """, (id_asesor, dia_semana, mes, anio))
-                horarios_base = [h['hora'] for h in cursor.fetchall()]
-                cursor.execute("""
-                    SELECT TIME_FORMAT(TIME(fecha_asesoria), '%H:%i') as hora
-                    FROM tbl_asesoria
-                    WHERE id_asesor = %s AND DATE(fecha_asesoria) = %s AND estado IN ('Pendiente', 'Pagada')
-                """, (id_asesor, dia))
-                ocupadas = [r['hora'] for r in cursor.fetchall()]
-                cursor.execute("""
-                    SELECT TIME_FORMAT(TIME(fecha), '%H:%i') as hora
-                    FROM tbl_reservas_temporales
-                    WHERE id_asesor = %s AND DATE(fecha) = %s AND expiracion > NOW()
-                """, (id_asesor, dia))
-                reservadas = [r['hora'] for r in cursor.fetchall()]
-                horarios_disponibles = [h for h in horarios_base if h not in ocupadas and h not in reservadas]
-                if horarios_disponibles:
-                    disponibles[dia.strftime('%Y-%m-%d')] = horarios_disponibles
+                
+                # Solo días laborales
+                if dia_semana >= 1 and dia_semana <= 5:
+                    horarios_base = []
+                    for hora in range(7, 16):  # 7:00 a 15:00
+                        horarios_base.append(f"{hora:02d}:00")
+                    
+                    cursor.execute("""
+                        SELECT TIME_FORMAT(TIME(fecha_asesoria), '%H:%i') as hora
+                        FROM tbl_asesoria
+                        WHERE id_asesor = %s AND DATE(fecha_asesoria) = %s AND estado IN ('Pendiente', 'Pagada')
+                    """, (id_asesor, dia))
+                    ocupadas = [r['hora'] for r in cursor.fetchall()]
+                    
+                    cursor.execute("""
+                        SELECT TIME_FORMAT(TIME(fecha), '%H:%i') as hora
+                        FROM tbl_reservas_temporales
+                        WHERE id_asesor = %s AND DATE(fecha) = %s AND expiracion > NOW()
+                    """, (id_asesor, dia))
+                    reservadas = [r['hora'] for r in cursor.fetchall()]
+                    
+                    horarios_disponibles = [h for h in horarios_base if h not in ocupadas and h not in reservadas]
+                    if horarios_disponibles:
+                        disponibles[dia.strftime('%Y-%m-%d')] = horarios_disponibles
+            
             conn.close()
             return jsonify({'success': True, 'disponibles': disponibles})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@asesorias_admin_bp.route('/admin/asesorias/horarios-ocupados')
+@admin_required
+def horarios_ocupados():
+    """
+    Devuelve los horarios ocupados para una fecha y asesor específicos.
+    """
+    try:
+        fecha = request.args.get('fecha')
+        asesor = request.args.get('asesor')
+        
+        if not fecha or not asesor:
+            return jsonify({'success': False, 'error': 'Parámetros faltantes'}), 400
+
+        conn = create_connection()
+        if not conn:
+            return jsonify({'success': False, 'error': 'Error de conexión a la base de datos'}), 500
+        cursor = conn.cursor(dictionary=True)
+
+        # Obtener horarios ocupados por asesorías existentes
+        cursor.execute("""
+            SELECT TIME_FORMAT(TIME(fecha_asesoria), '%H:%i') as hora
+            FROM tbl_asesoria
+            WHERE id_asesor = %s AND DATE(fecha_asesoria) = %s AND estado != 'Cancelada'
+        """, (asesor, fecha))
+        ocupadas = [r['hora'] for r in cursor.fetchall()]
+
+        # Obtener horarios con reservas temporales activas
+        cursor.execute("""
+            SELECT TIME_FORMAT(TIME(fecha), '%H:%i') as hora
+            FROM tbl_reservas_temporales
+            WHERE id_asesor = %s AND DATE(fecha) = %s AND expiracion > NOW()
+        """, (asesor, fecha))
+        reservadas = [r['hora'] for r in cursor.fetchall()]
+
+        # Combinar horarios ocupados y reservados
+        horarios_ocupados = list(set(ocupadas + reservadas))
+        
+        conn.close()
+        return jsonify({'success': True, 'horarios': horarios_ocupados})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -163,6 +208,7 @@ def validar_horario_asesoria():
         data = request.get_json()
         id_asesor = int(data.get('id_asesor'))
         fecha_asesoria = data.get('fecha_asesoria')  # formato: YYYY-MM-DDTHH:MM
+        codigo_asesoria_actual = data.get('codigo_asesoria')  # Para excluir la asesoría actual en edición
 
         if not id_asesor or not fecha_asesoria:
             return jsonify({'success': False, 'error': 'Datos incompletos'}), 400
@@ -170,12 +216,20 @@ def validar_horario_asesoria():
         conn = create_connection()
         cursor = conn.cursor(dictionary=True)
 
-        # Verificar si el horario está ocupado
-        cursor.execute('''
-            SELECT COUNT(*) as total
-            FROM tbl_asesoria
-            WHERE id_asesor = %s AND fecha_asesoria = %s AND estado != 'Cancelada'
-        ''', (id_asesor, fecha_asesoria.replace('T', ' ')))
+        # Verificar si el horario está ocupado (excluyendo la asesoría actual si se está editando)
+        if codigo_asesoria_actual:
+            cursor.execute('''
+                SELECT COUNT(*) as total
+                FROM tbl_asesoria
+                WHERE id_asesor = %s AND fecha_asesoria = %s AND estado != 'Cancelada' AND codigo_asesoria != %s
+            ''', (id_asesor, fecha_asesoria.replace('T', ' '), codigo_asesoria_actual))
+        else:
+            cursor.execute('''
+                SELECT COUNT(*) as total
+                FROM tbl_asesoria
+                WHERE id_asesor = %s AND fecha_asesoria = %s AND estado != 'Cancelada'
+            ''', (id_asesor, fecha_asesoria.replace('T', ' ')))
+        
         ocupado = cursor.fetchone()['total'] > 0
 
         conn.close()
@@ -527,6 +581,7 @@ def editar_asesoria(codigo):
         ]
         valores = [data.get(c) for c in campos]
         fecha_asesoria = data.get("fecha_asesoria")
+        
         # Si hay fecha, agrégala al update
         set_fields = ", ".join([f"{c}=%s" for c in campos])
         params = valores
@@ -552,6 +607,21 @@ def editar_asesoria(codigo):
         id_asesor_anterior = row["id_asesor"]
         id_usuario = row["id_usuario"]
 
+        # Validar que el nuevo horario esté disponible si se cambió
+        if fecha_asesoria and data.get("id_asesor"):
+            nueva_fecha_hora = fecha_asesoria.replace("T", " ")
+            
+            # Verificar si el horario está ocupado (excluyendo la asesoría actual)
+            cursor.execute("""
+                SELECT COUNT(*) as total
+                FROM tbl_asesoria
+                WHERE id_asesor = %s AND fecha_asesoria = %s AND estado != 'Cancelada' AND codigo_asesoria != %s
+            """, (data.get("id_asesor"), nueva_fecha_hora, codigo))
+            
+            if cursor.fetchone()['total'] > 0:
+                conn.close()
+                return jsonify({"error": "El horario seleccionado ya está ocupado"}), 400
+
         # Actualizar la asesoría
         cursor = conn.cursor()
         cursor.execute(
@@ -570,16 +640,69 @@ def editar_asesoria(codigo):
                     WHERE id_asesor=%s AND fecha=%s AND id_usuario=%s
                 """, (id_asesor_anterior, fecha_anterior, id_usuario))
                 conn.commit()
+            
             # Ocupar el nuevo horario (crear reserva temporal para el nuevo horario)
-            cursor.execute("""
-                INSERT INTO tbl_reservas_temporales (id_asesor, fecha, expiracion, id_usuario)
-                VALUES (%s, %s, DATE_ADD(NOW(), INTERVAL 2 HOUR), %s)
-                ON DUPLICATE KEY UPDATE expiracion = DATE_ADD(NOW(), INTERVAL 2 HOUR)
-            """, (data.get("id_asesor"), fecha_asesoria.replace("T", " "), id_usuario))
-            conn.commit()
+            if data.get("id_asesor") and id_usuario:
+                cursor.execute("""
+                    INSERT INTO tbl_reservas_temporales (id_asesor, fecha, expiracion, id_usuario)
+                    VALUES (%s, %s, DATE_ADD(NOW(), INTERVAL 2 HOUR), %s)
+                    ON DUPLICATE KEY UPDATE expiracion = DATE_ADD(NOW(), INTERVAL 2 HOUR)
+                """, (data.get("id_asesor"), fecha_asesoria.replace("T", " "), id_usuario))
+                conn.commit()
 
         cursor.close()
         conn.close()
         return jsonify({"mensaje": "Asesoría actualizada exitosamente"})
     except Exception as e:
         return jsonify({"error": f"Error al actualizar la asesoría: {str(e)}"}), 500
+
+@asesorias_admin_bp.route('/admin/asesorias/<int:codigo>/eliminar', methods=['POST'])
+@admin_required
+def eliminar_asesoria(codigo):
+    """
+    Cancela una asesoría y libera el horario.
+    """
+    try:
+        data = request.get_json()
+        motivo = data.get('motivo', 'Cancelada por administrador')
+
+        conn = create_connection()
+        if not conn:
+            return jsonify({"error": "Error de conexión a la base de datos"}), 500
+        cursor = conn.cursor(dictionary=True)
+
+        # Obtener información de la asesoría antes de cancelarla
+        cursor.execute("""
+            SELECT a.fecha_asesoria, a.id_asesor, s.id_usuario
+            FROM tbl_asesoria a
+            LEFT JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
+            WHERE a.codigo_asesoria = %s
+        """, (codigo,))
+        asesoria = cursor.fetchone()
+
+        if not asesoria:
+            conn.close()
+            return jsonify({"error": "Asesoría no encontrada"}), 404
+
+        # Actualizar el estado de la asesoría a cancelada
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE tbl_asesoria 
+            SET estado = 'Cancelada', estado_proceso = 'Cancelado'
+            WHERE codigo_asesoria = %s
+        """, (codigo,))
+        conn.commit()
+
+        # Liberar el horario (eliminar reserva temporal si existe)
+        if asesoria['fecha_asesoria'] and asesoria['id_asesor'] and asesoria['id_usuario']:
+            cursor.execute("""
+                DELETE FROM tbl_reservas_temporales
+                WHERE id_asesor = %s AND fecha = %s AND id_usuario = %s
+            """, (asesoria['id_asesor'], asesoria['fecha_asesoria'], asesoria['id_usuario']))
+            conn.commit()
+
+        cursor.close()
+        conn.close()
+        return jsonify({"mensaje": "Asesoría cancelada exitosamente"})
+    except Exception as e:
+        return jsonify({"error": f"Error al cancelar la asesoría: {str(e)}"}), 500

@@ -116,26 +116,26 @@
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex justify-end space-x-2">
                                     <button class="btn-action text-blue-600" title="Ver detalles"
-                                        onclick="abrirModalVerAsesoria({{ asesoria.codigo_asesoria }})">
+                                        onclick="abrirModalVerAsesoria('{{ asesoria.codigo_asesoria }}')">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                         </svg>
                                     </button>
                                     <button class="btn-action text-primary-600" title="Editar"
-                                        onclick="abrirModalEditarAsesoria({{ asesoria.codigo_asesoria }})">
+                                        onclick="abrirModalEditarAsesoria('{{ asesoria.codigo_asesoria }}')">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                         </svg>
                                     </button>
                                     <button class="btn-action text-red-600" title="Cancelar"
-                                        onclick="abrirModalCancelarAsesoria({{ asesoria.codigo_asesoria }})">
+                                        onclick="abrirModalCancelarAsesoria('{{ asesoria.codigo_asesoria }}')">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                         </svg>
                                     </button>
                                     <button class="btn-action text-red-600" title="Exportar PDF"
-                                        onclick="exportarAsesoriaPDF({{ asesoria.codigo_asesoria }})">
+                                        onclick="exportarAsesoriaPDF('{{ asesoria.codigo_asesoria }}')">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                         </svg>
@@ -159,7 +159,7 @@
         <div class="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold">Detalles de Asesoría</h2>
-                <button onclick="cerrarModalVerAsesoria()" class="text-gray-400 hover:text-gray-600"></button>
+                <button onclick="cerrarModalVerAsesoria()" class="text-gray-400 hover:text-gray-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
@@ -182,7 +182,7 @@
 
     <!-- MODAL EDITAR ASESORIA -->
     <div id="modalEditarAsesoria" class="fixed inset-0 backdrop-blur-sm bg-black/30 hidden justify-center items-center z-50">
-        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
                 <div>
                     <h2 class="text-xl font-bold text-gray-900">Editar Asesoría</h2>
@@ -196,27 +196,45 @@
             </div>
             <form id="formEditarAsesoria" class="space-y-6">
                 <div id="contenidoEditarAsesoria">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Lugar</label>
-                        <select id="lugar" name="lugar" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
-                            <option value="Presencial">Presencial</option>
-                            <option value="Virtual (Teams)">Virtual (Teams)</option>
-                            <option value="Virtual (Zoom)">Virtual (Zoom)</option>
-                        </select>
+                    <!-- El contenido se carga dinámicamente -->
+                </div>
+                
+                <!-- Sección de Fecha y Hora -->
+                <div class="border-t pt-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Programar Fecha y Hora</h3>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Calendario -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-3">Seleccionar Fecha</label>
+                            <div id="calendar-container-edit" class="bg-gray-50 rounded-lg p-4">
+                                <!-- Calendario se genera dinámicamente -->
+                            </div>
+                        </div>
+                        
+                        <!-- Horarios disponibles -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-3">Horarios Disponibles</label>
+                            <div id="horarios-container-edit" class="bg-gray-50 rounded-lg p-4 min-h-[200px]">
+                                <p class="text-gray-500 text-center py-8">Seleccione una fecha para ver los horarios disponibles</p>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Especialidad</label>
-                        <select id="especialidad" name="especialidad" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500">
-                            <option value="Inmigración Canadiense">Inmigración Canadiense</option>
-                            <option value="Especialista en Visas de Trabajo">Especialista en Visas de Trabajo</option>
-                            <option value="Especialista en Residencia Permanente">Especialista en Residencia Permanente</option>
-                        </select>
+                    
+                    <!-- Campo oculto para almacenar la fecha/hora seleccionada -->
+                    <input type="hidden" name="fecha_asesoria" id="fecha_asesoria_edit">
+                    
+                    <!-- Información de la selección actual -->
+                    <div id="seleccion-actual-edit" class="mt-4 p-3 bg-blue-50 rounded-lg hidden">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <span class="text-sm font-medium text-blue-900">Fecha y hora seleccionada:</span>
+                            <span id="fecha-hora-seleccionada-edit" class="ml-2 text-sm text-blue-700 font-semibold"></span>
+                        </div>
                     </div>
                 </div>
-                <!-- Calendario compacto y horarios disponibles para editar -->
-                <div id="calendar-container-admin-edit" class="mt-2"></div>
-                <div id="time-container-admin-edit" class="mt-1"></div>
-                <input type="hidden" name="fecha_asesoria" id="fecha_asesoria_admin_edit">
+
                 <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
                     <button type="button" onclick="cerrarModalEditarAsesoria()" class="px-6 py-3 bg-gray-300 text-gray-700 rounded-xl hover:bg-gray-400 transition-all duration-300 font-medium">
                         Cancelar
@@ -242,7 +260,7 @@
             </div>
             <div class="mb-4">
                 <div class="flex items-center mb-4">
-                    <svg class="w-12 h-12 text-red-500 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"></svg>
+                    <svg class="w-12 h-12 text-red-500 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
                     </svg>
                     <div>
@@ -272,27 +290,91 @@
             background: #f3f4f6;
             color: #1d4ed8;
         }
+        
+        /* Estilos para el calendario */
+        .calendar-day {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .calendar-day:hover {
+            background-color: #e5e7eb;
+        }
+        
+        .calendar-day.disabled {
+            color: #d1d5db;
+            cursor: not-allowed;
+            background-color: transparent;
+        }
+        
+        .calendar-day.disabled:hover {
+            background-color: transparent;
+        }
+        
+        .calendar-day.selected {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        .calendar-day.today {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        
+        .calendar-day.selected.today {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        /* Estilos para los horarios */
+        .horario-btn {
+            padding: 8px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+        }
+        
+        .horario-btn:hover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        
+        .horario-btn.selected {
+            border-color: #3b82f6;
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        .horario-btn.ocupado {
+            border-color: #ef4444;
+            background-color: #fef2f2;
+            color: #dc2626;
+            cursor: not-allowed;
+        }
+        
+        .horario-btn.ocupado:hover {
+            border-color: #ef4444;
+            background-color: #fef2f2;
+        }
+        
         /* Badge grande y centrado para estado proceso */
         .inline-flex.items-center.justify-center.px-4.py-1.rounded-full.text-base {
             min-width: 120px;
             justify-content: center;
             font-size: 1rem;
-        }
-        /* Calendario compacto */
-        #calendar-container-admin-edit .grid {
-            gap: 0.25rem !important;
-        }
-        #calendar-container-admin-edit .calendar-day {
-            padding: 0.25rem 0 !important;
-            min-width: 1.8rem;
-            min-height: 1.8rem;
-            font-size: 0.95rem;
-        }
-        #calendar-container-admin-edit .text-center {
-            font-size: 0.92rem;
-        }
-        #calendar-container-admin-edit .flex {
-            padding: 0.5rem 0.5rem !important;
         }
     </style>
 
@@ -300,5 +382,5 @@
       window.LISTA_ASESORES = {{ asesores|tojson }};
     </script>
     <script src="/static/js/administrador/asesorias_admin.js"></script>
-    <script src="/static/js/administrador/asesorias_admin_calendar_admin.js"></script>
+
 {% endblock %}
