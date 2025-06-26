@@ -5,7 +5,7 @@ from mysql.connector import Error
 from datetime import datetime, timedelta, time as dt_time
 from config.database import create_connection
 
-# Agregar estas importaciones al inicio del archivo después de las importaciones existentes
+# Importaciones para PDF mejoradas
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -17,18 +17,17 @@ import io
 import base64
 import os
 
-# Asegúrate de que el blueprint se registre así:
 asesorias_admin_bp = Blueprint('asesorias_admin', __name__)
 
 def get_pdf_styles():
-    """Obtener estilos para PDF"""
+    """Obtener estilos mejorados para PDF"""
     styles = getSampleStyleSheet()
     
     title_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
-        fontSize=18,
-        spaceAfter=20,
+        fontSize=20,
+        spaceAfter=24,
         alignment=TA_CENTER,
         textColor=colors.HexColor('#1f2937'),
         fontName='Helvetica-Bold'
@@ -37,9 +36,9 @@ def get_pdf_styles():
     heading_style = ParagraphStyle(
         'CustomHeading',
         parent=styles['Heading2'],
-        fontSize=14,
-        spaceAfter=12,
-        spaceBefore=20,
+        fontSize=16,
+        spaceAfter=16,
+        spaceBefore=24,
         textColor=colors.HexColor('#374151'),
         fontName='Helvetica-Bold'
     )
@@ -47,18 +46,22 @@ def get_pdf_styles():
     normal_style = ParagraphStyle(
         'CustomNormal',
         parent=styles['Normal'],
-        fontSize=10,
-        spaceAfter=6,
+        fontSize=11,
+        spaceAfter=8,
         fontName='Helvetica'
     )
     
     return styles, title_style, heading_style, normal_style
 
 def get_logo_image():
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    logo_path = os.path.join(base_dir, "static", "img", "logo-cva.png")
-    if os.path.exists(logo_path):
-        return Image(logo_path, width=120, height=40)
+    """Obtener imagen del logo con mejor manejo de errores"""
+    try:
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        logo_path = os.path.join(base_dir, "static", "img", "logo-cva.png")
+        if os.path.exists(logo_path):
+            return Image(logo_path, width=150, height=50)
+    except Exception as e:
+        print(f"Error al cargar logo: {e}")
     return None
 
 def admin_required(f):
@@ -74,10 +77,7 @@ def admin_required(f):
 @asesorias_admin_bp.route('/admin/asesores/<int:id_asesor>/horarios-disponibles')
 @admin_required
 def horarios_disponibles_asesor(id_asesor):
-    """
-    Devuelve los horarios disponibles para un asesor específico.
-    Si se pasa el parámetro 'fecha', solo devuelve los horarios de ese día.
-    """
+    """Devuelve los horarios disponibles para un asesor específico con mejor validación"""
     try:
         conn = create_connection()
         if not conn:
@@ -86,29 +86,31 @@ def horarios_disponibles_asesor(id_asesor):
 
         fecha = request.args.get('fecha')
         if fecha:
-            # Solo horarios de ese día
-            fecha_obj = datetime.strptime(fecha, '%Y-%m-%d')
-            dia_semana = fecha_obj.weekday() + 1  # 1=Lunes, 7=Domingo
-            mes = fecha_obj.month
-            anio = fecha_obj.year
+            try:
+                fecha_obj = datetime.strptime(fecha, '%Y-%m-%d')
+            except ValueError:
+                return jsonify({'success': False, 'error': 'Formato de fecha inválido'}), 400
+                
+            dia_semana = fecha_obj.weekday() + 1
 
             # Generar horarios de 7:00 a 15:00 (solo días laborales)
-            if dia_semana >= 1 and dia_semana <= 5:  # Lunes a Viernes
+            if dia_semana >= 1 and dia_semana <= 5:
                 horarios_base = []
-                for hora in range(7, 16):  # 7:00 a 15:00
+                for hora in range(7, 16):
                     horarios_base.append(f"{hora:02d}:00")
             else:
                 horarios_base = []
 
-            # Verificar horarios ocupados
+            # Verificar horarios ocupados con mejor consulta
             cursor.execute("""
                 SELECT TIME_FORMAT(TIME(fecha_asesoria), '%H:%i') as hora
                 FROM tbl_asesoria
-                WHERE id_asesor = %s AND DATE(fecha_asesoria) = %s AND estado IN ('Pendiente', 'Pagada')
+                WHERE id_asesor = %s AND DATE(fecha_asesoria) = %s 
+                AND estado NOT IN ('Cancelada', 'Cancelado')
             """, (id_asesor, fecha_obj.date()))
             ocupadas = [r['hora'] for r in cursor.fetchall()]
 
-            # Verificar reservas temporales
+            # Verificar reservas temporales activas
             cursor.execute("""
                 SELECT TIME_FORMAT(TIME(fecha), '%H:%i') as hora
                 FROM tbl_reservas_temporales
@@ -120,23 +122,23 @@ def horarios_disponibles_asesor(id_asesor):
             conn.close()
             return jsonify({'success': True, 'horarios': horarios_disponibles})
         else:
-            # Horarios para los próximos 30 días
+            # Horarios para los próximos 30 días con mejor lógica
             hoy = datetime.now().date()
             disponibles = {}
             for i in range(0, 30):
                 dia = hoy + timedelta(days=i)
                 dia_semana = dia.weekday() + 1
                 
-                # Solo días laborales
                 if dia_semana >= 1 and dia_semana <= 5:
                     horarios_base = []
-                    for hora in range(7, 16):  # 7:00 a 15:00
+                    for hora in range(7, 16):
                         horarios_base.append(f"{hora:02d}:00")
                     
                     cursor.execute("""
                         SELECT TIME_FORMAT(TIME(fecha_asesoria), '%H:%i') as hora
                         FROM tbl_asesoria
-                        WHERE id_asesor = %s AND DATE(fecha_asesoria) = %s AND estado IN ('Pendiente', 'Pagada')
+                        WHERE id_asesor = %s AND DATE(fecha_asesoria) = %s 
+                        AND estado NOT IN ('Cancelada', 'Cancelado')
                     """, (id_asesor, dia))
                     ocupadas = [r['hora'] for r in cursor.fetchall()]
                     
@@ -154,20 +156,24 @@ def horarios_disponibles_asesor(id_asesor):
             conn.close()
             return jsonify({'success': True, 'disponibles': disponibles})
     except Exception as e:
+        print(f"Error en horarios_disponibles_asesor: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @asesorias_admin_bp.route('/admin/asesorias/horarios-ocupados')
 @admin_required
 def horarios_ocupados():
-    """
-    Devuelve los horarios ocupados para una fecha y asesor específicos.
-    """
+    """Devuelve los horarios ocupados con mejor validación"""
     try:
         fecha = request.args.get('fecha')
         asesor = request.args.get('asesor')
         
         if not fecha or not asesor:
             return jsonify({'success': False, 'error': 'Parámetros faltantes'}), 400
+
+        try:
+            datetime.strptime(fecha, '%Y-%m-%d')
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Formato de fecha inválido'}), 400
 
         conn = create_connection()
         if not conn:
@@ -178,7 +184,8 @@ def horarios_ocupados():
         cursor.execute("""
             SELECT TIME_FORMAT(TIME(fecha_asesoria), '%H:%i') as hora
             FROM tbl_asesoria
-            WHERE id_asesor = %s AND DATE(fecha_asesoria) = %s AND estado != 'Cancelada'
+            WHERE id_asesor = %s AND DATE(fecha_asesoria) = %s 
+            AND estado NOT IN ('Cancelada', 'Cancelado')
         """, (asesor, fecha))
         ocupadas = [r['hora'] for r in cursor.fetchall()]
 
@@ -190,44 +197,52 @@ def horarios_ocupados():
         """, (asesor, fecha))
         reservadas = [r['hora'] for r in cursor.fetchall()]
 
-        # Combinar horarios ocupados y reservados
         horarios_ocupados = list(set(ocupadas + reservadas))
         
         conn.close()
         return jsonify({'success': True, 'horarios': horarios_ocupados})
     except Exception as e:
+        print(f"Error en horarios_ocupados: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @asesorias_admin_bp.route('/admin/asesorias/validar-horario', methods=['POST'])
 @admin_required
 def validar_horario_asesoria():
-    """
-    Valida si un horario está disponible para un asesor.
-    """
+    """Valida si un horario está disponible con mejor lógica de validación"""
     try:
         data = request.get_json()
-        id_asesor = int(data.get('id_asesor'))
-        fecha_asesoria = data.get('fecha_asesoria')  # formato: YYYY-MM-DDTHH:MM
-        codigo_asesoria_actual = data.get('codigo_asesoria')  # Para excluir la asesoría actual en edición
+        id_asesor = data.get('id_asesor')
+        fecha_asesoria = data.get('fecha_asesoria')
+        codigo_asesoria_actual = data.get('codigo_asesoria')
 
         if not id_asesor or not fecha_asesoria:
             return jsonify({'success': False, 'error': 'Datos incompletos'}), 400
 
+        try:
+            id_asesor = int(id_asesor)
+            # Validar formato de fecha
+            datetime.strptime(fecha_asesoria.replace('T', ' '), '%Y-%m-%d %H:%M')
+        except (ValueError, TypeError):
+            return jsonify({'success': False, 'error': 'Datos inválidos'}), 400
+
         conn = create_connection()
         cursor = conn.cursor(dictionary=True)
 
-        # Verificar si el horario está ocupado (excluyendo la asesoría actual si se está editando)
+        # Verificar si el horario está ocupado
         if codigo_asesoria_actual:
             cursor.execute('''
                 SELECT COUNT(*) as total
                 FROM tbl_asesoria
-                WHERE id_asesor = %s AND fecha_asesoria = %s AND estado != 'Cancelada' AND codigo_asesoria != %s
+                WHERE id_asesor = %s AND fecha_asesoria = %s 
+                AND estado NOT IN ('Cancelada', 'Cancelado') 
+                AND codigo_asesoria != %s
             ''', (id_asesor, fecha_asesoria.replace('T', ' '), codigo_asesoria_actual))
         else:
             cursor.execute('''
                 SELECT COUNT(*) as total
                 FROM tbl_asesoria
-                WHERE id_asesor = %s AND fecha_asesoria = %s AND estado != 'Cancelada'
+                WHERE id_asesor = %s AND fecha_asesoria = %s 
+                AND estado NOT IN ('Cancelada', 'Cancelado')
             ''', (id_asesor, fecha_asesoria.replace('T', ' ')))
         
         ocupado = cursor.fetchone()['total'] > 0
@@ -235,38 +250,13 @@ def validar_horario_asesoria():
         conn.close()
         return jsonify({'success': not ocupado, 'ocupado': ocupado})
     except Exception as e:
+        print(f"Error en validar_horario_asesoria: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
-
-@asesorias_admin_bp.route('/admin/asesores/buscar-id')
-@admin_required
-def buscar_id_asesor():
-    """
-    Devuelve el id_asesor dado el nombre o nombre completo.
-    """
-    nombre = request.args.get('nombre', '').strip()
-    if not nombre:
-        return jsonify({'error': 'Nombre requerido'}), 400
-    conn = create_connection()
-    if not conn:
-        return jsonify({'error': 'Error de conexión a la base de datos'}), 500
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("""
-        SELECT id_asesor FROM tbl_asesor
-        WHERE nombre LIKE %s OR CONCAT(nombre, ' ', apellidos) LIKE %s
-        LIMIT 1
-    """, (f'%{nombre}%', f'%{nombre}%'))
-    row = cursor.fetchone()
-    conn.close()
-    if row:
-        return jsonify({'id_asesor': row['id_asesor']})
-    return jsonify({'id_asesor': None})
 
 @asesorias_admin_bp.route('/admin/asesorias/<int:codigo>/exportar-pdf')
 @admin_required
 def exportar_asesoria_pdf(codigo):
-    """
-    Exporta una asesoría individual a PDF.
-    """
+    """Exporta una asesoría individual a PDF con logo mejorado"""
     try:
         conn = create_connection()
         if not conn:
@@ -276,7 +266,8 @@ def exportar_asesoria_pdf(codigo):
             SELECT a.*, 
                    CONCAT(u.nombres, ' ', u.apellidos) as cliente_nombre,
                    u.correo as cliente_correo, u.celular as cliente_telefono,
-                   ase.nombre as asesor_nombre, ase.apellidos as asesor_apellidos, ase.correo as asesor_correo
+                   ase.nombre as asesor_nombre, ase.apellidos as asesor_apellidos, 
+                   ase.correo as asesor_correo
             FROM tbl_asesoria a
             LEFT JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
             LEFT JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
@@ -286,48 +277,76 @@ def exportar_asesoria_pdf(codigo):
         asesoria = cursor.fetchone()
         cursor.close()
         conn.close()
+        
         if not asesoria:
             return jsonify({'error': 'Asesoría no encontrada'}), 404
 
         buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=40, leftMargin=40, rightMargin=40, bottomMargin=40)
+        doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=60, leftMargin=50, rightMargin=50, bottomMargin=50)
         styles, title_style, heading_style, normal_style = get_pdf_styles()
         elements = []
 
-        # Agrega el logo como elemento de contenido
+        # Header con logo
         logo_img = get_logo_image()
         if logo_img:
             elements.append(logo_img)
-            elements.append(Spacer(1, 12))
-        elements.append(Paragraph("Resumen de Asesoría", title_style))
-        elements.append(Spacer(1, 18))
+            elements.append(Spacer(1, 20))
+        
+        # Título principal
+        elements.append(Paragraph("REPORTE DE ASESORÍA", title_style))
+        elements.append(Spacer(1, 30))
 
+        # Información de la asesoría en tabla mejorada
         data = [
-            ["Código", asesoria['codigo_asesoria']],
-            ["Cliente", asesoria.get('cliente_nombre', '')],
-            ["Correo Cliente", asesoria.get('cliente_correo', '')],
-            ["Teléfono Cliente", asesoria.get('cliente_telefono', '')],
-            ["Tipo de Asesoría", asesoria.get('tipo_asesoria', '')],
-            ["Fecha de Asesoría", asesoria['fecha_asesoria'].strftime('%d/%m/%Y %H:%M') if asesoria['fecha_asesoria'] else ''],
-            ["Lugar", asesoria.get('lugar', '')],
-            ["Asesor", f"{asesoria.get('asesor_nombre', '')} {asesoria.get('asesor_apellidos', '')}"],
-            ["Correo Asesor", asesoria.get('asesor_correo', '')],
-            ["Especialidad", asesoria.get('especialidad', '')],
-            ["Estado", asesoria.get('estado', '')],
-            ["Estado Proceso", asesoria.get('estado_proceso', '')],
-            ["Descripción", asesoria.get('descripcion', '')],
+            ["CÓDIGO DE ASESORÍA", str(asesoria['codigo_asesoria'])],
+            ["CLIENTE", asesoria.get('cliente_nombre', 'N/A')],
+            ["CORREO CLIENTE", asesoria.get('cliente_correo', 'N/A')],
+            ["TELÉFONO CLIENTE", asesoria.get('cliente_telefono', 'N/A')],
+            ["TIPO DE ASESORÍA", asesoria.get('tipo_asesoria', 'N/A')],
+            ["FECHA Y HORA", asesoria['fecha_asesoria'].strftime('%d/%m/%Y %H:%M') if asesoria['fecha_asesoria'] else 'Por programar'],
+            ["LUGAR", asesoria.get('lugar', 'N/A')],
+            ["ASESOR ASIGNADO", f"{asesoria.get('asesor_nombre', '')} {asesoria.get('asesor_apellidos', '')}".strip() or 'Sin asignar'],
+            ["CORREO ASESOR", asesoria.get('asesor_correo', 'N/A')],
+            ["ESPECIALIDAD", asesoria.get('especialidad', 'N/A')],
+            ["ESTADO", asesoria.get('estado', 'N/A')],
+            ["ESTADO PROCESO", asesoria.get('estado_proceso', 'N/A')],
+            ["TIPO DOCUMENTO", asesoria.get('tipo_documento', 'N/A')],
+            ["NÚMERO DOCUMENTO", asesoria.get('numero_documento', 'N/A')],
         ]
-        table = Table(data, colWidths=[120, 320])
+        
+        if asesoria.get('descripcion'):
+            data.append(["DESCRIPCIÓN", asesoria.get('descripcion', '')])
+
+        table = Table(data, colWidths=[140, 350])
         table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (1, 0), colors.HexColor("#f3f4f6")),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor("#f8fafc")),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
             ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+            ('ALIGN', (1, 0), (1, -1), 'LEFT'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor("#f9fafb")]),
-            ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.HexColor("#e5e7eb")),
-            ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor("#d1d5db")),
+            ('ROWBACKGROUNDS', (0, 0), (-1, -1), [colors.white, colors.HexColor("#f9fafb")]),
+            ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#e5e7eb")),
+            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor("#d1d5db")),
+            ('LEFTPADDING', (0, 0), (-1, -1), 12),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
         ]))
         elements.append(table)
+        
+        # Footer con fecha de generación
+        elements.append(Spacer(1, 30))
+        footer_style = ParagraphStyle(
+            'Footer',
+            parent=styles['Normal'],
+            fontSize=9,
+            textColor=colors.HexColor('#6b7280'),
+            alignment=TA_CENTER
+        )
+        elements.append(Paragraph(f"Documento generado el {datetime.now().strftime('%d/%m/%Y a las %H:%M')}", footer_style))
+        
         doc.build(elements)
         buffer.seek(0)
         return send_file(
@@ -337,14 +356,13 @@ def exportar_asesoria_pdf(codigo):
             mimetype='application/pdf'
         )
     except Exception as e:
+        print(f"Error al generar PDF: {e}")
         return jsonify({'error': f'Error al generar PDF: {str(e)}'}), 500
 
 @asesorias_admin_bp.route('/admin/asesorias/exportar-todas-pdf')
 @admin_required
 def exportar_todas_asesorias_pdf():
-    """
-    Exporta todas las asesorías a un solo PDF.
-    """
+    """Exporta todas las asesorías a un solo PDF con mejor formato"""
     try:
         conn = create_connection()
         if not conn:
@@ -355,11 +373,12 @@ def exportar_todas_asesorias_pdf():
                    a.lugar, a.estado, a.estado_proceso, a.descripcion,
                    CONCAT(u.nombres, ' ', u.apellidos) as cliente_nombre,
                    u.correo as cliente_correo,
-                   ase.nombre as asesor_nombre, ase.apellidos as asesor_apellidos
+                   CONCAT(ase.nombre, ' ', ase.apellidos) as asesor_completo
             FROM tbl_asesoria a
             LEFT JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
             LEFT JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
             LEFT JOIN tbl_asesor ase ON a.id_asesor = ase.id_asesor
+            WHERE a.estado NOT IN ('Cancelada', 'Cancelado')
             ORDER BY a.codigo_asesoria DESC
         ''')
         asesorias = cursor.fetchall()
@@ -367,61 +386,71 @@ def exportar_todas_asesorias_pdf():
         conn.close()
 
         buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=18, leftMargin=18, topMargin=40, bottomMargin=18)
+        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=20, leftMargin=20, topMargin=50, bottomMargin=30)
         styles, title_style, heading_style, normal_style = get_pdf_styles()
         elements = []
 
-        # Agrega el logo como elemento de contenido
+        # Header con logo
         logo_img = get_logo_image()
         if logo_img:
             elements.append(logo_img)
-            elements.append(Spacer(1, 12))
-        elements.append(Paragraph("Reporte de Asesorías", title_style))
-        elements.append(Spacer(1, 18))
+            elements.append(Spacer(1, 20))
+        
+        elements.append(Paragraph("REPORTE GENERAL DE ASESORÍAS", title_style))
+        elements.append(Spacer(1, 10))
+        
+        # Información del reporte
+        info_style = ParagraphStyle(
+            'Info',
+            parent=styles['Normal'],
+            fontSize=10,
+            textColor=colors.HexColor('#6b7280'),
+            alignment=TA_CENTER
+        )
+        elements.append(Paragraph(f"Generado el {datetime.now().strftime('%d/%m/%Y a las %H:%M')} | Total de asesorías: {len(asesorias)}", info_style))
+        elements.append(Spacer(1, 20))
 
-        # Encabezados y datos
+        # Encabezados y datos de la tabla
         table_data = [
             [
                 Paragraph("<b>Código</b>", normal_style),
                 Paragraph("<b>Cliente</b>", normal_style),
                 Paragraph("<b>Tipo</b>", normal_style),
                 Paragraph("<b>Fecha</b>", normal_style),
-                Paragraph("<b>Lugar</b>", normal_style),
                 Paragraph("<b>Asesor</b>", normal_style),
                 Paragraph("<b>Estado</b>", normal_style),
-                Paragraph("<b>Estado Proceso</b>", normal_style),
             ]
         ]
+        
         for a in asesorias:
+            fecha_formateada = a['fecha_asesoria'].strftime('%d/%m/%Y %H:%M') if a['fecha_asesoria'] else 'Por programar'
             table_data.append([
-                str(a['codigo_asesoria']),
-                Paragraph(a.get('cliente_nombre', '') or '', normal_style),
-                Paragraph(a.get('tipo_asesoria', '') or '', normal_style),
-                a['fecha_asesoria'].strftime('%d/%m/%Y %H:%M') if a['fecha_asesoria'] else '',
-                Paragraph(a.get('lugar', '') or '', normal_style),
-                Paragraph(f"{a.get('asesor_nombre', '')} {a.get('asesor_apellidos', '')}", normal_style),
-                Paragraph(a.get('estado', '') or '', normal_style),
-                Paragraph(a.get('estado_proceso', '') or '', normal_style),
+                Paragraph(str(a['codigo_asesoria']), normal_style),
+                Paragraph(a.get('cliente_nombre', 'N/A') or 'N/A', normal_style),
+                Paragraph(a.get('tipo_asesoria', 'N/A') or 'N/A', normal_style),
+                Paragraph(fecha_formateada, normal_style),
+                Paragraph(a.get('asesor_completo', 'Sin asignar') or 'Sin asignar', normal_style),
+                Paragraph(a.get('estado_proceso', 'N/A') or 'N/A', normal_style),
             ])
 
-        # Ajustar anchos de columna para mejor visualización
-        col_widths = [35, 90, 70, 65, 60, 90, 45, 65]
+        # Ajustar anchos de columna
+        col_widths = [50, 120, 80, 80, 120, 80]
 
         table = Table(table_data, colWidths=col_widths, repeatRows=1)
         table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#f3f4f6")),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#f8fafc")),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
             ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
             ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor("#f9fafb")]),
-            ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.HexColor("#e5e7eb")),
-            ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor("#d1d5db")),
+            ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#e5e7eb")),
+            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor("#d1d5db")),
             ('WORDWRAP', (0, 0), (-1, -1), True),
-            ('LEFTPADDING', (0, 0), (-1, -1), 2),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 2),
-            ('TOPPADDING', (0, 0), (-1, -1), 2),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+            ('LEFTPADDING', (0, 0), (-1, -1), 4),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
         ]))
         elements.append(table)
         doc.build(elements)
@@ -429,25 +458,25 @@ def exportar_todas_asesorias_pdf():
         return send_file(
             buffer,
             as_attachment=True,
-            download_name=f"asesorias_reporte.pdf",
+            download_name=f"reporte_asesorias_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
             mimetype='application/pdf'
         )
     except Exception as e:
+        print(f"Error al generar reporte PDF: {e}")
         return jsonify({'error': f'Error al generar PDF: {str(e)}'}), 500
 
 @asesorias_admin_bp.route('/admin/asesorias')
 @admin_required
 def listar_asesorias():
-    """
-    Vista principal para la gestión de asesorías en el panel de administrador.
-    """
+    """Vista principal mejorada para la gestión de asesorías"""
     try:
         conn = create_connection()
         if not conn:
             flash('Error de conexión a la base de datos', 'error')
             return render_template('admin/asesorias_admin.html', asesorias=[], asesores=[])
         cursor = conn.cursor(dictionary=True)
-        # Obtener todas las asesorías
+        
+        # Obtener asesorías con mejor consulta
         cursor.execute('''
             SELECT a.codigo_asesoria, a.fecha_asesoria, a.tipo_asesoria, 
                    COALESCE(p.estado_pago, 'Pendiente') AS estado_pago, 
@@ -455,126 +484,154 @@ def listar_asesorias():
                    a.lugar, a.descripcion, a.asesor_asignado,
                    CONCAT(u.nombres, ' ', u.apellidos) as cliente_nombre,
                    u.correo as cliente_correo,
-                   ase.nombre as asesor_nombre, ase.apellidos as asesor_apellidos
+                   CONCAT(ase.nombre, ' ', ase.apellidos) as asesor_nombre
             FROM tbl_asesoria a
             LEFT JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
             LEFT JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
             LEFT JOIN tbl_asesor ase ON a.id_asesor = ase.id_asesor
             LEFT JOIN tbl_pago_asesoria p ON a.codigo_asesoria = p.codigo_asesoria
-            WHERE a.estado != 'Cancelada'
+            WHERE a.estado NOT IN ('Cancelada', 'Cancelado')
             ORDER BY a.codigo_asesoria DESC
+            LIMIT 50
         ''')
         asesorias = cursor.fetchall()
+        
         # Obtener lista de asesores
         cursor.execute('SELECT id_asesor, nombre, apellidos FROM tbl_asesor ORDER BY nombre, apellidos')
         asesores = cursor.fetchall()
         conn.close()
         return render_template('admin/asesorias_admin.html', asesorias=asesorias, asesores=asesores)
     except Exception as e:
+        print(f"Error al cargar asesorías: {e}")
         flash(f'Error al cargar asesorías: {str(e)}', 'error')
         return render_template('admin/asesorias_admin.html', asesorias=[], asesores=[])
 
 @asesorias_admin_bp.route('/admin/asesorias/filtrar')
 @admin_required
 def filtrar_asesorias_admin():
-    buscar = request.args.get("buscar", "").strip().lower()
-    asesor = request.args.get("asesor", "").strip()
-    estado_proceso = request.args.get("estado_proceso", "").strip()
-    fecha = request.args.get("fecha", "").strip()
+    """Filtrar asesorías con mejor rendimiento y validación"""
+    try:
+        buscar = request.args.get("buscar", "").strip().lower()
+        asesor = request.args.get("asesor", "").strip()
+        estado_proceso = request.args.get("estado_proceso", "").strip()
+        fecha = request.args.get("fecha", "").strip()
 
-    conn = create_connection()
-    if not conn:
-        return jsonify({"success": False, "error": "Error de conexión a la base de datos"}), 500
-    cursor = conn.cursor(dictionary=True)
+        conn = create_connection()
+        if not conn:
+            return jsonify({"success": False, "error": "Error de conexión a la base de datos"}), 500
+        cursor = conn.cursor(dictionary=True)
 
-    query = '''
-        SELECT a.codigo_asesoria, a.fecha_asesoria, a.tipo_asesoria, 
-               COALESCE(p.estado_pago, 'Pendiente') AS estado_pago, 
-               a.estado_proceso, a.estado,
-               a.lugar, a.descripcion, a.asesor_asignado,
-               CONCAT(u.nombres, ' ', u.apellidos) as cliente_nombre,
-               u.correo as cliente_correo,
-               ase.nombre as asesor_nombre, ase.apellidos as asesor_apellidos,
-               a.id_asesor
-        FROM tbl_asesoria a
-        LEFT JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
-        LEFT JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-        LEFT JOIN tbl_asesor ase ON a.id_asesor = ase.id_asesor
-        LEFT JOIN tbl_pago_asesoria p ON a.codigo_asesoria = p.codigo_asesoria
-        WHERE a.estado != 'Cancelada'
-    '''
-    params = []
+        query = '''
+            SELECT a.codigo_asesoria, a.fecha_asesoria, a.tipo_asesoria, 
+                   COALESCE(p.estado_pago, 'Pendiente') AS estado_pago, 
+                   a.estado_proceso, a.estado,
+                   a.lugar, a.descripcion, a.asesor_asignado,
+                   CONCAT(u.nombres, ' ', u.apellidos) as cliente_nombre,
+                   u.correo as cliente_correo,
+                   CONCAT(ase.nombre, ' ', ase.apellidos) as asesor_nombre,
+                   a.id_asesor
+            FROM tbl_asesoria a
+            LEFT JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
+            LEFT JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+            LEFT JOIN tbl_asesor ase ON a.id_asesor = ase.id_asesor
+            LEFT JOIN tbl_pago_asesoria p ON a.codigo_asesoria = p.codigo_asesoria
+            WHERE a.estado NOT IN ('Cancelada', 'Cancelado')
+        '''
+        params = []
 
-    if buscar:
-        query += " AND (LOWER(CONCAT(u.nombres, ' ', u.apellidos)) LIKE %s OR LOWER(u.correo) LIKE %s) "
-        params.extend([f"%{buscar}%", f"%{buscar}%"])
-    if asesor:
-        query += " AND a.id_asesor = %s "
-        params.append(asesor)
-    if estado_proceso:
-        query += " AND a.estado_proceso = %s "
-        params.append(estado_proceso)
-    if fecha:
-        query += " AND DATE(a.fecha_asesoria) = %s "
-        params.append(fecha)
+        if buscar:
+            query += " AND (LOWER(CONCAT(u.nombres, ' ', u.apellidos)) LIKE %s OR LOWER(u.correo) LIKE %s) "
+            params.extend([f"%{buscar}%", f"%{buscar}%"])
+        if asesor:
+            try:
+                asesor_id = int(asesor)
+                query += " AND a.id_asesor = %s "
+                params.append(asesor_id)
+            except ValueError:
+                pass
+        if estado_proceso:
+            query += " AND a.estado_proceso = %s "
+            params.append(estado_proceso)
+        if fecha:
+            try:
+                datetime.strptime(fecha, '%Y-%m-%d')
+                query += " AND DATE(a.fecha_asesoria) = %s "
+                params.append(fecha)
+            except ValueError:
+                pass
 
-    query += " ORDER BY a.codigo_asesoria DESC"
+        query += " ORDER BY a.codigo_asesoria DESC LIMIT 100"
 
-    cursor.execute(query, params)
-    asesorias = cursor.fetchall()
-    cursor.close()
-    conn.close()
+        cursor.execute(query, params)
+        asesorias = cursor.fetchall()
+        cursor.close()
+        conn.close()
 
-    # Formatea la fecha para el frontend
-    for a in asesorias:
-        if a["fecha_asesoria"]:
-            a["fecha_asesoria"] = a["fecha_asesoria"].strftime("%Y-%m-%dT%H:%M")
-    return jsonify({"success": True, "asesorias": asesorias})
+        # Formatear fechas para el frontend
+        for a in asesorias:
+            if a["fecha_asesoria"]:
+                a["fecha_asesoria"] = a["fecha_asesoria"].strftime("%Y-%m-%dT%H:%M")
+        
+        return jsonify({"success": True, "asesorias": asesorias})
+    except Exception as e:
+        print(f"Error en filtrar_asesorias_admin: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @asesorias_admin_bp.route('/admin/asesorias/<int:codigo>/ver')
 @admin_required
 def ver_asesoria(codigo):
-    conn = create_connection()
-    if not conn:
-        return jsonify({'success': False, 'error': 'Error de conexión a la base de datos'}), 500
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute('''
-        SELECT a.*, 
-               CONCAT(u.nombres, ' ', u.apellidos) as cliente_nombre,
-               u.correo as cliente_correo, u.celular as cliente_telefono,
-               ase.nombre as asesor_nombre, ase.apellidos as asesor_apellidos, ase.correo as asesor_correo
-        FROM tbl_asesoria a
-        LEFT JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
-        LEFT JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
-        LEFT JOIN tbl_asesor ase ON a.id_asesor = ase.id_asesor
-        WHERE a.codigo_asesoria = %s
-    ''', (codigo,))
-    asesoria = cursor.fetchone()
-    # Opcional: obtener historial de pagos
-    cursor.execute('''
-        SELECT monto, metodo_pago, estado_pago, fecha_pago
-        FROM tbl_pago_asesoria
-        WHERE codigo_asesoria = %s
-        ORDER BY fecha_pago DESC
-    ''', (codigo,))
-    pagos = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    if not asesoria:
-        return jsonify({'success': False, 'error': 'Asesoría no encontrada'})
-    # Formatea la fecha para el frontend
-    if asesoria.get("fecha_asesoria"):
-        asesoria["fecha_asesoria_formatted"] = asesoria["fecha_asesoria"].strftime("%d/%m/%Y %H:%M")
-    return jsonify({'success': True, 'asesoria': asesoria, 'pagos': pagos})
+    """Ver detalles de asesoría con mejor manejo de datos"""
+    try:
+        conn = create_connection()
+        if not conn:
+            return jsonify({'success': False, '': 'Error de conexión a la base de datos'}), 500
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('''
+            SELECT a.*, 
+                   CONCAT(u.nombres, ' ', u.apellidos) as cliente_nombre,
+                   u.correo as cliente_correo, u.celular as cliente_telefono,
+                   CONCAT(ase.nombre, ' ', ase.apellidos) as asesor_nombre, 
+                   ase.correo as asesor_correo
+            FROM tbl_asesoria a
+            LEFT JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
+            LEFT JOIN tbl_usuario u ON s.id_usuario = u.id_usuario
+            LEFT JOIN tbl_asesor ase ON a.id_asesor = ase.id_asesor
+            WHERE a.codigo_asesoria = %s
+        ''', (codigo,))
+        asesoria = cursor.fetchone()
+        
+        # Obtener historial de pagos
+        cursor.execute('''
+            SELECT monto, metodo_pago, estado_pago, fecha_pago
+            FROM tbl_pago_asesoria
+            WHERE codigo_asesoria = %s
+            ORDER BY fecha_pago DESC
+        ''', (codigo,))
+        pagos = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        if not asesoria:
+            return jsonify({'success': False, 'error': 'Asesoría no encontrada'})
+        
+        # Formatear fecha para el frontend
+        if asesoria.get("fecha_asesoria"):
+            asesoria["fecha_asesoria_formatted"] = asesoria["fecha_asesoria"].strftime("%d/%m/%Y %H:%M")
+        
+        return jsonify({'success': True, 'asesoria': asesoria, 'pagos': pagos})
+    except Exception as e:
+        print(f"Error en ver_asesoria: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @asesorias_admin_bp.route('/admin/asesorias/<int:codigo>/editar', methods=['POST'])
 @admin_required
 def editar_asesoria(codigo):
-    """
-    Actualiza los datos de una asesoría.
-    """
+    """Actualiza los datos de una asesoría con validación mejorada y liberación automática de horarios"""
     try:
         data = request.get_json()
+        if not data:
+            return jsonify({"error": "No se recibieron datos"}), 400
+
         campos = [
             "tipo_asesoria", "lugar", "estado_proceso", "id_asesor",
             "especialidad", "tipo_documento", "numero_documento", "descripcion"
@@ -582,32 +639,36 @@ def editar_asesoria(codigo):
         valores = [data.get(c) for c in campos]
         fecha_asesoria = data.get("fecha_asesoria")
         
-        # Si hay fecha, agrégala al update
-        set_fields = ", ".join([f"{c}=%s" for c in campos])
-        params = valores
-        if fecha_asesoria:
-            set_fields += ", fecha_asesoria=%s"
-            params.append(fecha_asesoria.replace("T", " "))
-        params.append(codigo)
+        # Validaciones básicas
+        if data.get("id_asesor"):
+            try:
+                int(data.get("id_asesor"))
+            except (ValueError, TypeError):
+                return jsonify({"error": "ID de asesor inválido"}), 400
 
         conn = create_connection()
         if not conn:
             return jsonify({"error": "Error de conexión a la base de datos"}), 500
         cursor = conn.cursor(dictionary=True)
 
-        # Obtener la fecha/hora anterior, el id_asesor anterior y el id_usuario
+        # Obtener información actual de la asesoría
         cursor.execute("""
             SELECT a.fecha_asesoria, a.id_asesor, s.id_usuario
             FROM tbl_asesoria a
             LEFT JOIN tbl_solicitante s ON a.id_solicitante = s.id_solicitante
-            WHERE a.codigo_asesoria=%s
+            WHERE a.codigo_asesoria = %s
         """, (codigo,))
         row = cursor.fetchone()
+        
+        if not row:
+            conn.close()
+            return jsonify({"error": "Asesoría no encontrada"}), 404
+
         fecha_anterior = row["fecha_asesoria"]
         id_asesor_anterior = row["id_asesor"]
         id_usuario = row["id_usuario"]
 
-        # Validar que el nuevo horario esté disponible si se cambió
+        # Validar disponibilidad del nuevo horario si se cambió
         if fecha_asesoria and data.get("id_asesor"):
             nueva_fecha_hora = fecha_asesoria.replace("T", " ")
             
@@ -615,12 +676,22 @@ def editar_asesoria(codigo):
             cursor.execute("""
                 SELECT COUNT(*) as total
                 FROM tbl_asesoria
-                WHERE id_asesor = %s AND fecha_asesoria = %s AND estado != 'Cancelada' AND codigo_asesoria != %s
+                WHERE id_asesor = %s AND fecha_asesoria = %s 
+                AND estado NOT IN ('Cancelada', 'Cancelado') 
+                AND codigo_asesoria != %s
             """, (data.get("id_asesor"), nueva_fecha_hora, codigo))
             
             if cursor.fetchone()['total'] > 0:
                 conn.close()
                 return jsonify({"error": "El horario seleccionado ya está ocupado"}), 400
+
+        # Construir query de actualización
+        set_fields = ", ".join([f"{c}=%s" for c in campos])
+        params = valores
+        if fecha_asesoria:
+            set_fields += ", fecha_asesoria=%s"
+            params.append(fecha_asesoria.replace("T", " "))
+        params.append(codigo)
 
         # Actualizar la asesoría
         cursor = conn.cursor()
@@ -630,18 +701,22 @@ def editar_asesoria(codigo):
         )
         conn.commit()
 
-        # Liberar el horario anterior si cambió la fecha/hora o el asesor
-        if fecha_asesoria:
+        # Gestión de horarios: liberar el anterior y ocupar el nuevo
+        if fecha_asesoria and id_usuario:
             fecha_anterior_str = fecha_anterior.strftime("%Y-%m-%dT%H:%M") if fecha_anterior else None
-            if (fecha_anterior_str and (fecha_anterior_str != fecha_asesoria or str(id_asesor_anterior) != str(data.get("id_asesor")))):
-                # Liberar el horario anterior (eliminar reserva temporal si existe)
+            
+            # Si cambió la fecha/hora o el asesor, liberar el horario anterior
+            if (fecha_anterior_str and 
+                (fecha_anterior_str != fecha_asesoria or str(id_asesor_anterior) != str(data.get("id_asesor")))):
+                
+                # Liberar el horario anterior
                 cursor.execute("""
                     DELETE FROM tbl_reservas_temporales
-                    WHERE id_asesor=%s AND fecha=%s AND id_usuario=%s
+                    WHERE id_asesor = %s AND fecha = %s AND id_usuario = %s
                 """, (id_asesor_anterior, fecha_anterior, id_usuario))
                 conn.commit()
             
-            # Ocupar el nuevo horario (crear reserva temporal para el nuevo horario)
+            # Crear/actualizar reserva temporal para el nuevo horario
             if data.get("id_asesor") and id_usuario:
                 cursor.execute("""
                     INSERT INTO tbl_reservas_temporales (id_asesor, fecha, expiracion, id_usuario)
@@ -654,17 +729,16 @@ def editar_asesoria(codigo):
         conn.close()
         return jsonify({"mensaje": "Asesoría actualizada exitosamente"})
     except Exception as e:
+        print(f"Error en editar_asesoria: {e}")
         return jsonify({"error": f"Error al actualizar la asesoría: {str(e)}"}), 500
 
 @asesorias_admin_bp.route('/admin/asesorias/<int:codigo>/eliminar', methods=['POST'])
 @admin_required
 def eliminar_asesoria(codigo):
-    """
-    Cancela una asesoría y libera el horario.
-    """
+    """Cancela una asesoría y libera el horario automáticamente"""
     try:
         data = request.get_json()
-        motivo = data.get('motivo', 'Cancelada por administrador')
+        motivo = data.get('motivo', 'Cancelada por administrador') if data else 'Cancelada por administrador'
 
         conn = create_connection()
         if not conn:
@@ -693,7 +767,7 @@ def eliminar_asesoria(codigo):
         """, (codigo,))
         conn.commit()
 
-        # Liberar el horario (eliminar reserva temporal si existe)
+        # Liberar el horario automáticamente
         if asesoria['fecha_asesoria'] and asesoria['id_asesor'] and asesoria['id_usuario']:
             cursor.execute("""
                 DELETE FROM tbl_reservas_temporales
@@ -703,6 +777,7 @@ def eliminar_asesoria(codigo):
 
         cursor.close()
         conn.close()
-        return jsonify({"mensaje": "Asesoría cancelada exitosamente"})
+        return jsonify({"mensaje": "Asesoría cancelada exitosamente y horario liberado"})
     except Exception as e:
+        print(f"Error en eliminar_asesoria: {e}")
         return jsonify({"error": f"Error al cancelar la asesoría: {str(e)}"}), 500

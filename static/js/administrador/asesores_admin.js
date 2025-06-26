@@ -196,7 +196,7 @@ function eliminarAsesor(asesorId) {
   showModal(
     "Eliminar Asesor",
     "¿Estás seguro de que quieres eliminar este asesor? Esta acción no se puede deshacer y se verificará que no tenga asesorías asociadas.",
-    btn
+    btn,
   )
 }
 
@@ -411,7 +411,7 @@ async function handleConfirmAction() {
   }
 }
 
-// Sistema de notificaciones mejorado
+// Sistema de notificaciones mejorado y más estético
 function showNotification(message, type = "info") {
   const container = document.getElementById("toast-container")
   if (!container) {
@@ -420,79 +420,203 @@ function showNotification(message, type = "info") {
   }
 
   const notification = document.createElement("div")
-  notification.className = `max-w-sm w-full bg-white shadow-lg rounded-2xl pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-500 translate-x-full`
 
-  let bgColor, iconColor, icon, borderColor
+  // Configuración de estilos según el tipo
+  let bgGradient, iconColor, icon, borderColor, shadowColor
 
   switch (type) {
     case "success":
-      bgColor = "bg-green-50"
-      iconColor = "text-green-400"
+      bgGradient = "bg-gradient-to-r from-green-50 to-emerald-50"
+      iconColor = "text-green-600"
       borderColor = "border-l-4 border-green-500"
-      icon = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>'
+      shadowColor = "shadow-green-200/50"
+      icon = `
+        <div class="relative">
+          <div class="absolute inset-0 bg-green-500 rounded-full animate-ping opacity-20"></div>
+          <div class="relative bg-green-500 rounded-full p-2">
+            <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+        </div>
+      `
       break
     case "error":
-      bgColor = "bg-red-50"
-      iconColor = "text-red-400"
+      bgGradient = "bg-gradient-to-r from-red-50 to-rose-50"
+      iconColor = "text-red-600"
       borderColor = "border-l-4 border-red-500"
-      icon = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>'
+      shadowColor = "shadow-red-200/50"
+      icon = `
+        <div class="relative">
+          <div class="absolute inset-0 bg-red-500 rounded-full animate-pulse opacity-20"></div>
+          <div class="relative bg-red-500 rounded-full p-2">
+            <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </div>
+        </div>
+      `
       break
     case "info":
-      bgColor = "bg-blue-50"
-      iconColor = "text-blue-400"
+      bgGradient = "bg-gradient-to-r from-blue-50 to-indigo-50"
+      iconColor = "text-blue-600"
       borderColor = "border-l-4 border-blue-500"
-      icon =
-        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+      shadowColor = "shadow-blue-200/50"
+      icon = `
+        <div class="relative">
+          <div class="absolute inset-0 bg-blue-500 rounded-full animate-pulse opacity-20"></div>
+          <div class="relative bg-blue-500 rounded-full p-2">
+            <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+        </div>
+      `
       break
     default:
-      bgColor = "bg-gray-50"
-      iconColor = "text-gray-400"
+      bgGradient = "bg-gradient-to-r from-gray-50 to-slate-50"
+      iconColor = "text-gray-600"
       borderColor = "border-l-4 border-gray-500"
-      icon =
-        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+      shadowColor = "shadow-gray-200/50"
+      icon = `
+        <div class="relative bg-gray-500 rounded-full p-2">
+          <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+      `
   }
 
+  // Estructura de la notificación mejorada
+  notification.className = `
+    max-w-sm w-full fixed right-4 top-4 z-[100] transform transition-all duration-700 ease-out
+    translate-x-full opacity-0 scale-95 pointer-events-auto
+    ${type === "error" ? "animate-shake" : ""}
+  `.replace(/\s+/g, " ")
+
   notification.innerHTML = `
-        <div class="p-4 ${bgColor} ${borderColor}">
-            <div class="flex items-start">
-                <div class="flex-shrink-0">
-                    <svg class="h-6 w-6 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        ${icon}
-                    </svg>
-                </div>
-                <div class="ml-3 w-0 flex-1 pt-0.5">
-                    <p class="text-sm font-medium text-gray-900">${message}</p>
-                </div>
-                <div class="ml-4 flex-shrink-0 flex">
-                    <button class="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500" onclick="this.closest('.max-w-sm').remove()">
-                        <span class="sr-only">Cerrar</span>
-                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414z" clip-rule="evenodd"></path>
-                        </svg>
-                    </button>
-                </div>
+    <div class="relative overflow-hidden rounded-2xl ${bgGradient} ${borderColor} ${shadowColor} shadow-2xl backdrop-blur-sm">
+      <!-- Efecto de brillo animado -->
+      <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 animate-shimmer"></div>
+      
+      <div class="relative p-4">
+        <div class="flex items-start space-x-4">
+          <!-- Icono animado -->
+          <div class="flex-shrink-0 mt-0.5">
+            ${icon}
+          </div>
+          
+          <!-- Contenido -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <p class="text-sm font-semibold text-gray-900 leading-5 mb-1">
+                  ${type === "success" ? "¡Éxito!" : type === "error" ? "¡Error!" : "Información"}
+                </p>
+                <p class="text-sm text-gray-700 leading-relaxed">${message}</p>
+              </div>
+              
+              <!-- Botón cerrar mejorado -->
+              <button class="ml-4 flex-shrink-0 rounded-full p-1.5 hover:bg-white/20 transition-colors duration-200 group" 
+                      onclick="this.closest('.max-w-sm').remove()">
+                <svg class="h-4 w-4 text-gray-500 group-hover:text-gray-700 transition-colors duration-200" 
+                     fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414z" clip-rule="evenodd"></path>
+                </svg>
+              </button>
             </div>
+          </div>
         </div>
-    `
+        
+        <!-- Barra de progreso para auto-cierre -->
+        <div class="absolute bottom-0 left-0 h-1 bg-gradient-to-r ${type === "success" ? "from-green-400 to-emerald-500" : type === "error" ? "from-red-400 to-rose-500" : "from-blue-400 to-indigo-500"} rounded-full animate-progress"></div>
+      </div>
+    </div>
+    
+    <style>
+      @keyframes shake {
+        10%, 90% { transform: translateX(-2px); }
+        20%, 80% { transform: translateX(4px); }
+        30%, 50%, 70% { transform: translateX(-8px); }
+        40%, 60% { transform: translateX(8px); }
+      }
+      
+      @keyframes shimmer {
+        0% { transform: translateX(-100%) skewX(-12deg); }
+        100% { transform: translateX(200%) skewX(-12deg); }
+      }
+      
+      @keyframes progress {
+        0% { width: 100%; }
+        100% { width: 0%; }
+      }
+      
+      .animate-shake { 
+        animation: shake 0.6s ease-in-out; 
+      }
+      
+      .animate-shimmer { 
+        animation: shimmer 2s ease-in-out infinite; 
+      }
+      
+      .animate-progress { 
+        animation: progress ${type === "error" ? "4s" : "5s"} linear forwards; 
+      }
+    </style>
+  `
 
   container.appendChild(notification)
 
-  // Mostrar notificación
+  // Animación de entrada mejorada
   setTimeout(() => {
-    notification.classList.remove("translate-x-full")
-    notification.classList.add("translate-x-0")
+    notification.classList.remove("translate-x-full", "opacity-0", "scale-95")
+    notification.classList.add("translate-x-0", "opacity-100", "scale-100")
   }, 100)
 
-  // Auto-ocultar después de 5 segundos
-  setTimeout(() => {
-    notification.classList.remove("translate-x-0")
-    notification.classList.add("translate-x-full")
+  // Auto-ocultar con animación de salida
+  const hideTimeout = setTimeout(
+    () => {
+      notification.classList.remove("translate-x-0", "opacity-100", "scale-100")
+      notification.classList.add("translate-x-full", "opacity-0", "scale-95")
+
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.remove()
+        }
+      }, 500)
+    },
+    type === "error" ? 4500 : 5500,
+  )
+
+  // Pausar auto-cierre al hacer hover
+  notification.addEventListener("mouseenter", () => {
+    clearTimeout(hideTimeout)
+    const progressBar = notification.querySelector(".animate-progress")
+    if (progressBar) {
+      progressBar.style.animationPlayState = "paused"
+    }
+  })
+
+  // Reanudar auto-cierre al quitar hover
+  notification.addEventListener("mouseleave", () => {
+    const progressBar = notification.querySelector(".animate-progress")
+    if (progressBar) {
+      progressBar.style.animationPlayState = "running"
+    }
+
     setTimeout(() => {
       if (notification.parentNode) {
-        notification.remove()
+        notification.classList.remove("translate-x-0", "opacity-100", "scale-100")
+        notification.classList.add("translate-x-full", "opacity-0", "scale-95")
+
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.remove()
+          }
+        }, 500)
       }
-    }, 500)
-  }, 5000)
+    }, 2000)
+  })
 }
 
 // Función para mostrar modal de crear asesor

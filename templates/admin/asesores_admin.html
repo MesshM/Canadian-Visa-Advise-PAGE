@@ -321,8 +321,10 @@
     </div>
 </div>
 
-    <!-- Toast notifications container -->
-    <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
+    <!-- Toast notifications container mejorado -->
+    <div id="toast-container" class="fixed top-4 right-4 z-[100] space-y-3 pointer-events-none">
+      <!-- Las notificaciones se insertarán aquí dinámicamente -->
+    </div>
 
     <script src="{{ url_for('static', filename='js/administrador/asesores_admin.js') }}"></script>
 {% endblock %}
